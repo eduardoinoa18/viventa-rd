@@ -1,11 +1,8 @@
 import './globals.css'
 import Link from 'next/link'
-import type { ReactNode } from 'react'
 import LocaleSwitcher from '../components/LocaleSwitcher'
-
-export const metadata = { title: 'Viventa RD — Phase 1', description: 'Viventa RD bilingual starter' }
-
-export default function RootLayout({ children }: { children: ReactNode }) {
+export const metadata = {title:'Viventa RD MVP', description:'Viventa RD Lean MVP'}
+export default function RootLayout({children}:{children:React.ReactNode}) {
   return (
     <html lang="es">
       <body>
@@ -32,8 +29,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <div>© {new Date().getFullYear()} Viventa RD</div>
             <div className="space-x-4">
               <a href="/admin" className="underline">Admin</a>
-              <a href="/agent" className="underline">Agent Login</a>
-              <a href="/auth" className="underline">Iniciar sesión / Login</a>
+              <a href="/agent" className="underline">Agent</a>
+              <a href="/auth" className="underline">Login</a>
             </div>
           </div>
         </footer>

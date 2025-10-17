@@ -1,8 +1,7 @@
-// Minimal Firebase client wiring. Requires NEXT_PUBLIC_* env vars in .env.local
-import { initializeApp, getApps } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
-import { getStorage } from 'firebase/storage'
+import { initializeApp, getApps } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,21 +10,19 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-}
+};
 
+let _db: any = null
 let _auth: any = null
-let _firestore: any = null
 let _storage: any = null
 
 if (typeof window !== 'undefined') {
-  if (!getApps().length) {
-    initializeApp(firebaseConfig)
-  }
-  _auth = getAuth()
-  _firestore = getFirestore()
-  _storage = getStorage()
+  if(!getApps().length) initializeApp(firebaseConfig);
+  _db = getFirestore();
+  _auth = getAuth();
+  _storage = getStorage();
 }
 
+export const db = _db
 export const auth = _auth
-export const firestore = _firestore
 export const storage = _storage

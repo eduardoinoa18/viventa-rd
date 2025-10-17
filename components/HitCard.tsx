@@ -1,37 +1,39 @@
-"use client"
-import Link from 'next/link'
+'use client'
+import { useState, useEffect } from 'react'
+import { db, auth } from '../lib/firebaseClient'
+import { doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore'
+import { t } from '../lib/i18n'
 
-type Hit = {
-  objectID: string
-  title?: string
-  price?: number
-  price_usd?: number
-  city?: string
-  neighborhood?: string
-  images?: string[]
-  main_photo_url?: string
-}
+export default function HitCard({ hit }: any){
+  const [saved, setSaved] = useState(false)
+  useEffect(()=> {
+    const uid = auth.currentUser?.uid
+    if(!uid) return
+    const ref = doc(db, 'users', uid, 'favorites', hit.objectID)
+  getDoc(ref).then((snap: any)=> setSaved(snap.exists()))
+  },[hit])
 
-export default function HitCard({ hit }: { hit: Hit }) {
-  const img = hit.main_photo_url || (hit.images && hit.images[0]) || ''
-  const price = hit.price_usd ?? hit.price
+  async function toggleSave(){
+    const user = auth.currentUser
+    if(!user) return alert('Please login')
+    const ref = doc(db, 'users', user.uid, 'favorites', hit.objectID)
+    if(saved){ await deleteDoc(ref); setSaved(false) } else { await setDoc(ref, { listingId: hit.objectID, savedAt: new Date() }); setSaved(true) }
+  }
+
   return (
-    <Link href={`/listing/${hit.objectID}`} className="block border rounded-lg overflow-hidden hover:shadow-md transition bg-white">
-      <div className="h-40 bg-gray-100">
-        {img ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={img} alt={hit.title || 'Listing'} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">No image</div>
-        )}
+    <div className="border rounded overflow-hidden">
+      <div className="h-48 bg-gray-100">
+        <img src={hit.main_photo_url || '/placeholder.png'} className="w-full h-full object-cover"/>
       </div>
       <div className="p-3">
-        <h3 className="text-base font-semibold line-clamp-1">{hit.title || 'Listing'}</h3>
-        <p className="text-sm text-gray-600 line-clamp-1">{[hit.city, hit.neighborhood].filter(Boolean).join(', ')}</p>
-        {price != null && (
-          <p className="mt-1 text-green-700 font-semibold">${price}</p>
-        )}
+        <div className="font-semibold">{hit.title}</div>
+        <div className="text-sm text-gray-600">{hit.city} • {hit.neighborhood}</div>
+        <div className="text-lg font-bold mt-2">USD {hit.price_usd}</div>
+        <div className="mt-3 flex items-center justify-between">
+          <button onClick={toggleSave} className="px-3 py-1 border rounded text-sm">{saved? t('saved') : t('save')}</button>
+          <a className="px-3 py-1 bg-[#00A6A6] text-white rounded text-sm" href={`/listing/${hit.objectID}`}>{t('contact_agent')}</a>
+        </div>
       </div>
-    </Link>
+    </div>
   )
 }

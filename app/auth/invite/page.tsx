@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from 'react'
-import { auth, firestore } from '../../../lib/firebaseClient'
+import { auth, db } from '../../../lib/firebaseClient'
 import { collection, query, where, getDocs, updateDoc, doc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 
@@ -19,7 +19,7 @@ export default function InviteAcceptPage(){
 
   async function redeem(){
     if (!code) return
-    const q = query(collection(firestore, 'invites'), where('code','==',code))
+  const q = query(collection(db, 'invites'), where('code','==',code))
     const snap = await getDocs(q)
     if (snap.empty) { setStatus('Código inválido'); return }
     const d = snap.docs[0]
@@ -29,8 +29,8 @@ export default function InviteAcceptPage(){
     if (!u) { setStatus('Inicia sesión antes de canjear'); return }
     if (inv.email && inv.email !== u.email) { setStatus('Este código está asignado a otro correo'); return }
 
-    await updateDoc(doc(firestore, 'invites', d.id), { status: 'used', usedBy: u.uid })
-    await setDoc(doc(firestore, 'users', u.uid), { email: u.email, role: inv.role || 'agent' }, { merge: true })
+  await updateDoc(doc(db, 'invites', d.id), { status: 'used', usedBy: u.uid })
+  await setDoc(doc(db, 'users', u.uid), { email: u.email, role: inv.role || 'agent' }, { merge: true })
     setStatus('Invitación aceptada. Tienes rol: ' + (inv.role || 'agent'))
     setTimeout(()=> router.replace('/agent'), 1200)
   }

@@ -3,35 +3,38 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     match /users/{userId} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null && (request.auth.uid == userId || isElevated());
       allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      allow delete: if isAdmin();
+      allow update: if request.auth != null && (request.auth.uid == userId || isElevated());
+      allow delete: if isMasterAdmin();
     }
 
     match /listings/{listingId} {
       allow read: if true;
-      allow create: if isAgentOrAdmin();
-      allow update: if isOwnerOrAdmin();
-      allow delete: if isOwnerOrAdmin();
+      allow create: if isAgentOrAbove();
+      allow update: if isOwnerOrElevated();
+      allow delete: if isOwnerOrElevated();
+    }
+
+    match /invites/{inviteId} {
+      allow read: if true;
+      allow create: if isElevated();
+      allow update: if isElevated();
+      allow delete: if isElevated();
     }
 
     match /{document=**} {
       allow read: if true;
     }
 
-    function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    function roleOf(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
     }
-    function isAgentOrAdmin() {
-      return request.auth != null && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['agent','admin']
-      );
-    }
-    function isOwnerOrAdmin() {
-      return request.auth != null && (
-        resource.data.createdBy == request.auth.uid || isAdmin()
-      );
-    }
+    function isAdmin() { return request.auth != null && roleOf(request.auth.uid) == 'admin'; }
+    function isBrokerageAdmin() { return request.auth != null && roleOf(request.auth.uid) == 'brokerage_admin'; }
+    function isMasterAdmin() { return request.auth != null && roleOf(request.auth.uid) == 'master_admin'; }
+    function isElevated() { return isAdmin() || isBrokerageAdmin() || isMasterAdmin(); }
+    function isAgentOrAbove() { return request.auth != null && (roleOf(request.auth.uid) in ['agent','admin','brokerage_admin','master_admin']); }
+    function isOwnerOrElevated() { return request.auth != null && (resource.data.createdBy == request.auth.uid || isElevated()); }
   }
 }

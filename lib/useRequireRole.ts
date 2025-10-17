@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from 'react'
-import { auth, firestore } from './firebaseClient'
+import { auth, db } from './firebaseClient'
 import { doc, getDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 
@@ -19,7 +19,7 @@ export function useRequireRole(allowed: Role[] = ['agent','admin','brokerage_adm
         router.replace('/auth')
         return
       }
-      const ref = doc(firestore, 'users', u.uid)
+  const ref = doc(db, 'users', u.uid)
       const snap = await getDoc(ref)
       const role = (snap.exists() ? (snap.data() as any).role : 'client') as Role
       const allowedOk = allowed.includes(role)

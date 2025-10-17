@@ -1,7 +1,7 @@
-"use client"
+'use client'
 import { useEffect, useRef } from 'react'
 import mapboxgl from 'mapbox-gl'
-import { useInstantSearch } from 'react-instantsearch'
+import { useInstantSearch, useHits } from 'react-instantsearch'
 
 export default function MapSearch() {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -38,7 +38,30 @@ export default function MapSearch() {
         },
       }))
     })
+
+    return () => {
+      mapRef.current?.remove()
+      mapRef.current = null
+    }
   }, [containerRef, token, setUiState, uiState, indexId, indexUiState])
+
+  const { hits } = useHits<any>()
+  useEffect(() => {
+    const m = mapRef.current
+    if (!m) return
+    const old = (m as any)._viventaMarkers as mapboxgl.Marker[] | undefined
+    old?.forEach((mk) => mk.remove())
+    const markers: mapboxgl.Marker[] = []
+    hits.forEach((h) => {
+      const loc = (h as any)._geoloc
+      if (!loc || loc.lat == null || loc.lng == null) return
+      const el = document.createElement('div')
+      el.className = 'bg-[#FF6B35] rounded-full w-3 h-3 ring-2 ring-white shadow'
+      const mk = new mapboxgl.Marker({ element: el }).setLngLat([loc.lng, loc.lat]).addTo(m)
+      markers.push(mk)
+    })
+    ;(m as any)._viventaMarkers = markers
+  }, [hits])
 
   return <div className="w-full h-80 rounded-lg overflow-hidden" ref={containerRef} />
 }
@@ -47,6 +70,5 @@ function estimateRadiusKm(b: mapboxgl.LngLatBounds) {
   const dx = b.getEast() - b.getWest()
   const dy = b.getNorth() - b.getSouth()
   const approx = Math.max(dx, dy)
-  // crude conversion degrees to km near equator
   return approx * 111
 }
