@@ -4,5 +4,7 @@
   "search_button": "Search",
   "featured": "Featured Listings",
   "agent_dashboard": "Agent Dashboard",
-  "admin_panel": "Admin Panel"
+  "admin_panel": "Admin Panel",
+  "save_search": "Save search",
+  "search_title": "Search properties"
 }

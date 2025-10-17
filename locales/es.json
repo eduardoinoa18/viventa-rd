@@ -4,5 +4,7 @@
   "search_button": "Buscar",
   "featured": "Propiedades destacadas",
   "agent_dashboard": "Panel de Agente",
-  "admin_panel": "Panel de Admin"
+  "admin_panel": "Panel de Admin",
+  "save_search": "Guardar búsqueda",
+  "search_title": "Buscar propiedades"
 }

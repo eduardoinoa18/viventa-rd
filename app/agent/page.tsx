@@ -1,11 +1,15 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { auth, firestore, storage } from '../../lib/firebaseClient'
+import { useRequireRole } from '../../lib/useRequireRole'
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
 import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 
 export default function AgentPage(){
+  const guard = useRequireRole(['agent','admin','brokerage_admin','master_admin'])
+  if (guard.loading) return <div>Loading…</div>
+  if (!guard.ok) return null
   const [user, setUser] = useState<any>(null)
   const [listings, setListings] = useState<any[]>([])
   const [title, setTitle] = useState('')
