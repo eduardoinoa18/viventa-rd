@@ -13,9 +13,9 @@ const client = algoliasearch(appId || '', apiKey || '')
 const index = client.initIndex(indexName)
 
 function toIndexObject(id: string, data: FirebaseFirestore.DocumentData) {
-  const listing = { ...data, id }
+  const listing: any = { ...data, id }
   listing._geoloc = { lat: listing.lat, lng: listing.lng }
-  listing.score = computeFinalScore(listing as any, (data.agentTrust ?? 0.5) as number)
+  listing.score = computeFinalScore(listing, (data.agentTrust ?? 0.5) as number)
   return { objectID: id, ...listing }
 }
 
