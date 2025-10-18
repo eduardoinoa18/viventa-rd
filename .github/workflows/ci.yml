@@ -1,0 +1,31 @@
+name: App CI
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint --if-present
+      - run: npm run typecheck --if-present
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: dummy
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: dummy
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: dummy
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: dummy
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: dummy
+          NEXT_PUBLIC_FIREBASE_APP_ID: dummy
+          NEXT_PUBLIC_ALGOLIA_APP_ID: dummy
+          NEXT_PUBLIC_ALGOLIA_SEARCH_KEY: dummy
+          NEXT_PUBLIC_ALGOLIA_INDEX: viventa_listings_dev
