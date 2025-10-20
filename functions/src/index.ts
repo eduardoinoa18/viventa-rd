@@ -5,6 +5,7 @@ import { computeFinalScore } from './searchIndexUtils'
 export { acceptInvite } from './acceptInvite'
 export { logAdminAction } from './auditLog'
 export { sendAdminCode, verifyAdminCode } from './adminAuth'
+export { processApplication } from './applications'
 
 admin.initializeApp()
 

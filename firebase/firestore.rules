@@ -23,10 +23,27 @@ service cloud.firestore {
     }
 
     match /invites/{inviteId} {
-      allow read: if true;
+      allow read: if isElevated();
       allow create: if isElevated();
       allow update: if isElevated();
       allow delete: if isElevated();
+    }
+
+    match /applications/{appId} {
+      allow read: if isElevated();
+      allow create: if true; // public form
+      allow update: if isElevated();
+      allow delete: if isMasterAdmin();
+    }
+
+    match /brokerages/{bId} {
+      allow read: if true;
+      allow create, update, delete: if isElevated();
+    }
+
+    match /counters/{doc} {
+      allow read: if isElevated();
+      allow write: if isElevated();
     }
 
     match /{document=**} {

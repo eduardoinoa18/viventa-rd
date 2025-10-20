@@ -7,7 +7,7 @@ import AdminCodeModal from '../../../components/AdminCodeModal'
 import ListingsModeration from './ListingsModeration'
 
 const TABS = [
-  'Dashboard', 'Listings', 'Users', 'Brokerages', 'Clients & CRM', 'Inbox', 'Settings', 'Analytics', 'Audit Logs', 'Billing'
+  'Dashboard', 'Listings', 'Users', 'Brokerages', 'Applications', 'Clients & CRM', 'Inbox', 'Settings', 'Analytics', 'Audit Logs', 'Billing'
 ]
 
 export default function MasterAdminPage() {
@@ -45,6 +45,7 @@ export default function MasterAdminPage() {
            {tab === 'Listings' && <ListingsModeration />}
            {tab === 'Users' && <UsersManagement />}
            {tab === 'Brokerages' && <BrokeragesManagement />}
+           {tab === 'Applications' && <ApplicationsQueue />}
            {tab === 'Audit Logs' && <AuditLogs />}
            {tab === 'Clients & CRM' && <CRMClients />}
            {tab === 'Inbox' && <InboxSupport />}
@@ -57,6 +58,7 @@ export default function MasterAdminPage() {
 }
 import UsersManagement from './UsersManagement'
 import BrokeragesManagement from './BrokeragesManagement'
+import ApplicationsQueue from './ApplicationsQueue'
 import AuditLogs from './AuditLogs'
 import CRMClients from './CRMClients'
 import InboxSupport from './InboxSupport'
