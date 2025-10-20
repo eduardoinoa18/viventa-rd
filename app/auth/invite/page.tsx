@@ -1,7 +1,8 @@
 "use client"
 import { useEffect, useState } from 'react'
 import { auth, db } from '../../../lib/firebaseClient'
-import { collection, query, where, getDocs, updateDoc, doc, setDoc } from 'firebase/firestore'
+import { httpsCallable } from 'firebase/functions'
+import { functions } from '../../../lib/firebaseClient'
 import { useRouter } from 'next/navigation'
 
 export default function InviteAcceptPage(){
@@ -19,20 +20,16 @@ export default function InviteAcceptPage(){
 
   async function redeem(){
     if (!code) return
-  const q = query(collection(db, 'invites'), where('code','==',code))
-    const snap = await getDocs(q)
-    if (snap.empty) { setStatus('Código inválido'); return }
-    const d = snap.docs[0]
-    const inv = d.data() as any
-    if (inv.status === 'used') { setStatus('Este código ya fue usado'); return }
     const u = auth.currentUser
     if (!u) { setStatus('Inicia sesión antes de canjear'); return }
-    if (inv.email && inv.email !== u.email) { setStatus('Este código está asignado a otro correo'); return }
-
-  await updateDoc(doc(db, 'invites', d.id), { status: 'used', usedBy: u.uid })
-  await setDoc(doc(db, 'users', u.uid), { email: u.email, role: inv.role || 'agent' }, { merge: true })
-    setStatus('Invitación aceptada. Tienes rol: ' + (inv.role || 'agent'))
-    setTimeout(()=> router.replace('/agent'), 1200)
+    try {
+      const acceptInvite = httpsCallable(functions, 'acceptInvite')
+      const res: any = await acceptInvite({ token: code, uid: u.uid, email: u.email })
+      setStatus('Invitación aceptada. Estado: ' + res.status)
+      setTimeout(()=> router.replace('/agent'), 1200)
+    } catch (err: any) {
+      setStatus(err.message || 'Error al aceptar invitación')
+    }
   }
 
   return (

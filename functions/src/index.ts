@@ -2,6 +2,9 @@ import * as functions from 'firebase-functions'
 import * as admin from 'firebase-admin'
 import algoliasearch from 'algoliasearch'
 import { computeFinalScore } from './searchIndexUtils'
+export { acceptInvite } from './acceptInvite'
+export { logAdminAction } from './auditLog'
+export { sendAdminCode, verifyAdminCode } from './adminAuth'
 
 admin.initializeApp()
 
