@@ -9,7 +9,9 @@ export default function OnboardingPage(){
   function complete(){
     const s = getSession();
     if(s){ s.profileComplete = true; saveSession(s) }
-    router.replace('/dashboard')
+    // Redirect to agent dashboard after onboarding
+    const dest = s?.role === 'agent' ? '/dashboard/agent' : '/dashboard'
+    router.replace(dest)
   }
   return (
     <div className="bg-[#FAFAFA] min-h-screen flex flex-col">

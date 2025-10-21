@@ -23,7 +23,7 @@ export default function LoginPage() {
     const session = { uid: 'demo', role, token: 'demo-token', profileComplete: true, name: 'Eduardo' }
     saveSession(session)
     setError('')
-    const dest = role === 'master_admin' ? '/admin' : role === 'broker' ? '/dashboard' : role === 'agent' ? '/dashboard' : '/'
+    const dest = role === 'master_admin' ? '/admin' : role === 'broker' ? '/dashboard' : role === 'agent' ? '/dashboard/agent' : '/'
     router.push(dest + '?welcome=1')
   }
 
