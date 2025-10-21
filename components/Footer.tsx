@@ -10,13 +10,12 @@ export default function Footer() {
           <span className="font-bold text-lg text-[#0B2545]">VIVENTA</span>
         </div>
         <div className="flex space-x-4 mt-4 md:mt-0">
-          <Link href="/">Comprar</Link>
-          <Link href="/">Rentar</Link>
+          <Link href="/">Inicio</Link>
+          <Link href="/search">Buscar</Link>
           <Link href="/agents">Agentes</Link>
-          <Link href="/proyectos">Proyectos</Link>
-          <Link href="/blog">Blog</Link>
+          <Link href="/profesionales" className="font-semibold text-[#3BAFDA]">Profesionales</Link>
+          <Link href="/dashboard">Dashboard</Link>
           <Link href="/contact">Contacto</Link>
-          <Link href="/profesionales" className="font-semibold text-[#3BAFDA]">VIVENTA para Profesionales</Link>
         </div>
         <div className="mt-4 md:mt-0 text-xs text-right">
           <Link href="/admin" className="text-gray-400 hover:text-[#0B2545]" style={{fontSize:'10px'}}>Master Admin Login</Link>
