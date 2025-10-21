@@ -1,8 +1,9 @@
+"use client"
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import SearchBar from '../components/SearchBar'
 import PropertyCard from '../components/PropertyCard'
 import AgentCard from '../components/AgentCard'
+import { useState } from 'react'
 
 const featuredProperties = [
   { id: '1', image: '/demo1.jpg', price_usd: 250000, city: 'Santo Domingo', neighborhood: 'Piantini', beds: 3, baths: 2, sqft: 180 },
@@ -20,6 +21,16 @@ const topAgents = [
   { id: 'a4', photo: '/agent4.jpg', name: 'Luis Rodríguez', area: 'La Romana', rating: 4.7 },
 ]
 
+function SimpleSearchBar() {
+  const [query, setQuery] = useState('')
+  return (
+    <div className="bg-white rounded-lg shadow flex items-center p-4">
+      <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Ciudad, barrio o proyecto" className="flex-1 px-3 py-2 rounded border" />
+      <button onClick={() => window.location.href = `/search?q=${query}`} className="ml-4 px-6 py-2 bg-[#00A676] text-white rounded font-semibold">🔍 Buscar</button>
+    </div>
+  )
+}
+
 export default function HomePage() {
   return (
     <div className="bg-[#FAFAFA] min-h-screen flex flex-col">
@@ -32,7 +43,7 @@ export default function HomePage() {
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Encuentra tu próximo hogar con VIVENTA.</h1>
             <p className="mb-6 text-lg">Tu espacio, tu futuro.</p>
             <div className="max-w-2xl mx-auto">
-              <SearchBar />
+              <SimpleSearchBar />
             </div>
           </div>
         </section>

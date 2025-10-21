@@ -1,37 +1,44 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    match /users/{userId} {
-      allow read: if request.auth != null && (request.auth.uid == userId || isElevated());
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && (request.auth.uid == userId || isElevated());
-      allow delete: if isMasterAdmin();
+    
+    function isSignedIn() { return request.auth != null; }
+    function getUserRole() { 
+      return isSignedIn() ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : null; 
     }
+    function isAdmin() { return getUserRole() in ['master_admin','admin']; }
+    function isBrokerAdmin() { return getUserRole() == 'broker_admin'; }
+    function isMasterAdmin() { return getUserRole() == 'master_admin'; }
+    function isElevated() { return isAdmin() || isBrokerAdmin(); }
+    function isAgentOrAbove() { return isSignedIn() && (getUserRole() in ['agent','admin','broker_admin','master_admin']); }
+    function isOwnerOrAdmin() { return isSignedIn() && (resource.data.createdBy == request.auth.uid || isAdmin() || isBrokerAdmin()); }
 
-    match /audit_logs/{logId} {
-      allow create: if isElevated();
-      allow read: if isElevated();
-      allow update, delete: if false;
+    match /marketing_leads/{doc} { 
+      allow create: if true; 
+      allow read: if isAdmin(); 
     }
 
     match /listings/{listingId} {
       allow read: if true;
       allow create: if isAgentOrAbove();
-      allow update: if isOwnerOrAdmin();
-      allow delete: if isOwnerOrAdmin();
+      allow update, delete: if isOwnerOrAdmin();
+    }
+
+    match /users/{userId} {
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isMasterAdmin();
     }
 
     match /invites/{inviteId} {
-      allow read: if isElevated();
-      allow create: if isElevated();
-      allow update: if isElevated();
-      allow delete: if isElevated();
+      allow create: if isSignedIn() && isAdmin();
+      allow read, update, delete: if isSignedIn() && isAdmin();
     }
 
     match /applications/{appId} {
       allow read: if isElevated();
-      allow create: if true; // public form
+      allow create: if true;
       allow update: if isElevated();
       allow delete: if isMasterAdmin();
     }
@@ -46,18 +53,14 @@ service cloud.firestore {
       allow write: if isElevated();
     }
 
-    match /{document=**} {
-      allow read: if true;
+    match /audit_logs/{logId} {
+      allow create: if isElevated();
+      allow read: if isElevated();
+      allow update, delete: if false;
     }
 
-    function roleOf(uid) {
-      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    match /{document=**} {
+      allow read: if false;
     }
-    function isAdmin() { return request.auth != null && roleOf(request.auth.uid) == 'admin'; }
-    function isBrokerAdmin() { return request.auth != null && roleOf(request.auth.uid) == 'broker_admin'; }
-    function isMasterAdmin() { return request.auth != null && roleOf(request.auth.uid) == 'master_admin'; }
-    function isElevated() { return isAdmin() || isBrokerAdmin() || isMasterAdmin(); }
-    function isAgentOrAbove() { return request.auth != null && (roleOf(request.auth.uid) in ['agent','admin','broker_admin','master_admin']); }
-    function isOwnerOrAdmin() { return request.auth != null && (resource.data.createdBy == request.auth.uid || isAdmin() || isBrokerAdmin() || isMasterAdmin()); }
   }
 }

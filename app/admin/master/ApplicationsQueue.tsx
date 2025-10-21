@@ -63,7 +63,7 @@ export default function ApplicationsQueue() {
         ))}
       </div>
       <Dialog open={!!selected} onClose={() => setSelected(null)} className="fixed z-50 inset-0 flex items-center justify-center">
-        <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-30" />
+        {!!selected && <div className="fixed inset-0 bg-black bg-opacity-30" aria-hidden="true" />}
         {selected && (
           <div className="bg-white rounded shadow-lg p-6 max-w-lg mx-auto relative">
             <button className="absolute top-2 right-2 text-gray-500" onClick={() => setSelected(null)}>×</button>
