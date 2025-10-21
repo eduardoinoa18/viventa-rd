@@ -1,28 +1,22 @@
-'use client'
-import { useEffect, useState } from 'react'
-import { auth } from '../../lib/firebaseClient'
-import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth'
+import Header from '../../components/Header'
+import Footer from '../../components/Footer'
 
-export default function AuthPage(){
-  const [user,setUser]=useState<any>(null)
-  useEffect(()=> auth.onAuthStateChanged((u: any)=> setUser(u)),[])
-  async function login(){ const provider=new GoogleAuthProvider(); await signInWithPopup(auth,provider) }
-  async function logout(){ await signOut(auth) }
-
+export default function AuthPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Login</h1>
-      {!user ? (
-        <div className="mt-4">
-          <button onClick={login} className="px-4 py-2 bg-[#00A6A6] text-white rounded">Sign in with Google</button>
+    <div className="bg-[#FAFAFA] min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 max-w-md mx-auto px-4 py-12">
+        <h1 className="text-3xl font-bold mb-8 text-[#0B2545]">Iniciar Sesión / Registrarse</h1>
+        <form className="bg-white rounded-lg shadow p-6 flex flex-col gap-4">
+          <input placeholder="Email" className="px-3 py-2 border rounded" />
+          <input placeholder="Contraseña" type="password" className="px-3 py-2 border rounded" />
+          <button type="submit" className="px-6 py-2 bg-[#00A676] text-white rounded font-semibold">Entrar</button>
+        </form>
+        <div className="mt-4 text-center text-sm text-gray-600">
+          ¿No tienes cuenta? <a href="#" className="text-[#3BAFDA] font-semibold">Regístrate</a>
         </div>
-      ) : (
-        <div className="mt-4 p-4 bg-white rounded shadow">
-          <div>{user.displayName}</div>
-          <div className="text-sm">{user.email}</div>
-          <button onClick={logout} className="mt-3 px-3 py-2 border rounded">Sign out</button>
-        </div>
-      )}
+      </main>
+      <Footer />
     </div>
   )
 }
