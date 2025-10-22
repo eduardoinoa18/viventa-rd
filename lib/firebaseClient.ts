@@ -1,8 +1,8 @@
-import { initializeApp, getApps } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
-import { getFunctions } from "firebase/functions";
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getAuth, Auth } from "firebase/auth";
+import { getStorage, FirebaseStorage } from "firebase/storage";
+import { getFunctions, Functions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -25,31 +25,44 @@ function isFirebaseConfigValid() {
   );
 }
 
-let _db: any = null
-let _auth: any = null
-let _storage: any = null
-let _functions: any = null
+// Initialize Firebase only on client side
+let app: any = null;
+let _db: any = null;
+let _auth: any = null;
+let _storage: any = null;
+let _functions: any = null;
 
-if (typeof window !== 'undefined') {
+function initializeFirebase() {
+  if (typeof window === 'undefined') return;
+  if (app) return; // Already initialized
+
   if (isFirebaseConfigValid()) {
     try {
       if (!getApps().length) {
-        initializeApp(firebaseConfig);
+        app = initializeApp(firebaseConfig);
+        console.log('✓ Firebase initialized');
+      } else {
+        app = getApps()[0];
       }
-      _db = getFirestore();
-      _auth = getAuth();
-      _storage = getStorage();
-      _functions = getFunctions();
+      _db = getFirestore(app);
+      _auth = getAuth(app);
+      _storage = getStorage(app);
+      _functions = getFunctions(app);
     } catch (error) {
       console.error('Firebase initialization error:', error);
     }
   } else {
-    console.warn('Firebase configuration is incomplete. Please set all NEXT_PUBLIC_FIREBASE_* environment variables.');
+    console.warn('⚠️ Firebase configuration is incomplete. Please set all NEXT_PUBLIC_FIREBASE_* environment variables.');
   }
 }
 
-export const db = _db
-export const auth = _auth
-export const storage = _storage
-export const functions = _functions
-export const isFirebaseConfigured = isFirebaseConfigValid()
+// Initialize on client side
+if (typeof window !== 'undefined') {
+  initializeFirebase();
+}
+
+export const db = _db;
+export const auth = _auth;
+export const storage = _storage;
+export const functions = _functions;
+export const isFirebaseConfigured = isFirebaseConfigValid();
