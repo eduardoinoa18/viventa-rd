@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '../../../lib/firebaseClient'
+import { db, isFirebaseConfigured } from '../../../lib/firebaseClient'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 
 export async function POST(request: NextRequest) {
@@ -12,6 +12,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Check if Firebase is configured
+    if (!isFirebaseConfigured || !db) {
+      console.warn('Firebase not configured. Contact form data:', { name, email, type })
+      return NextResponse.json({ 
+        ok: true, 
+        message: 'Contact form submitted (Firebase not configured)' 
+      })
+    }
+
     // Save to Firestore
     await addDoc(collection(db, 'marketing_leads'), {
       name,
@@ -21,9 +30,6 @@ export async function POST(request: NextRequest) {
       message: message || '',
       createdAt: serverTimestamp()
     })
-
-    // TODO: Send email via SendGrid to admin_emails
-    // await sendEmailNotification({ name, email, type, message })
 
     return NextResponse.json({ ok: true })
   } catch (error: any) {
