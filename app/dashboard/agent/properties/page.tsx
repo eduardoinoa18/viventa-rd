@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { getSession } from "@/lib/authSession";
+import { uploadMultipleImages, validateImageFiles, generatePropertyImagePath } from "@/lib/storageService";
 
 const statusOptions = ["All", "Active", "Pending", "Sold"];
 
@@ -88,7 +89,42 @@ function AddPropertyForm({ onClose }: { onClose: () => void }) {
     propertyType: 'apartment',
     listingType: 'sale'
   });
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []) as File[];
+    if (!files.length) return;
+
+    // Enforce max 10 images total
+    const combined = [...selectedFiles, ...files].slice(0, 10);
+    const validation = validateImageFiles(combined);
+    if (!validation.valid) {
+      setUploadError(validation.errors[0]);
+      return;
+    }
+
+    setUploadError('');
+    setSelectedFiles(combined);
+    const previews = combined.map(f => URL.createObjectURL(f));
+    setImagePreviews(previews);
+  }
+
+  function removeImage(index: number) {
+    const nextFiles = [...selectedFiles];
+    nextFiles.splice(index, 1);
+    setSelectedFiles(nextFiles);
+    const previews = nextFiles.map(f => URL.createObjectURL(f));
+    setImagePreviews(previews);
+    setUploadProgress(prev => {
+      const copy = { ...prev };
+      delete copy[index];
+      return copy;
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -97,6 +133,13 @@ function AddPropertyForm({ onClose }: { onClose: () => void }) {
     try {
       const session = getSession();
       if (!session) throw new Error('Not authenticated');
+
+      // Validate images (optional but recommended)
+      if (selectedFiles.length === 0) {
+        setUploadError('Please upload at least one image.');
+        setSubmitting(false);
+        return;
+      }
 
       const propertyData = {
         ...formData,
@@ -110,6 +153,7 @@ function AddPropertyForm({ onClose }: { onClose: () => void }) {
         images: []
       };
 
+      // 1) Create property first to get an ID
       const res = await fetch('/api/properties', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -117,6 +161,22 @@ function AddPropertyForm({ onClose }: { onClose: () => void }) {
       });
 
       if (!res.ok) throw new Error('Failed to create property');
+      const created = await res.json();
+      const propertyId = created.id as string;
+
+      // 2) Upload images to Storage
+      const folderPath = generatePropertyImagePath(session.uid, propertyId);
+      const imageUrls = await uploadMultipleImages(selectedFiles, folderPath, (index, progress) => {
+        setUploadProgress(prev => ({ ...prev, [index]: progress }));
+      });
+
+      // 3) Update property with image URLs
+      const updateRes = await fetch('/api/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', id: propertyId, images: imageUrls })
+      });
+      if (!updateRes.ok) throw new Error('Failed to attach images to property');
 
       alert('Property created successfully!');
       onClose();
@@ -217,13 +277,53 @@ function AddPropertyForm({ onClose }: { onClose: () => void }) {
             required 
           />
         </div>
-        <div className="mb-4"><input type="file" multiple className="w-full text-sm" /></div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Property Images (Max 10)</label>
+          <input 
+            type="file" 
+            multiple 
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={handleFileSelect}
+            className="w-full text-sm border rounded px-3 py-2" 
+          />
+          {uploadError && (
+            <p className="text-red-600 text-sm mt-1">{uploadError}</p>
+          )}
+          
+          {/* Image Previews */}
+          {imagePreviews.length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {imagePreviews.map((preview, index) => (
+                <div key={index} className="relative">
+                  <img 
+                    src={preview} 
+                    alt={`Preview ${index + 1}`} 
+                    className="w-full h-24 object-cover rounded border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700"
+                  >
+                    ✕
+                  </button>
+                  {uploadProgress[index] !== undefined && uploadProgress[index] < 100 && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1">
+                      {Math.round(uploadProgress[index])}%
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <button 
           type="submit" 
           disabled={submitting}
           className="bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition w-full disabled:opacity-50"
         >
-          {submitting ? 'Submitting...' : 'Submit'}
+          {submitting ? 'Uploading...' : 'Submit'}
         </button>
       </form>
     </div>
