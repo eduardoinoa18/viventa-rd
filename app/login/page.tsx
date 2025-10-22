@@ -7,6 +7,7 @@ import { saveSession } from '../../lib/authSession'
 import { auth, db } from '@/lib/firebaseClient'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
+import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -45,9 +46,11 @@ export default function LoginPage() {
       }
       const dest = role === 'master_admin' ? '/admin' : role === 'broker' ? '/dashboard' : role === 'agent' ? '/dashboard/agent' : '/'
       router.push(dest + '?welcome=1')
+      toast.success('¡Bienvenido de vuelta!')
     } catch (err: any) {
       const msg = err?.message || 'No se pudo iniciar sesión.'
       setError(msg)
+      toast.error(msg)
     }
   }
 

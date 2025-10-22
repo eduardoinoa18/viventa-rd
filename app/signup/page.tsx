@@ -7,6 +7,7 @@ import { saveSession } from '../../lib/authSession'
 import { auth, db } from '@/lib/firebaseClient'
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import toast from 'react-hot-toast'
 
 export default function SignupPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '' })
@@ -37,10 +38,12 @@ export default function SignupPage() {
         saveSession({ uid: cred.user.uid, role: 'agent', profileComplete: false, name: form.name })
         setError('')
         router.push('/onboarding')
+        toast.success('¡Cuenta creada exitosamente!')
       }
     } catch (err: any) {
       const msg = err?.message || 'No se pudo crear la cuenta.'
       setError(msg)
+      toast.error(msg)
     }
   }
 

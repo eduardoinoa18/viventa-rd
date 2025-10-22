@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { getSession } from "@/lib/authSession";
 import { uploadMultipleImages, validateImageFiles, generatePropertyImagePath } from "@/lib/storageService";
+import toast from "react-hot-toast";
+import { validatePropertyForm } from "@/lib/validation";
 
 const statusOptions = ["All", "Active", "Pending", "Sold"];
 
@@ -134,6 +136,15 @@ function AddPropertyForm({ onClose }: { onClose: () => void }) {
       const session = getSession();
       if (!session) throw new Error('Not authenticated');
 
+      // Validate form data
+      const validation = validatePropertyForm(formData);
+      if (!validation.valid) {
+        const firstError = Object.values(validation.errors)[0];
+        toast.error(firstError);
+        setSubmitting(false);
+        return;
+      }
+
       // Validate images (optional but recommended)
       if (selectedFiles.length === 0) {
         setUploadError('Please upload at least one image.');
@@ -178,10 +189,10 @@ function AddPropertyForm({ onClose }: { onClose: () => void }) {
       });
       if (!updateRes.ok) throw new Error('Failed to attach images to property');
 
-      alert('Property created successfully!');
+      toast.success('¡Propiedad creada exitosamente!');
       onClose();
     } catch (error: any) {
-      alert(error.message || 'Failed to create property');
+      toast.error(error.message || 'Error al crear la propiedad');
     } finally {
       setSubmitting(false);
     }

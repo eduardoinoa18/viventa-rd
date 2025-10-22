@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { auth } from '@/lib/firebaseClient'
 import { sendPasswordResetEmail } from 'firebase/auth'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -20,9 +21,11 @@ export default function ForgotPasswordPage() {
     try {
       await sendPasswordResetEmail(auth, email)
       setStatus('Si existe una cuenta, recibirás un correo para restablecer la contraseña.')
+      toast.success('Correo enviado exitosamente')
       setTimeout(() => router.push('/login'), 2000)
     } catch (err: any) {
       setStatus(err?.message || 'No se pudo enviar el correo de restablecimiento.')
+      toast.error(err?.message || 'Error al enviar el correo')
     }
   }
 
