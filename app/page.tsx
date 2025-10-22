@@ -32,6 +32,11 @@ const topAgents = [
 export default function HomePage() {
   const user = undefined as any;
   const [filters, setFilters] = useState({ location: "", type: "", minPrice: "", maxPrice: "" });
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const filtered = properties.filter((p) => {
     const matchesType = filters.type ? p.type === filters.type : true;
@@ -118,22 +123,28 @@ export default function HomePage() {
 
           {/* RIGHT — Map */}
           <div className="md:w-2/3 h-[400px] rounded-xl overflow-hidden shadow-lg">
-            <MapContainer center={[18.7357, -70.1627]} zoom={8} style={{ height: "100%", width: "100%" }}>
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              {filtered.map((p) => (
-                <Marker key={p.id} position={[p.lat, p.lng]}>
-                  <Popup>
-                    <strong>{p.title}</strong><br />
-                    ${p.price.toLocaleString()}<br />
-                    {user ? (
-                      <a href={`/properties/${p.id}`} className="text-blue-700 underline text-sm">Ver</a>
-                    ) : (
-                      <a href="/login" className="text-blue-700 underline text-sm">Inicia sesión para ver</a>
-                    )}
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
+            {isMounted ? (
+              <MapContainer center={[18.7357, -70.1627]} zoom={8} style={{ height: "100%", width: "100%" }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                {filtered.map((p) => (
+                  <Marker key={p.id} position={[p.lat, p.lng]}>
+                    <Popup>
+                      <strong>{p.title}</strong><br />
+                      ${p.price.toLocaleString()}<br />
+                      {user ? (
+                        <a href={`/properties/${p.id}`} className="text-blue-700 underline text-sm">Ver</a>
+                      ) : (
+                        <a href="/login" className="text-blue-700 underline text-sm">Inicia sesión para ver</a>
+                      )}
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            ) : (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-600">Cargando mapa...</span>
+              </div>
+            )}
           </div>
         </section>
 
