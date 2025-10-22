@@ -2,6 +2,8 @@
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { useState } from 'react'
+import { auth } from '@/lib/firebaseClient'
+import { sendPasswordResetEmail } from 'firebase/auth'
 import { useRouter } from 'next/navigation'
 
 export default function ForgotPasswordPage() {
@@ -11,14 +13,17 @@ export default function ForgotPasswordPage() {
 
   async function handleReset(e: any) {
     e.preventDefault()
-    // TODO: Integrate with Firebase Auth password reset
     if (!email) {
       setStatus('Ingresa tu email.')
       return
     }
-    // Simulate success
-    setStatus('Si existe una cuenta, recibirás un correo para restablecer la contraseña.')
-    setTimeout(() => router.push('/login'), 2000)
+    try {
+      await sendPasswordResetEmail(auth, email)
+      setStatus('Si existe una cuenta, recibirás un correo para restablecer la contraseña.')
+      setTimeout(() => router.push('/login'), 2000)
+    } catch (err: any) {
+      setStatus(err?.message || 'No se pudo enviar el correo de restablecimiento.')
+    }
   }
 
   return (

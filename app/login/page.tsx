@@ -4,6 +4,9 @@ import Footer from '../../components/Footer'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveSession } from '../../lib/authSession'
+import { auth, db } from '@/lib/firebaseClient'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -13,18 +16,39 @@ export default function LoginPage() {
 
   async function handleLogin(e: any) {
     e.preventDefault()
-    // TODO: Integrate with Firebase Auth
     if (!email || !password) {
       setError('Completa todos los campos.')
       return
     }
-    // Simulate API login returning role and token
-    const role: any = email.includes('admin') ? 'master_admin' : email.includes('broker') ? 'broker' : email.includes('agent') ? 'agent' : 'user'
-    const session = { uid: 'demo', role, token: 'demo-token', profileComplete: true, name: 'Eduardo' }
-    saveSession(session)
-    setError('')
-    const dest = role === 'master_admin' ? '/admin' : role === 'broker' ? '/dashboard' : role === 'agent' ? '/dashboard/agent' : '/'
-    router.push(dest + '?welcome=1')
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password)
+      const uid = cred.user.uid
+      // Fetch role and profile from Firestore
+      let role: any = 'agent'
+      let name: string | undefined = cred.user.displayName || undefined
+      let profileComplete = true
+      try {
+        const snap = await getDoc(doc(db, 'users', uid))
+        if (snap.exists()) {
+          const data = snap.data() as any
+          role = data?.role || role
+          name = data?.name || name
+          profileComplete = !!data?.profileComplete
+        }
+      } catch {}
+      // Save session for client and middleware
+      saveSession({ uid, role, profileComplete, name })
+      setError('')
+      if (!profileComplete && role === 'agent') {
+        router.push('/onboarding')
+        return
+      }
+      const dest = role === 'master_admin' ? '/admin' : role === 'broker' ? '/dashboard' : role === 'agent' ? '/dashboard/agent' : '/'
+      router.push(dest + '?welcome=1')
+    } catch (err: any) {
+      const msg = err?.message || 'No se pudo iniciar sesión.'
+      setError(msg)
+    }
   }
 
   return (

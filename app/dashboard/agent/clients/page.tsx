@@ -1,23 +1,43 @@
 "use client";
-import React, { useState } from "react";
-
-const mockLeads = [
-  { id: 1, name: "Ana Perez", tag: "Buyer", status: "New" },
-  { id: 2, name: "Carlos Gomez", tag: "Seller", status: "Contacted" },
-  { id: 3, name: "Lucia Rivera", tag: "Investor", status: "Appointment" },
-];
-
-const mockClients = [
-  { id: 1, name: "Ana Perez", email: "ana@email.com", phone: "809-555-1234" },
-  { id: 2, name: "Carlos Gomez", email: "carlos@email.com", phone: "809-555-5678" },
-  { id: 3, name: "Lucia Rivera", email: "lucia@email.com", phone: "809-555-8765" },
-];
+import React, { useState, useEffect } from "react";
+import { getSession } from "@/lib/authSession";
 
 export default function AgentClientsPage() {
   const [tab, setTab] = useState("leads");
   const [search, setSearch] = useState("");
+  const [leads, setLeads] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredClients = mockClients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  async function fetchData() {
+    try {
+      const session = getSession();
+      if (!session) return;
+      
+      const [leadsRes, clientsRes] = await Promise.all([
+        fetch(`/api/leads?agentId=${session.uid}`),
+        fetch(`/api/clients?agentId=${session.uid}`)
+      ]);
+      
+      const leadsData = await leadsRes.json();
+      const clientsData = await clientsRes.json();
+      
+      setLeads(leadsData.leads || []);
+      setClients(clientsData.clients || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const filteredClients = clients.filter(c => 
+    c.name?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <main className="p-6">
@@ -38,10 +58,14 @@ export default function AgentClientsPage() {
               </tr>
             </thead>
             <tbody>
-              {mockLeads.map(lead => (
+              {loading ? (
+                <tr><td colSpan={4} className="p-3 text-center text-gray-500">Loading...</td></tr>
+              ) : leads.length === 0 ? (
+                <tr><td colSpan={4} className="p-3 text-center text-gray-500">No leads found</td></tr>
+              ) : leads.map(lead => (
                 <tr key={lead.id} className="border-b hover:bg-gray-50">
                   <td className="p-3">{lead.name}</td>
-                  <td className="p-3"><span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold">{lead.tag}</span></td>
+                  <td className="p-3"><span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold">{lead.source}</span></td>
                   <td className="p-3">{lead.status}</td>
                   <td className="p-3 flex gap-2">
                     <button className="text-blue-600 hover:underline">Mark Contacted</button>
@@ -73,7 +97,11 @@ export default function AgentClientsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredClients.map(client => (
+              {loading ? (
+                <tr><td colSpan={4} className="p-3 text-center text-gray-500">Loading...</td></tr>
+              ) : filteredClients.length === 0 ? (
+                <tr><td colSpan={4} className="p-3 text-center text-gray-500">No clients found</td></tr>
+              ) : filteredClients.map(client => (
                 <tr key={client.id} className="border-b hover:bg-gray-50">
                   <td className="p-3">{client.name}</td>
                   <td className="p-3">{client.email}</td>

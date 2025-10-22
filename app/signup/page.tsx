@@ -4,6 +4,9 @@ import Footer from '../../components/Footer'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveSession } from '../../lib/authSession'
+import { auth, db } from '@/lib/firebaseClient'
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 
 export default function SignupPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '' })
@@ -12,16 +15,33 @@ export default function SignupPage() {
 
   async function handleSignup(e: any) {
     e.preventDefault()
-    // TODO: Integrate with Firebase Auth
     if (!form.email || !form.password || !form.name) {
       setError('Completa todos los campos.')
       return
     }
-    // Simulate success with onboarding pending
-    const session = { uid: 'demo', role: 'agent', token: 'demo-token', profileComplete: false, name: form.name }
-    saveSession(session as any)
-    setError('')
-    router.push('/onboarding')
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, form.email, form.password)
+      if (cred.user) {
+        await updateProfile(cred.user, { displayName: form.name })
+        // Create user profile in Firestore
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          uid: cred.user.uid,
+          email: form.email,
+          name: form.name,
+          role: 'agent',
+          profileComplete: false,
+          createdAt: serverTimestamp(),
+        }, { merge: true })
+
+        // Save session locally for client routing and middleware cookies
+        saveSession({ uid: cred.user.uid, role: 'agent', profileComplete: false, name: form.name })
+        setError('')
+        router.push('/onboarding')
+      }
+    } catch (err: any) {
+      const msg = err?.message || 'No se pudo crear la cuenta.'
+      setError(msg)
+    }
   }
 
   return (

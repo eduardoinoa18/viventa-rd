@@ -1,18 +1,50 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server"
+import {
+  getConversationsForUser,
+  getMessagesByConversation,
+  sendMessage,
+  markMessageAsRead
+} from "@/lib/firestoreService"
 
-export async function GET() {
-  // TODO: Fetch from Firestore
-  return NextResponse.json({
-    conversations: [
-      { id: 1, name: "Ana Perez", lastMessage: "Looking for a 3BR apartment...", time: "10 min ago", unread: 2 },
-      { id: 2, name: "Carlos Gomez", lastMessage: "What's the closing date?", time: "1 hour ago", unread: 0 },
-      { id: 3, name: "Lucia Rivera", lastMessage: "Can we schedule a viewing?", time: "2 hours ago", unread: 1 },
-    ],
-  });
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const userId = searchParams.get('userId')
+    const conversationId = searchParams.get('conversationId')
+
+    if (!userId) {
+      return NextResponse.json({ error: 'userId required' }, { status: 400 })
+    }
+
+    if (conversationId) {
+      const messages = await getMessagesByConversation(conversationId)
+      return NextResponse.json({ messages })
+    } else {
+      const conversations = await getConversationsForUser(userId)
+      return NextResponse.json({ conversations })
+    }
+  } catch (error: any) {
+    console.error('Error fetching messages:', error)
+    return NextResponse.json({ error: error.message || 'Failed to fetch messages' }, { status: 500 })
+  }
 }
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  // TODO: Send message via Firestore or WebSocket
-  return NextResponse.json({ success: true, message: "Message sent" });
+  try {
+    const body = await req.json()
+    const { action, ...data } = body
+
+    if (action === 'send') {
+      const id = await sendMessage(data)
+      return NextResponse.json({ success: true, message: "Message sent", id })
+    } else if (action === 'markRead') {
+      await markMessageAsRead(data.id)
+      return NextResponse.json({ success: true, message: "Message marked as read" })
+    } else {
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+    }
+  } catch (error: any) {
+    console.error('Error managing message:', error)
+    return NextResponse.json({ error: error.message || 'Failed to manage message' }, { status: 500 })
+  }
 }
