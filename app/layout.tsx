@@ -3,16 +3,22 @@ import Link from 'next/link'
 import LocaleSwitcher from '../components/LocaleSwitcher'
 import { Toaster } from 'react-hot-toast'
 import ErrorBoundary from '../components/ErrorBoundary'
-export const metadata = {title:'VIVENTA MVP', description:'VIVENTA Lean MVP'}
+
+export const metadata = {
+  title: 'VIVENTA - Tu Espacio, Tu Futuro',
+  description: 'Plataforma inmobiliaria líder en República Dominicana',
+  manifest: '/manifest.json',
+}
+
 export default function RootLayout({children}:{children:React.ReactNode}) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="manifest" href="/manifest.json" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        <meta name="theme-color" content="#00A676" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
