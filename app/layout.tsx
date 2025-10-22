@@ -2,6 +2,7 @@ import './globals.css'
 import Link from 'next/link'
 import LocaleSwitcher from '../components/LocaleSwitcher'
 import { Toaster } from 'react-hot-toast'
+import ErrorBoundary from '../components/ErrorBoundary'
 export const metadata = {title:'VIVENTA MVP', description:'VIVENTA Lean MVP'}
 export default function RootLayout({children}:{children:React.ReactNode}) {
   return (
@@ -9,10 +10,12 @@ export default function RootLayout({children}:{children:React.ReactNode}) {
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/favicon.ico" />
       </head>
       <body>
-        {/* Use only the new Header and Footer components for global layout */}
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
         <Toaster 
           position="top-right"
           toastOptions={{
