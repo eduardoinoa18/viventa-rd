@@ -6,15 +6,7 @@ import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-
-const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { 
-  ssr: false, 
-  loading: () => <div className="w-full h-full bg-gray-200 flex items-center justify-center">Cargando mapa...</div> 
-});
-
-const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
-const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
-const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
+const LeafletMap = dynamic(() => import('../components/LeafletMap'), { ssr: false });
 
 const properties = [
   { id: 1, title: "Luxury Villa in Santo Domingo", price: 350000, type: "Villa", lat: 18.4861, lng: -69.9312, img: "/demo1.jpg", city: "Santo Domingo", neighborhood: "Piantini", beds: 3, baths: 2, sqft: 180 },
@@ -33,10 +25,7 @@ export default function HomePage() {
   const user = undefined as any;
   const [filters, setFilters] = useState({ location: "", type: "", minPrice: "", maxPrice: "" });
   const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  useEffect(() => { setIsMounted(true) }, []);
 
   const filtered = properties.filter((p) => {
     const matchesType = filters.type ? p.type === filters.type : true;
@@ -124,22 +113,7 @@ export default function HomePage() {
           {/* RIGHT — Map */}
           <div className="md:w-2/3 h-[400px] rounded-xl overflow-hidden shadow-lg">
             {isMounted ? (
-              <MapContainer center={[18.7357, -70.1627]} zoom={8} style={{ height: "100%", width: "100%" }}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                {filtered.map((p) => (
-                  <Marker key={p.id} position={[p.lat, p.lng]}>
-                    <Popup>
-                      <strong>{p.title}</strong><br />
-                      ${p.price.toLocaleString()}<br />
-                      {user ? (
-                        <a href={`/properties/${p.id}`} className="text-blue-700 underline text-sm">Ver</a>
-                      ) : (
-                        <a href="/login" className="text-blue-700 underline text-sm">Inicia sesión para ver</a>
-                      )}
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
+              <LeafletMap properties={filtered as any} user={user} />
             ) : (
               <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                 <span className="text-gray-600">Cargando mapa...</span>
