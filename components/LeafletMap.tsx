@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
 
 interface Property {
   id: number;
@@ -13,44 +11,48 @@ interface Property {
 }
 
 export default function LeafletMap({ properties, user }: { properties: Property[]; user: any }) {
-  const [ready, setReady] = useState(false);
-  const [iconsReady, setIconsReady] = useState(false);
+  const [MapComponents, setMapComponents] = useState<any>(null);
+  const [L, setL] = useState<any>(null);
 
   useEffect(() => {
-    // Defer to client mount
-    setReady(true);
-
+    // Import everything client-side only
+    if (typeof window === 'undefined') return;
+    
     let cancelled = false;
-    // Dynamically import Leaflet and assets on client to avoid SSR eval issues
+
     (async () => {
       try {
-        if (typeof window === 'undefined') return;
-        const L = (await import('leaflet')).default;
-        const iconUrl = (await import('leaflet/dist/images/marker-icon.png')).default as unknown as string;
-        const iconRetinaUrl = (await import('leaflet/dist/images/marker-icon-2x.png')).default as unknown as string;
-        const shadowUrl = (await import('leaflet/dist/images/marker-shadow.png')).default as unknown as string;
-
-        const DefaultIcon = L.icon({
-          iconUrl,
-          iconRetinaUrl,
-          shadowUrl,
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [41, 41],
+        // Import CSS
+        await import('leaflet/dist/leaflet.css');
+        
+        // Import Leaflet
+        const leaflet = await import('leaflet');
+        const leafletModule = leaflet.default || leaflet;
+        
+        // Import react-leaflet components
+        const reactLeaflet = await import('react-leaflet');
+        
+        // Fix default marker icon
+        delete (leafletModule.Icon.Default.prototype as any)._getIconUrl;
+        leafletModule.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
         });
-        (L.Marker as any).prototype.options.icon = DefaultIcon;
-        if (!cancelled) setIconsReady(true);
+
+        if (!cancelled) {
+          setL(leafletModule);
+          setMapComponents(reactLeaflet);
+        }
       } catch (e) {
-        console.error('Leaflet icon init failed:', e);
-        if (!cancelled) setIconsReady(true); // proceed without custom icons
+        console.error('Failed to load map:', e);
       }
     })();
 
     return () => { cancelled = true };
   }, []);
 
-  if (!ready) {
+  if (!MapComponents || !L) {
     return (
       <div className="w-full h-full bg-gray-200 flex items-center justify-center">
         <span className="text-gray-600">Cargando mapa...</span>
@@ -58,11 +60,13 @@ export default function LeafletMap({ properties, user }: { properties: Property[
     );
   }
 
+  const { MapContainer, TileLayer, Marker, Popup } = MapComponents;
+
   return (
     <MapContainer center={[18.7357, -70.1627]} zoom={8} style={{ height: '100%', width: '100%' }}>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       {properties.map((p) => (
-        <Marker key={p.id} position={[p.lat, p.lng] as any}>
+        <Marker key={p.id} position={[p.lat, p.lng]}>
           <Popup>
             <strong>{p.title}</strong>
             <br />${p.price.toLocaleString()}
