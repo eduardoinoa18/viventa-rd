@@ -4,27 +4,6 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Some Leaflet builds need icon fix when bundling with Next.js
-import L from 'leaflet';
-// @ts-ignore - webpack file-loader paths might differ, handle gracefully
-import iconUrl from 'leaflet/dist/images/marker-icon.png';
-// @ts-ignore
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
-// @ts-ignore
-import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
-
-// Ensure default icon paths are set to bundled assets (prevents missing marker icons)
-const DefaultIcon = L.icon({
-  iconUrl: (iconUrl as unknown as string) ?? '',
-  iconRetinaUrl: (iconRetinaUrl as unknown as string) ?? '',
-  shadowUrl: (shadowUrl as unknown as string) ?? '',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-L.Marker.prototype.options.icon = DefaultIcon as any;
-
 interface Property {
   id: number;
   title: string;
@@ -35,10 +14,40 @@ interface Property {
 
 export default function LeafletMap({ properties, user }: { properties: Property[]; user: any }) {
   const [ready, setReady] = useState(false);
+  const [iconsReady, setIconsReady] = useState(false);
 
   useEffect(() => {
-    // Defer to client
+    // Defer to client mount
     setReady(true);
+
+    let cancelled = false;
+    // Dynamically import Leaflet and assets on client to avoid SSR eval issues
+    (async () => {
+      try {
+        if (typeof window === 'undefined') return;
+        const L = (await import('leaflet')).default;
+        const iconUrl = (await import('leaflet/dist/images/marker-icon.png')).default as unknown as string;
+        const iconRetinaUrl = (await import('leaflet/dist/images/marker-icon-2x.png')).default as unknown as string;
+        const shadowUrl = (await import('leaflet/dist/images/marker-shadow.png')).default as unknown as string;
+
+        const DefaultIcon = L.icon({
+          iconUrl,
+          iconRetinaUrl,
+          shadowUrl,
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41],
+        });
+        (L.Marker as any).prototype.options.icon = DefaultIcon;
+        if (!cancelled) setIconsReady(true);
+      } catch (e) {
+        console.error('Leaflet icon init failed:', e);
+        if (!cancelled) setIconsReady(true); // proceed without custom icons
+      }
+    })();
+
+    return () => { cancelled = true };
   }, []);
 
   if (!ready) {

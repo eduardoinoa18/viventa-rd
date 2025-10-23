@@ -6,7 +6,14 @@ import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-const LeafletMap = dynamic(() => import('../components/LeafletMap'), { ssr: false });
+const LeafletMap = dynamic(() => import('../components/LeafletMap'), { 
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+      <span className="text-gray-600">Cargando mapa...</span>
+    </div>
+  )
+});
 
 const properties = [
   { id: 1, title: "Luxury Villa in Santo Domingo", price: 350000, type: "Villa", lat: 18.4861, lng: -69.9312, img: "/demo1.jpg", city: "Santo Domingo", neighborhood: "Piantini", beds: 3, baths: 2, sqft: 180 },
