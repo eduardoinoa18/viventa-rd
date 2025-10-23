@@ -13,10 +13,16 @@ export async function POST(request: Request) {
     // Check if email is authorized master admin
     const MASTER_ADMIN_EMAIL = process.env.MASTER_ADMIN_EMAIL || 'admin@viventa.com'
     
+    // Security: Don't log sensitive data in production
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Login attempt for:', email)
+    }
+    
     if (email !== MASTER_ADMIN_EMAIL) {
+      // Security: Use generic error message to prevent email enumeration
       return NextResponse.json({ 
         ok: false, 
-        error: 'Unauthorized email address' 
+        error: 'Invalid credentials' 
       }, { status: 403 })
     }
 
@@ -62,6 +68,7 @@ async function sendVerificationEmail(email: string, code: string): Promise<boole
       const msg = {
         to: email,
         from: process.env.SENDGRID_FROM_EMAIL || 'noreply@viventa.com',
+        replyTo: 'no-reply@viventa.com', // Prevent replies
         subject: 'VIVENTA Master Admin - Verification Code',
         text: `Your verification code is: ${code}\n\nThis code will expire in 10 minutes.\n\nIf you did not request this code, please ignore this email.`,
         html: `
@@ -107,8 +114,12 @@ async function sendVerificationEmail(email: string, code: string): Promise<boole
       })
 
       await transporter.sendMail({
-        from: process.env.SMTP_FROM || 'noreply@viventa.com',
+        from: {
+          name: 'VIVENTA Security',
+          address: process.env.SMTP_FROM || 'noreply@viventa.com'
+        },
         to: email,
+        replyTo: 'no-reply@viventa.com', // Prevent replies
         subject: 'VIVENTA Master Admin - Verification Code',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

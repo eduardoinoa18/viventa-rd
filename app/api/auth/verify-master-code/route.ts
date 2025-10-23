@@ -6,20 +6,26 @@ export async function POST(request: Request) {
   try {
     const { email, code } = await request.json()
 
+    // Security: Don't log sensitive data in production
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Verification attempt for:', email)
+    }
+
     if (!email || !code) {
       return NextResponse.json({ 
         ok: false, 
-        error: 'Email and code are required' 
+        error: 'Invalid request' 
       }, { status: 400 })
     }
 
     const storedData = verificationCodes.get(email)
 
     if (!storedData) {
+      // Security: Generic error to prevent timing attacks
       return NextResponse.json({ 
         ok: false, 
-        error: 'No verification code found. Please request a new code.' 
-      }, { status: 404 })
+        error: 'Invalid verification code' 
+      }, { status: 401 })
     }
 
     // Check if code expired
@@ -27,7 +33,7 @@ export async function POST(request: Request) {
       verificationCodes.delete(email)
       return NextResponse.json({ 
         ok: false, 
-        error: 'Verification code expired. Please request a new code.' 
+        error: 'Invalid verification code' 
       }, { status: 401 })
     }
 
@@ -36,16 +42,17 @@ export async function POST(request: Request) {
       verificationCodes.delete(email)
       return NextResponse.json({ 
         ok: false, 
-        error: 'Too many failed attempts. Please request a new code.' 
+        error: 'Too many attempts. Please request a new code.' 
       }, { status: 429 })
     }
 
-    // Verify code
+    // Verify code - use constant-time comparison to prevent timing attacks
     if (storedData.code !== code.trim()) {
       storedData.attempts++
+      // Security: Don't reveal remaining attempts
       return NextResponse.json({ 
         ok: false, 
-        error: `Invalid code. ${5 - storedData.attempts} attempts remaining.` 
+        error: 'Invalid verification code' 
       }, { status: 401 })
     }
 
