@@ -1,0 +1,42 @@
+// components/AdminSidebar.tsx
+'use client'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+
+export default function AdminSidebar() {
+  const pathname = usePathname()
+  
+  const links = [
+    { href: '/admin', label: 'Dashboard', icon: '📊' },
+    { href: '/admin/users', label: 'Users', icon: '👥' },
+    { href: '/admin/properties', label: 'Properties', icon: '🏠' },
+    { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
+  ]
+
+  return (
+    <aside className="w-64 bg-white border-r min-h-screen p-4">
+      <nav className="space-y-2">
+        {links.map(link => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+              pathname === link.href
+                ? 'bg-[#00A676] text-white font-semibold'
+                : 'hover:bg-gray-100 text-gray-700'
+            }`}
+          >
+            <span className="text-xl">{link.icon}</span>
+            <span>{link.label}</span>
+          </Link>
+        ))}
+      </nav>
+      
+      <div className="mt-8 p-3 bg-blue-50 rounded-lg">
+        <div className="text-xs font-semibold text-blue-900 mb-1">Quick Actions</div>
+        <Link href="/" className="text-sm text-blue-600 hover:underline block">View Site</Link>
+        <Link href="/dashboard/agent" className="text-sm text-blue-600 hover:underline block mt-1">Agent Dashboard</Link>
+      </div>
+    </aside>
+  )
+}
