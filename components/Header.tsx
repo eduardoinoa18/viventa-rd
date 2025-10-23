@@ -60,7 +60,7 @@ export default function Header() {
           <Link href="/profesionales" className="hover:text-[#3BAFDA]">Profesionales</Link>
           <Link href="/dashboard" className="hover:text-[#3BAFDA]">Dashboard</Link>
           <Link href="/contact" className="hover:text-[#3BAFDA]">Contacto</Link>
-          <Link href="/admin" className="text-gray-400 hover:text-[#0B2545]" style={{fontSize:'10px'}}>Admin</Link>
+          <Link href="/admin/login" className="text-gray-400 hover:text-[#0B2545]" style={{fontSize:'10px'}}>Master Admin</Link>
         </nav>
         <div className="flex items-center space-x-3">
           <LocaleSwitcher />
