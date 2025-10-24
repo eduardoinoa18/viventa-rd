@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://viventa-rd.vercel.app/sitemap.xml
