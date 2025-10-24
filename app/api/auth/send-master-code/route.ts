@@ -23,16 +23,13 @@ export async function POST(request: Request) {
     }
     
     const incoming = String(email || '').trim().toLowerCase()
-    // In development, allow any email if no explicit allowlist is configured
     const isDev = process.env.NODE_ENV !== 'production'
-    const hasAllowlist = allowedEmails.size > 0
     const isAllowed = allowedEmails.has(incoming)
 
-    if (!isDev || hasAllowlist) {
-      if (!isAllowed) {
-        // Security: Use generic error message to prevent email enumeration
-        return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })
-      }
+    // In development, do not enforce allowlist to reduce friction
+    if (!isDev && !isAllowed) {
+      // Security: Use generic error message to prevent email enumeration
+      return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })
     }
 
     // Generate 6-digit code

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import ProtectedClient from '../../auth/ProtectedClient'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
+import Link from 'next/link'
+import { FiCheck, FiX, FiMapPin, FiDollarSign, FiEye, FiPlusSquare } from 'react-icons/fi'
 
 type Listing = { id: string; title: string; city: string; price: number; status: string; agent: string }
 
@@ -37,7 +39,10 @@ export default function AdminPropertiesPage() {
         <main className="flex-1 p-6 bg-gray-50">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-[#0B2545]">Property Listings</h1>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              <Link href="/admin/properties/create" className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]">
+                <FiPlusSquare /> New Listing
+              </Link>
               <select className="px-3 py-2 border rounded">
                 <option>All Status</option>
                 <option>Pending</option>
@@ -63,9 +68,9 @@ export default function AdminPropertiesPage() {
                       </span>
                     </div>
                     <div className="text-gray-600 space-y-1">
-                      <div>📍 {l.city}</div>
-                      <div>💰 <span className="font-semibold text-[#00A676]">USD {l.price.toLocaleString()}</span></div>
-                      <div className="text-sm">👤 Agent: <span className="text-blue-600">{l.agent}</span></div>
+                      <div className="flex items-center gap-2"><FiMapPin /> {l.city}</div>
+                      <div className="flex items-center gap-2"><FiDollarSign /> <span className="font-semibold text-[#00A676]">USD {l.price.toLocaleString()}</span></div>
+                      <div className="text-sm">Agent: <span className="text-blue-600">{l.agent}</span></div>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
@@ -73,20 +78,20 @@ export default function AdminPropertiesPage() {
                       <>
                         <button 
                           onClick={() => approve(l.id)}
-                          className="px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] transition-colors"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] transition-colors"
                         >
-                          ✓ Approve
+                          <FiCheck /> Approve
                         </button>
                         <button 
                           onClick={() => reject(l.id)}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
                         >
-                          ✗ Reject
+                          <FiX /> Reject
                         </button>
                       </>
                     )}
-                    <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                      View Details
+                    <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                      <FiEye /> View Details
                     </button>
                   </div>
                 </div>
