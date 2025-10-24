@@ -6,10 +6,12 @@ import { t } from '../lib/i18n'
 import Link from 'next/link'
 import { FaHeart, FaRegHeart, FaBed, FaBath, FaRulerCombined } from 'react-icons/fa'
 import WhatsAppButton from './WhatsAppButton'
+import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../lib/currency'
 
 export default function HitCard({ hit }: any){
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [currency, setCurrency] = useState<Currency>('USD')
   
   useEffect(()=> {
     const uid = auth.currentUser?.uid
@@ -17,6 +19,20 @@ export default function HitCard({ hit }: any){
     const ref = doc(db, 'users', uid, 'favorites', hit.objectID)
     getDoc(ref).then((snap: any)=> setSaved(snap.exists()))
   },[hit])
+
+  // Sync with global currency switcher
+  useEffect(() => {
+    // initialize
+    setCurrency(getUserCurrency())
+    const onCurrency = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { currency: Currency }
+      if (detail?.currency) setCurrency(detail.currency)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('currencyChanged', onCurrency as EventListener)
+      return () => window.removeEventListener('currencyChanged', onCurrency as EventListener)
+    }
+  }, [])
 
   async function toggleSave(){
     const user = auth.currentUser
@@ -38,14 +54,9 @@ export default function HitCard({ hit }: any){
     }
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price)
-  }
+  const priceUSD = Number(hit.price_usd || 0)
+  const displayAmount = currency === 'USD' ? priceUSD : convertCurrency(priceUSD, 'USD', 'DOP')
+  const priceLabel = formatCurrency(displayAmount, { currency, compact: true })
 
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 overflow-hidden group">
@@ -90,9 +101,7 @@ export default function HitCard({ hit }: any){
           📍 {hit.city || 'N/A'} {hit.neighborhood && `• ${hit.neighborhood}`}
         </p>
         
-        <div className="text-2xl font-bold text-[#FF6B35] mt-3">
-          {formatPrice(hit.price_usd || 0)}
-        </div>
+        <div className="text-2xl font-bold text-[#FF6B35] mt-3">{priceLabel}</div>
         
         {(hit.bedrooms || hit.bathrooms || hit.area_sqm) && (
           <div className="flex items-center gap-4 mt-3 text-sm text-gray-600">
