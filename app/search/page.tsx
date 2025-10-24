@@ -7,6 +7,8 @@ import MapSearch from '../../components/MapSearch'
 import SavedSearchModal from '../../components/SavedSearchModal'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
+import SearchFilters from '../../components/SearchFilters'
+import { FiList, FiMap } from 'react-icons/fi'
 import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs } from 'firebase/firestore'
 
@@ -15,6 +17,7 @@ export default function SearchPage() {
   const indexName = process.env.NEXT_PUBLIC_ALGOLIA_INDEX || 'viventa_listings'
   const [showSave, setShowSave] = useState(false)
   const [saved, setSaved] = useState<any[]>([])
+  const [mobileView, setMobileView] = useState<'list' | 'map'>('list')
 
   useEffect(() => {
     loadSaved()
@@ -38,9 +41,26 @@ export default function SearchPage() {
           </div>
           
           <InstantSearch searchClient={searchClient} indexName={indexName}>
+            {/* Mobile view toggle */}
+            <div className="lg:hidden mb-4">
+              <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden">
+                <button
+                  onClick={() => setMobileView('list')}
+                  className={`px-4 py-2 flex items-center gap-2 ${mobileView === 'list' ? 'bg-[#0B2545] text-white' : 'bg-white text-gray-700'}`}
+                >
+                  <FiList /> Lista
+                </button>
+                <button
+                  onClick={() => setMobileView('map')}
+                  className={`px-4 py-2 flex items-center gap-2 ${mobileView === 'map' ? 'bg-[#0B2545] text-white' : 'bg-white text-gray-700'}`}
+                >
+                  <FiMap /> Mapa
+                </button>
+              </div>
+            </div>
             <div className="grid lg:grid-cols-[1fr_400px] gap-6 items-start">
               {/* Main content area */}
-              <div className="space-y-4">
+              <div className={`${mobileView !== 'list' ? 'hidden lg:block' : ''} space-y-4`}>
                 <div className="bg-white rounded-lg shadow-sm p-4">
                   <SearchBox 
                     placeholder="Buscar por ubicación, tipo de propiedad..."
@@ -58,8 +78,9 @@ export default function SearchPage() {
               </div>
 
               {/* Sidebar */}
-              <div className="space-y-4">
+              <div className={`${mobileView !== 'map' ? 'hidden lg:block' : ''} space-y-4`}>
                 <div className="sticky top-20 space-y-4">
+                  <SearchFilters />
                   <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="p-4 bg-[#0B2545] text-white">
                       <h3 className="font-semibold">Mapa de búsqueda</h3>

@@ -1,7 +1,8 @@
 'use client'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import { useInstantSearch, useHits } from 'react-instantsearch'
+import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '@/lib/currency'
 
 export default function MapSearch() {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -9,6 +10,7 @@ export default function MapSearch() {
   const { uiState, setUiState, indexUiState } = useInstantSearch()
   const indexId = Object.keys(uiState)[0]
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+  const [currency, setCurrency] = useState<Currency>('USD')
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -56,12 +58,33 @@ export default function MapSearch() {
       const loc = (h as any)._geoloc
       if (!loc || loc.lat == null || loc.lng == null) return
       const el = document.createElement('div')
-      el.className = 'bg-[#FF6B35] rounded-full w-3 h-3 ring-2 ring-white shadow'
+      el.className = 'relative'
+      // price chip
+      const priceUSD = Number((h as any).price_usd || 0)
+      const amount = currency === 'USD' ? priceUSD : convertCurrency(priceUSD, 'USD', 'DOP')
+      const label = formatCurrency(amount, { currency, compact: true })
+      el.innerHTML = `
+        <div class="px-2 py-1 bg-white text-[#0B2545] border border-gray-200 rounded-full text-xs font-semibold shadow">${label}</div>
+        <div class="mx-auto mt-1 w-2 h-2 bg-[#FF6B35] rounded-full ring-2 ring-white shadow"></div>
+      `
       const mk = new mapboxgl.Marker({ element: el }).setLngLat([loc.lng, loc.lat]).addTo(m)
       markers.push(mk)
     })
     ;(m as any)._viventaMarkers = markers
-  }, [hits])
+  }, [hits, currency])
+
+  // Listen for currency changes
+  useEffect(() => {
+    setCurrency(getUserCurrency())
+    const onCurrency = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { currency: Currency }
+      if (detail?.currency) setCurrency(detail.currency)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('currencyChanged', onCurrency as EventListener)
+      return () => window.removeEventListener('currencyChanged', onCurrency as EventListener)
+    }
+  }, [])
 
   if (!token) {
     return (
