@@ -77,6 +77,14 @@ export default function MapSearch() {
   return (
     <div className="relative">
       <div className="w-full h-80 rounded-lg overflow-hidden border border-gray-200" ref={containerRef} />
+      {!mapRef.current && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/40">
+          <div className="flex items-center gap-3 text-gray-600">
+            <span className="animate-spin inline-block h-5 w-5 rounded-full border-2 border-gray-300 border-t-transparent" />
+            <span>Cargando mapa…</span>
+          </div>
+        </div>
+      )}
       <div className="absolute bottom-4 left-4 bg-white px-3 py-2 rounded-lg shadow-md text-xs text-gray-600">
         💡 Mueve el mapa para buscar en esa área
       </div>

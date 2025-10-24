@@ -64,8 +64,12 @@ export default function HitCard({ hit }: any){
         <div className="relative h-56 bg-gray-100 overflow-hidden">
           <img 
             src={hit.main_photo_url || '/placeholder.png'} 
-            alt={hit.title}
+            alt={hit.title || 'Propiedad'}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            sizes="(min-width: 1280px) 380px, (min-width: 768px) 50vw, 100vw"
           />
           <button
             onClick={(e) => {
