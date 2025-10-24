@@ -1,10 +1,12 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { InstantSearch, SearchBox, Configure, useSearchBox } from 'react-instantsearch'
 import { algoliaClient } from '../../lib/algoliaClient'
 import InstantHits from '../../components/InstantHits'
 import MapSearch from '../../components/MapSearch'
 import SavedSearchModal from '../../components/SavedSearchModal'
+import Header from '../../components/Header'
+import Footer from '../../components/Footer'
 import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs } from 'firebase/firestore'
 
@@ -14,47 +16,93 @@ export default function SearchPage() {
   const [showSave, setShowSave] = useState(false)
   const [saved, setSaved] = useState<any[]>([])
 
+  useEffect(() => {
+    loadSaved()
+  }, [])
+
   async function loadSaved() {
     const u = auth?.currentUser
     if (!u) return
-  const snap = await getDocs(collection(db, 'users', u.uid, 'saved_searches'))
-  setSaved(snap.docs.map((d: any) => ({ id: d.id, ...d.data() })))
+    const snap = await getDocs(collection(db, 'users', u.uid, 'saved_searches'))
+    setSaved(snap.docs.map((d: any) => ({ id: d.id, ...d.data() })))
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Buscar propiedades</h1>
-      <InstantSearch searchClient={searchClient} indexName={indexName}>
-        <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
-          <div>
-            <SearchBox />
-            <Configure hitsPerPage={12} clickAnalytics enablePersonalization={false} />
-            <div className="mt-4">
-              <InstantHits />
-            </div>
+    <>
+      <Header />
+      <main className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-[#0B2545] mb-2">Buscar propiedades</h1>
+            <p className="text-gray-600">Encuentra tu propiedad ideal en República Dominicana</p>
           </div>
-
-          <div className="sticky top-20 space-y-3">
-            <MapSearch />
-            <SaveSearchButton onOpen={() => setShowSave(true)} />
-            <div className="p-3 bg-white rounded shadow">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Búsquedas guardadas</h3>
-                <button onClick={loadSaved} className="text-sm underline">Actualizar</button>
+          
+          <InstantSearch searchClient={searchClient} indexName={indexName}>
+            <div className="grid lg:grid-cols-[1fr_400px] gap-6 items-start">
+              {/* Main content area */}
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg shadow-sm p-4">
+                  <SearchBox 
+                    placeholder="Buscar por ubicación, tipo de propiedad..."
+                    classNames={{
+                      root: 'w-full',
+                      form: 'relative',
+                      input: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent',
+                      submit: 'absolute right-3 top-1/2 -translate-y-1/2',
+                      reset: 'absolute right-12 top-1/2 -translate-y-1/2',
+                    }}
+                  />
+                </div>
+                <Configure hitsPerPage={12} clickAnalytics enablePersonalization={false} />
+                <InstantHits />
               </div>
-              <SavedList items={saved} />
+
+              {/* Sidebar */}
+              <div className="space-y-4">
+                <div className="sticky top-20 space-y-4">
+                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div className="p-4 bg-[#0B2545] text-white">
+                      <h3 className="font-semibold">Mapa de búsqueda</h3>
+                    </div>
+                    <MapSearch />
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-sm p-4">
+                    <SaveSearchButton onOpen={() => setShowSave(true)} />
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-sm p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-[#0B2545]">Búsquedas guardadas</h3>
+                      <button 
+                        onClick={loadSaved} 
+                        className="text-sm text-[#00A6A6] hover:underline"
+                      >
+                        Actualizar
+                      </button>
+                    </div>
+                    <SavedList items={saved} />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+            {showSave && <SaveModal onClose={() => setShowSave(false)} />}
+          </InstantSearch>
         </div>
-        {showSave && <SaveModal onClose={() => setShowSave(false)} />}
-      </InstantSearch>
-    </div>
+      </main>
+      <Footer />
+    </>
   )
 }
 
 function SaveSearchButton({ onOpen }: { onOpen: () => void }) {
   return (
-    <button onClick={onOpen} className="w-full px-3 py-2 bg-[#00A6A6] text-white rounded">Guardar búsqueda</button>
+    <button 
+      onClick={onOpen} 
+      className="w-full px-4 py-3 bg-[#00A6A6] hover:bg-[#008c8c] text-white rounded-lg font-medium transition-colors duration-200 shadow-sm"
+    >
+      💾 Guardar búsqueda actual
+    </button>
   )
 }
 
@@ -66,21 +114,25 @@ function SaveModal({ onClose }: { onClose: () => void }) {
 function SavedList({ items }: { items: any[] }) {
   const { refine } = useSearchBox()
   return (
-    <ul className="mt-2 space-y-1">
-      {items.length === 0 && <li className="text-sm text-gray-500">No hay búsquedas guardadas</li>}
+    <div className="space-y-2">
+      {items.length === 0 && (
+        <div className="text-center py-4">
+          <p className="text-sm text-gray-500">No hay búsquedas guardadas</p>
+          <p className="text-xs text-gray-400 mt-1">Guarda tus búsquedas favoritas aquí</p>
+        </div>
+      )}
       {items.map((s) => (
-        <li key={s.id}>
-          <button
-            className="text-sm text-[#004AAD] hover:underline"
-            onClick={() => {
-              const savedQuery = (s as any).query || {}
-              if (savedQuery.query) refine(savedQuery.query)
-            }}
-          >
-            {s.name || 'Búsqueda'}
-          </button>
-        </li>
+        <button
+          key={s.id}
+          className="w-full text-left px-3 py-2 text-sm text-[#004AAD] hover:bg-blue-50 rounded-lg transition-colors duration-150 border border-gray-200"
+          onClick={() => {
+            const savedQuery = (s as any).query || {}
+            if (savedQuery.query) refine(savedQuery.query)
+          }}
+        >
+          🔍 {s.name || 'Búsqueda sin nombre'}
+        </button>
       ))}
-    </ul>
+    </div>
   )
 }

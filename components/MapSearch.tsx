@@ -63,7 +63,25 @@ export default function MapSearch() {
     ;(m as any)._viventaMarkers = markers
   }, [hits])
 
-  return <div className="w-full h-80 rounded-lg overflow-hidden" ref={containerRef} />
+  if (!token) {
+    return (
+      <div className="w-full h-80 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
+        <div className="text-center p-4">
+          <p className="font-semibold">Mapa no disponible</p>
+          <p className="text-sm mt-1">Configure NEXT_PUBLIC_MAPBOX_TOKEN</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative">
+      <div className="w-full h-80 rounded-lg overflow-hidden border border-gray-200" ref={containerRef} />
+      <div className="absolute bottom-4 left-4 bg-white px-3 py-2 rounded-lg shadow-md text-xs text-gray-600">
+        💡 Mueve el mapa para buscar en esa área
+      </div>
+    </div>
+  )
 }
 
 function estimateRadiusKm(b: mapboxgl.LngLatBounds) {
