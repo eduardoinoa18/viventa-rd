@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { loginDemo } from '../../../lib/authClient'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
+import { FiMail, FiAlertCircle, FiCheckCircle, FiLock } from 'react-icons/fi'
 
 export default function MasterLoginPage() {
   const router = useRouter()
@@ -128,14 +129,16 @@ export default function MasterLoginPage() {
                 </div>
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                    ⚠️ {error}
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+                    <FiAlertCircle className="text-red-500" />
+                    <span>{error}</span>
                   </div>
                 )}
 
                 {message && (
-                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-                    ✓ {message}
+                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+                    <FiCheckCircle className="text-green-600" />
+                    <span>{message}</span>
                   </div>
                 )}
 
@@ -155,7 +158,7 @@ export default function MasterLoginPage() {
               <form onSubmit={handleVerifyCode} className="space-y-6">
                 <div className="text-center mb-6">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-3">
-                    <span className="text-3xl">📧</span>
+                    <FiMail className="text-2xl text-[#0B2545]" />
                   </div>
                   <p className="text-gray-700">
                     We sent a code to<br />
@@ -185,8 +188,9 @@ export default function MasterLoginPage() {
                 )}
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                    ⚠️ {error}
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+                    <FiAlertCircle className="text-red-500" />
+                    <span>{error}</span>
                   </div>
                 )}
 
@@ -220,8 +224,9 @@ export default function MasterLoginPage() {
           </div>
 
           {/* Security Notice */}
-          <div className="mt-6 text-center text-xs text-gray-500">
-            <p>🔒 This is a secure admin area. All logins are monitored.</p>
+          <div className="mt-6 text-center text-xs text-gray-500 flex items-center justify-center gap-2">
+            <FiLock />
+            <p>This is a secure admin area. All logins are monitored.</p>
           </div>
         </div>
       </main>

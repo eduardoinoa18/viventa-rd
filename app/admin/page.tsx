@@ -5,15 +5,23 @@ import AdminWidget from '../../components/AdminWidget'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminTopbar from '../../components/AdminTopbar'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { FiUsers, FiHome, FiDollarSign, FiClock, FiUserPlus, FiCreditCard } from 'react-icons/fi'
 
 export default function AdminPage() {
-  // minimal demo stats; in production fetch from /api/admin/stats
-  const stats = {
-    totalUsers: 124,
-    activeListings: 78,
-    monthlyRevenueUSD: 4500,
-    pendingApprovals: 3
-  }
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeListings: 0,
+    monthlyRevenueUSD: 0,
+    pendingApprovals: 0,
+    leads: 0,
+  })
+
+  useEffect(() => {
+    fetch('/api/admin/stats').then(r => r.json()).then((d) => {
+      if (d?.ok) setStats(d.data)
+    }).catch(() => {})
+  }, [])
 
   return (
     <ProtectedClient allowed={['master_admin','admin']}>
@@ -24,10 +32,10 @@ export default function AdminPage() {
           <h1 className="text-3xl font-bold text-[#0B2545] mb-6">Master Admin Dashboard</h1>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <AdminWidget title="Total Users" value={stats.totalUsers} icon="👥" subtitle="+12 this month" />
-            <AdminWidget title="Active Listings" value={stats.activeListings} icon="🏠" subtitle="78 approved" />
-            <AdminWidget title="Monthly Revenue" value={`$${stats.monthlyRevenueUSD.toLocaleString()}`} icon="💰" subtitle="USD" />
-            <AdminWidget title="Pending Approvals" value={stats.pendingApprovals} icon="⏳" subtitle="Awaiting review" />
+            <AdminWidget title="Total Users" value={stats.totalUsers} icon={<FiUsers />} subtitle="Active in system" />
+            <AdminWidget title="Active Listings" value={stats.activeListings} icon={<FiHome />} subtitle="Published" />
+            <AdminWidget title="Monthly Revenue" value={`$${stats.monthlyRevenueUSD.toLocaleString()}`} icon={<FiDollarSign />} subtitle="USD" />
+            <AdminWidget title="Pending Approvals" value={stats.pendingApprovals} icon={<FiClock />} subtitle="Awaiting review" />
           </div>
 
           <section className="mb-8">
@@ -35,21 +43,21 @@ export default function AdminPage() {
             <div className="bg-white rounded-lg shadow p-5">
               <ul className="divide-y divide-gray-200">
                 <li className="py-3 flex items-start gap-3">
-                  <span className="text-2xl">👤</span>
+                  <span className="text-xl text-[#0B2545]"><FiUserPlus /></span>
                   <div>
                     <div>User <strong className="text-[#00A676]">maría@demo.com</strong> requested Agent approval</div>
                     <div className="text-xs text-gray-500">2 hours ago</div>
                   </div>
                 </li>
                 <li className="py-3 flex items-start gap-3">
-                  <span className="text-2xl">🏠</span>
+                  <span className="text-xl text-[#0B2545]"><FiHome /></span>
                   <div>
                     <div>Listing <strong className="text-[#00A676]">#L-0012</strong> submitted by agent carlos@demo.com</div>
                     <div className="text-xs text-gray-500">5 hours ago</div>
                   </div>
                 </li>
                 <li className="py-3 flex items-start gap-3">
-                  <span className="text-2xl">💳</span>
+                  <span className="text-xl text-[#0B2545]"><FiCreditCard /></span>
                   <div>
                     <div>Payment succeeded for Broker <strong className="text-[#00A676]">B-001</strong></div>
                     <div className="text-xs text-gray-500">1 day ago</div>

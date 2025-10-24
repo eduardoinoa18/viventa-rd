@@ -10,20 +10,29 @@ export async function POST(request: Request) {
   try {
     const { email } = await request.json()
 
-    // Check if email is authorized master admin
-    const MASTER_ADMIN_EMAIL = process.env.MASTER_ADMIN_EMAIL || 'admin@viventa.com'
+    // Build allowed email list: prefer MASTER_ADMIN_EMAILS (comma-separated), fallback to MASTER_ADMIN_EMAIL
+    const rawList = (process.env.MASTER_ADMIN_EMAILS || process.env.MASTER_ADMIN_EMAIL || 'admin@viventa.com')
+      .split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(Boolean)
+    const allowedEmails = new Set(rawList)
     
     // Security: Don't log sensitive data in production
     if (process.env.NODE_ENV === 'development') {
       console.log('Login attempt for:', email)
     }
     
-    if (email !== MASTER_ADMIN_EMAIL) {
-      // Security: Use generic error message to prevent email enumeration
-      return NextResponse.json({ 
-        ok: false, 
-        error: 'Invalid credentials' 
-      }, { status: 403 })
+    const incoming = String(email || '').trim().toLowerCase()
+    // In development, allow any email if no explicit allowlist is configured
+    const isDev = process.env.NODE_ENV !== 'production'
+    const hasAllowlist = allowedEmails.size > 0
+    const isAllowed = allowedEmails.has(incoming)
+
+    if (!isDev || hasAllowlist) {
+      if (!isAllowed) {
+        // Security: Use generic error message to prevent email enumeration
+        return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })
+      }
     }
 
     // Generate 6-digit code
