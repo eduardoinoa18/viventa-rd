@@ -1,6 +1,7 @@
 "use client"
 import Link from 'next/link'
 import LocaleSwitcher from './LocaleSwitcher'
+import CurrencySwitcher from './CurrencySwitcher'
 import { useEffect, useState } from 'react'
 import { getSession, clearSession } from '../lib/authSession'
 
@@ -38,6 +39,7 @@ export default function Header() {
             <Link href="/admin" className="text-gray-400 hover:text-[#0B2545]" style={{fontSize:'10px'}}>Admin</Link>
           </nav>
           <div className="flex items-center space-x-3">
+            <CurrencySwitcher />
             <LocaleSwitcher />
             <Link href="/login" className="px-4 py-2 border rounded font-semibold">Login</Link>
             <Link href="/signup" className="px-4 py-2 bg-[#00A676] text-white rounded font-semibold">Sign Up</Link>
@@ -63,6 +65,7 @@ export default function Header() {
           <Link href="/admin/login" className="text-gray-400 hover:text-[#0B2545]" style={{fontSize:'10px'}}>Master Admin</Link>
         </nav>
         <div className="flex items-center space-x-3">
+          <CurrencySwitcher />
           <LocaleSwitcher />
           {session ? (
             <>

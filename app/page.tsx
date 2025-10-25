@@ -31,90 +31,128 @@ export default function HomePage() {
   });
 
   return (
-    <div className="bg-[#FAFAFA] min-h-screen flex flex-col">
+    <div className="bg-gray-50 min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative bg-cover bg-center h-[320px] flex items-center justify-center" style={{backgroundImage:'url(/hero-bg.jpg)'}}>
-          <div className="absolute inset-0 bg-[#0B2545]/60" />
-          <div className="relative z-10 text-center text-white">
-            <h1 className="text-3xl md:text-5xl font-bold mb-4">Encuentra tu próximo hogar con VIVENTA.</h1>
-            <p className="mb-6 text-lg">Tu espacio, tu futuro.</p>
+        <section className="relative bg-gradient-to-br from-[#0B2545] via-[#134074] to-[#00A6A6] h-[500px] flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#FF6B35] rounded-full blur-3xl"></div>
+          </div>
+          <div className="relative z-10 text-center text-white px-4 max-w-5xl mx-auto">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+              Encuentra tu próximo hogar <br/>con <span className="text-[#00A6A6]">VIVENTA</span>
+            </h1>
+            <p className="text-xl md:text-2xl mb-8 text-gray-200">Tu espacio, tu futuro en República Dominicana</p>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <a 
+                href="/search" 
+                className="px-8 py-4 bg-[#00A6A6] hover:bg-[#008c8c] text-white font-bold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105"
+              >
+                🔍 Buscar Propiedades
+              </a>
+              <a 
+                href="/agents" 
+                className="px-8 py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold rounded-lg border-2 border-white/30 transition-all duration-300"
+              >
+                👥 Conoce a nuestros Agentes
+              </a>
+            </div>
           </div>
         </section>
 
         {/* Map Search & Filters */}
-        <section className="flex flex-col md:flex-row max-w-7xl mx-auto py-8 px-4 gap-6">
-          {/* LEFT — Filters */}
-          <div className="md:w-1/3 bg-white shadow-lg rounded-xl p-5">
-            <h2 className="text-2xl font-bold text-blue-800 mb-4">Buscar propiedades</h2>
-            <input
-              type="text"
-              placeholder="Ubicación..."
-              className="w-full border p-2 rounded mb-3"
-              value={filters.location}
-              onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-            />
-
-            <select
-              className="w-full border p-2 rounded mb-3"
-              value={filters.type}
-              onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-            >
-              <option value="">Tipo de propiedad</option>
-              <option value="Villa">Villa</option>
-              <option value="Apartment">Apartamento</option>
-              <option value="House">Casa</option>
-            </select>
-
-            <div className="flex gap-2 mb-3">
-              <input
-                type="number"
-                placeholder="Precio mínimo"
-                className="w-1/2 border p-2 rounded"
-                value={filters.minPrice}
-                onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
-              />
-              <input
-                type="number"
-                placeholder="Precio máximo"
-                className="w-1/2 border p-2 rounded"
-                value={filters.maxPrice}
-                onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
-              />
-            </div>
-
-            {!user && (
-              <p className="text-sm text-gray-500 bg-yellow-100 p-2 rounded">
-                🔒 Inicia sesión o regístrate para ver todos los detalles de las propiedades.
-              </p>
-            )}
-
-            <div className="mt-6 space-y-4">
-              {filtered.map((p) => (
-                <div key={p.id} className="bg-gray-50 shadow rounded p-3">
-                  <img src={p.img} alt={p.title} className="w-full h-32 object-cover rounded" />
-                  <h3 className="font-semibold mt-2">{p.title}</h3>
-                  <p className="text-blue-600 font-bold">${p.price.toLocaleString()}</p>
-                  {user ? (
-                    <a href={`/properties/${p.id}`} className="text-blue-700 underline text-sm">Ver detalles</a>
-                  ) : (
-                    <span className="text-gray-500 text-sm">Requiere login</span>
-                  )}
-                </div>
-              ))}
-            </div>
+        <section className="max-w-7xl mx-auto py-12 px-4">
+          <div className="mb-8 text-center">
+            <h2 className="text-3xl font-bold text-[#0B2545] mb-2">Propiedades Destacadas</h2>
+            <p className="text-gray-600">Descubre las mejores oportunidades del mercado</p>
           </div>
+          
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* LEFT — Filters */}
+            <div className="lg:w-1/3">
+              <div className="bg-white shadow-lg rounded-xl p-6 sticky top-20">
+                <h3 className="text-xl font-bold text-[#0B2545] mb-4">🔍 Buscar propiedades</h3>
+                <input
+                  type="text"
+                  placeholder="Ubicación..."
+                  className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
+                  value={filters.location}
+                  onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+                />
 
-          {/* RIGHT — Map Placeholder */}
-          <div className="md:w-2/3 h-[400px] rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-blue-100 to-teal-100 flex items-center justify-center">
-            <div className="text-center p-8">
-              <svg className="w-24 h-24 mx-auto mb-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Mapa Interactivo</h3>
-              <p className="text-gray-600 text-sm">Explora propiedades en República Dominicana</p>
-              <p className="text-gray-500 text-xs mt-2">{filtered.length} propiedades disponibles</p>
+                <select
+                  className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
+                  value={filters.type}
+                  onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+                >
+                  <option value="">Tipo de propiedad</option>
+                  <option value="Villa">Villa</option>
+                  <option value="Apartment">Apartamento</option>
+                  <option value="House">Casa</option>
+                </select>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <input
+                    type="number"
+                    placeholder="Precio mín"
+                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
+                    value={filters.minPrice}
+                    onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Precio máx"
+                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
+                    value={filters.maxPrice}
+                    onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
+                  />
+                </div>
+
+                <a 
+                  href="/search"
+                  className="w-full block text-center px-6 py-3 bg-[#00A6A6] hover:bg-[#008c8c] text-white font-bold rounded-lg transition-colors duration-200"
+                >
+                  Ver todas las propiedades
+                </a>
+
+                {!user && (
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      🔒 <strong>Inicia sesión</strong> para guardar favoritos y ver más detalles
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT — Properties Grid */}
+            <div className="lg:w-2/3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filtered.map((p) => (
+                  <PropertyCard 
+                    key={p.id} 
+                    property={{
+                      ...p,
+                      price_usd: p.price,
+                      image: p.img
+                    }} 
+                  />
+                ))}
+              </div>
+              
+              {filtered.length === 0 && (
+                <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                  <p className="text-gray-600 mb-4">No se encontraron propiedades con esos filtros</p>
+                  <button 
+                    onClick={() => setFilters({ location: "", type: "", minPrice: "", maxPrice: "" })}
+                    className="px-6 py-2 bg-[#00A6A6] text-white rounded-lg hover:bg-[#008c8c] transition-colors"
+                  >
+                    Limpiar filtros
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </section>

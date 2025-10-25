@@ -7,28 +7,53 @@ import AdminTopbar from '../../../components/AdminTopbar'
 import Link from 'next/link'
 import { FiCheck, FiX, FiMapPin, FiDollarSign, FiEye, FiPlusSquare } from 'react-icons/fi'
 
-type Listing = { id: string; title: string; city: string; price: number; status: string; agent: string }
+type Listing = { id: string; title: string; location?: string; city?: string; price: number; status: string; agentName?: string; agent?: string }
 
 export default function AdminPropertiesPage() {
   const [listings, setListings] = useState<Listing[]>([])
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState('all')
 
-  useEffect(() => {
-    // minimal mock. In production, fetch from /api/admin/properties
-    setListings([
-      { id: 'L-001', title: 'Casa Punta Cana', city: 'Punta Cana', price: 240000, status: 'pending', agent: 'carlos@demo.com' },
-      { id: 'L-002', title: 'Condo Samaná', city: 'Samaná', price: 380000, status: 'active', agent: 'maria@demo.com' },
-      { id: 'L-003', title: 'Villa Santo Domingo', city: 'Santo Domingo', price: 520000, status: 'pending', agent: 'ana@demo.com' }
-    ])
-  }, [])
+  useEffect(() => { load() }, [statusFilter])
+
+  async function load() {
+    setLoading(true)
+    try {
+      const url = statusFilter === 'all' ? '/api/admin/properties' : `/api/admin/properties?status=${statusFilter}`
+      const res = await fetch(url)
+      const json = await res.json()
+      if (json.ok) setListings(json.data || [])
+    } catch (e) {
+      console.error('Failed to load properties', e)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function approve(id: string) {
-    // call API to approve; here we update locally
-    setListings(listings.map(l => l.id === id ? { ...l, status: 'active' } : l))
-    // In production: await fetch('/api/admin/properties/approve', { method:'POST', body: JSON.stringify({ id })})
+    try {
+      const res = await fetch('/api/admin/properties', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'active' })
+      })
+      if (res.ok) load()
+    } catch (e) {
+      console.error('Failed to approve property', e)
+    }
   }
 
   async function reject(id: string) {
-    setListings(listings.map(l => l.id === id ? { ...l, status: 'rejected' } : l))
+    try {
+      const res = await fetch('/api/admin/properties', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'rejected' })
+      })
+      if (res.ok) load()
+    } catch (e) {
+      console.error('Failed to reject property', e)
+    }
   }
 
   return (
@@ -43,60 +68,68 @@ export default function AdminPropertiesPage() {
               <Link href="/admin/properties/create" className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]">
                 <FiPlusSquare /> New Listing
               </Link>
-              <select className="px-3 py-2 border rounded">
-                <option>All Status</option>
-                <option>Pending</option>
-                <option>Active</option>
-                <option>Rejected</option>
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 border rounded">
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="active">Active</option>
+                <option value="rejected">Rejected</option>
+                <option value="sold">Sold</option>
               </select>
             </div>
           </div>
 
           <div className="space-y-4">
-            {listings.map(l => (
-              <div key={l.id} className="bg-white rounded-lg shadow p-5 hover:shadow-lg transition-shadow">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-semibold text-gray-900">{l.title}</h3>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        l.status === 'active' ? 'bg-green-100 text-green-800' :
-                        l.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {l.status}
-                      </span>
+            {loading ? (
+              <div className="bg-white rounded-lg shadow p-5 text-center text-gray-500">Loading...</div>
+            ) : listings.length === 0 ? (
+              <div className="bg-white rounded-lg shadow p-5 text-center text-gray-500">No properties found</div>
+            ) : (
+              listings.map(l => (
+                <div key={l.id} className="bg-white rounded-lg shadow p-5 hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-semibold text-gray-900">{l.title}</h3>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          l.status === 'active' ? 'bg-green-100 text-green-800' :
+                          l.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          l.status === 'sold' ? 'bg-blue-100 text-blue-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {l.status}
+                        </span>
+                      </div>
+                      <div className="text-gray-600 space-y-1">
+                        <div className="flex items-center gap-2"><FiMapPin /> {l.location || l.city || 'N/A'}</div>
+                        <div className="flex items-center gap-2"><FiDollarSign /> <span className="font-semibold text-[#00A676]">USD {l.price.toLocaleString()}</span></div>
+                        <div className="text-sm">Agent: <span className="text-blue-600">{l.agentName || l.agent || 'N/A'}</span></div>
+                      </div>
                     </div>
-                    <div className="text-gray-600 space-y-1">
-                      <div className="flex items-center gap-2"><FiMapPin /> {l.city}</div>
-                      <div className="flex items-center gap-2"><FiDollarSign /> <span className="font-semibold text-[#00A676]">USD {l.price.toLocaleString()}</span></div>
-                      <div className="text-sm">Agent: <span className="text-blue-600">{l.agent}</span></div>
+                    <div className="flex flex-col gap-2">
+                      {l.status === 'pending' && (
+                        <>
+                          <button 
+                            onClick={() => approve(l.id)}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] transition-colors"
+                          >
+                            <FiCheck /> Approve
+                          </button>
+                          <button 
+                            onClick={() => reject(l.id)}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                          >
+                            <FiX /> Reject
+                          </button>
+                        </>
+                      )}
+                      <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <FiEye /> View Details
+                      </button>
                     </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {l.status === 'pending' && (
-                      <>
-                        <button 
-                          onClick={() => approve(l.id)}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] transition-colors"
-                        >
-                          <FiCheck /> Approve
-                        </button>
-                        <button 
-                          onClick={() => reject(l.id)}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
-                        >
-                          <FiX /> Reject
-                        </button>
-                      </>
-                    )}
-                    <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                      <FiEye /> View Details
-                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </main>
       </div>
