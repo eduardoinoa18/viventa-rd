@@ -15,6 +15,7 @@ export default function MasterLoginPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [expiresIn, setExpiresIn] = useState(0)
+  const [devCode, setDevCode] = useState<string | null>(null)
 
   async function handleSendCode(e: React.FormEvent) {
     e.preventDefault()
@@ -29,7 +30,7 @@ export default function MasterLoginPage() {
         body: JSON.stringify({ email })
       })
 
-      const data = await res.json()
+  const data = await res.json()
 
       if (!data.ok) {
         setError(data.error || 'Failed to send verification code')
@@ -39,6 +40,11 @@ export default function MasterLoginPage() {
 
       setMessage('Verification code sent! Check your email.')
       setExpiresIn(data.expiresIn)
+      if (data.devCode) {
+        setDevCode(data.devCode)
+      } else {
+        setDevCode(null)
+      }
       setStep('code')
       
       // Start countdown
@@ -179,6 +185,20 @@ export default function MasterLoginPage() {
                     required
                     className="w-full px-4 py-4 border-2 border-gray-300 rounded-lg text-center text-2xl font-bold tracking-widest focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all"
                   />
+                  {devCode && (
+                    <div className="mt-3 text-center text-sm">
+                      <span className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-full">
+                        Dev code: <strong>{devCode}</strong>
+                        <button
+                          type="button"
+                          onClick={() => setCode(devCode)}
+                          className="text-[#00A676] hover:text-[#008F64] font-semibold"
+                        >
+                          Use
+                        </button>
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {expiresIn > 0 && (

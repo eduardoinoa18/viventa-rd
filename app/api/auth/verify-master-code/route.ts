@@ -4,7 +4,7 @@ import { verificationCodes } from '@/lib/verificationStore'
 
 export async function POST(request: Request) {
   try {
-    const { email, code } = await request.json()
+  const { email, code } = await request.json()
 
     // Security: Don't log sensitive data in production
     if (process.env.NODE_ENV === 'development') {
@@ -18,7 +18,8 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
 
-    const storedData = verificationCodes.get(email)
+  const key = String(email || '').trim().toLowerCase()
+  const storedData = verificationCodes.get(key)
 
     if (!storedData) {
       // Security: Generic error to prevent timing attacks
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
 
     // Check if code expired
     if (Date.now() > storedData.expiresAt) {
-      verificationCodes.delete(email)
+      verificationCodes.delete(key)
       return NextResponse.json({ 
         ok: false, 
         error: 'Invalid verification code' 
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
 
     // Check attempts (max 5)
     if (storedData.attempts >= 5) {
-      verificationCodes.delete(email)
+      verificationCodes.delete(key)
       return NextResponse.json({ 
         ok: false, 
         error: 'Too many attempts. Please request a new code.' 
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
     }
 
     // Success - delete code and return success
-    verificationCodes.delete(email)
+  verificationCodes.delete(key)
 
     // In production, create a session token here
     const sessionToken = generateSessionToken()

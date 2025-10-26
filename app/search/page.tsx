@@ -1,7 +1,7 @@
 'use client'
 import { useMemo, useState, useEffect } from 'react'
 import { InstantSearch, SearchBox, Configure, useSearchBox } from 'react-instantsearch'
-import { algoliaClient } from '../../lib/algoliaClient'
+import { getAlgoliaClient, isAlgoliaConfigured, ALGOLIA_INDEX } from '../../lib/algoliaClient'
 import InstantHits from '../../components/InstantHits'
 import MapSearch from '../../components/MapSearch'
 import SavedSearchModal from '../../components/SavedSearchModal'
@@ -13,8 +13,8 @@ import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs } from 'firebase/firestore'
 
 export default function SearchPage() {
-  const searchClient = useMemo(() => algoliaClient, [])
-  const indexName = process.env.NEXT_PUBLIC_ALGOLIA_INDEX || 'viventa_listings'
+  const searchClient = useMemo(() => getAlgoliaClient(), [])
+  const indexName = ALGOLIA_INDEX
   const [showSave, setShowSave] = useState(false)
   const [saved, setSaved] = useState<any[]>([])
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list')
@@ -40,6 +40,14 @@ export default function SearchPage() {
             <p className="text-gray-600">Encuentra tu propiedad ideal en República Dominicana</p>
           </div>
           
+          {!isAlgoliaConfigured || !searchClient ? (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg p-4 mb-6">
+              <div className="font-semibold">Búsqueda deshabilitada (configuración pendiente)</div>
+              <div className="text-sm mt-1">Falta configurar las variables de entorno de Algolia: NEXT_PUBLIC_ALGOLIA_APP_ID y NEXT_PUBLIC_ALGOLIA_SEARCH_KEY. Mientras tanto, puedes navegar por las propiedades destacadas o usar filtros locales.</div>
+            </div>
+          ) : null}
+
+          {isAlgoliaConfigured && searchClient && (
           <InstantSearch searchClient={searchClient} indexName={indexName}>
             {/* Mobile view toggle */}
             <div className="lg:hidden mb-4">
@@ -109,6 +117,7 @@ export default function SearchPage() {
             </div>
             {showSave && <SaveModal onClose={() => setShowSave(false)} />}
           </InstantSearch>
+          )}
         </div>
       </main>
       <Footer />
