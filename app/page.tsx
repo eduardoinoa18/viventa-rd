@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import { useState } from 'react';
+import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock } from 'react-icons/fi'
 
 const properties = [
   { id: 1, title: "Luxury Villa in Santo Domingo", price: 350000, type: "Villa", lat: 18.4861, lng: -69.9312, img: "/demo1.jpg", city: "Santo Domingo", neighborhood: "Piantini", beds: 3, baths: 2, sqft: 180 },
@@ -48,15 +49,15 @@ export default function HomePage() {
             <div className="flex flex-wrap gap-4 justify-center">
               <a 
                 href="/search" 
-                className="px-8 py-4 bg-[#00A6A6] hover:bg-[#008c8c] text-white font-bold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105"
+                className="px-8 py-4 bg-[#00A6A6] hover:bg-[#008c8c] text-white font-bold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center gap-2"
               >
-                🔍 Buscar Propiedades
+                <FiSearch className="text-xl" /> Buscar Propiedades
               </a>
               <a 
                 href="/agents" 
-                className="px-8 py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold rounded-lg border-2 border-white/30 transition-all duration-300"
+                className="px-8 py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold rounded-lg border-2 border-white/30 transition-all duration-300 inline-flex items-center gap-2"
               >
-                👥 Conoce a nuestros Agentes
+                <FiUsers className="text-xl" /> Conoce a nuestros Agentes
               </a>
             </div>
           </div>
@@ -73,7 +74,7 @@ export default function HomePage() {
             {/* LEFT — Filters */}
             <div className="lg:w-1/3">
               <div className="bg-white shadow-lg rounded-xl p-6 sticky top-20">
-                <h3 className="text-xl font-bold text-[#0B2545] mb-4">🔍 Buscar propiedades</h3>
+                <h3 className="text-xl font-bold text-[#0B2545] mb-4 inline-flex items-center gap-2"><FiSearch /> Buscar propiedades</h3>
                 <input
                   type="text"
                   placeholder="Ubicación..."
@@ -118,9 +119,10 @@ export default function HomePage() {
                 </a>
 
                 {!user && (
-                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-800">
-                      🔒 <strong>Inicia sesión</strong> para guardar favoritos y ver más detalles
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2 text-yellow-800">
+                    <FiLock className="text-lg" />
+                    <p className="text-sm">
+                      <strong>Inicia sesión</strong> para guardar favoritos y ver más detalles
                     </p>
                   </div>
                 )}
@@ -170,23 +172,23 @@ export default function HomePage() {
         {/* Why Choose VIVENTA */}
         <section className="max-w-7xl mx-auto px-4 py-12">
           <h2 className="text-2xl font-bold mb-6 text-[#0B2545]">¿Por qué elegir VIVENTA?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-              <span className="text-4xl mb-2">✅</span>
-              <div className="font-bold mb-1">Listados Verificados</div>
-              <div className="text-sm text-gray-600 text-center">Solo propiedades revisadas y aprobadas por nuestro equipo.</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+                <FiCheckCircle className="text-4xl text-[#00A6A6] mb-2" />
+                <div className="font-bold mb-1">Listados Verificados</div>
+                <div className="text-sm text-gray-600 text-center">Solo propiedades revisadas y aprobadas por nuestro equipo.</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+                <FiUsers className="text-4xl text-[#0B2545] mb-2" />
+                <div className="font-bold mb-1">Agentes de Confianza</div>
+                <div className="text-sm text-gray-600 text-center">Trabaja con los mejores profesionales del sector inmobiliario.</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+                <FiShield className="text-4xl text-[#3BAFDA] mb-2" />
+                <div className="font-bold mb-1">Transacciones Seguras</div>
+                <div className="text-sm text-gray-600 text-center">Tu información y tu inversión están protegidas.</div>
+              </div>
             </div>
-            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-              <span className="text-4xl mb-2">🤝</span>
-              <div className="font-bold mb-1">Agentes de Confianza</div>
-              <div className="text-sm text-gray-600 text-center">Trabaja con los mejores profesionales del sector inmobiliario.</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-              <span className="text-4xl mb-2">🔒</span>
-              <div className="font-bold mb-1">Transacciones Seguras</div>
-              <div className="text-sm text-gray-600 text-center">Tu información y tu inversión están protegidas.</div>
-            </div>
-          </div>
         </section>
 
         {/* CTA Section */}

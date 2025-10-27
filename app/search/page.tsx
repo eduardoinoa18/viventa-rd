@@ -8,7 +8,7 @@ import SavedSearchModal from '../../components/SavedSearchModal'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import SearchFilters from '../../components/SearchFilters'
-import { FiList, FiMap } from 'react-icons/fi'
+import { FiList, FiMap, FiSave, FiSearch } from 'react-icons/fi'
 import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs } from 'firebase/firestore'
 
@@ -129,9 +129,9 @@ function SaveSearchButton({ onOpen }: { onOpen: () => void }) {
   return (
     <button 
       onClick={onOpen} 
-      className="w-full px-4 py-3 bg-[#00A6A6] hover:bg-[#008c8c] text-white rounded-lg font-medium transition-colors duration-200 shadow-sm"
+      className="w-full px-4 py-3 bg-[#00A6A6] hover:bg-[#008c8c] text-white rounded-lg font-medium transition-colors duration-200 shadow-sm inline-flex items-center justify-center gap-2"
     >
-      💾 Guardar búsqueda actual
+      <FiSave /> Guardar búsqueda actual
     </button>
   )
 }
@@ -154,13 +154,13 @@ function SavedList({ items }: { items: any[] }) {
       {items.map((s) => (
         <button
           key={s.id}
-          className="w-full text-left px-3 py-2 text-sm text-[#004AAD] hover:bg-blue-50 rounded-lg transition-colors duration-150 border border-gray-200"
+          className="w-full text-left px-3 py-2 text-sm text-[#004AAD] hover:bg-blue-50 rounded-lg transition-colors duration-150 border border-gray-200 inline-flex items-center gap-2"
           onClick={() => {
             const savedQuery = (s as any).query || {}
             if (savedQuery.query) refine(savedQuery.query)
           }}
         >
-          🔍 {s.name || 'Búsqueda sin nombre'}
+          <FiSearch /> {s.name || 'Búsqueda sin nombre'}
         </button>
       ))}
     </div>

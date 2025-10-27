@@ -1,5 +1,6 @@
 import Footer from '../../components/Footer'
 import Header from '../../components/Header'
+import { FiHome, FiBarChart2, FiCpu, FiCompass, FiShield } from 'react-icons/fi'
 
 export default function ProfesionalesLanding() {
   return (
@@ -22,29 +23,29 @@ export default function ProfesionalesLanding() {
         <section className="max-w-5xl mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8 text-center">
             <div>
-              <div className="text-4xl mb-2">🏢</div>
+              <FiHome className="text-4xl text-white/90 mb-2 inline-block" />
               <div className="font-bold mb-1">Gestión de Propiedades</div>
-              <div className="text-xs text-gray-600">Administra, publica y comparte tus listados fácilmente.</div>
+              <div className="text-xs text-gray-200">Administra, publica y comparte tus listados fácilmente.</div>
             </div>
             <div>
-              <div className="text-4xl mb-2">📊</div>
+              <FiBarChart2 className="text-4xl text-white/90 mb-2 inline-block" />
               <div className="font-bold mb-1">Panel Inteligente</div>
-              <div className="text-xs text-gray-600">Estadísticas y reportes en tiempo real.</div>
+              <div className="text-xs text-gray-200">Estadísticas y reportes en tiempo real.</div>
             </div>
             <div>
-              <div className="text-4xl mb-2">🧠</div>
+              <FiCpu className="text-4xl text-white/90 mb-2 inline-block" />
               <div className="font-bold mb-1">CRM Integrado</div>
-              <div className="text-xs text-gray-600">Gestiona clientes y oportunidades en un solo lugar.</div>
+              <div className="text-xs text-gray-200">Gestiona clientes y oportunidades en un solo lugar.</div>
             </div>
             <div>
-              <div className="text-4xl mb-2">🧭</div>
+              <FiCompass className="text-4xl text-white/90 mb-2 inline-block" />
               <div className="font-bold mb-1">Buscador de Clientes</div>
-              <div className="text-xs text-gray-600">Encuentra leads calificados y conecta rápido.</div>
+              <div className="text-xs text-gray-200">Encuentra leads calificados y conecta rápido.</div>
             </div>
             <div>
-              <div className="text-4xl mb-2">🔒</div>
+              <FiShield className="text-4xl text-white/90 mb-2 inline-block" />
               <div className="font-bold mb-1">Seguridad Total</div>
-              <div className="text-xs text-gray-600">Tus datos y transacciones siempre protegidos.</div>
+              <div className="text-xs text-gray-200">Tus datos y transacciones siempre protegidos.</div>
             </div>
           </div>
         </section>
