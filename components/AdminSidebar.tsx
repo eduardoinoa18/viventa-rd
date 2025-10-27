@@ -40,8 +40,8 @@ export default function AdminSidebar() {
       
       <div className="mt-8 p-3 bg-blue-50 rounded-lg">
         <div className="text-xs font-semibold text-blue-900 mb-1">Quick Actions</div>
-        <Link href="/" className="text-sm text-blue-600 hover:underline block">View Site</Link>
-        <Link href="/dashboard/agent" className="text-sm text-blue-600 hover:underline block mt-1">Agent Dashboard</Link>
+        <Link href="/" className="text-sm text-blue-600 hover:underline block">View Public Site</Link>
+        <Link href="/dashboard" className="text-sm text-blue-600 hover:underline block mt-1">User Dashboard</Link>
       </div>
     </aside>
   )

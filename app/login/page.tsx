@@ -40,11 +40,11 @@ export default function LoginPage() {
       // Save session for client and middleware
       saveSession({ uid, role, profileComplete, name })
       setError('')
-      if (!profileComplete && role === 'agent') {
+      if (!profileComplete && (role === 'agent' || role === 'broker')) {
         router.push('/onboarding')
         return
       }
-      const dest = role === 'master_admin' ? '/admin' : role === 'broker' ? '/dashboard' : role === 'agent' ? '/dashboard/agent' : '/'
+      const dest = role === 'master_admin' ? '/admin' : '/dashboard'
       router.push(dest + '?welcome=1')
       toast.success('¡Bienvenido de vuelta!')
     } catch (err: any) {

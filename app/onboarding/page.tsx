@@ -29,8 +29,7 @@ export default function OnboardingPage(){
     } finally {
       setSaving(false)
     }
-    const dest = s?.role === 'agent' ? '/dashboard/agent' : '/dashboard'
-    router.replace(dest)
+    router.replace('/dashboard')
   }
   return (
     <div className="bg-[#FAFAFA] min-h-screen flex flex-col">

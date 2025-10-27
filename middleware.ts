@@ -4,13 +4,11 @@ export function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const { pathname } = url;
 
-  // Protect agent dashboard
-  if (pathname.startsWith("/dashboard/agent")) {
+  // Protect admin routes
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
     const role = req.cookies.get("viventa_role")?.value;
-    if (role !== "agent") {
-      const loginUrl = new URL("/login", req.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
+    if (role !== "master_admin") {
+      return NextResponse.redirect(new URL("/admin/login", req.url));
     }
   }
 

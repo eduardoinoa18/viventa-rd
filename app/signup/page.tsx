@@ -29,15 +29,15 @@ export default function SignupPage() {
           uid: cred.user.uid,
           email: form.email,
           name: form.name,
-          role: 'agent',
-          profileComplete: false,
+          role: 'user',
+          profileComplete: true,
           createdAt: serverTimestamp(),
         }, { merge: true })
 
         // Save session locally for client routing and middleware cookies
-        saveSession({ uid: cred.user.uid, role: 'agent', profileComplete: false, name: form.name })
+        saveSession({ uid: cred.user.uid, role: 'user', profileComplete: true, name: form.name })
         setError('')
-        router.push('/onboarding')
+        router.push('/dashboard')
         toast.success('¡Cuenta creada exitosamente!')
       }
     } catch (err: any) {
