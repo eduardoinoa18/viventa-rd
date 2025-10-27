@@ -4,7 +4,9 @@ service cloud.firestore {
     
     function isSignedIn() { return request.auth != null; }
     function getUserRole() { 
-      return isSignedIn() ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : null; 
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role 
+        : null; 
     }
     function isAdmin() { return getUserRole() in ['master_admin','admin']; }
     function isBrokerAdmin() { return getUserRole() == 'broker_admin'; }
