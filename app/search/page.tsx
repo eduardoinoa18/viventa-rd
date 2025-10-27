@@ -1,6 +1,6 @@
 'use client'
 import { useMemo, useState, useEffect } from 'react'
-import { InstantSearch, SearchBox, Configure, useSearchBox } from 'react-instantsearch'
+import { InstantSearch, SearchBox, Configure, useSearchBox, SortBy } from 'react-instantsearch'
 import { getAlgoliaClient, isAlgoliaConfigured, ALGOLIA_INDEX } from '../../lib/algoliaClient'
 import InstantHits from '../../components/InstantHits'
 import MapSearch from '../../components/MapSearch'
@@ -8,7 +8,7 @@ import SavedSearchModal from '../../components/SavedSearchModal'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import SearchFilters from '../../components/SearchFilters'
-import { FiList, FiMap, FiSave, FiSearch } from 'react-icons/fi'
+import { FiList, FiMap, FiSave, FiSearch, FiSliders } from 'react-icons/fi'
 import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs } from 'firebase/firestore'
 
@@ -18,6 +18,7 @@ export default function SearchPage() {
   const [showSave, setShowSave] = useState(false)
   const [saved, setSaved] = useState<any[]>([])
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list')
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     loadSaved()
@@ -49,8 +50,8 @@ export default function SearchPage() {
 
           {isAlgoliaConfigured && searchClient && (
           <InstantSearch searchClient={searchClient} indexName={indexName}>
-            {/* Mobile view toggle */}
-            <div className="lg:hidden mb-4">
+            {/* Mobile view toggle + filters toggle */}
+            <div className="lg:hidden mb-4 flex items-center justify-between gap-2">
               <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden">
                 <button
                   onClick={() => setMobileView('list')}
@@ -65,6 +66,12 @@ export default function SearchPage() {
                   <FiMap /> Mapa
                 </button>
               </div>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center gap-2 text-gray-700 hover:bg-gray-50"
+              >
+                <FiSliders /> Filtros
+              </button>
             </div>
             <div className="grid lg:grid-cols-[1fr_400px] gap-6 items-start">
               {/* Main content area */}
@@ -86,7 +93,7 @@ export default function SearchPage() {
               </div>
 
               {/* Sidebar */}
-              <div className={`${mobileView !== 'map' ? 'hidden lg:block' : ''} space-y-4`}>
+              <div className={`${mobileView !== 'map' && !showFilters ? 'hidden lg:block' : ''} space-y-4`}>
                 <div className="sticky top-20 space-y-4">
                   <SearchFilters />
                   <div className="bg-white rounded-lg shadow-sm overflow-hidden">

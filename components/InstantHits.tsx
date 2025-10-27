@@ -1,6 +1,7 @@
 "use client"
 import { Pagination, Stats, useHits, useInstantSearch } from 'react-instantsearch'
 import HitCard from './HitCard'
+import { FiSearch } from 'react-icons/fi'
 
 function SkeletonCard() {
   return (
@@ -43,7 +44,7 @@ export default function InstantHits() {
         {!isLoading && hits.length === 0 && (
           <div className="col-span-full">
             <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-              <div className="text-2xl mb-2">🔎</div>
+              <FiSearch className="text-4xl mx-auto mb-3 text-gray-400" />
               <h3 className="text-lg font-semibold text-[#0B2545]">No encontramos resultados</h3>
               <p className="text-sm text-gray-600 mt-1">Ajusta tu búsqueda o mueve el mapa para explorar otras áreas.</p>
             </div>
