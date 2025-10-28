@@ -16,7 +16,6 @@ export default function Footer() {
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/favorites', label: 'Favoritos' },
     { href: '/search', label: 'Buscar' },
-    { href: '/social', label: 'Social' },
     { href: '/contact', label: 'Soporte' },
   ]
 
