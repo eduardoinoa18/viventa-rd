@@ -9,9 +9,58 @@ import OfflineIndicator from '../components/OfflineIndicator'
 import BottomNav from '../components/BottomNav'
 
 export const metadata = {
-  title: 'VIVENTA - Tu Espacio, Tu Futuro',
-  description: 'Plataforma inmobiliaria líder en República Dominicana',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com'),
+  title: {
+    default: 'VIVENTA - Tu Espacio, Tu Futuro',
+    template: '%s | VIVENTA'
+  },
+  description: 'Plataforma inmobiliaria líder en República Dominicana. Encuentra casas, apartamentos, villas y terrenos en Santo Domingo, Punta Cana, Santiago y más. Agentes verificados y transacciones seguras.',
+  keywords: ['bienes raíces', 'propiedades República Dominicana', 'casas en venta', 'apartamentos Santo Domingo', 'inmobiliaria RD', 'VIVENTA', 'real estate', 'Punta Cana properties', 'Santiago real estate', 'inversión inmobiliaria'],
+  authors: [{ name: 'VIVENTA' }],
+  creator: 'VIVENTA',
+  publisher: 'VIVENTA',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   manifest: '/manifest.json',
+  openGraph: {
+    type: 'website',
+    locale: 'es_DO',
+    url: '/',
+    siteName: 'VIVENTA',
+    title: 'VIVENTA - Tu Espacio, Tu Futuro',
+    description: 'Plataforma inmobiliaria líder en República Dominicana',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'VIVENTA - Plataforma Inmobiliaria',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'VIVENTA - Tu Espacio, Tu Futuro',
+    description: 'Plataforma inmobiliaria líder en República Dominicana',
+    images: ['/og-image.jpg'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+  },
 }
 
 export default function RootLayout({children}:{children:React.ReactNode}) {

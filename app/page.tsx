@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
+import StructuredData from '../components/StructuredData';
 import { useState } from 'react';
 import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock } from 'react-icons/fi'
 
@@ -31,8 +32,48 @@ export default function HomePage() {
     return matchesType && matchesMin && matchesMax;
   });
 
+  // Structured data for organization
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    "name": "VIVENTA",
+    "description": "Plataforma inmobiliaria líder en República Dominicana",
+    "url": "https://viventa-rd.com",
+    "logo": "https://viventa-rd.com/logo.png",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "DO",
+      "addressLocality": "Santo Domingo"
+    },
+    "areaServed": {
+      "@type": "Country",
+      "name": "República Dominicana"
+    },
+    "sameAs": [
+      "https://www.facebook.com/viventa",
+      "https://www.instagram.com/viventa",
+      "https://twitter.com/viventa"
+    ]
+  }
+
+  // Breadcrumb schema
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Inicio",
+        "item": "https://viventa-rd.com"
+      }
+    ]
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
+      <StructuredData data={organizationSchema} />
+      <StructuredData data={breadcrumbSchema} />
       <Header />
       <main className="flex-1">
         {/* Hero Section */}

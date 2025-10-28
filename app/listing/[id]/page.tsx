@@ -7,7 +7,9 @@ import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
 import WhatsAppButton from '../../../components/WhatsAppButton'
 import FavoriteButton from '../../../components/FavoriteButton'
+import StructuredData from '../../../components/StructuredData'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
+import { generatePropertySchema } from '../../../lib/seoUtils'
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt } from 'react-icons/fa'
 
 export default function ListingDetail(){
@@ -84,9 +86,52 @@ export default function ListingDetail(){
     agentName: listing.agent?.name,
     agentPhone: listing.agent?.phone
   }
+
+  // Generate structured data for SEO
+  const propertySchema = listing ? generatePropertySchema({
+    id: listing.id,
+    title: listing.title,
+    description: listing.description || `${listing.title} en ${listing.city}`,
+    price: listing.price_usd || 0,
+    currency: 'USD',
+    location: `${listing.city || ''}${listing.neighborhood ? ', ' + listing.neighborhood : ''}`,
+    bedrooms: listing.bedrooms,
+    bathrooms: listing.bathrooms,
+    area: listing.area_sqm,
+    images: listing.images || [],
+    agentName: listing.agent?.name
+  }) : null
+
+  // Breadcrumb schema
+  const breadcrumbSchema = listing ? {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Inicio",
+        "item": "https://viventa-rd.com"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Propiedades",
+        "item": "https://viventa-rd.com/search"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": listing.title,
+        "item": `https://viventa-rd.com/listing/${listing.id}`
+      }
+    ]
+  } : null
   
   return (
     <>
+      {propertySchema && <StructuredData data={propertySchema} />}
+      {breadcrumbSchema && <StructuredData data={breadcrumbSchema} />}
       <Header />
       <main className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
