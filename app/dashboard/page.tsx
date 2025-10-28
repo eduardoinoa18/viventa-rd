@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import UserEngagement from '../../components/UserEngagement';
-import { FiHeart, FiSearch, FiUser, FiMail, FiPhone, FiBookmark, FiMessageSquare, FiSettings, FiLogOut, FiAward } from 'react-icons/fi';
+import { FiHeart, FiSearch, FiUser, FiMail, FiPhone, FiBookmark, FiMessageSquare, FiSettings, FiLogOut, FiAward, FiZap } from 'react-icons/fi';
 import { auth } from '../../lib/firebaseClient';
 import { signOut } from 'firebase/auth';
 
 export default function UserDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [user, setUser] = useState<any>(null);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [loadingRecs, setLoadingRecs] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -21,7 +23,23 @@ export default function UserDashboard() {
       return; 
     }
     setUser(s);
+    fetchRecommendations();
   }, []);
+
+  async function fetchRecommendations() {
+    setLoadingRecs(true);
+    try {
+      const res = await fetch('/api/recommendations');
+      const data = await res.json();
+      if (data.ok) {
+        setRecommendations(data.recommendations || []);
+      }
+    } catch (e) {
+      console.error('Failed to fetch recommendations', e);
+    } finally {
+      setLoadingRecs(false);
+    }
+  }
 
   async function handleLogout() {
     await signOut(auth);
@@ -60,6 +78,14 @@ export default function UserDashboard() {
                 }`}
               >
                 <FiHeart /> Favoritos
+              </button>
+              <button
+                onClick={() => setActiveTab('recommendations')}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                  activeTab === 'recommendations' ? 'bg-blue-100 text-blue-800 font-semibold' : 'hover:bg-gray-100'
+                }`}
+              >
+                <FiZap /> Recomendaciones
               </button>
               <button
                 onClick={() => setActiveTab('searches')}
@@ -153,6 +179,66 @@ export default function UserDashboard() {
                   <p className="mb-4">No tienes propiedades favoritas aún</p>
                   <a href="/search" className="text-blue-600 hover:underline">Explorar propiedades</a>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'recommendations' && (
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 text-white">
+                  <div className="flex items-center gap-3 mb-2">
+                    <FiZap className="text-3xl" />
+                    <h2 className="text-2xl font-bold">Recomendaciones para ti</h2>
+                  </div>
+                  <p className="text-purple-100">Propiedades seleccionadas según tus preferencias y actividad</p>
+                </div>
+
+                {loadingRecs ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Analizando tus preferencias...</p>
+                  </div>
+                ) : recommendations.length === 0 ? (
+                  <div className="bg-white rounded-lg shadow p-6 text-center py-12 text-gray-500">
+                    <FiZap className="text-5xl mx-auto mb-4 text-gray-300" />
+                    <p className="mb-4">Aún no tenemos suficiente información para personalizar tus recomendaciones</p>
+                    <a href="/search" className="text-blue-600 hover:underline">Explora propiedades para empezar</a>
+                  </div>
+                ) : (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {recommendations.map((prop) => (
+                      <div key={prop.id} className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden">
+                        <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center relative">
+                          {prop.images && prop.images[0] ? (
+                            <img src={prop.images[0]} alt={prop.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <FiHeart className="text-4xl text-gray-300" />
+                          )}
+                          {prop.score && (
+                            <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                              {prop.score}% match
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-bold text-gray-800 mb-1 line-clamp-2">{prop.title}</h3>
+                          <p className="text-sm text-gray-600 mb-2">{prop.location || prop.city}</p>
+                          <div className="text-sm text-gray-600 mb-2">
+                            {prop.bedrooms} hab • {prop.bathrooms} baños • {prop.area}m²
+                          </div>
+                          <div className="font-bold text-[#0B2545] mb-3">
+                            RD$ {Number(prop.price || 0).toLocaleString('es-DO')}
+                          </div>
+                          <a
+                            href={`/listing/${prop.id}`}
+                            className="block w-full text-center px-4 py-2 bg-[#00A6A6] text-white rounded-lg font-semibold hover:bg-[#008f8f] transition"
+                          >
+                            Ver detalles
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
