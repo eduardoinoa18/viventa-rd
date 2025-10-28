@@ -95,8 +95,13 @@ export async function POST(request: Request) {
 
 async function sendVerificationEmail(email: string, code: string): Promise<boolean> {
   try {
+    console.log('📧 Attempting to send email to:', email)
+    console.log('📧 SENDGRID_API_KEY exists:', !!process.env.SENDGRID_API_KEY)
+    console.log('📧 SMTP_HOST exists:', !!process.env.SMTP_HOST)
+
     // Option 1: Using SendGrid (recommended for production)
     if (process.env.SENDGRID_API_KEY) {
+      console.log('📧 Using SendGrid...')
       const sgMail = require('@sendgrid/mail')
       sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
@@ -130,12 +135,21 @@ async function sendVerificationEmail(email: string, code: string): Promise<boole
         `
       }
 
-      await sgMail.send(msg)
+      const result = await sgMail.send(msg)
+      console.log('✅ SendGrid email sent successfully:', result)
       return true
     }
 
     // Option 2: Using Nodemailer (for development/testing)
     if (process.env.SMTP_HOST) {
+      console.log('📧 Using SMTP/Nodemailer...')
+      console.log('📧 SMTP Config:', {
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        user: process.env.SMTP_USER ? '***' : 'missing',
+        pass: process.env.SMTP_PASS ? '***' : 'missing',
+      })
+
       const nodemailer = require('nodemailer')
       
       const transporter = nodemailer.createTransport({
@@ -148,7 +162,7 @@ async function sendVerificationEmail(email: string, code: string): Promise<boole
         },
       })
 
-      await transporter.sendMail({
+      const info = await transporter.sendMail({
         from: {
           name: 'VIVENTA Security',
           address: process.env.SMTP_FROM || 'noreply@viventa.com'
@@ -177,10 +191,14 @@ async function sendVerificationEmail(email: string, code: string): Promise<boole
         `
       })
 
+      console.log('✅ SMTP email sent successfully:', info.messageId)
       return true
     }
 
-    // Development fallback - just log to console
+    // No email service configured - throw error
+    console.error('❌ No email service configured!')
+    console.error('Please set either SENDGRID_API_KEY or SMTP credentials in .env.local')
+    console.error('Development fallback (console only):')
     console.log('═══════════════════════════════════════')
     console.log('📧 MASTER ADMIN VERIFICATION CODE')
     console.log('═══════════════════════════════════════')
@@ -189,10 +207,11 @@ async function sendVerificationEmail(email: string, code: string): Promise<boole
     console.log(`Expires: ${new Date(Date.now() + 10 * 60 * 1000).toLocaleString()}`)
     console.log('═══════════════════════════════════════')
     
-    return true
+    // Return false to indicate email was NOT sent
+    return false
 
   } catch (error) {
-    console.error('Email send error:', error)
+    console.error('❌ Email send error:', error)
     return false
   }
 }
