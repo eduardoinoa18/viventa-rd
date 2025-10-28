@@ -52,11 +52,23 @@ export default function Header() {
           <img src="/logo.svg" alt="VIVENTA" className="h-10 sm:h-12 md:h-14" />
         </Link>
         <nav className="space-x-4 lg:space-x-6 hidden md:flex text-sm lg:text-base">
-          <Link href="/" className="hover:text-[#3BAFDA]">Inicio</Link>
-          <Link href="/search" className="hover:text-[#3BAFDA]">Buscar</Link>
-          <Link href="/agents" className="hover:text-[#3BAFDA]">Agentes</Link>
-          <Link href="/profesionales" className="hover:text-[#3BAFDA]">Profesionales</Link>
-          <Link href="/contact" className="hover:text-[#3BAFDA]">Contacto</Link>
+          {!session ? (
+            <>
+              <Link href="/" className="hover:text-[#3BAFDA]">Inicio</Link>
+              <Link href="/search" className="hover:text-[#3BAFDA]">Buscar</Link>
+              <Link href="/agents" className="hover:text-[#3BAFDA]">Agentes</Link>
+              <Link href="/profesionales" className="hover:text-[#3BAFDA]">Profesionales</Link>
+              <Link href="/contact" className="hover:text-[#3BAFDA]">Contacto</Link>
+            </>
+          ) : (
+            <>
+              <Link href="/dashboard" className="hover:text-[#3BAFDA]">Dashboard</Link>
+              <Link href="/search" className="hover:text-[#3BAFDA]">Explorar</Link>
+              <Link href="/favorites" className="hover:text-[#3BAFDA]">Favoritos</Link>
+              <Link href="/dashboard/social" className="hover:text-[#3BAFDA]">Social</Link>
+              <Link href="/contact" className="hover:text-[#3BAFDA]">Soporte</Link>
+            </>
+          )}
         </nav>
         <div className="flex items-center space-x-2 sm:space-x-3">
           <CurrencySwitcher />

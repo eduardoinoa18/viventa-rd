@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginDemo } from '../../../lib/authClient'
+import { saveSession } from '../../../lib/authSession'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
 import { FiMail, FiAlertCircle, FiCheckCircle, FiLock } from 'react-icons/fi'
@@ -85,8 +86,14 @@ export default function MasterLoginPage() {
         return
       }
 
-      // Login success
+      // Login success: set both mock user (for legacy) and cookie-based session for middleware
       await loginDemo(data.user.email, 'master_admin')
+      saveSession({
+        uid: 'admin_'+Math.random().toString(36).slice(2,9),
+        role: 'master_admin',
+        profileComplete: true,
+        name: data.user.email.split('@')[0],
+      })
       router.push('/admin')
 
     } catch (err) {

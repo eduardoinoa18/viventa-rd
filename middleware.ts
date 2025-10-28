@@ -3,13 +3,21 @@ import { NextRequest, NextResponse } from "next/server";
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const { pathname } = url;
+  const role = req.cookies.get("viventa_role")?.value;
 
   // Protect admin routes
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    const role = req.cookies.get("viventa_role")?.value;
     if (role !== "master_admin") {
       return NextResponse.redirect(new URL("/admin/login", req.url));
     }
+  }
+
+  // User app experience: if a logged-in non-admin user hits marketing/auth routes, send to dashboard
+  const isLoggedInUser = role && role !== 'master_admin' && role !== 'admin';
+  const redirectToDashboard = ['/', '/login', '/signup'].includes(pathname);
+  if (isLoggedInUser && redirectToDashboard) {
+    const dest = new URL('/dashboard', req.url);
+    return NextResponse.redirect(dest);
   }
 
   return NextResponse.next();
