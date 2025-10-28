@@ -1,8 +1,9 @@
 ﻿import Link from 'next/link'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ImagePlaceholder from './ImagePlaceholder';
 import FavoriteButton from './FavoriteButton';
 import { formatCurrency, formatFeatures, formatArea } from '@/lib/currency';
+import { analytics } from '@/lib/analytics';
 
 export default function PropertyCard({ property }: { property: any }) {
   const [imgError, setImgError] = useState(false);
@@ -10,16 +11,20 @@ export default function PropertyCard({ property }: { property: any }) {
   // Prepare property data for FavoriteButton
   const favoriteData = {
     id: property.id || property.objectID || String(Math.random()),
-    title: property.title || `, `,
+    title: property.title || property.name || 'Propiedad',
     price: property.price_usd || 0,
     currency: 'USD' as const,
-    location: `, `,
+    location: property.city || property.location || '',
     bedrooms: property.beds,
     bathrooms: property.baths,
     area: property.sqft,
     images: property.image ? [property.image] : [],
     agentName: property.agent?.name,
     agentPhone: property.agent?.phone
+  };
+
+  const handleClick = () => {
+    analytics.viewProperty(favoriteData.id, favoriteData.title);
   };
 
   return (
@@ -45,9 +50,15 @@ export default function PropertyCard({ property }: { property: any }) {
       <div className="text-sm text-gray-700">{property.city}, {property.neighborhood}</div>
       <div className="text-xs text-gray-500 mb-2">
         {formatFeatures(property.beds, property.baths)}
-        {property.sqft && ` • `}
+        {property.sqft && ` • ${formatArea(property.sqft)}`}
       </div>
-      <Link href={`/properties/`} className="mt-auto text-[#3BAFDA] font-semibold hover:underline">Más detalles</Link>
+      <Link 
+        href={`/properties/${favoriteData.id}`} 
+        onClick={handleClick}
+        className="mt-auto text-[#3BAFDA] font-semibold hover:underline"
+      >
+        Más detalles
+      </Link>
     </div>
   )
 }
