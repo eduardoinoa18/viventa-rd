@@ -12,11 +12,33 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // User app experience: if a logged-in non-admin user hits marketing/auth routes, send to dashboard
+  // Protect broker routes
+  if (pathname.startsWith("/broker")) {
+    if (role !== "broker" && role !== "master_admin" && role !== "admin") {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+  }
+
+  // Protect agent routes (excluding /agent/assistant which is open to all pros)
+  if (pathname.startsWith("/agent") && pathname !== "/agent/assistant") {
+    if (role !== "agent" && role !== "broker" && role !== "master_admin" && role !== "admin") {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+  }
+
+  // User app experience: if a logged-in non-admin user hits marketing/auth routes, send to appropriate dashboard
   const isLoggedInUser = role && role !== 'master_admin' && role !== 'admin';
   const redirectToDashboard = ['/', '/login', '/signup'].includes(pathname);
   if (isLoggedInUser && redirectToDashboard) {
-    const dest = new URL('/dashboard', req.url);
+    // Route to appropriate dashboard based on role
+    let dest;
+    if (role === 'broker') {
+      dest = new URL('/broker', req.url);
+    } else if (role === 'agent') {
+      dest = new URL('/agent', req.url);
+    } else {
+      dest = new URL('/dashboard', req.url);
+    }
     return NextResponse.redirect(dest);
   }
 
