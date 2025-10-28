@@ -5,7 +5,8 @@ import ProtectedClient from '../../auth/ProtectedClient'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
 import Link from 'next/link'
-import { FiCheck, FiX, FiMapPin, FiDollarSign, FiEye, FiPlusSquare } from 'react-icons/fi'
+import { FiCheck, FiX, FiMapPin, FiDollarSign, FiEye, FiPlusSquare, FiEdit, FiTrash2 } from 'react-icons/fi'
+import toast from 'react-hot-toast'
 
 type Listing = { id: string; title: string; location?: string; city?: string; price: number; status: string; agentName?: string; agent?: string }
 
@@ -25,6 +26,7 @@ export default function AdminPropertiesPage() {
       if (json.ok) setListings(json.data || [])
     } catch (e) {
       console.error('Failed to load properties', e)
+      toast.error('Failed to load properties')
     } finally {
       setLoading(false)
     }
@@ -37,9 +39,15 @@ export default function AdminPropertiesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status: 'active' })
       })
-      if (res.ok) load()
+      if (res.ok) {
+        toast.success('Property approved')
+        load()
+      } else {
+        toast.error('Failed to approve property')
+      }
     } catch (e) {
       console.error('Failed to approve property', e)
+      toast.error('Failed to approve property')
     }
   }
 
@@ -50,9 +58,35 @@ export default function AdminPropertiesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status: 'rejected' })
       })
-      if (res.ok) load()
+      if (res.ok) {
+        toast.success('Property rejected')
+        load()
+      } else {
+        toast.error('Failed to reject property')
+      }
     } catch (e) {
       console.error('Failed to reject property', e)
+      toast.error('Failed to reject property')
+    }
+  }
+
+  async function deleteListing(id: string) {
+    if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) return
+    try {
+      const res = await fetch('/api/admin/properties', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      if (res.ok) {
+        toast.success('Property deleted')
+        load()
+      } else {
+        toast.error('Failed to delete property')
+      }
+    } catch (e) {
+      console.error('Failed to delete property', e)
+      toast.error('Failed to delete property')
     }
   }
 
@@ -122,9 +156,20 @@ export default function AdminPropertiesPage() {
                           </button>
                         </>
                       )}
-                      <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        <FiEye /> View Details
-                      </button>
+                      <div className="flex gap-2">
+                        <button className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+                          <FiEye /> View
+                        </button>
+                        <button className="inline-flex items-center gap-2 px-3 py-2 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm">
+                          <FiEdit /> Edit
+                        </button>
+                        <button 
+                          onClick={() => deleteListing(l.id)}
+                          className="inline-flex items-center gap-2 px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm"
+                        >
+                          <FiTrash2 /> Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

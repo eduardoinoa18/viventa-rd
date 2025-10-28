@@ -113,9 +113,9 @@ export async function PATCH(req: NextRequest) {
     if (status) updates.status = status // active, suspended, pending
     if (role) updates.role = role // user, agent, broker, admin
     if (name) updates.name = name
-    if (phone) updates.phone = phone
-    if (brokerage) updates.brokerage = brokerage
-    if (company) updates.company = company
+    if (phone !== undefined) updates.phone = phone
+    if (brokerage !== undefined) updates.brokerage = brokerage
+    if (company !== undefined) updates.company = company
 
     await updateDoc(doc(db, 'users', id), updates)
 
@@ -126,5 +126,33 @@ export async function PATCH(req: NextRequest) {
   } catch (e: any) {
     console.error('admin users PATCH error', e)
     return NextResponse.json({ ok: false, error: e.message || 'Failed to update user' }, { status: 500 })
+  }
+}
+
+// DELETE /api/admin/users - delete a user
+export async function DELETE(req: NextRequest) {
+  try {
+    const db = initFirebase()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
+    }
+
+    const body = await req.json()
+    const { id } = body
+
+    if (!id) {
+      return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
+    }
+
+    const { deleteDoc } = await import('firebase/firestore')
+    await deleteDoc(doc(db, 'users', id))
+
+    return NextResponse.json({
+      ok: true,
+      message: 'User deleted successfully',
+    })
+  } catch (e: any) {
+    console.error('admin users DELETE error', e)
+    return NextResponse.json({ ok: false, error: e.message || 'Failed to delete user' }, { status: 500 })
   }
 }

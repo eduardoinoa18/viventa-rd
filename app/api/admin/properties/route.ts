@@ -133,3 +133,31 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: false, error: e.message || 'Failed to update property' }, { status: 500 })
   }
 }
+
+// DELETE /api/admin/properties - delete a property
+export async function DELETE(req: NextRequest) {
+  try {
+    const db = initFirebase()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
+    }
+
+    const body = await req.json()
+    const { id } = body
+
+    if (!id) {
+      return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
+    }
+
+    const { deleteDoc } = await import('firebase/firestore')
+    await deleteDoc(doc(db, 'properties', id))
+
+    return NextResponse.json({
+      ok: true,
+      message: 'Property deleted successfully',
+    })
+  } catch (e: any) {
+    console.error('admin properties DELETE error', e)
+    return NextResponse.json({ ok: false, error: e.message || 'Failed to delete property' }, { status: 500 })
+  }
+}
