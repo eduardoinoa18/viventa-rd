@@ -1,8 +1,11 @@
 'use client'
 import { useState, useEffect } from 'react'
 import ProtectedClient from '@/app/auth/ProtectedClient'
-import { FiHeart, FiMessageCircle, FiShare2, FiTrendingUp, FiAward, FiHome, FiDollarSign } from 'react-icons/fi'
+import Header from '@/components/Header'
+import Footer from '@/components/Footer'
+import { FiHeart, FiMessageCircle, FiShare2, FiTrendingUp, FiAward, FiHome, FiDollarSign, FiArrowLeft } from 'react-icons/fi'
 import { getSession } from '@/lib/authSession'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 interface Post {
@@ -20,6 +23,7 @@ interface Post {
 }
 
 export default function SocialFeedPage() {
+  const router = useRouter()
   const [posts, setPosts] = useState<Post[]>([])
   const [newPost, setNewPost] = useState('')
   const [loading, setLoading] = useState(true)
@@ -119,7 +123,7 @@ export default function SocialFeedPage() {
 
   if (loading) {
     return (
-      <ProtectedClient allowed={['agent', 'broker']}>
+      <ProtectedClient allowed={['agent', 'broker', 'brokerage_admin', 'master_admin']}>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50 flex items-center justify-center">
           <div className="animate-pulse text-2xl font-bold text-[#004AAD]">Cargando feed...</div>
         </div>
@@ -128,8 +132,22 @@ export default function SocialFeedPage() {
   }
 
   return (
-    <ProtectedClient allowed={['agent', 'broker']}>
+    <ProtectedClient allowed={['agent', 'broker', 'brokerage_admin', 'master_admin']}>
+      <Header />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 pb-20">
+        {/* Back Navigation */}
+        <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
+          <div className="max-w-3xl mx-auto px-4 py-3">
+            <button 
+              onClick={() => router.push('/dashboard')}
+              className="inline-flex items-center gap-2 text-[#004AAD] font-semibold hover:text-[#003d8f] transition-colors active:scale-95"
+            >
+              <FiArrowLeft className="text-xl" />
+              <span>Volver al Dashboard</span>
+            </button>
+          </div>
+        </div>
+
         {/* Header */}
         <div className="bg-gradient-to-r from-[#004AAD] to-[#00A6A6] text-white py-12 px-4 mb-6">
           <div className="max-w-3xl mx-auto">
@@ -246,6 +264,7 @@ export default function SocialFeedPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </ProtectedClient>
   )
 }

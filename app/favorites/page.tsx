@@ -1,9 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { getAllFavorites, syncFavorites, isOffline } from '@/lib/offlineFavorites'
+import { getSession } from '@/lib/authSession'
 import Link from 'next/link'
 import { formatCurrency, formatFeatures, formatArea } from '@/lib/currency'
-import { FaSync, FaWifi, FaHeart } from 'react-icons/fa'
+import { FaSync, FaWifi, FaHeart, FaUser } from 'react-icons/fa'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
@@ -12,9 +13,11 @@ export default function FavoritesPage() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [offline, setOffline] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userName, setUserName] = useState('')
 
   useEffect(() => {
-    loadFavorites()
+    checkUserAndLoadFavorites()
     setOffline(isOffline())
 
     // Listen for online/offline events
@@ -33,6 +36,43 @@ export default function FavoritesPage() {
       window.removeEventListener('offline', updateOnlineStatus)
     }
   }, [])
+
+  async function checkUserAndLoadFavorites() {
+    setLoading(true)
+    try {
+      const session = await getSession()
+      if (session?.uid) {
+        setIsLoggedIn(true)
+        setUserName(session.name || 'Usuario')
+        // Load favorites from server for logged-in users
+        await loadFavoritesFromServer()
+      } else {
+        // Load from local storage for guests
+        await loadFavorites()
+      }
+    } catch (error) {
+      console.error('Error checking user:', error)
+      await loadFavorites()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function loadFavoritesFromServer() {
+    try {
+      const res = await fetch('/api/favorites')
+      const data = await res.json()
+      if (data.ok) {
+        setFavorites(data.favorites)
+      } else {
+        // Fallback to local storage
+        await loadFavorites()
+      }
+    } catch (error) {
+      console.error('Error loading favorites from server:', error)
+      await loadFavorites()
+    }
+  }
 
   async function loadFavorites() {
     setLoading(true)
@@ -65,10 +105,18 @@ export default function FavoritesPage() {
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold text-[#0B2545] flex items-center gap-2">
-              <FaHeart className="text-red-500" />
-              Mis Favoritos
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold text-[#0B2545] flex items-center gap-2">
+                <FaHeart className="text-red-500" />
+                Mis Favoritos
+              </h1>
+              {isLoggedIn && (
+                <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
+                  <FaUser className="text-gray-400" />
+                  {userName}
+                </p>
+              )}
+            </div>
             
             <div className="flex items-center gap-3">
               {offline && (
@@ -96,6 +144,7 @@ export default function FavoritesPage() {
           <p className="text-gray-600">
             {favorites.length} {favorites.length === 1 ? 'propiedad guardada' : 'propiedades guardadas'}
             {offline && ' (disponibles offline)'}
+            {!isLoggedIn && ' • Inicia sesión para sincronizar entre dispositivos'}
           </p>
         </div>
 

@@ -4,7 +4,8 @@ import { getSession } from '../../lib/authSession';
 import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { FiHeart, FiSearch, FiUser, FiMail, FiPhone, FiBookmark, FiMessageSquare, FiSettings, FiLogOut } from 'react-icons/fi';
+import UserEngagement from '../../components/UserEngagement';
+import { FiHeart, FiSearch, FiUser, FiMail, FiPhone, FiBookmark, FiMessageSquare, FiSettings, FiLogOut, FiAward } from 'react-icons/fi';
 import { auth } from '../../lib/firebaseClient';
 import { signOut } from 'firebase/auth';
 
@@ -83,6 +84,14 @@ export default function UserDashboard() {
                 }`}
               >
                 <FiSettings /> Perfil
+              </button>
+              <button
+                onClick={() => setActiveTab('engagement')}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                  activeTab === 'engagement' ? 'bg-blue-100 text-blue-800 font-semibold' : 'hover:bg-gray-100'
+                }`}
+              >
+                <FiAward /> Mis Logros
               </button>
               <button
                 onClick={handleLogout}
@@ -207,6 +216,13 @@ export default function UserDashboard() {
                     </a>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'engagement' && (
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">Mis Logros y Progreso</h2>
+                <UserEngagement />
               </div>
             )}
           </div>

@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const { email } = await request.json()
 
     // Build allowed email list: prefer MASTER_ADMIN_EMAILS (comma-separated), fallback to MASTER_ADMIN_EMAIL
-    const rawList = (process.env.MASTER_ADMIN_EMAILS || process.env.MASTER_ADMIN_EMAIL || 'admin@viventa.com')
+    const rawList = (process.env.MASTER_ADMIN_EMAILS || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com')
       .split(',')
       .map(e => e.trim().toLowerCase())
       .filter(Boolean)
