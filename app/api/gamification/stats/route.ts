@@ -64,6 +64,10 @@ export async function POST(request: Request) {
       'login': 5,
       'profile_updated': 25,
       'first_sale': 1000, // Bonus
+      // Social actions
+      'content_shared': 20,
+      'content_liked': 2,
+      'content_commented': 5,
     }
 
     const pointsEarned = pointsMap[action] || 0
