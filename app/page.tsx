@@ -5,8 +5,8 @@ import Footer from '../components/Footer';
 import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import StructuredData from '../components/StructuredData';
-import { useState } from 'react';
-import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock } from 'react-icons/fi'
+import { useState, useEffect } from 'react';
+import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock, FiTrendingUp } from 'react-icons/fi'
 
 const properties = [
   { id: 1, title: "Luxury Villa in Santo Domingo", price: 350000, type: "Villa", lat: 18.4861, lng: -69.9312, img: "/demo1.jpg", city: "Santo Domingo", neighborhood: "Piantini", beds: 3, baths: 2, sqft: 180 },
@@ -24,6 +24,14 @@ const topAgents = [
 export default function HomePage() {
   const user = undefined as any;
   const [filters, setFilters] = useState({ location: "", type: "", minPrice: "", maxPrice: "" });
+  const [stats, setStats] = useState<any>(null)
+
+  useEffect(() => {
+    fetch('/api/stats/homepage')
+      .then(r => r.json())
+      .then(data => setStats(data.stats))
+      .catch(() => {})
+  }, [])
 
   const filtered = properties.filter((p) => {
     const matchesType = filters.type ? p.type === filters.type : true;
@@ -159,7 +167,51 @@ export default function HomePage() {
                   Ver todas las propiedades
                 </a>
 
-                {!user && (
+                {/* Trending Searches */}
+                {stats?.trendingSearches && stats.trendingSearches.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <FiTrendingUp className="text-[#00A6A6]" /> Búsquedas Populares
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {stats.trendingSearches.slice(0, 5).map((term: string, i: number) => (
+                        <a
+                          key={i}
+                          href={`/search?q=${encodeURIComponent(term)}`}
+                          className="px-3 py-1 bg-gradient-to-r from-[#00A6A6]/10 to-[#0B2545]/10 hover:from-[#00A6A6]/20 hover:to-[#0B2545]/20 text-[#0B2545] text-sm rounded-full transition-colors"
+                        >
+                          {term}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT — Properties */}
+            <div className="lg:w-2/3">
+              {/* Quick Stats */}
+              {stats && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-white rounded-xl p-4 shadow-sm text-center">
+                    <div className="text-2xl font-bold text-[#00A6A6]">{stats.totalProperties.toLocaleString()}</div>
+                    <div className="text-xs text-gray-600 mt-1">Propiedades</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm text-center">
+                    <div className="text-2xl font-bold text-[#0B2545]">{stats.totalAgents}</div>
+                    <div className="text-xs text-gray-600 mt-1">Agentes</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm text-center">
+                    <div className="text-2xl font-bold text-[#00A676]">{stats.totalSales}</div>
+                    <div className="text-xs text-gray-600 mt-1">Ventas</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm text-center">
+                    <div className="text-2xl font-bold text-[#134074]">${(stats.avgPrice / 1000).toFixed(0)}K</div>
+                    <div className="text-xs text-gray-600 mt-1">Precio Promedio</div>
+                  </div>
+                </div>
+              )}                {!user && (
                   <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2 text-yellow-800">
                     <FiLock className="text-lg" />
                     <p className="text-sm">
