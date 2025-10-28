@@ -18,7 +18,7 @@ export function useRequireRole(allowed: Role[] = ['agent','admin','brokerage_adm
       if (!u) {
         setOk(false)
         setLoading(false)
-        router.replace('/auth')
+        router.replace('/login')
         return
       }
       const ref = doc(db, 'users', u.uid)

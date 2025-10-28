@@ -48,11 +48,14 @@ export async function POST(request: Request) {
   verificationCodes.set(incoming, { code, expiresAt, attempts: 0 })
 
     // Send email
+    console.log('📧 Attempting to send verification email to:', incoming)
     const emailSent = await sendVerificationEmail(incoming, code)
+    console.log('📧 Email send result:', emailSent ? '✅ SUCCESS' : '❌ FAILED')
 
     // If sending fails in development, still allow sign-in by surfacing the code
     if (!emailSent) {
       if (isDev || process.env.ALLOW_DEV_2FA_RESPONSE === 'true') {
+        console.log('⚠️  Email failed but DEV mode - returning code in response')
         return NextResponse.json({ 
           ok: true, 
           message: 'Verification code (DEV) ready. Email sending is not configured.',
@@ -60,6 +63,7 @@ export async function POST(request: Request) {
           devCode: code
         })
       }
+      console.error('❌ Email failed in production mode')
       return NextResponse.json({ 
         ok: false, 
         error: 'Email provider error. Please check SENDGRID or SMTP credentials.' 
@@ -67,6 +71,7 @@ export async function POST(request: Request) {
     }
 
     // Success
+    console.log('✅ Verification code successfully sent and stored')
     const response: any = { 
       ok: true, 
       message: 'Verification code sent to your email',
@@ -75,6 +80,7 @@ export async function POST(request: Request) {
     // Helpful for development and staging
     if (isDev || process.env.ALLOW_DEV_2FA_RESPONSE === 'true') {
       response.devCode = code
+      console.log('🔐 DEV CODE:', code)
     }
     return NextResponse.json(response)
 

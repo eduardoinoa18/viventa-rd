@@ -60,7 +60,7 @@ export default function SignupPage() {
           {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
         </form>
         <div className="mt-4 text-center text-sm text-gray-600">
-          ¿Ya tienes cuenta? <a href="/auth" className="text-[#3BAFDA] font-semibold">Inicia sesión</a>
+          ¿Ya tienes cuenta? <a href="/login" className="text-[#3BAFDA] font-semibold">Inicia sesión</a>
         </div>
       </main>
       <Footer />
