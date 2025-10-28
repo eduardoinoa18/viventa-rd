@@ -6,6 +6,28 @@ function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// Simple rate limiting (in-memory, per-email)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+
+function checkRateLimit(email: string): { allowed: boolean; retryAfter?: number } {
+  const now = Date.now()
+  const limit = rateLimitMap.get(email)
+  
+  if (!limit || now > limit.resetAt) {
+    // Reset or first request
+    rateLimitMap.set(email, { count: 1, resetAt: now + 5 * 60 * 1000 }) // 5 min window
+    return { allowed: true }
+  }
+  
+  if (limit.count >= 3) {
+    // Max 3 requests per 5 minutes
+    return { allowed: false, retryAfter: Math.ceil((limit.resetAt - now) / 1000) }
+  }
+  
+  limit.count++
+  return { allowed: true }
+}
+
 export async function POST(request: Request) {
   try {
     const { email } = await request.json()
@@ -39,6 +61,17 @@ export async function POST(request: Request) {
     if (!isAllowed) {
       // Security: Use generic error message to prevent email enumeration
       return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })
+    }
+
+    // Rate limiting (only in production)
+    if (!isDev && !isLocalHost) {
+      const rateCheck = checkRateLimit(incoming)
+      if (!rateCheck.allowed) {
+        return NextResponse.json({ 
+          ok: false, 
+          error: `Too many requests. Please try again in ${rateCheck.retryAfter} seconds.` 
+        }, { status: 429 })
+      }
     }
 
     // Generate 6-digit code

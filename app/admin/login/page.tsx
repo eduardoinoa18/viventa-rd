@@ -17,6 +17,7 @@ export default function MasterLoginPage() {
   const [message, setMessage] = useState('')
   const [expiresIn, setExpiresIn] = useState(0)
   const [devCode, setDevCode] = useState<string | null>(null)
+  const [resendCooldown, setResendCooldown] = useState(0)
 
   async function handleSendCode(e: React.FormEvent) {
     e.preventDefault()
@@ -48,11 +49,24 @@ export default function MasterLoginPage() {
       }
       setStep('code')
       
-      // Start countdown
-      const interval = setInterval(() => {
+      // Start resend cooldown (60 seconds)
+      setResendCooldown(60)
+      
+      // Start countdown timers
+      const expiryInterval = setInterval(() => {
         setExpiresIn(prev => {
           if (prev <= 1) {
-            clearInterval(interval)
+            clearInterval(expiryInterval)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
+      const cooldownInterval = setInterval(() => {
+        setResendCooldown(prev => {
+          if (prev <= 1) {
+            clearInterval(cooldownInterval)
             return 0
           }
           return prev - 1
@@ -232,7 +246,7 @@ export default function MasterLoginPage() {
                 <div className="flex justify-between text-sm">
                   <button
                     type="button"
-                    onClick={() => { setStep('email'); setCode(''); setError(''); }}
+                    onClick={() => { setStep('email'); setCode(''); setError(''); setResendCooldown(0); }}
                     className="text-gray-600 hover:text-[#00A676] font-medium"
                   >
                     ← Change Email
@@ -240,10 +254,10 @@ export default function MasterLoginPage() {
                   <button
                     type="button"
                     onClick={handleSendCode}
-                    disabled={loading}
-                    className="text-[#00A676] hover:text-[#008F64] font-medium disabled:opacity-50"
+                    disabled={loading || resendCooldown > 0}
+                    className="text-[#00A676] hover:text-[#008F64] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Resend Code
+                    {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend Code'}
                   </button>
                 </div>
               </form>

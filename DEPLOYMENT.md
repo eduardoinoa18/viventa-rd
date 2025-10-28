@@ -180,3 +180,59 @@ cd functions && firebase deploy --only firestore:rules,storage:rules
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase App ID | ✅ Yes |
 | `NEXT_PUBLIC_ALGOLIA_APP_ID` | Algolia App ID (for search) | ⚠️ Optional |
 | `NEXT_PUBLIC_ALGOLIA_SEARCH_KEY` | Algolia Search Key | ⚠️ Optional |
+| `MASTER_ADMIN_EMAIL` | Master admin email (for 2FA login) | ✅ Yes |
+| `SENDGRID_API_KEY` | SendGrid API key (for emails) | ⚠️ Recommended |
+| `SENDGRID_FROM_EMAIL` | SendGrid from email | ⚠️ Recommended |
+| `SMTP_HOST` | SMTP host (alt. to SendGrid) | ⚠️ Optional |
+| `SMTP_PORT` | SMTP port | ⚠️ Optional |
+| `SMTP_USER` | SMTP username | ⚠️ Optional |
+| `SMTP_PASS` | SMTP password/app password | ⚠️ Optional |
+| `SMTP_FROM` | SMTP from email | ⚠️ Optional |
+
+---
+
+## 🔐 Master Admin Login Setup (Production)
+
+The master admin login uses 2FA email verification. For production, you MUST configure email sending:
+
+### Option 1: SendGrid (Recommended for Production)
+
+1. Sign up at [sendgrid.com](https://sendgrid.com/)
+2. Create API key with "Mail Send" permissions
+3. Add to Vercel environment variables:
+   ```
+   MASTER_ADMIN_EMAIL=viventa.rd@gmail.com
+   SENDGRID_API_KEY=SG.your_key_here
+   SENDGRID_FROM_EMAIL=noreply@viventa.com
+   ```
+
+### Option 2: SMTP (Gmail/Other)
+
+1. For Gmail: Generate app password at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+2. Add to Vercel environment variables:
+   ```
+   MASTER_ADMIN_EMAIL=viventa.rd@gmail.com
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_SECURE=false
+   SMTP_USER=viventa.rd@gmail.com
+   SMTP_PASS=your_app_password_here
+   SMTP_FROM=viventa.rd@gmail.com
+   ```
+
+### Important Notes:
+
+- ⚠️ **Without email config, admin login will NOT work in production**
+- ✅ In development/localhost, the code appears in terminal and UI even if email fails
+- ✅ Production requires working email to receive verification codes
+- 🔒 Only the email in `MASTER_ADMIN_EMAIL` can access master admin login
+
+### Troubleshooting Production Login:
+
+If admin login fails on production:
+
+1. **Check Vercel logs** for email send errors
+2. **Verify env vars** are set in Vercel dashboard (all environments)
+3. **Test email service** - try sending a test email through SendGrid/SMTP
+4. **Check spam folder** - verification emails might be filtered
+5. **For testing:** Add `ALLOW_DEV_2FA_RESPONSE=true` to show code in API response (temporary only)
