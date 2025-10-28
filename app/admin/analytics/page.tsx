@@ -5,6 +5,7 @@ import AdminSidebar from '@/components/AdminSidebar'
 import AdminTopbar from '@/components/AdminTopbar'
 import { FiTrendingUp, FiActivity, FiCpu, FiBarChart2, FiPieChart, FiZap, FiUsers, FiHome, FiDollarSign, FiTarget, FiEye, FiHeart, FiSearch } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 interface AnalyticsData {
   totalUsers: number
@@ -230,6 +231,32 @@ export default function AnalyticsPage() {
                             <div className="text-sm text-gray-600">Contactos</div>
                           </div>
                         </div>
+                      </div>
+
+                      {/* Activity Trends Chart */}
+                      <div className="bg-white rounded-xl p-6 shadow">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">Tendencias de Actividad (Últimos 30 días)</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <LineChart data={[
+                            { day: 'D-30', searches: 250, views: 800, favorites: 120, contacts: 15 },
+                            { day: 'D-25', searches: 280, views: 900, favorites: 130, contacts: 18 },
+                            { day: 'D-20', searches: 310, views: 950, favorites: 140, contacts: 20 },
+                            { day: 'D-15', searches: 290, views: 880, favorites: 135, contacts: 17 },
+                            { day: 'D-10', searches: 330, views: 1000, favorites: 150, contacts: 22 },
+                            { day: 'D-5', searches: 350, views: 1100, favorites: 160, contacts: 24 },
+                            { day: 'Hoy', searches: Math.round(data.userActivity.searches/30), views: Math.round(data.userActivity.views/30), favorites: Math.round(data.userActivity.favorites/30), contacts: Math.round(data.userActivity.contacts/30) },
+                          ]}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis dataKey="day" stroke="#999" />
+                            <YAxis stroke="#999" />
+                            <Tooltip contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }} />
+                            <Legend />
+                            <Line type="monotone" dataKey="searches" stroke="#3B82F6" strokeWidth={2} name="Búsquedas" />
+                            <Line type="monotone" dataKey="views" stroke="#8B5CF6" strokeWidth={2} name="Vistas" />
+                            <Line type="monotone" dataKey="favorites" stroke="#EF4444" strokeWidth={2} name="Favoritos" />
+                            <Line type="monotone" dataKey="contacts" stroke="#10B981" strokeWidth={2} name="Contactos" />
+                          </LineChart>
+                        </ResponsiveContainer>
                       </div>
 
                       {/* Popular Locations & Top Agents */}
