@@ -18,7 +18,9 @@ export async function POST(request: Request) {
     const allowedEmails = new Set(rawList)
     
     const incoming = String(email || '').trim().toLowerCase()
-    const isDev = process.env.NODE_ENV !== 'production'
+  const isDev = process.env.NODE_ENV !== 'production'
+  const host = (request.headers.get('host') || '').toLowerCase()
+  const isLocalHost = host.includes('localhost') || host.startsWith('127.0.0.1') || host.endsWith('.local')
     const allowAny = process.env.ALLOW_ANY_MASTER_EMAIL === 'true'
     
     // In development, allow any email. In production, check allowlist or ALLOW_ANY_MASTER_EMAIL flag
@@ -54,7 +56,8 @@ export async function POST(request: Request) {
 
     // If sending fails in development, still allow sign-in by surfacing the code
     if (!emailSent) {
-      if (isDev || process.env.ALLOW_DEV_2FA_RESPONSE === 'true') {
+      const allowDevResponse = isDev || isLocalHost || process.env.ALLOW_DEV_2FA_RESPONSE === 'true'
+      if (allowDevResponse) {
         console.log('⚠️  Email failed but DEV mode - returning code in response')
         return NextResponse.json({ 
           ok: true, 
@@ -78,7 +81,7 @@ export async function POST(request: Request) {
       expiresIn: 600 // seconds
     }
     // Helpful for development and staging
-    if (isDev || process.env.ALLOW_DEV_2FA_RESPONSE === 'true') {
+    if (isDev || isLocalHost || process.env.ALLOW_DEV_2FA_RESPONSE === 'true') {
       response.devCode = code
       console.log('🔐 DEV CODE:', code)
     }
