@@ -211,20 +211,18 @@ export default function HomePage() {
                     <div className="text-xs text-gray-600 mt-1">Precio Promedio</div>
                   </div>
                 </div>
-              )}                {!user && (
-                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2 text-yellow-800">
-                    <FiLock className="text-lg" />
-                    <p className="text-sm">
-                      <strong>Inicia sesión</strong> para guardar favoritos y ver más detalles
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+              )}
+              {!user && (
+                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2 text-yellow-800">
+                  <FiLock className="text-lg" />
+                  <p className="text-sm">
+                    <strong>Inicia sesión</strong> para guardar favoritos y ver más detalles
+                  </p>
+                </div>
+              )}
 
-            {/* RIGHT — Properties Grid */}
-            <div className="lg:w-2/3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Properties Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 {filtered.map((p) => (
                   <PropertyCard 
                     key={p.id} 
@@ -238,7 +236,7 @@ export default function HomePage() {
               </div>
               
               {filtered.length === 0 && (
-                <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                <div className="text-center py-12 bg-white rounded-lg shadow-sm mt-6">
                   <p className="text-gray-600 mb-4">No se encontraron propiedades con esos filtros</p>
                   <button 
                     onClick={() => setFilters({ location: "", type: "", minPrice: "", maxPrice: "" })}

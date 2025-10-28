@@ -9,6 +9,7 @@ on:
 
 jobs:
   deploy:
+    if: ${{ secrets.FIREBASE_TOKEN && secrets.FIREBASE_PROJECT_ID }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
