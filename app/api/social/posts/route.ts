@@ -30,8 +30,9 @@ export async function POST(req: NextRequest) {
     if (!uid || !role) {
       return NextResponse.json({ ok: false, error: 'Not authenticated' }, { status: 401 })
     }
-    if (!['agent', 'broker', 'admin', 'master_admin'].includes(role)) {
-      return NextResponse.json({ ok: false, error: 'Not authorized' }, { status: 403 })
+    // Temporarily restrict publishing to master_admin only (public can still view; others can like/comment)
+    if (role !== 'master_admin') {
+      return NextResponse.json({ ok: false, error: 'Publishing is restricted' }, { status: 403 })
     }
 
     const { type, title, text, videoUrl, listingId, listingTitle } = await req.json()

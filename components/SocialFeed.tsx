@@ -32,7 +32,7 @@ export default function SocialFeed() {
   const [listingTitle, setListingTitle] = useState('')
 
   const session = typeof window !== 'undefined' ? getSession() : null
-  const isPro = session && ['agent','broker','admin','master_admin'].includes(session.role)
+  const canPost = session && session.role === 'master_admin' // temporarily restrict posting
 
   async function load() {
     setLoading(true)
@@ -108,9 +108,9 @@ export default function SocialFeed() {
   return (
     <main className="max-w-2xl mx-auto px-4 py-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold text-gray-900">Feed Social</h1>
-        {isPro && (
+        {canPost && (
           <button
             onClick={() => setComposerOpen(!composerOpen)}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#0B2545] to-[#00A676] text-white rounded-lg font-semibold hover:shadow-lg transition-all"
@@ -120,8 +120,13 @@ export default function SocialFeed() {
         )}
       </div>
 
+      {/* Limited access banner */}
+      <div className="mb-6 text-sm text-gray-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+        Vista temprana: por ahora solo el Master Admin puede publicar. Todos los usuarios pueden ver, dar like y comentar.
+      </div>
+
       {/* Composer */}
-      {isPro && composerOpen && (
+      {canPost && composerOpen && (
         <div className="mb-6 bg-white rounded-lg shadow p-4 border border-gray-200">
           <div className="flex gap-2 mb-4">
             <button

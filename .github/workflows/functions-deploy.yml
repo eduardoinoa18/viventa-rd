@@ -10,7 +10,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ vars.FIREBASE_PROJECT_ID != '' }}
+    # Disabled by default; enable by setting repo variable ENABLE_FUNCTIONS_DEPLOY=true
+    if: ${{ vars.ENABLE_FUNCTIONS_DEPLOY == 'true' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,6 +23,4 @@ jobs:
         working-directory: functions
         run: npm ci
       - name: Deploy Functions
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: firebase deploy --only functions --project ${{ secrets.FIREBASE_PROJECT_ID }}

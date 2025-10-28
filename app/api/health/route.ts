@@ -8,6 +8,7 @@ export async function GET() {
     const hasSendgrid = !!process.env.SENDGRID_API_KEY
     const hasSmtp = !!process.env.SMTP_HOST && !!process.env.SMTP_USER && !!process.env.SMTP_PASS
     const masterAdminEmail = process.env.MASTER_ADMIN_EMAIL || process.env.MASTER_ADMIN_EMAILS || ''
+    const hasAdminPassword = !!process.env.MASTER_ADMIN_PASSWORD
 
     const env = {
       vercelEnv: process.env.VERCEL_ENV || 'local',
@@ -16,6 +17,8 @@ export async function GET() {
       hasEmailProvider: hasSendgrid || hasSmtp,
       emailProvider: hasSendgrid ? 'sendgrid' : (hasSmtp ? 'smtp' : 'none'),
       hasMasterAdminEmail: !!masterAdminEmail,
+      hasAdminPassword,
+      authMode: hasAdminPassword ? 'password' : ((hasSendgrid || hasSmtp) ? '2fa' : 'unknown'),
       socialEnabled: process.env.FEATURE_SOCIAL_ENABLED === 'true',
     }
 

@@ -1,6 +1,6 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
-import { FiHome, FiSearch, FiHeart, FiMessageCircle, FiUser } from 'react-icons/fi'
+import { FiHome, FiSearch, FiHeart, FiMessageCircle, FiUser, FiStar } from 'react-icons/fi'
 import { useEffect, useState } from 'react'
 
 export default function BottomNav() {
@@ -31,6 +31,12 @@ export default function BottomNav() {
       active: pathname?.startsWith('/search')
     },
     {
+      name: 'Social',
+      icon: FiStar,
+      path: '/social',
+      active: pathname?.startsWith('/social')
+    },
+    {
       name: 'Favoritos',
       icon: FiHeart,
       path: '/favorites',
@@ -56,7 +62,7 @@ export default function BottomNav() {
       <div className="h-20 md:hidden" />
       
       {/* Bottom Navigation - Only visible on mobile */}
-      <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[92%] bg-white border border-gray-200 shadow-2xl md:hidden z-50 safe-area-inset-bottom rounded-2xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[640px] bg-white/95 border-t border-gray-200 shadow-2xl md:hidden z-50 pb-[env(safe-area-inset-bottom)] rounded-t-2xl backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="flex items-center justify-around h-16 px-2">
           {navItems.map((item) => {
             const Icon = item.icon
@@ -77,6 +83,9 @@ export default function BottomNav() {
                     <Icon className="text-xl" />
                   </div>
                 </div>
+                {item.name === 'Social' && (
+                  <span className="absolute -top-1 right-4 text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">Soon</span>
+                )}
                 <span className={`text-[11px] font-medium ${isActive ? 'text-[#0B2545]' : ''}`}>{item.name}</span>
               </button>
             )

@@ -108,6 +108,18 @@ export default function HomePage() {
               >
                 <FiUsers className="text-xl" /> Conoce a nuestros Agentes
               </a>
+              <a 
+                href="/social" 
+                className="px-8 py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold rounded-lg border-2 border-white/30 transition-all duration-300 inline-flex items-center gap-2"
+                aria-label="Social (Próximamente)"
+              >
+                <span className="relative">
+                  <span className="absolute -top-2 -right-3 text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">Soon</span>
+                  {/* Using the same search icon for consistency; could swap for a social icon */}
+                  <FiTrendingUp className="text-xl" />
+                </span>
+                Social
+              </a>
             </div>
           </div>
         </section>
