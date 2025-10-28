@@ -1,10 +1,12 @@
 ﻿'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { db } from '../../lib/firebaseClient'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import { FiSend, FiUsers, FiBriefcase } from 'react-icons/fi'
+import { FiSend, FiUsers, FiBriefcase, FiArrowLeft } from 'react-icons/fi'
 
 export default function ApplyPage(){
+  const router = useRouter()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({
     type:'agent',
@@ -23,10 +25,20 @@ export default function ApplyPage(){
   if(submitted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50 flex items-center justify-center p-4">
-        <div className="max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
+        <div className="max-w-md bg-white rounded-2xl shadow-xl p-8 text-center animate-fade-in-up">
+          <div className="mb-4 inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full animate-bounce">
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-4">¡Solicitud Enviada!</h1>
           <p className="text-gray-600 mb-6">Te contactaremos en 24–48 horas.</p>
-          <a href="/" className="inline-block px-6 py-3 bg-[#004AAD] text-white rounded-lg font-semibold">Volver</a>
+          <button 
+            onClick={() => router.push('/')}
+            className="inline-block px-6 py-3 bg-[#004AAD] text-white rounded-lg font-semibold hover:bg-[#003d8f] transition-all hover:scale-105 active:scale-95"
+          >
+            Volver al Inicio
+          </button>
         </div>
       </div>
     )
@@ -35,7 +47,16 @@ export default function ApplyPage(){
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        {/* Back Navigation */}
+        <button 
+          onClick={() => router.push('/')} 
+          className="mb-6 inline-flex items-center gap-2 text-[#004AAD] font-semibold hover:text-[#003d8f] transition-all active:scale-95 group"
+        >
+          <FiArrowLeft className="text-xl group-hover:-translate-x-1 transition-transform" />
+          <span>Volver al inicio</span>
+        </button>
+
+        <div className="bg-white rounded-2xl shadow-xl p-8 transform transition-all duration-300 hover:shadow-2xl">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Únete a VIVENTA</h1>
           <p className="text-gray-600 mb-6">Completa el formulario para registrarte</p>
           
@@ -102,8 +123,12 @@ export default function ApplyPage(){
             </div>
           )}
 
-          <button onClick={submit} className="w-full px-6 py-4 bg-[#00A6A6] text-white rounded-lg font-bold text-lg flex items-center justify-center gap-2 hover:bg-[#008f8f]">
-            <FiSend /> Enviar Solicitud
+          <button 
+            onClick={submit} 
+            className="w-full py-4 bg-gradient-to-r from-[#00A676] to-[#00A6A6] text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
+          >
+            <FiSend className="group-hover:translate-x-1 transition-transform" />
+            <span>Enviar Solicitud</span>
           </button>
         </div>
       </div>

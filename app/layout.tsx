@@ -6,6 +6,7 @@ import ErrorBoundary from '../components/ErrorBoundary'
 import ServiceWorkerManager from '../components/ServiceWorkerManager'
 import PwaInstallPrompt from '../components/PwaInstallPrompt'
 import OfflineIndicator from '../components/OfflineIndicator'
+import BottomNav from '../components/BottomNav'
 
 export const metadata = {
   title: 'VIVENTA - Tu Espacio, Tu Futuro',
@@ -35,6 +36,7 @@ export default function RootLayout({children}:{children:React.ReactNode}) {
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
+        <BottomNav />
         <Toaster 
           position="top-right"
           toastOptions={{

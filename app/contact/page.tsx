@@ -22,13 +22,17 @@ export default function ContactPage() {
     setSubmitting(true);
 
     try {
-      const res = await fetch('/api/contact', {
+      const res = await fetch('/api/contact/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          source: 'Contact Page'
+        })
       });
 
-      if (!res.ok) throw new Error('Failed to send message');
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Failed to send message');
 
       toast.success('¡Mensaje enviado! Te contactaremos pronto.');
       setFormData({ name: '', email: '', phone: '', type: 'general', message: '' });
