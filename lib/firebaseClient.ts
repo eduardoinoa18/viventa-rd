@@ -25,7 +25,7 @@ function isFirebaseConfigValid() {
   );
 }
 
-// Initialize Firebase only on client side
+// Initialize Firebase on both client and server
 let app: any = null;
 let _db: any = null;
 let _auth: any = null;
@@ -33,7 +33,6 @@ let _storage: any = null;
 let _functions: any = null;
 
 function initializeFirebase() {
-  if (typeof window === 'undefined') return;
   if (app) return; // Already initialized
 
   if (isFirebaseConfigValid()) {
@@ -45,7 +44,8 @@ function initializeFirebase() {
         app = getApps()[0];
       }
       _db = getFirestore(app);
-      _auth = getAuth(app);
+      // Auth is only available in browser contexts; guard for server
+      try { _auth = getAuth(app); } catch {}
       _storage = getStorage(app);
       _functions = getFunctions(app);
     } catch (error) {
@@ -56,10 +56,8 @@ function initializeFirebase() {
   }
 }
 
-// Initialize on client side
-if (typeof window !== 'undefined') {
-  initializeFirebase();
-}
+// Initialize once (both server and client)
+initializeFirebase();
 
 export const db = _db;
 export const auth = _auth;

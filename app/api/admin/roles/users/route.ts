@@ -1,8 +1,9 @@
 // app/api/admin/roles/users/route.ts
 import { NextResponse } from 'next/server'
-import { db, auth } from '@/lib/firebaseClient'
+import { db } from '@/lib/firebaseClient'
 import { collection, addDoc, getDocs, doc, setDoc, serverTimestamp, query, orderBy, where } from 'firebase/firestore'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+// NOTE: Creating Firebase Auth users server-side requires the Firebase Admin SDK.
+// For now, we will create a pending admin user record in Firestore.
 
 // GET - List all admin users
 export async function GET() {
@@ -43,35 +44,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
     }
 
-    // Create Firebase Auth user
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-    const uid = userCredential.user.uid
-
-    // Create Firestore user document
-    await setDoc(doc(db, 'users', uid), {
+    // Create pending admin invitation (without Auth user creation)
+    const pendingRef = doc(collection(db, 'admin_invitations'))
+    await setDoc(pendingRef, {
       email,
       name,
       role,
-      roleName: role,
-      active: true,
-      profileComplete: true,
-      requirePasswordChange: true,
+      status: 'pending',
       createdAt: serverTimestamp(),
-      createdBy: 'master_admin' // TODO: Get from session
+      createdBy: 'master_admin', // TODO: Get from session
     })
 
-    return NextResponse.json({ ok: true, uid })
+    return NextResponse.json({ ok: true, invitationId: pendingRef.id })
   } catch (error: any) {
     console.error('Error creating admin user:', error)
     
     let errorMessage = 'Error al crear usuario'
-    if (error.code === 'auth/email-already-in-use') {
-      errorMessage = 'Este email ya está registrado'
-    } else if (error.code === 'auth/weak-password') {
-      errorMessage = 'La contraseña es muy débil'
-    } else if (error.code === 'auth/invalid-email') {
-      errorMessage = 'Email inválido'
-    }
+    // Additional error mapping can be added once Admin SDK is integrated
     
     return NextResponse.json({ ok: false, error: errorMessage }, { status: 500 })
   }
