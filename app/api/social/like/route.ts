@@ -1,7 +1,7 @@
 // app/api/social/like/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
-import { doc, getDoc, updateDoc, increment, collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc } from 'firebase/firestore'
+import { doc, updateDoc, increment, collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc } from 'firebase/firestore'
 
 function getCookie(req: NextRequest, name: string): string | null {
   const cookie = req.headers.get('cookie') || ''
@@ -35,37 +35,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, liked: true })
     } else {
       // Unlike
-      await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'social_likes', d.id))))
+      await Promise.all(snap.docs.map((d: any) => deleteDoc(doc(db, 'social_likes', d.id))))
       await updateDoc(postRef, { likesCount: increment(-1) })
       return NextResponse.json({ ok: true, liked: false })
     }
   } catch (e) {
     console.error('social like POST error', e)
     return NextResponse.json({ ok: false, error: 'Failed to like' }, { status: 500 })
-  }
-}
-// app/api/social/like/route.ts
-import { NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { doc, getDoc, updateDoc, increment } from 'firebase/firestore'
-
-export async function POST(request: Request) {
-  try {
-    const { postId } = await request.json()
-
-    if (!postId) {
-      return NextResponse.json({ ok: false, error: 'Post ID required' }, { status: 400 })
-    }
-
-    // TODO: Check if user already liked
-    // For now, just increment
-    await updateDoc(doc(db, 'social_posts', postId), {
-      likes: increment(1)
-    })
-
-    return NextResponse.json({ ok: true })
-  } catch (error) {
-    console.error('Error liking post:', error)
-    return NextResponse.json({ ok: false, error: 'Error al dar like' }, { status: 500 })
   }
 }
