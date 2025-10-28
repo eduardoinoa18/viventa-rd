@@ -1,4 +1,6 @@
 // app/api/auth/verify-master-code/route.ts
+// Ensure Node.js runtime for consistency with server-only modules
+export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { verificationCodes } from '@/lib/verificationStore'
 

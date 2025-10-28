@@ -1,4 +1,6 @@
 // app/api/auth/send-master-code/route.ts
+// Ensure Node.js runtime (required for Nodemailer/SendGrid in production)
+export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { verificationCodes } from '@/lib/verificationStore'
 
