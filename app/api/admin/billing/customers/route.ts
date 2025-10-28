@@ -1,23 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-type Customer = { id: string; email: string; name?: string; createdAt: string }
-
-let customers: Customer[] = []
+import { db } from '@/lib/firebaseClient'
+import { collection, getDocs, doc, setDoc, serverTimestamp, query, orderBy } from 'firebase/firestore'
 
 export async function GET() {
-  return NextResponse.json({ ok: true, data: customers })
+  try {
+    const q = query(collection(db, 'billing_customers'), orderBy('createdAt', 'desc'))
+    const snapshot = await getDocs(q)
+    const customers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+    return NextResponse.json({ ok: true, data: customers })
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message }, { status: 500 })
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const { email, name } = await req.json()
-    if (!email) return NextResponse.json({ ok:false, error:'Email required' }, { status: 400 })
-    const exists = customers.find(c=>c.email.toLowerCase()===String(email).toLowerCase())
-    if (exists) return NextResponse.json({ ok:true, data: exists })
-    const c: Customer = { id: `cus_${Math.random().toString(36).slice(2,10)}`, email, name, createdAt: new Date().toISOString() }
-    customers.push(c)
-    return NextResponse.json({ ok: true, data: c })
-  } catch (e:any) {
-    return NextResponse.json({ ok:false, error: e?.message || 'Invalid payload' }, { status: 400 })
+    if (!email) return NextResponse.json({ ok: false, error: 'Email required' }, { status: 400 })
+
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+    if (!stripeSecretKey) {
+      return NextResponse.json({ ok: false, error: 'Stripe not configured' }, { status: 501 })
+    }
+
+    const stripe = require('stripe')(stripeSecretKey)
+    const customer = await stripe.customers.create({ email, name })
+
+    await setDoc(doc(db, 'billing_customers', customer.id), {
+      customerId: customer.id,
+      email,
+      name,
+      createdAt: serverTimestamp(),
+    })
+
+    return NextResponse.json({ ok: true, data: { id: customer.id, email, name, createdAt: new Date().toISOString() } })
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message || 'Invalid payload' }, { status: 400 })
   }
 }

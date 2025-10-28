@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 
+const SETTINGS_DOC = 'settings/billing'
+
 export async function GET() {
   try {
     const docSnap = await getDoc(doc(db, 'settings', 'billing'))

@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server'
-
-type Invoice = { id: string; customerId: string; amount: number; currency: string; status: 'paid'|'open'|'void'|'uncollectible'; createdAt: string }
-
-let invoices: Invoice[] = []
+import { db } from '@/lib/firebaseClient'
+import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 
 export async function GET() {
-  return NextResponse.json({ ok: true, data: invoices })
+  try {
+    const q = query(collection(db, 'billing_invoices'), orderBy('paidAt', 'desc'))
+    const snapshot = await getDocs(q)
+    const invoices = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+    return NextResponse.json({ ok: true, data: invoices })
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message }, { status: 500 })
+  }
 }
