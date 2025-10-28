@@ -17,22 +17,23 @@ export async function POST(request: Request) {
       .filter(Boolean)
     const allowedEmails = new Set(rawList)
     
-  const incoming = String(email || '').trim().toLowerCase()
+    const incoming = String(email || '').trim().toLowerCase()
     const isDev = process.env.NODE_ENV !== 'production'
     const allowAny = process.env.ALLOW_ANY_MASTER_EMAIL === 'true'
-    const isAllowed = allowedEmails.has(incoming) || (isDev ? true : allowAny)
+    
+    // In development, allow any email. In production, check allowlist or ALLOW_ANY_MASTER_EMAIL flag
+    const isAllowed = isDev || allowAny || allowedEmails.has(incoming)
     
     // Security: Don't log sensitive data in production
     if (isDev) {
       console.log('═══ Master Admin Login Attempt ═══')
-      console.log('Email:', email)
+      console.log('Email:', incoming)
       console.log('Allowlist:', Array.from(allowedEmails))
       console.log('Dev mode:', isDev)
       console.log('Allow any:', allowAny)
       console.log('Is allowed:', isAllowed)
     }
 
-    // In development, do not enforce allowlist to reduce friction
     if (!isAllowed) {
       // Security: Use generic error message to prevent email enumeration
       return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })

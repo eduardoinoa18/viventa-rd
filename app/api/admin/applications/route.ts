@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '../../../../lib/firebaseClient'
+import { db } from '@/lib/firebaseClient'
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { sendEmail } from '../../../../lib/emailService'
+import { sendEmail } from '@/lib/emailService'
 
 export async function PATCH(req: NextRequest) {
   try {

@@ -6,13 +6,13 @@ export async function GET() {
   try {
     // Fetch active subscriptions
     const subsSnapshot = await getDocs(collection(db, 'billing_subscriptions'))
-    const allSubs = subsSnapshot.docs.map(d => d.data())
-    const activeSubs = allSubs.filter(s => s.status === 'active' || s.status === 'trialing')
+    const allSubs = subsSnapshot.docs.map((d: any) => d.data())
+    const activeSubs = allSubs.filter((s: any) => s.status === 'active' || s.status === 'trialing')
 
     // Fetch invoices
     const invoicesSnapshot = await getDocs(collection(db, 'billing_invoices'))
-    const allInvoices = invoicesSnapshot.docs.map(d => d.data())
-    const unpaidInvoices = allInvoices.filter(i => i.status === 'open' || i.status === 'past_due')
+    const allInvoices = invoicesSnapshot.docs.map((d: any) => d.data())
+    const unpaidInvoices = allInvoices.filter((i: any) => i.status === 'open' || i.status === 'past_due')
 
     // Calculate MRR (simplified - assumes all subs are monthly at same price)
     // In production, fetch price amounts from Stripe or store them
@@ -20,7 +20,7 @@ export async function GET() {
 
     // Calculate churn (simplified)
     const totalSubs = allSubs.length
-    const canceledSubs = allSubs.filter(s => s.status === 'canceled').length
+    const canceledSubs = allSubs.filter((s: any) => s.status === 'canceled').length
     const churnRatePct = totalSubs > 0 ? Math.round((canceledSubs / totalSubs) * 100) : 0
 
     return NextResponse.json({
