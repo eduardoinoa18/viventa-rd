@@ -174,10 +174,10 @@ export default function AgentDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="flex gap-2 p-2 border-b overflow-x-auto">
+        <div className="bg-white rounded-lg shadow mb-6 sticky top-0 z-20">
+          <div className="flex gap-2 p-2 border-b overflow-x-auto bg-white">
             <button
-              onClick={() => setActiveTab('overview')}
+              onClick={() => { setActiveTab('overview'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'overview' ? 'bg-[#0B2545] text-white' : 'hover:bg-gray-100'
               }`}
@@ -186,7 +186,7 @@ export default function AgentDashboard() {
               Resumen
             </button>
             <button
-              onClick={() => setActiveTab('listings')}
+              onClick={() => { setActiveTab('listings'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'listings' ? 'bg-[#0B2545] text-white' : 'hover:bg-gray-100'
               }`}
@@ -195,7 +195,7 @@ export default function AgentDashboard() {
               Mis Listados
             </button>
             <button
-              onClick={() => setActiveTab('leads')}
+              onClick={() => { setActiveTab('leads'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'leads' ? 'bg-[#0B2545] text-white' : 'hover:bg-gray-100'
               }`}
@@ -204,7 +204,7 @@ export default function AgentDashboard() {
               Leads
             </button>
             <button
-              onClick={() => setActiveTab('tasks')}
+              onClick={() => { setActiveTab('tasks'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'tasks' ? 'bg-[#0B2545] text-white' : 'hover:bg-gray-100'
               }`}
@@ -214,7 +214,7 @@ export default function AgentDashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('calendar')}
+              onClick={() => { setActiveTab('calendar'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'calendar' ? 'bg-[#0B2545] text-white' : 'hover:bg-gray-100'
               }`}

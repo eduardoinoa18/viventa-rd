@@ -30,14 +30,16 @@ export async function POST(request: Request) {
       readBy: [],
     })
 
-    // Send email notification to master admin
+    // Send email notification to admin(s)
     const masterEmail = process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com'
-    
+    const adminList = (process.env.ADMIN_NOTIFICATION_EMAILS || '')
+      .split(',')
+      .map(e => e.trim())
+      .filter(Boolean)
+    const notifyEmails = Array.from(new Set([masterEmail, ...adminList]))
+
     try {
-      await sendEmail({
-        to: masterEmail,
-        subject: `🔔 Nuevo Contacto desde ${source || 'Website'} - ${type || 'General'}`,
-        html: `
+      const html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #0B2545 0%, #00A676 100%); padding: 30px; text-align: center;">
               <h1 style="color: white; margin: 0;">VIVENTA</h1>
@@ -89,10 +91,46 @@ export async function POST(request: Request) {
             </div>
           </div>
         `
+
+      for (const to of notifyEmails) {
+        await sendEmail({ to, subject: `🔔 Nuevo Contacto desde ${source || 'Website'} - ${type || 'General'}`, html })
+      }
+
+      // Auto-reply to the sender
+      await sendEmail({
+        to: email,
+        subject: 'Recibimos tu mensaje - VIVENTA',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 20px;">
+            <h2 style="color:#0B2545;">¡Gracias por contactarnos, ${name}!</h2>
+            <p>Hemos recibido tu mensaje y nuestro equipo te responderá dentro de 24 horas.</p>
+            <div style="margin-top: 16px; padding: 12px 16px; background:#f7f7f7; border-left:4px solid #00A676;">
+              <div style="font-weight:600; color:#0B2545; margin-bottom:8px;">Tu mensaje:</div>
+              <div style="white-space: pre-wrap; color:#333;">${message}</div>
+            </div>
+            <p style="margin-top: 16px; color:#555; font-size: 12px;">Este es un correo automático de confirmación.</p>
+          </div>
+        `
       })
-    } catch (emailError) {
+    }
+    catch (emailError) {
       console.error('Failed to send notification email:', emailError)
       // Don't fail the request if email fails
+    }
+
+    // In-app notification for admins
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        type: 'contact_submission',
+        title: 'Nuevo contacto recibido',
+        message: `${name} (${email}) - ${type || 'General'}`,
+        refId: docRef.id,
+        createdAt: serverTimestamp(),
+        audience: ['admin', 'master'],
+        readBy: [],
+      })
+    } catch (e) {
+      console.warn('Failed to save admin notification:', e)
     }
 
     return NextResponse.json({ 

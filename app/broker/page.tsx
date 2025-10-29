@@ -133,10 +133,10 @@ export default function BrokerDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="flex gap-2 p-2 border-b overflow-x-auto">
+        <div className="bg-white rounded-lg shadow mb-6 sticky top-0 z-20">
+          <div className="flex gap-2 p-2 border-b overflow-x-auto bg-white">
             <button
-              onClick={() => setActiveTab('overview')}
+              onClick={() => { setActiveTab('overview'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'overview' ? 'bg-[#0B2545] text-white' : 'hover:bg-gray-100'
               }`}
@@ -145,7 +145,7 @@ export default function BrokerDashboard() {
               Resumen
             </button>
             <button
-              onClick={() => setActiveTab('team')}
+              onClick={() => { setActiveTab('team'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'team' ? 'bg-[#0B2545] text-white' : 'hover:bg-gray-100'
               }`}
@@ -154,7 +154,7 @@ export default function BrokerDashboard() {
               Mi Equipo
             </button>
             <button
-              onClick={() => setActiveTab('listings')}
+              onClick={() => { setActiveTab('listings'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'listings' ? 'bg-[#0B2545] text-white' : 'hover:bg-gray-100'
               }`}
@@ -163,7 +163,7 @@ export default function BrokerDashboard() {
               Listados
             </button>
             <button
-              onClick={() => setActiveTab('performance')}
+              onClick={() => { setActiveTab('performance'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'performance' ? 'bg-[#0B2545] text-white' : 'hover:bg-gray-100'
               }`}
@@ -172,7 +172,7 @@ export default function BrokerDashboard() {
               Rendimiento
             </button>
             <button
-              onClick={() => setActiveTab('settings')}
+              onClick={() => { setActiveTab('settings'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
                 activeTab === 'settings' ? 'bg-[#0B2545] text-white' : 'hover:bg-gray-100'
               }`}

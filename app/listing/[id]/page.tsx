@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { db } from '../../../lib/firebaseClient'
 import { doc, getDoc } from 'firebase/firestore'
 import { useParams } from 'next/navigation'
@@ -13,6 +14,7 @@ import { generatePropertySchema } from '../../../lib/seoUtils'
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt } from 'react-icons/fa'
 
 export default function ListingDetail(){
+  const router = useRouter()
   const params = useParams()
   const id = params?.id
   const [listing,setListing] = useState<any>(null)
@@ -252,7 +254,10 @@ export default function ListingDetail(){
                     agentName={listing.agent?.name}
                   />
                   
-                  <button className="w-full px-6 py-3 bg-[#0B2545] hover:bg-[#0B2545]/90 text-white rounded-lg font-medium transition-colors duration-200">
+                  <button
+                    onClick={() => router.push(`/contact?type=buyer&subject=${encodeURIComponent('Interés: ' + listing.title)}&ref=${encodeURIComponent(listing.id)}`)}
+                    className="w-full px-6 py-3 bg-[#0B2545] hover:bg-[#0B2545]/90 text-white rounded-lg font-medium transition-colors duration-200"
+                  >
                     📧 Enviar mensaje
                   </button>
                   
