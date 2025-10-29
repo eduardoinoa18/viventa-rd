@@ -6,7 +6,6 @@ import ErrorBoundary from '../components/ErrorBoundary'
 import ServiceWorkerManager from '../components/ServiceWorkerManager'
 import PwaInstallPrompt from '../components/PwaInstallPrompt'
 import OfflineIndicator from '../components/OfflineIndicator'
-import BottomNav from '../components/BottomNav'
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com'),
@@ -85,7 +84,6 @@ export default function RootLayout({children}:{children:React.ReactNode}) {
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
-        <BottomNav />
         <Toaster 
           position="top-right"
           toastOptions={{

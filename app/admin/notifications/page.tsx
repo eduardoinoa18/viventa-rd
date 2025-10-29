@@ -50,7 +50,7 @@ export default function NotificationsPage() {
         limit(50)
       )
       const notifSnap = await getDocs(notifQuery)
-      const notifs = notifSnap.docs.map(d => ({ id: d.id, ...d.data() } as Notification))
+      const notifs = notifSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as Notification))
       setNotifications(notifs)
 
       // Load contact submissions
@@ -60,7 +60,7 @@ export default function NotificationsPage() {
         limit(50)
       )
       const contactSnap = await getDocs(contactQuery)
-      const contacts = contactSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      const contacts = contactSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
       setContactSubmissions(contacts)
 
       // Load property inquiries
@@ -70,7 +70,7 @@ export default function NotificationsPage() {
         limit(50)
       )
       const inquirySnap = await getDocs(inquiryQuery)
-      const inquiries = inquirySnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      const inquiries = inquirySnap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
       setPropertyInquiries(inquiries)
     } catch (e) {
       console.error('Failed to load notifications', e)

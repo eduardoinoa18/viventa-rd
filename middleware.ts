@@ -26,9 +26,9 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // User app experience: if a logged-in non-admin user hits marketing/auth routes, send to appropriate dashboard
+  // User app experience: if a logged-in non-admin user hits auth routes (NOT homepage), send to appropriate dashboard
   const isLoggedInUser = role && role !== 'master_admin' && role !== 'admin';
-  const redirectToDashboard = ['/', '/login', '/signup'].includes(pathname);
+  const redirectToDashboard = ['/login', '/signup'].includes(pathname); // REMOVED '/' from this list
   if (isLoggedInUser && redirectToDashboard) {
     // Route to appropriate dashboard based on role
     let dest;
