@@ -145,7 +145,7 @@ export default function MessagesPage() {
                     const mine = m.senderId === session?.uid
                     return (
                       <div key={m.id} className={`max-w-[80%] rounded-lg px-3 py-2 ${mine ? 'ml-auto bg-[#00A676] text-white' : 'bg-gray-100 text-gray-800'}`}>
-                        <div className="whitespace-pre-wrap text-sm">{m.text}</div>
+                        <div className="whitespace-pre-wrap text-sm">{m.text ?? m.content}</div>
                         <div className={`text-[10px] mt-1 ${mine ? 'text-white/80' : 'text-gray-500'}`}>{new Date(m.createdAt?.toDate?.() || m.createdAt).toLocaleString()}</div>
                       </div>
                     )
