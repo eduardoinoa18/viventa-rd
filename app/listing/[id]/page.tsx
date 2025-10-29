@@ -26,7 +26,7 @@ export default function ListingDetail(){
   useEffect(()=> {
     if(!id) return
     setLoading(true)
-    getDoc(doc(db,'listings',id as string))
+    getDoc(doc(db,'properties',id as string))
       .then((snap: any)=> { 
         if(snap.exists()) setListing({...snap.data(), id: snap.id})
       })
@@ -80,30 +80,30 @@ export default function ListingDetail(){
   const favoriteData = {
     id: listing.id,
     title: listing.title,
-    price: listing.price_usd || 0,
-    currency: 'USD' as const,
-    location: `${listing.city || ''}, ${listing.neighborhood || ''}`,
+    price: listing.price || 0,
+    currency: listing.currency || 'USD',
+    location: `${listing.location?.city || listing.city || ''}, ${listing.location?.neighborhood || listing.neighborhood || ''}`,
     bedrooms: listing.bedrooms,
     bathrooms: listing.bathrooms,
-    area: listing.area_sqm,
+    area: listing.area,
     images: listing.images || [],
-    agentName: listing.agent?.name,
-    agentPhone: listing.agent?.phone
+    agentName: listing.agentName,
+    agentPhone: listing.agentPhone
   }
 
   // Generate structured data for SEO
   const propertySchema = listing ? generatePropertySchema({
     id: listing.id,
     title: listing.title,
-    description: listing.description || `${listing.title} en ${listing.city}`,
-    price: listing.price_usd || 0,
-    currency: 'USD',
-    location: `${listing.city || ''}${listing.neighborhood ? ', ' + listing.neighborhood : ''}`,
+    description: listing.description || `${listing.title} en ${listing.location?.city || listing.city}`,
+    price: listing.price || 0,
+    currency: listing.currency || 'USD',
+    location: `${listing.location?.city || listing.city || ''}${listing.location?.neighborhood || listing.neighborhood ? ', ' + (listing.location?.neighborhood || listing.neighborhood) : ''}`,
     bedrooms: listing.bedrooms,
     bathrooms: listing.bathrooms,
-    area: listing.area_sqm,
+    area: listing.area,
     images: listing.images || [],
-    agentName: listing.agent?.name
+    agentName: listing.agentName
   }) : null
 
   // Breadcrumb schema
@@ -146,7 +146,7 @@ export default function ListingDetail(){
                 <h1 className="text-4xl font-bold text-[#0B2545] mb-2">{listing.title}</h1>
                 <div className="flex items-center text-gray-600">
                   <FaMapMarkerAlt className="mr-2 text-[#FF6B35]" />
-                  <span>{listing.city || 'N/A'} • {listing.neighborhood || 'N/A'}</span>
+                  <span>{listing.location?.city || listing.city || 'N/A'} • {listing.location?.neighborhood || listing.neighborhood || 'N/A'}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -210,13 +210,13 @@ export default function ListingDetail(){
                       </div>
                     </div>
                   )}
-                  {listing.area_sqm && (
+                  {listing.area && (
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-[#00A6A6]/10 rounded-lg flex items-center justify-center">
                         <FaRulerCombined className="text-[#00A6A6] text-xl" />
                       </div>
                       <div>
-                        <div className="text-2xl font-bold text-[#0B2545]">{listing.area_sqm}</div>
+                        <div className="text-2xl font-bold text-[#0B2545]">{listing.area}</div>
                         <div className="text-sm text-gray-600">m²</div>
                       </div>
                     </div>
@@ -239,9 +239,9 @@ export default function ListingDetail(){
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-20">
                 <div className="text-4xl font-bold text-[#FF6B35] mb-6">
                   {formatCurrency(
-                    currency === 'USD' 
-                      ? Number(listing.price_usd || 0) 
-                      : convertCurrency(Number(listing.price_usd || 0), 'USD', 'DOP'),
+                    currency === listing.currency 
+                      ? Number(listing.price || 0) 
+                      : convertCurrency(Number(listing.price || 0), listing.currency || 'USD', currency),
                     { currency }
                   )}
                 </div>
@@ -249,11 +249,11 @@ export default function ListingDetail(){
                 {/* Contact Actions */}
                 <div className="space-y-3">
                   <WhatsAppButton 
-                    phoneNumber={listing.agent?.phone || '+18095551234'}
+                    phoneNumber={listing.agentPhone || '+18095551234'}
                     propertyTitle={listing.title}
                     propertyId={listing.id}
-                    propertyPrice={String(listing.price_usd || 0)}
-                    agentName={listing.agent?.name}
+                    propertyPrice={String(listing.price || 0)}
+                    agentName={listing.agentName}
                   />
                   
                   <button
@@ -269,7 +269,7 @@ export default function ListingDetail(){
                 </div>
                 
                 {/* Agent Info */}
-                {listing.agent && (
+                {(listing.agentName || listing.agentEmail) && (
                   <div className="mt-6 pt-6 border-t border-gray-200">
                     <h3 className="font-semibold text-[#0B2545] mb-2">Agente</h3>
                     <div className="flex items-center gap-3">
@@ -277,8 +277,8 @@ export default function ListingDetail(){
                         <span className="text-xl">👤</span>
                       </div>
                       <div>
-                        <div className="font-medium text-[#0B2545]">{listing.agent.name || 'Agente VIVENTA'}</div>
-                        <div className="text-sm text-gray-600">{listing.agent.phone || 'Contacto disponible'}</div>
+                        <div className="font-medium text-[#0B2545]">{listing.agentName || 'Agente VIVENTA'}</div>
+                        <div className="text-sm text-gray-600">{listing.agentPhone || listing.agentEmail || 'Contacto disponible'}</div>
                       </div>
                     </div>
                   </div>
@@ -292,8 +292,8 @@ export default function ListingDetail(){
         <PropertyInquiryForm
           propertyId={listing.id}
           propertyTitle={listing.title}
-          agentName={listing.agent?.name}
-          agentEmail={listing.agent?.email}
+          agentName={listing.agentName}
+          agentEmail={listing.agentEmail}
           onClose={() => setShowInquiryForm(false)}
         />
       )}
