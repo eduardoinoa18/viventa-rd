@@ -103,7 +103,7 @@ export default function FeaturedProperties() {
           </div>
 
           <Link
-            href="/properties"
+            href="/search?featured=1"
             className="mt-4 md:mt-0 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#00A676] to-[#00A6A6] text-white rounded-xl font-semibold hover:shadow-lg transition-all"
           >
             Ver todas

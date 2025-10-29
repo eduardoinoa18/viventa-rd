@@ -1,5 +1,6 @@
 'use client'
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { InstantSearch, SearchBox, Configure, useSearchBox, SortBy } from 'react-instantsearch'
 import { getAlgoliaClient, isAlgoliaConfigured, ALGOLIA_INDEX } from '../../lib/algoliaClient'
 import InstantHits from '../../components/InstantHits'
@@ -10,12 +11,15 @@ import Footer from '../../components/Footer'
 import BottomNav from '../../components/BottomNav'
 import SearchFilters from '../../components/SearchFilters'
 import PropertyCard from '../../components/PropertyCard'
+import SearchStatsBar from '../../components/SearchStatsBar'
+import AlgoliaStatsBar from '../../components/algolia/AlgoliaStatsBar'
+import { getUserCurrency, type Currency } from '../../lib/currency'
 import AdvancedFilters from '../../components/AdvancedFilters'
 import { FiList, FiMap, FiSave, FiSearch, FiSliders, FiFilter } from 'react-icons/fi'
 import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore'
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchClient = useMemo(() => getAlgoliaClient(), [])
   const indexName = ALGOLIA_INDEX
   const [showSave, setShowSave] = useState(false)
@@ -27,13 +31,16 @@ export default function SearchPage() {
   const [properties, setProperties] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const searchParams = useSearchParams()
+  const [currency, setCurrency] = useState<Currency>('USD')
   const [filters, setFilters] = useState({
     type: '',
     minPrice: '',
     maxPrice: '',
     bedrooms: '',
     bathrooms: '',
-    city: ''
+    city: '',
+    featured: ''
   })
 
   useEffect(() => {
@@ -41,6 +48,12 @@ export default function SearchPage() {
     if (!isAlgoliaConfigured) {
       loadProperties()
     }
+    // initialize featured filter from URL
+    const f = searchParams?.get('featured')
+    if (f === '1' || f === 'true') {
+      setFilters((prev) => ({ ...prev, featured: '1' }))
+    }
+    setCurrency(getUserCurrency())
   }, [])
 
   async function loadSaved() {
@@ -98,6 +111,9 @@ export default function SearchPage() {
           p.location?.city?.toLowerCase().includes(filters.city.toLowerCase())
         )
       }
+      if (filters.featured) {
+        results = results.filter((p: any) => !!p.featured)
+      }
       
       setProperties(results)
     } catch (error) {
@@ -132,7 +148,8 @@ export default function SearchPage() {
                   maxPrice: appliedFilters.maxPrice || '',
                   bedrooms: appliedFilters.bedrooms || '',
                   bathrooms: appliedFilters.bathrooms || '',
-                  city: appliedFilters.city || ''
+                  city: appliedFilters.city || '',
+                  featured: filters.featured || ''
                 })
                 // You can expand this to include more filters
               }}
@@ -142,7 +159,8 @@ export default function SearchPage() {
                 maxPrice: filters.maxPrice,
                 bedrooms: filters.bedrooms,
                 bathrooms: filters.bathrooms,
-                city: filters.city
+                city: filters.city,
+                featured: filters.featured
               }}
             />
             <div className="text-sm text-gray-600">
@@ -199,6 +217,9 @@ export default function SearchPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Metrics */}
+                  <SearchStatsBar items={properties} currency={currency} />
 
                   {/* Results */}
                   <div className="bg-white rounded-lg shadow-sm p-4">
@@ -325,7 +346,8 @@ export default function SearchPage() {
                             maxPrice: '',
                             bedrooms: '',
                             bathrooms: '',
-                            city: ''
+                            city: '',
+                            featured: ''
                           })
                           setSearchQuery('')
                         }}
@@ -380,6 +402,8 @@ export default function SearchPage() {
                     }}
                   />
                 </div>
+                {/* Metrics driven by Algolia hits */}
+                <AlgoliaStatsBar />
                 <Configure hitsPerPage={12} clickAnalytics enablePersonalization={false} />
                 <InstantHits />
               </div>
@@ -422,6 +446,21 @@ export default function SearchPage() {
       <Footer />
       <BottomNav />
     </>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00A6A6] mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando búsqueda...</p>
+        </div>
+      </div>
+    }>
+      <SearchPageContent />
+    </Suspense>
   )
 }
 

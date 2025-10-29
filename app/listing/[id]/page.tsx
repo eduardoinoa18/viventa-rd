@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { db } from '../../../lib/firebaseClient'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, increment } from 'firebase/firestore'
 import { useParams } from 'next/navigation'
+import Head from 'next/head'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
 import WhatsAppButton from '../../../components/WhatsAppButton'
@@ -12,7 +13,7 @@ import PropertyInquiryForm from '../../../components/PropertyInquiryForm'
 import StructuredData from '../../../components/StructuredData'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
-import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt } from 'react-icons/fa'
+import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaParking, FaBuilding, FaCalendar } from 'react-icons/fa'
 
 export default function ListingDetail(){
   const router = useRouter()
@@ -28,7 +29,13 @@ export default function ListingDetail(){
     setLoading(true)
     getDoc(doc(db,'properties',id as string))
       .then((snap: any)=> { 
-        if(snap.exists()) setListing({...snap.data(), id: snap.id})
+        if(snap.exists()) {
+          setListing({...snap.data(), id: snap.id})
+          // Increment view count
+          updateDoc(doc(db,'properties',id as string), {
+            views: increment(1)
+          }).catch((err: any) => console.error('Error updating views:', err))
+        }
       })
       .finally(() => setLoading(false))
   },[id])
@@ -132,8 +139,45 @@ export default function ListingDetail(){
     ]
   } : null
   
+  // Generate meta description
+  const metaDescription = listing.description 
+    ? listing.description.substring(0, 155) + '...'
+    : `${listing.title} en ${listing.location?.city || listing.city}. ${listing.bedrooms} hab, ${listing.bathrooms} baños, ${listing.area}m². ${formatCurrency(listing.price || 0, { currency: listing.currency || 'USD' })}`;
+  
+  const metaTitle = `${listing.title} - VIVENTA RD`;
+  const propertyUrl = `https://viventa-rd.com/listing/${listing.id}`;
+  const mainImage = listing.images?.[0] || listing.mainImage || '/logo.png';
+
   return (
     <>
+      <Head>
+        {/* Primary Meta Tags */}
+        <title>{metaTitle}</title>
+        <meta name="title" content={metaTitle} />
+        <meta name="description" content={metaDescription} />
+        <meta name="keywords" content={`${listing.propertyType}, ${listing.listingType}, ${listing.location?.city}, ${listing.location?.neighborhood}, propiedad, inmueble, República Dominicana, VIVENTA`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={propertyUrl} />
+        <meta property="og:title" content={metaTitle} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:image" content={mainImage} />
+        <meta property="og:site_name" content="VIVENTA RD" />
+        
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content={propertyUrl} />
+        <meta property="twitter:title" content={metaTitle} />
+        <meta property="twitter:description" content={metaDescription} />
+        <meta property="twitter:image" content={mainImage} />
+        
+        {/* Additional SEO */}
+        <meta name="robots" content="index, follow" />
+        <meta name="language" content="Spanish" />
+        <meta name="author" content="VIVENTA RD" />
+        <link rel="canonical" href={propertyUrl} />
+      </Head>
       {propertySchema && <StructuredData data={propertySchema} />}
       {breadcrumbSchema && <StructuredData data={breadcrumbSchema} />}
       <Header />
@@ -186,9 +230,9 @@ export default function ListingDetail(){
               
               {/* Property Features */}
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-2xl font-bold text-[#0B2545] mb-4">Características</h2>
-                <div className="grid grid-cols-3 gap-6">
-                  {listing.bedrooms && (
+                <h2 className="text-2xl font-bold text-[#0B2545] mb-4">Características Principales</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  {listing.bedrooms > 0 && (
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-[#00A6A6]/10 rounded-lg flex items-center justify-center">
                         <FaBed className="text-[#00A6A6] text-xl" />
@@ -199,7 +243,7 @@ export default function ListingDetail(){
                       </div>
                     </div>
                   )}
-                  {listing.bathrooms && (
+                  {listing.bathrooms > 0 && (
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-[#00A6A6]/10 rounded-lg flex items-center justify-center">
                         <FaBath className="text-[#00A6A6] text-xl" />
@@ -210,18 +254,66 @@ export default function ListingDetail(){
                       </div>
                     </div>
                   )}
-                  {listing.area && (
+                  {listing.area > 0 && (
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-[#00A6A6]/10 rounded-lg flex items-center justify-center">
                         <FaRulerCombined className="text-[#00A6A6] text-xl" />
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-[#0B2545]">{listing.area}</div>
-                        <div className="text-sm text-gray-600">m²</div>
+                        <div className="text-sm text-gray-600">m² de construcción</div>
+                      </div>
+                    </div>
+                  )}
+                  {listing.parkingSpaces > 0 && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-[#00A6A6]/10 rounded-lg flex items-center justify-center">
+                        <FaParking className="text-[#00A6A6] text-xl" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-[#0B2545]">{listing.parkingSpaces}</div>
+                        <div className="text-sm text-gray-600">Parqueos</div>
+                      </div>
+                    </div>
+                  )}
+                  {listing.lotSize > 0 && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-[#00A6A6]/10 rounded-lg flex items-center justify-center">
+                        <FaBuilding className="text-[#00A6A6] text-xl" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-[#0B2545]">{listing.lotSize}</div>
+                        <div className="text-sm text-gray-600">m² de terreno</div>
+                      </div>
+                    </div>
+                  )}
+                  {listing.yearBuilt && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-[#00A6A6]/10 rounded-lg flex items-center justify-center">
+                        <FaCalendar className="text-[#00A6A6] text-xl" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-[#0B2545]">{listing.yearBuilt}</div>
+                        <div className="text-sm text-gray-600">Año construcción</div>
                       </div>
                     </div>
                   )}
                 </div>
+
+                {/* Additional Features/Amenities */}
+                {listing.features && listing.features.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <h3 className="text-lg font-semibold text-[#0B2545] mb-3">Amenidades</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {listing.features.map((feature: string, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2 text-gray-700">
+                          <div className="w-2 h-2 bg-[#00A676] rounded-full"></div>
+                          <span className="capitalize">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Description */}
@@ -284,6 +376,84 @@ export default function ListingDetail(){
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Agent/Company Attribution - Similar to Zillow */}
+          <div className="mt-12 bg-white rounded-xl shadow-sm p-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-gray-200">
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 bg-gradient-to-br from-[#00A676] to-[#00A6A6] rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                  {listing.agentName ? listing.agentName.charAt(0).toUpperCase() : 'A'}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-[#0B2545]">{listing.agentName || 'Agente VIVENTA'}</h3>
+                  <p className="text-gray-600">Agente Inmobiliario</p>
+                  {listing.agentEmail && (
+                    <p className="text-sm text-gray-500">{listing.agentEmail}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => setShowInquiryForm(true)}
+                  className="px-6 py-3 bg-[#00A676] hover:bg-[#008c5c] text-white rounded-lg font-semibold transition-colors"
+                >
+                  Contactar Agente
+                </button>
+                <a
+                  href="/agents"
+                  className="text-sm text-center text-[#00A6A6] hover:underline"
+                >
+                  Ver perfil completo →
+                </a>
+              </div>
+            </div>
+
+            <div className="pt-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Sobre esta propiedad</h4>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p>• Listado ID: <span className="font-mono text-gray-900">{listing.id}</span></p>
+                    <p>• Tipo: <span className="text-gray-900 capitalize">{listing.propertyType}</span></p>
+                    <p>• Transacción: <span className="text-gray-900 capitalize">{listing.listingType === 'sale' ? 'Venta' : 'Alquiler'}</span></p>
+                    {listing.views > 0 && <p>• Vistas: <span className="text-gray-900">{listing.views.toLocaleString()}</span></p>}
+                    {listing.createdAt && (
+                      <p>• Publicado: <span className="text-gray-900">{new Date(listing.createdAt.seconds * 1000).toLocaleDateString('es-DO')}</span></p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Listado por</h4>
+                  <div className="flex items-center gap-3 mb-4">
+                    <img 
+                      src="/logo.png" 
+                      alt="VIVENTA" 
+                      className="h-8 w-auto"
+                      onError={(e) => { e.currentTarget.src = '/logo.png' }}
+                    />
+                    <div>
+                      <p className="font-bold text-gray-900">VIVENTA</p>
+                      <p className="text-xs text-gray-500">Plataforma Inmobiliaria #1 en RD</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Todos los contactos y consultas pasan a través de VIVENTA para tu seguridad y protección.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Legal Disclaimer */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <p className="text-xs text-gray-500 leading-relaxed">
+                <strong>Nota:</strong> La información de este listado es proporcionada por el agente y debe ser verificada. 
+                VIVENTA actúa como plataforma intermediaria entre compradores y vendedores. Las transacciones inmobiliarias 
+                están sujetas a disponibilidad y pueden cambiar sin previo aviso. Se recomienda realizar inspecciones 
+                independientes antes de cualquier transacción.
+              </p>
             </div>
           </div>
         </div>
