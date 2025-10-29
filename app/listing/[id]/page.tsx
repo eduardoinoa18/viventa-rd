@@ -8,6 +8,7 @@ import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
 import WhatsAppButton from '../../../components/WhatsAppButton'
 import FavoriteButton from '../../../components/FavoriteButton'
+import PropertyInquiryForm from '../../../components/PropertyInquiryForm'
 import StructuredData from '../../../components/StructuredData'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
@@ -20,6 +21,7 @@ export default function ListingDetail(){
   const [listing,setListing] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [currency, setCurrency] = useState<Currency>('USD')
+  const [showInquiryForm, setShowInquiryForm] = useState(false)
   
   useEffect(()=> {
     if(!id) return
@@ -255,7 +257,7 @@ export default function ListingDetail(){
                   />
                   
                   <button
-                    onClick={() => router.push(`/contact?type=buyer&subject=${encodeURIComponent('Interés: ' + listing.title)}&ref=${encodeURIComponent(listing.id)}`)}
+                    onClick={() => setShowInquiryForm(true)}
                     className="w-full px-6 py-3 bg-[#0B2545] hover:bg-[#0B2545]/90 text-white rounded-lg font-medium transition-colors duration-200"
                   >
                     📧 Enviar mensaje
@@ -286,6 +288,15 @@ export default function ListingDetail(){
           </div>
         </div>
       </main>
+      {showInquiryForm && (
+        <PropertyInquiryForm
+          propertyId={listing.id}
+          propertyTitle={listing.title}
+          agentName={listing.agent?.name}
+          agentEmail={listing.agent?.email}
+          onClose={() => setShowInquiryForm(false)}
+        />
+      )}
       <Footer />
     </>
   )
