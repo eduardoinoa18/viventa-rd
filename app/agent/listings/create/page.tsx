@@ -25,19 +25,27 @@ export default function CreateListingPage() {
   
   const [formData, setFormData] = useState({
     title: '',
+    titleEn: '',
     description: '',
+    descriptionEn: '',
     propertyType: 'apartment',
     listingType: 'sale',
     price: '',
     currency: 'USD',
     bedrooms: '',
     bathrooms: '',
+    parkingSpaces: '',
     area: '',
+    lotSize: '',
+    yearBuilt: '',
     city: '',
     neighborhood: '',
     address: '',
+    latitude: '',
+    longitude: '',
     features: [] as string[],
-    status: 'pending'
+    status: 'active',
+    featured: false
   })
 
   const propertyTypes = [
@@ -100,6 +108,18 @@ export default function CreateListingPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    
+    // Validation
+    if (images.length === 0) {
+      toast.error('Debes subir al menos una imagen')
+      return
+    }
+
+    if (!formData.title || !formData.description) {
+      toast.error('El título y descripción son requeridos')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -110,34 +130,77 @@ export default function CreateListingPage() {
         return
       }
 
-      // Upload images
+      // Upload images with progress
       const imageUrls: string[] = []
+      toast.loading('Subiendo imágenes...', { id: 'upload' })
+      
       for (let i = 0; i < images.length; i++) {
         const file = images[i]
-        const fileName = `${Date.now()}-${i}-${file.name}`
+        const fileName = `${Date.now()}-${i}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
         const storageRef = ref(storage, `properties/${session.uid}/${fileName}`)
         
         await uploadBytes(storageRef, file)
         const url = await getDownloadURL(storageRef)
         imageUrls.push(url)
       }
+      
+      toast.success('Imágenes subidas', { id: 'upload' })
 
-      // Create property document
+      // Create property document with complete structure
       const propertyData = {
-        ...formData,
+        // Spanish content (primary)
+        title: formData.title,
+        description: formData.description,
+        
+        // English content (secondary)
+        titleEn: formData.titleEn || formData.title,
+        descriptionEn: formData.descriptionEn || formData.description,
+        
+        // Property details
+        propertyType: formData.propertyType,
+        listingType: formData.listingType,
         price: parseFloat(formData.price),
+        currency: formData.currency,
+        
+        // Specifications
         bedrooms: parseInt(formData.bedrooms) || 0,
-        bathrooms: parseInt(formData.bathrooms) || 0,
+        bathrooms: parseFloat(formData.bathrooms) || 0,
+        parkingSpaces: parseInt(formData.parkingSpaces) || 0,
         area: parseInt(formData.area) || 0,
-        images: imageUrls,
-        agentId: session.uid,
-        agentName: session.displayName || session.email,
-        agentEmail: session.email,
+        lotSize: parseInt(formData.lotSize) || 0,
+        yearBuilt: parseInt(formData.yearBuilt) || null,
+        
+        // Location
         location: {
           city: formData.city,
           neighborhood: formData.neighborhood,
-          address: formData.address
+          address: formData.address,
+          latitude: parseFloat(formData.latitude) || null,
+          longitude: parseFloat(formData.longitude) || null
         },
+        
+        // Media
+        images: imageUrls,
+        mainImage: imageUrls[0],
+        
+        // Features
+        features: formData.features,
+        
+        // Agent information
+        agentId: session.uid,
+        agentName: session.name || session.displayName || session.email,
+        agentEmail: session.email,
+        
+        // Status and visibility
+        status: formData.status,
+        featured: formData.featured,
+        
+        // Metrics (initialized)
+        views: 0,
+        inquiries: 0,
+        favorites: 0,
+        
+        // Timestamps
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }
@@ -146,9 +209,9 @@ export default function CreateListingPage() {
 
       toast.success('¡Propiedad creada exitosamente!')
       router.push(`/listing/${docRef.id}`)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating property:', error)
-      toast.error('Error al crear la propiedad. Intenta de nuevo.')
+      toast.error(error.message || 'Error al crear la propiedad. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -186,7 +249,7 @@ export default function CreateListingPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Título de la propiedad *
+                  Título de la propiedad (Español) *
                 </label>
                 <input
                   type="text"
@@ -202,7 +265,22 @@ export default function CreateListingPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Descripción *
+                  Título de la propiedad (English)
+                </label>
+                <input
+                  type="text"
+                  value={formData.titleEn}
+                  onChange={(e) =>
+                    setFormData({ ...formData, titleEn: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                  placeholder="Ex: Modern apartment in Piantini"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Descripción (Español) *
                 </label>
                 <textarea
                   required
@@ -213,6 +291,21 @@ export default function CreateListingPage() {
                   }
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                   placeholder="Describe tu propiedad en detalle..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Descripción (English)
+                </label>
+                <textarea
+                  rows={5}
+                  value={formData.descriptionEn}
+                  onChange={(e) =>
+                    setFormData({ ...formData, descriptionEn: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                  placeholder="Describe your property in detail..."
                 />
               </div>
 
@@ -314,6 +407,7 @@ export default function CreateListingPage() {
                     }
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                     placeholder="3"
+                    min="0"
                   />
                 </div>
 
@@ -324,12 +418,14 @@ export default function CreateListingPage() {
                   <input
                     type="number"
                     required
+                    step="0.5"
                     value={formData.bathrooms}
                     onChange={(e) =>
                       setFormData({ ...formData, bathrooms: e.target.value })
                     }
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                     placeholder="2"
+                    min="0"
                   />
                 </div>
 
@@ -346,6 +442,58 @@ export default function CreateListingPage() {
                     }
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                     placeholder="120"
+                    min="1"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Parqueos
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.parkingSpaces}
+                    onChange={(e) =>
+                      setFormData({ ...formData, parkingSpaces: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    placeholder="1"
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Tamaño del terreno (m²)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.lotSize}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lotSize: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    placeholder="150"
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Año de construcción
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.yearBuilt}
+                    onChange={(e) =>
+                      setFormData({ ...formData, yearBuilt: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    placeholder="2023"
+                    min="1900"
+                    max={new Date().getFullYear()}
                   />
                 </div>
               </div>
@@ -407,6 +555,56 @@ export default function CreateListingPage() {
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                   placeholder="Calle, número, etc."
                 />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Latitud (coordenadas GPS)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={formData.latitude}
+                    onChange={(e) =>
+                      setFormData({ ...formData, latitude: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    placeholder="18.4861"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Longitud (coordenadas GPS)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={formData.longitude}
+                    onChange={(e) =>
+                      setFormData({ ...formData, longitude: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    placeholder="-69.9312"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FiMapPin className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-blue-900 mb-1">
+                      ¿Cómo obtener coordenadas?
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      Abre Google Maps, busca tu propiedad, haz clic derecho en la ubicación y selecciona las coordenadas para copiarlas.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -488,6 +686,57 @@ export default function CreateListingPage() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Status & Featured */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-bold text-[#0B2545] mb-4">
+              Visibilidad y Estado
+            </h2>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl hover:border-[#00A676] transition-colors">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    Propiedad Destacada
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Las propiedades destacadas aparecen en la página principal y obtienen mayor visibilidad
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData({ ...formData, featured: !formData.featured })
+                  }
+                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                    formData.featured ? 'bg-[#00A676]' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                      formData.featured ? 'translate-x-7' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    ✓
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-1">
+                      Publicación Inmediata
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Tu propiedad se publicará automáticamente y será visible para todos los usuarios de inmediato.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
