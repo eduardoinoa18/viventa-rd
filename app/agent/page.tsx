@@ -1,149 +1,97 @@
-'use client''use client'
+"use client"
 
-import { useEffect, useState } from 'react'import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Header from '@/components/Header'
+import Footer from '@/components/Footer'
+import { getSession } from '@/lib/authSession'
+import { db } from '@/lib/firebaseClient'
+import { collection, query, where, getDocs } from 'firebase/firestore'
+import {
+  FiHome,
+  FiUsers,
+  FiCalendar,
+  FiCheckSquare,
+  FiTrendingUp,
+  FiMessageSquare,
+  FiPhone,
+  FiMail,
+  FiPlus,
+  FiEye,
+  FiStar,
+  FiEdit,
+  FiClock,
+  FiDollarSign,
+} from 'react-icons/fi'
 
-import { useRouter } from 'next/navigation'import { auth, db, storage } from '../../lib/firebaseClient'
-
-import { getSession } from '@/lib/authSession'import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
-
-import Header from '@/components/Header'import { collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
-
-import Footer from '@/components/Footer'import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
-
-import { FiHome, FiUsers, FiCalendar, FiCheckSquare, FiTrendingUp, FiMessageSquare, FiPhone, FiMail, FiPlus, FiEye, FiHeart, FiStar, FiEdit, FiTrash2, FiClock, FiDollarSign } from 'react-icons/fi'
-
-import { db } from '@/lib/firebaseClient'export default function AgentDashboard(){
-
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore'  const [user,setUser]=useState<any>(null)
-
-  const [title,setTitle]=useState(''); const [price,setPrice]=useState(''); const [img,setImg]=useState<File|null>(null)
-
-type Listing = {  const [listings,setListings]=useState<any[]>([])
-
+type Listing = {
   id: string
-
-  title: string  useEffect(()=> auth.onAuthStateChanged((u: any)=> setUser(u)),[])
-
-  price: number
-
-  location: string  async function login(){ const provider=new GoogleAuthProvider(); await signInWithPopup(auth,provider) }
-
-  status: string  async function addListing(){
-
-  bedrooms: number    if(!user) return alert('Login required')
-
-  bathrooms: number    let url=''
-
-  images: string[]    if(img){
-
-}      const fileRef = ref(storage, `listing_images/${Date.now()}_${img.name}`)
-
-      const snap = await uploadBytesResumable(fileRef, img)
-
-type Lead = {      url = await getDownloadURL(snap.ref)
-
-  id: string    }
-
-  name: string    await addDoc(collection(db,'listings'), { title, price_usd: parseFloat(price), images: url? [url]: [], createdBy: user.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), status:'active' })
-
-  email: string    setTitle(''); setPrice(''); setImg(null); loadMyListings()
-
-  phone?: string  }
-
-  property?: string  async function loadMyListings(){
-
-  status: 'new' | 'contacted' | 'qualified' | 'lost'    if(!user) return
-
-  createdAt: any    const q = query(collection(db,'listings'), where('createdBy','==', user.uid))
-
-}    const snap = await getDocs(q)
-
-  setListings(snap.docs.map((d: any)=> ({id:d.id, ...d.data()})))
-
-type Task = {  }
-
-  id: string
-
-  title: string  return (
-
-  dueDate: string    <div>
-
-  priority: 'high' | 'medium' | 'low'      <h1 className="text-2xl font-bold">Agent Dashboard</h1>
-
-  completed: boolean      {!user ? (
-
-}        <div className="mt-4">
-
-          <button onClick={login} className="px-4 py-2 bg-[#00A6A6] text-white rounded">Sign in with Google</button>
-
-export default function AgentDashboard() {        </div>
-
-  const [activeTab, setActiveTab] = useState('overview')      ) : (
-
-  const [user, setUser] = useState<any>(null)        <div className="mt-4 grid md:grid-cols-2 gap-6">
-
-  const [listings, setListings] = useState<Listing[]>([])          <div className="p-4 bg-white rounded shadow">
-
-  const [leads, setLeads] = useState<Lead[]>([])            <h3 className="font-semibold">New listing</h3>
-
-  const [tasks, setTasks] = useState<Task[]>([])            <input placeholder="Title" value={title} onChange={e=>setTitle(e.target.value)} className="mt-2 w-full px-3 py-2 border rounded"/>
-
-  const [stats, setStats] = useState({            <input placeholder="Price USD" value={price} onChange={e=>setPrice(e.target.value)} className="mt-2 w-full px-3 py-2 border rounded"/>
-
-    totalListings: 0,            <input type="file" className="mt-2" onChange={e=> setImg(e.target.files? e.target.files[0] : null)} />
-
-    activeListings: 0,            <button onClick={addListing} className="mt-3 px-3 py-2 bg-[#FF6B35] text-white rounded">Create</button>
-
-    soldThisMonth: 0,          </div>
-
-    totalViews: 0,          <div>
-
-    newLeads: 0,            <h3 className="font-semibold">My listings</h3>
-
-    pendingTasks: 0            <div className="mt-3 space-y-3">
-
-  })              <button onClick={loadMyListings} className="px-3 py-2 border rounded">Load</button>
-
-  const [loading, setLoading] = useState(true)              {listings.map(l=>(
-
-  const router = useRouter()                <div key={l.id} className="p-3 bg-white rounded shadow">
-
-                  <div className="font-medium">{l.title}</div>
-
-  useEffect(() => {                  <div className="text-sm text-gray-600">USD {l.price_usd}</div>
-
-    const s = getSession()                </div>
-
-    if (!s || s.role !== 'agent') {              ))}
-
-      router.replace('/login')            </div>
-
-      return          </div>
-
-    }        </div>
-
-    setUser(s)      )}
-
-    loadDashboard(s.uid)    </div>
-
-  }, [])  )
-
+  title: string
+  price?: number | string
+  price_usd?: number
+  location?: string
+  status?: 'active' | 'sold' | 'inactive' | string
+  bedrooms?: number
+  bathrooms?: number
+  images?: string[]
 }
+
+type Lead = {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  property?: string
+  status: 'new' | 'contacted' | 'qualified' | 'lost'
+  createdAt: any
+}
+
+type Task = {
+  id: string
+  title: string
+  dueDate: string
+  priority: 'high' | 'medium' | 'low'
+  completed: boolean
+}
+
+export default function AgentDashboard() {
+  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'leads' | 'tasks' | 'calendar'>('overview')
+  const [user, setUser] = useState<any>(null)
+  const [listings, setListings] = useState<Listing[]>([])
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [stats, setStats] = useState({
+    totalListings: 0,
+    activeListings: 0,
+    soldThisMonth: 0,
+    totalViews: 0,
+    newLeads: 0,
+    pendingTasks: 0,
+  })
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    const s = getSession()
+    if (!s || s.role !== 'agent') {
+      router.replace('/login')
+      return
+    }
+    setUser(s)
+    loadDashboard(s.uid)
+  }, [])
 
   async function loadDashboard(agentId: string) {
     setLoading(true)
     try {
       // Load agent's listings
-      const listingsQuery = query(
-        collection(db, 'listings'),
-        where('agentId', '==', agentId)
-      )
-      const listingsSnap = await getDocs(listingsQuery)
-      const listingsList = listingsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Listing[]
+      const listingsQuery = query(collection(db, 'listings'), where('agentId', '==', agentId))
+  const listingsSnap = await getDocs(listingsQuery)
+  const listingsList = listingsSnap.docs.map((d: any) => ({ id: d.id, ...d.data() })) as Listing[]
 
       // Calculate stats
-      const activeListings = listingsList.filter(l => l.status === 'active').length
-      const soldThisMonth = listingsList.filter(l => {
+      const activeListings = listingsList.filter((l) => l.status === 'active').length
+      const soldThisMonth = listingsList.filter((l) => {
         if (l.status !== 'sold') return false
         // In real app, check soldAt date
         return true
@@ -158,7 +106,7 @@ export default function AgentDashboard() {        </div>
           phone: '809-555-0101',
           property: 'Apartamento en Piantini',
           status: 'new',
-          createdAt: new Date()
+          createdAt: new Date(),
         },
         {
           id: '2',
@@ -167,8 +115,8 @@ export default function AgentDashboard() {        </div>
           phone: '809-555-0102',
           property: 'Villa en Casa de Campo',
           status: 'contacted',
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       ]
 
       // Mock tasks
@@ -178,22 +126,22 @@ export default function AgentDashboard() {        </div>
           title: 'Llamar a cliente Carlos Pérez',
           dueDate: '2025-10-29',
           priority: 'high',
-          completed: false
+          completed: false,
         },
         {
           id: '2',
           title: 'Preparar documentos para cierre',
           dueDate: '2025-10-30',
           priority: 'high',
-          completed: false
+          completed: false,
         },
         {
           id: '3',
           title: 'Actualizar fotos de listado',
           dueDate: '2025-11-01',
           priority: 'medium',
-          completed: false
-        }
+          completed: false,
+        },
       ]
 
       setListings(listingsList)
@@ -204,8 +152,8 @@ export default function AgentDashboard() {        </div>
         activeListings,
         soldThisMonth,
         totalViews: Math.floor(Math.random() * 500) + 200,
-        newLeads: mockLeads.filter(l => l.status === 'new').length,
-        pendingTasks: mockTasks.filter(t => !t.completed).length
+        newLeads: mockLeads.filter((l) => l.status === 'new').length,
+        pendingTasks: mockTasks.filter((t) => !t.completed).length,
       })
     } catch (e) {
       console.error('Failed to load agent dashboard', e)
@@ -264,6 +212,7 @@ export default function AgentDashboard() {        </div>
               <FiCheckSquare className="inline mr-2" />
               Tareas
             </button>
+
             <button
               onClick={() => setActiveTab('calendar')}
               className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
@@ -296,9 +245,7 @@ export default function AgentDashboard() {        </div>
                         <div className="text-sm text-gray-600">Total Listados</div>
                       </div>
                     </div>
-                    <div className="text-xs text-green-600 font-semibold mt-2">
-                      {stats.activeListings} activos
-                    </div>
+                    <div className="text-xs text-green-600 font-semibold mt-2">{stats.activeListings} activos</div>
                   </div>
                   <div className="bg-white rounded-xl shadow p-6">
                     <div className="flex items-center gap-3 mb-2">
@@ -308,9 +255,7 @@ export default function AgentDashboard() {        </div>
                         <div className="text-sm text-gray-600">Vistas (mes)</div>
                       </div>
                     </div>
-                    <div className="text-xs text-green-600 font-semibold mt-2">
-                      +{Math.floor(Math.random() * 20)}% vs. mes anterior
-                    </div>
+                    <div className="text-xs text-green-600 font-semibold mt-2">+{Math.floor(Math.random() * 20)}% vs. mes anterior</div>
                   </div>
                   <div className="bg-white rounded-xl shadow p-6">
                     <div className="flex items-center gap-3 mb-2">
@@ -320,9 +265,7 @@ export default function AgentDashboard() {        </div>
                         <div className="text-sm text-gray-600">Nuevos Leads</div>
                       </div>
                     </div>
-                    <div className="text-xs text-blue-600 font-semibold mt-2">
-                      {leads.length} total
-                    </div>
+                    <div className="text-xs text-blue-600 font-semibold mt-2">{leads.length} total</div>
                   </div>
                   <div className="bg-white rounded-xl shadow p-6">
                     <div className="flex items-center gap-3 mb-2">
@@ -357,31 +300,19 @@ export default function AgentDashboard() {        </div>
                 <div className="bg-gradient-to-r from-[#0B2545] to-[#00A676] rounded-xl shadow p-6 text-white">
                   <h3 className="text-xl font-bold mb-4">Acciones Rápidas</h3>
                   <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
-                    <a
-                      href="/admin/properties/create"
-                      className="bg-white/20 hover:bg-white/30 rounded-lg p-4 text-left transition-colors"
-                    >
+                    <a href="/admin/properties/create" className="bg-white/20 hover:bg-white/30 rounded-lg p-4 text-left transition-colors">
                       <FiPlus className="text-2xl mb-2" />
                       <div className="font-semibold">Crear Listado</div>
                     </a>
-                    <button
-                      onClick={() => setActiveTab('leads')}
-                      className="bg-white/20 hover:bg-white/30 rounded-lg p-4 text-left transition-colors"
-                    >
+                    <button onClick={() => setActiveTab('leads')} className="bg-white/20 hover:bg-white/30 rounded-lg p-4 text-left transition-colors">
                       <FiUsers className="text-2xl mb-2" />
                       <div className="font-semibold">Ver Leads</div>
                     </button>
-                    <a
-                      href="/agent/assistant"
-                      className="bg-white/20 hover:bg-white/30 rounded-lg p-4 text-left transition-colors"
-                    >
+                    <a href="/agent/assistant" className="bg-white/20 hover:bg-white/30 rounded-lg p-4 text-left transition-colors">
                       <FiMessageSquare className="text-2xl mb-2" />
                       <div className="font-semibold">Asistente IA</div>
                     </a>
-                    <button
-                      onClick={() => setActiveTab('calendar')}
-                      className="bg-white/20 hover:bg-white/30 rounded-lg p-4 text-left transition-colors"
-                    >
+                    <button onClick={() => setActiveTab('calendar')} className="bg-white/20 hover:bg-white/30 rounded-lg p-4 text-left transition-colors">
                       <FiCalendar className="text-2xl mb-2" />
                       <div className="font-semibold">Mi Agenda</div>
                     </button>
@@ -396,7 +327,7 @@ export default function AgentDashboard() {        </div>
                       <p className="text-gray-500 text-center py-4">No hay leads recientes</p>
                     ) : (
                       <div className="space-y-3">
-                        {leads.slice(0, 3).map(lead => (
+                        {leads.slice(0, 3).map((lead) => (
                           <div key={lead.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                             <div>
                               <div className="font-semibold text-gray-800">{lead.name}</div>
@@ -421,14 +352,14 @@ export default function AgentDashboard() {        </div>
 
                   <div className="bg-white rounded-xl shadow p-6">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Tareas Urgentes</h3>
-                    {tasks.filter(t => !t.completed && t.priority === 'high').length === 0 ? (
+                    {tasks.filter((t) => !t.completed && t.priority === 'high').length === 0 ? (
                       <p className="text-gray-500 text-center py-4">No hay tareas urgentes</p>
                     ) : (
                       <div className="space-y-3">
                         {tasks
-                          .filter(t => !t.completed && t.priority === 'high')
+                          .filter((t) => !t.completed && t.priority === 'high')
                           .slice(0, 3)
-                          .map(task => (
+                          .map((task) => (
                             <div key={task.id} className="flex items-center gap-3 p-3 border rounded-lg">
                               <input type="checkbox" className="w-5 h-5" />
                               <div className="flex-1">
@@ -464,16 +395,13 @@ export default function AgentDashboard() {        </div>
                   <div className="bg-white rounded-xl shadow p-12 text-center">
                     <FiHome className="text-6xl text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-600 mb-4">No tienes listados aún</p>
-                    <a
-                      href="/admin/properties/create"
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]"
-                    >
+                    <a href="/admin/properties/create" className="inline-flex items-center gap-2 px-6 py-3 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]">
                       <FiPlus /> Crear tu primer listado
                     </a>
                   </div>
                 ) : (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {listings.map(listing => (
+                    {listings.map((listing) => (
                       <div key={listing.id} className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden">
                         <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 relative">
                           {listing.images?.[0] ? (
@@ -502,13 +430,14 @@ export default function AgentDashboard() {        </div>
                             {listing.bedrooms} hab • {listing.bathrooms} baños
                           </div>
                           <div className="font-bold text-[#0B2545] mb-3">
-                            RD$ {Number(listing.price).toLocaleString('es-DO')}
+                            {(() => {
+                              const price = (listing as any).price ?? (listing as any).price_usd
+                              const num = typeof price === 'string' ? Number(price) : price
+                              return num ? `RD$ ${num.toLocaleString('es-DO')}` : 'Precio a consultar'
+                            })()}
                           </div>
                           <div className="flex gap-2">
-                            <a
-                              href={`/listing/${listing.id}`}
-                              className="flex-1 text-center px-3 py-2 bg-[#00A676] text-white rounded-lg text-sm font-semibold hover:bg-[#008F64]"
-                            >
+                            <a href={`/listing/${listing.id}`} className="flex-1 text-center px-3 py-2 bg-[#00A676] text-white rounded-lg text-sm font-semibold hover:bg-[#008F64]">
                               <FiEye className="inline mr-1" /> Ver
                             </a>
                             <button className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
@@ -552,7 +481,7 @@ export default function AgentDashboard() {        </div>
                           </td>
                         </tr>
                       ) : (
-                        leads.map(lead => (
+                        leads.map((lead) => (
                           <tr key={lead.id} className="hover:bg-gray-50">
                             <td className="p-4 font-semibold text-gray-800">{lead.name}</td>
                             <td className="p-4">
@@ -614,23 +543,19 @@ export default function AgentDashboard() {        </div>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
-                  {['high', 'medium', 'low'].map(priority => (
+                  {(['high', 'medium', 'low'] as const).map((priority) => (
                     <div key={priority} className="bg-white rounded-xl shadow">
                       <div
                         className={`p-4 border-b font-semibold ${
-                          priority === 'high'
-                            ? 'text-red-600'
-                            : priority === 'medium'
-                            ? 'text-yellow-600'
-                            : 'text-green-600'
+                          priority === 'high' ? 'text-red-600' : priority === 'medium' ? 'text-yellow-600' : 'text-green-600'
                         }`}
                       >
                         {priority === 'high' ? 'Alta' : priority === 'medium' ? 'Media' : 'Baja'} Prioridad
                       </div>
                       <div className="p-4 space-y-3">
                         {tasks
-                          .filter(t => t.priority === priority && !t.completed)
-                          .map(task => (
+                          .filter((t) => t.priority === priority && !t.completed)
+                          .map((task) => (
                             <div key={task.id} className="p-3 border rounded-lg hover:bg-gray-50">
                               <div className="flex items-start gap-3">
                                 <input type="checkbox" className="mt-1 w-5 h-5" />
@@ -644,7 +569,7 @@ export default function AgentDashboard() {        </div>
                               </div>
                             </div>
                           ))}
-                        {tasks.filter(t => t.priority === priority && !t.completed).length === 0 && (
+                        {tasks.filter((t) => t.priority === priority && !t.completed).length === 0 && (
                           <p className="text-center text-gray-500 py-4">Sin tareas</p>
                         )}
                       </div>
@@ -675,3 +600,4 @@ export default function AgentDashboard() {        </div>
     </div>
   )
 }
+

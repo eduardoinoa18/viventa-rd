@@ -45,8 +45,8 @@ export default function BottomNav() {
     {
       name: 'Mensajes',
       icon: FiMessageCircle,
-      path: '/dashboard',
-      active: pathname?.startsWith('/dashboard') && pathname !== '/'
+      path: '/messages',
+      active: pathname?.startsWith('/messages')
     },
     {
       name: 'Perfil',
