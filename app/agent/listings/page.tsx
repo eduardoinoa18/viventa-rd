@@ -67,7 +67,7 @@ export default function AgentListingsPage() {
 
       const snapshot = await getDocs(q)
       const results: Listing[] = []
-      snapshot.forEach((doc) => {
+      snapshot.forEach((doc: any) => {
         results.push({ id: doc.id, ...doc.data() } as Listing)
       })
 

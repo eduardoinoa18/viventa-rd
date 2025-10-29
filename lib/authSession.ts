@@ -1,9 +1,11 @@
 export type UserSession = {
   uid: string;
   role: 'agent' | 'broker' | 'master_admin' | 'user';
+  email?: string;
   token?: string;
   profileComplete?: boolean;
   name?: string;
+  displayName?: string;
 };
 
 const KEY = 'viventa:session';
