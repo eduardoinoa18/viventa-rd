@@ -6,6 +6,7 @@ import BottomNav from '../components/BottomNav';
 import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import StructuredData from '../components/StructuredData';
+import FeaturedProperties from '../components/FeaturedProperties';
 import { useState, useEffect } from 'react';
 import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock, FiTrendingUp } from 'react-icons/fi'
 
@@ -128,8 +129,8 @@ export default function HomePage() {
         {/* Map Search & Filters */}
         <section className="max-w-7xl mx-auto py-12 px-4">
           <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold text-[#0B2545] mb-2">Propiedades Destacadas</h2>
-            <p className="text-gray-600">Descubre las mejores oportunidades del mercado</p>
+            <h2 className="text-3xl font-bold text-[#0B2545] mb-2">Explora Propiedades</h2>
+            <p className="text-gray-600">Usa los filtros para encontrar tu propiedad ideal</p>
           </div>
           
           <div className="flex flex-col lg:flex-row gap-6">
@@ -262,6 +263,9 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* Featured Properties Section */}
+        <FeaturedProperties />
 
         {/* Top Agents */}
         <section className="bg-white py-12">

@@ -9,6 +9,7 @@ import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import SearchFilters from '../../components/SearchFilters'
 import PropertyCard from '../../components/PropertyCard'
+import AdvancedFilters from '../../components/AdvancedFilters'
 import { FiList, FiMap, FiSave, FiSearch, FiSliders, FiFilter } from 'react-icons/fi'
 import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore'
@@ -118,6 +119,34 @@ export default function SearchPage() {
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-[#0B2545] mb-2">Buscar propiedades</h1>
             <p className="text-gray-600">Encuentra tu propiedad ideal en República Dominicana</p>
+          </div>
+
+          {/* Advanced Filters Button */}
+          <div className="mb-6 flex items-center gap-4">
+            <AdvancedFilters 
+              onApply={(appliedFilters) => {
+                setFilters({
+                  type: appliedFilters.propertyType || '',
+                  minPrice: appliedFilters.minPrice || '',
+                  maxPrice: appliedFilters.maxPrice || '',
+                  bedrooms: appliedFilters.bedrooms || '',
+                  bathrooms: appliedFilters.bathrooms || '',
+                  city: appliedFilters.city || ''
+                })
+                // You can expand this to include more filters
+              }}
+              initialFilters={{
+                propertyType: filters.type,
+                minPrice: filters.minPrice,
+                maxPrice: filters.maxPrice,
+                bedrooms: filters.bedrooms,
+                bathrooms: filters.bathrooms,
+                city: filters.city
+              }}
+            />
+            <div className="text-sm text-gray-600">
+              Usa filtros avanzados para una búsqueda más específica
+            </div>
           </div>
           
           {!isAlgoliaConfigured || !searchClient ? (
