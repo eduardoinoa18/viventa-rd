@@ -40,7 +40,7 @@ export default function BottomNav() {
       name: 'Favoritos',
       icon: FiHeart,
       path: '/favorites',
-      active: pathname === '/favorites'
+      active: pathname?.startsWith('/favorites')
     },
     {
       name: 'Mensajes',
@@ -52,7 +52,7 @@ export default function BottomNav() {
       name: 'Perfil',
       icon: FiUser,
       path: '/dashboard',
-      active: false // Will show active state differently
+      active: pathname?.startsWith('/dashboard')
     }
   ]
 

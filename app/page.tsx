@@ -2,6 +2,7 @@
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import BottomNav from '../components/BottomNav';
 import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import StructuredData from '../components/StructuredData';
@@ -302,6 +303,7 @@ export default function HomePage() {
         </section>
       </main>
       <Footer />
+      <BottomNav />
     </div>
   );
 }

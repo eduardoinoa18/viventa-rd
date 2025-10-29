@@ -4,6 +4,7 @@ import { getSession } from '../../lib/authSession';
 import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import BottomNav from '../../components/BottomNav';
 import UserEngagement from '../../components/UserEngagement';
 import { FiHeart, FiSearch, FiUser, FiMail, FiPhone, FiBookmark, FiMessageSquare, FiSettings, FiLogOut, FiAward, FiZap } from 'react-icons/fi';
 import { auth } from '../../lib/firebaseClient';
@@ -315,6 +316,7 @@ export default function UserDashboard() {
         </div>
       </main>
       <Footer />
+      <BottomNav />
     </div>
   );
 }

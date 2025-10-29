@@ -7,6 +7,7 @@ import { formatCurrency, formatFeatures, formatArea } from '@/lib/currency'
 import { FaSync, FaWifi, FaHeart, FaUser } from 'react-icons/fa'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import BottomNav from '@/components/BottomNav'
 
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<any[]>([])
@@ -229,6 +230,7 @@ export default function FavoritesPage() {
       </main>
 
       <Footer />
+      <BottomNav />
     </div>
   )
 }
