@@ -7,6 +7,7 @@ import MapSearch from '../../components/MapSearch'
 import SavedSearchModal from '../../components/SavedSearchModal'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
+import BottomNav from '../../components/BottomNav'
 import SearchFilters from '../../components/SearchFilters'
 import PropertyCard from '../../components/PropertyCard'
 import AdvancedFilters from '../../components/AdvancedFilters'
@@ -419,6 +420,7 @@ export default function SearchPage() {
         </div>
       </main>
       <Footer />
+      <BottomNav />
     </>
   )
 }

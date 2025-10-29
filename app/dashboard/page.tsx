@@ -7,6 +7,7 @@ import Footer from '../../components/Footer';
 import BottomNav from '../../components/BottomNav';
 import UserEngagement from '../../components/UserEngagement';
 import { FiHeart, FiSearch, FiUser, FiMail, FiPhone, FiBookmark, FiMessageSquare, FiSettings, FiLogOut, FiAward, FiZap } from 'react-icons/fi';
+import MessagesPreview from '../../components/MessagesPreview';
 import { auth } from '../../lib/firebaseClient';
 import { signOut } from 'firebase/auth';
 
@@ -58,6 +59,29 @@ export default function UserDashboard() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Mi Dashboard</h1>
           <p className="text-gray-600">Bienvenido, {user.name || 'Usuario'}</p>
+        </div>
+
+        {/* Mobile tabs for quick navigation */}
+        <div className="md:hidden -mx-4 px-4 overflow-x-auto pb-2 mb-4">
+          <div className="flex gap-2">
+            {[
+              { id: 'overview', label: 'Resumen' },
+              { id: 'favorites', label: 'Favoritos' },
+              { id: 'recommendations', label: 'Recomendaciones' },
+              { id: 'searches', label: 'Búsquedas' },
+              { id: 'messages', label: 'Mensajes' },
+              { id: 'profile', label: 'Perfil' },
+              { id: 'engagement', label: 'Logros' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={()=>setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border ${activeTab===tab.id?'bg-[#00A6A6] text-white border-[#00A6A6]':'bg-white text-gray-700 border-gray-200'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="grid md:grid-cols-4 gap-6">
@@ -255,13 +279,13 @@ export default function UserDashboard() {
             )}
 
             {activeTab === 'messages' && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-bold mb-4">Mensajes</h2>
-                <div className="text-center py-12 text-gray-500">
-                  <FiMessageSquare className="text-5xl mx-auto mb-4 text-gray-300" />
-                  <p className="mb-4">No tienes mensajes</p>
-                  <p className="text-sm">Los agentes podrán contactarte cuando te interese una propiedad</p>
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h2 className="text-xl font-bold mb-2">Mensajes</h2>
+                  <p className="text-sm text-gray-600 mb-4">Tus chats recientes con agentes</p>
+                  <MessagesPreview />
                 </div>
+                <a href="/messages" className="block w-full text-center px-4 py-3 bg-[#0B2545] text-white rounded-lg font-semibold hover:opacity-90">Abrir chat completo</a>
               </div>
             )}
 

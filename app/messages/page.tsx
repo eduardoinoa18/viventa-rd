@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import BottomNav from '@/components/BottomNav'
 import { getSession } from '@/lib/authSession'
 import { FiSend, FiSearch, FiMessageSquare, FiUser, FiArrowLeft } from 'react-icons/fi'
 
@@ -19,7 +20,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!session) {
-      router.replace('/login')
+      setLoadingConvos(false)
       return
     }
     loadConversations()
@@ -83,6 +84,31 @@ export default function MessagesPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
+      {!session ? (
+        <main className="flex-1 flex items-center justify-center px-4 py-20">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div className="w-20 h-20 bg-gradient-to-br from-[#00A676] to-[#00A6A6] rounded-full flex items-center justify-center mx-auto mb-6">
+              <FiMessageSquare className="text-4xl text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-[#0B2545] mb-4">Mensajes</h2>
+            <p className="text-gray-600 mb-8">
+              Inicia sesión para ver y enviar mensajes a otros usuarios de la plataforma
+            </p>
+            <button
+              onClick={() => router.push('/login')}
+              className="w-full px-8 py-4 bg-gradient-to-r from-[#00A676] to-[#00A6A6] text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              Iniciar Sesión
+            </button>
+            <button
+              onClick={() => router.push('/signup')}
+              className="w-full mt-3 px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all"
+            >
+              Crear Cuenta
+            </button>
+          </div>
+        </main>
+      ) : (
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 grid md:grid-cols-3 gap-4">
         {/* Conversations List */}
         <div className="md:col-span-1 bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
@@ -169,7 +195,9 @@ export default function MessagesPage() {
           )}
         </div>
       </main>
+      )}
       <Footer />
+      <BottomNav />
     </div>
   )
 }

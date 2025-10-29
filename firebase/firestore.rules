@@ -45,6 +45,49 @@ service cloud.firestore {
       allow delete: if isMasterAdmin();
     }
 
+    match /properties/{propertyId} {
+      allow read: if true;
+      allow create: if isAgentOrAbove();
+      allow update: if isSignedIn() && (resource.data.agentId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow create: if isElevated();
+      allow update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    match /contact_submissions/{submissionId} {
+      allow read: if isElevated();
+      allow create: if true;
+      allow update: if isElevated();
+      allow delete: if isAdmin();
+    }
+
+    match /property_inquiries/{inquiryId} {
+      allow read: if isElevated();
+      allow create: if true;
+      allow update: if isElevated();
+      allow delete: if isAdmin();
+    }
+
+    match /billing_customers/{customerId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /billing_subscriptions/{subscriptionId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /billing_invoices/{invoiceId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
     match /brokerages/{bId} {
       allow read: if true;
       allow create, update, delete: if isElevated();

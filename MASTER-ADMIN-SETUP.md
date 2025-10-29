@@ -79,7 +79,7 @@ Visit http://localhost:3000/admin/login, enter your master admin email, and chec
    SMTP_PORT=587
    SMTP_SECURE=false
    SMTP_USER=your-email@gmail.com
-   SMTP_PASS=your-app-specific-password
+   SMTP_PASS=gecp gnct wdqi grzz
    SMTP_FROM=your-email@gmail.com
    ```
 
@@ -193,7 +193,7 @@ SENDGRID_FROM_EMAIL=noreply@viventa.com
 # SMTP_PORT=587
 # SMTP_SECURE=false
 # SMTP_USER=your-email@gmail.com
-# SMTP_PASS=your-app-password
+# SMTP_PASS=gecp gnct wdqi grzz
 # SMTP_FROM=your-email@gmail.com
 ```
 
