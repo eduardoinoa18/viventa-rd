@@ -71,7 +71,7 @@ export default function FeaturedProperties() {
 
       const snapshot = await getDocs(q)
       const props: Property[] = []
-      snapshot.forEach((doc) => {
+      snapshot.forEach((doc: any) => {
         props.push({ id: doc.id, ...doc.data() } as Property)
       })
 
