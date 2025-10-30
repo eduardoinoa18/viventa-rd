@@ -23,7 +23,7 @@ export default function Header() {
   // Prevent hydration mismatch
   if (!mounted) {
     return (
-      <header className="sticky top-0 z-20 bg-white shadow-sm">
+      <header className="sticky top-0 z-50 bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <img src="/logo.svg" alt="VIVENTA" className="h-10 sm:h-12 md:h-14" />
@@ -38,15 +38,15 @@ export default function Header() {
           <div className="flex items-center space-x-2 sm:space-x-3">
             <CurrencySwitcher />
             <LocaleSwitcher />
-            <Link href="/login" className="px-3 py-2 text-sm border rounded font-semibold hidden sm:inline-block">Login</Link>
-            <Link href="/signup" className="px-3 py-2 text-sm bg-[#00A676] text-white rounded font-semibold hidden sm:inline-block">Sign Up</Link>
+            <Link href="/login" className="px-3 py-2 min-h-[44px] min-w-[60px] flex items-center justify-center text-sm border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition active:scale-95">Login</Link>
+            <Link href="/signup" className="px-3 py-2 min-h-[44px] text-sm bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008f5f] transition active:scale-95 shadow-sm">Sign Up</Link>
           </div>
         </div>
       </header>
     )
   }
   return (
-    <header className="sticky top-0 z-20 bg-white shadow-sm">
+    <header className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center">
           <img src="/logo.svg" alt="VIVENTA" className="h-10 sm:h-12 md:h-14" />
@@ -75,13 +75,13 @@ export default function Header() {
           <LocaleSwitcher />
           {session ? (
             <>
-              <Link href="/dashboard" className="px-3 py-2 text-sm border rounded font-semibold hidden sm:inline-block">Dashboard</Link>
-              <button onClick={logout} className="px-3 py-2 text-sm bg-red-500 text-white rounded font-semibold">Logout</button>
+              <Link href="/dashboard" className="px-3 py-2 text-sm border rounded font-semibold hover:bg-gray-50 transition hidden sm:inline-block">Dashboard</Link>
+              <button onClick={logout} className="px-3 py-2 text-sm bg-red-500 text-white rounded font-semibold hover:bg-red-600 transition hidden md:inline-block">Logout</button>
             </>
           ) : (
             <>
-              <Link href="/login" className="px-3 py-2 text-sm border rounded font-semibold hidden sm:inline-block">Login</Link>
-              <Link href="/signup" className="px-3 py-2 text-sm bg-[#00A676] text-white rounded font-semibold">Sign Up</Link>
+              <Link href="/login" className="px-3 py-2 min-h-[44px] min-w-[60px] flex items-center justify-center text-sm border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition active:scale-95">Login</Link>
+              <Link href="/signup" className="px-3 py-2 min-h-[44px] text-sm bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008f5f] transition active:scale-95 shadow-sm">Sign Up</Link>
             </>
           )}
         </div>
