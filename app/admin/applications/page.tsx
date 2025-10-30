@@ -268,6 +268,11 @@ function ApplicationCard({ app, selected, onToggleSelect, onApprove, onReject, o
           <div>
             <div className="font-semibold text-[#0B2545] inline-flex items-center gap-2">
               {app.contact || 'Sin nombre'} — {typeLabel}
+              {app.assignedCode && (
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-mono">
+                  {app.assignedCode}
+                </span>
+              )}
             </div>
             <div className="text-sm text-gray-600 flex items-center gap-3 mt-1">
               {app.email && (
@@ -279,6 +284,19 @@ function ApplicationCard({ app, selected, onToggleSelect, onApprove, onReject, o
                 <span className="inline-flex items-center gap-1">
                   <FiPhone className="text-gray-400" /> {app.phone}
                 </span>
+              )}
+              {app.linkedUid && (
+                <a
+                  href={`/admin/users`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    // In a real implementation, you'd navigate to the user detail or filter by this uid
+                  }}
+                  className="inline-flex items-center gap-1 text-[#00A6A6] hover:text-[#008c8c] font-medium"
+                  title="Ver perfil de usuario"
+                >
+                  <FiUser className="text-sm" /> Ver perfil
+                </a>
               )}
             </div>
             <div className="text-xs text-gray-500 mt-1 inline-flex items-center gap-1">
