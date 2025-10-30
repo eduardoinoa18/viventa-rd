@@ -47,6 +47,40 @@ export async function uploadImage(
 }
 
 /**
+ * Upload a generic file (PDF/DOC/DOCX/images) to Firebase Storage
+ */
+export async function uploadFile(
+  file: File,
+  path: string,
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const storageRef = ref(storage, path)
+    const uploadTask = uploadBytesResumable(storageRef, file)
+
+    uploadTask.on(
+      'state_changed',
+      (snapshot: any) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        if (onProgress) onProgress(progress)
+      },
+      (error: any) => {
+        console.error('Upload error:', error)
+        reject(error)
+      },
+      async () => {
+        try {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref)
+          resolve(downloadURL)
+        } catch (error) {
+          reject(error)
+        }
+      }
+    )
+  })
+}
+
+/**
  * Upload multiple images to Firebase Storage
  */
 export async function uploadMultipleImages(
@@ -113,6 +147,38 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
 }
 
 /**
+ * Validate generic file (pdf/doc/docx/images)
+ */
+export function validateFile(file: File): { valid: boolean; error?: string } {
+  const maxSize = 10 * 1024 * 1024 // 10MB
+  const allowedTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+  ]
+
+  if (!allowedTypes.includes(file.type)) {
+    return {
+      valid: false,
+      error: 'Tipo de archivo no permitido. Sube PDF, DOC, DOCX o imágenes (JPG/PNG/WebP).'
+    }
+  }
+
+  if (file.size > maxSize) {
+    return {
+      valid: false,
+      error: 'Archivo muy grande. Tamaño máximo 10MB.'
+    }
+  }
+
+  return { valid: true }
+}
+
+/**
  * Validate multiple image files
  */
 export function validateImageFiles(files: File[]): { valid: boolean; errors: string[] } {
@@ -142,4 +208,13 @@ export function validateImageFiles(files: File[]): { valid: boolean; errors: str
 export function generatePropertyImagePath(userId: string, propertyId?: string): string {
   const id = propertyId || `temp_${Date.now()}`
   return `properties/${userId}/${id}`
+}
+
+/**
+ * Generate a path for application uploads
+ */
+export function generateApplicationFilePath(type: 'agent' | 'broker' | 'developer', originalName: string) {
+  const timestamp = Date.now()
+  const safeName = originalName.replace(/[^a-zA-Z0-9.]/g, '_')
+  return `applications/${type}/${timestamp}_${safeName}`
 }

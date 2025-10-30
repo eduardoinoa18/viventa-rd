@@ -13,8 +13,14 @@ export default function PwaInstallPrompt() {
       // Show prompt after user has visited 2+ times or after 30 seconds
       const visitCount = parseInt(localStorage.getItem('visitCount') || '0')
       localStorage.setItem('visitCount', String(visitCount + 1))
-      
-      if (visitCount >= 2) {
+
+      // Respect recent dismiss (7 days)
+      const dismissedAt = parseInt(localStorage.getItem('installPromptDismissed') || '0')
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
+      const recentlyDismissed = dismissedAt && (Date.now() - dismissedAt) < sevenDaysMs
+
+      if (!recentlyDismissed && visitCount >= 2) {
+        // Delay a bit so it doesn't fight with initial UI
         setTimeout(() => setVisible(true), 3000)
       }
     }

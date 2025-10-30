@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { db } from '../../lib/firebaseClient'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { FiSend, FiUsers, FiBriefcase, FiArrowLeft } from 'react-icons/fi'
+import { uploadFile, validateFile, generateApplicationFilePath } from '@/lib/storageService'
 
 export default function ApplyPage(){
   const router = useRouter()
@@ -15,11 +16,46 @@ export default function ApplyPage(){
     agents:0, annualVolume12m:0, offices:1, crm:'', insurance:false
   })
   const [submitted,setSubmitted] = useState(false)
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [bizDocFile, setBizDocFile] = useState<File | null>(null)
+  const [uploadProgress, setUploadProgress] = useState<number>(0)
+  const [submitting, setSubmitting] = useState(false)
 
   async function submit(){
     if(!form.email || !form.contact){ alert('Completa los campos requeridos'); return }
-    await addDoc(collection(db,'applications'), { ...form, status:'pending', createdAt: serverTimestamp() })
-    setSubmitted(true)
+    try {
+      setSubmitting(true)
+      let resumeUrl: string | undefined
+      let documentUrl: string | undefined
+
+      if (form.type === 'agent' && resumeFile) {
+        const v = validateFile(resumeFile)
+        if (!v.valid) { alert(v.error); setSubmitting(false); return }
+        const path = generateApplicationFilePath('agent', resumeFile.name)
+        resumeUrl = await uploadFile(resumeFile, path, (p) => setUploadProgress(p))
+      }
+
+      if (form.type === 'broker' && bizDocFile) {
+        const v = validateFile(bizDocFile)
+        if (!v.valid) { alert(v.error); setSubmitting(false); return }
+        const path = generateApplicationFilePath('broker', bizDocFile.name)
+        documentUrl = await uploadFile(bizDocFile, path, (p) => setUploadProgress(p))
+      }
+
+      await addDoc(collection(db,'applications'), {
+        ...form,
+        status:'pending',
+        createdAt: serverTimestamp(),
+        resumeUrl,
+        documentUrl,
+      })
+      setSubmitted(true)
+    } catch (e: any) {
+      console.error('Application submit failed', e)
+      alert(e?.message || 'No se pudo enviar la solicitud. Intenta de nuevo.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if(submitted) {
@@ -106,6 +142,13 @@ export default function ApplyPage(){
                 <div><label className="block text-sm font-semibold mb-2">Inmobiliaria actual</label><input value={form.brokerage} onChange={e=>setForm({...form,brokerage:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
                 <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2">Idiomas</label><input value={form.languages} onChange={e=>setForm({...form,languages:e.target.value})} className="w-full px-4 py-3 border rounded-lg" placeholder="Español, Inglés"/></div>
                 <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2">Especialidades</label><input value={form.specialties} onChange={e=>setForm({...form,specialties:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold mb-2">Currículum (PDF/DOC/DOCX, máx 10MB)</label>
+                  <input type="file" accept=".pdf,.doc,.docx,image/*" onChange={(e)=> setResumeFile(e.target.files?.[0] || null)} className="w-full px-4 py-3 border rounded-lg" />
+                  {uploadProgress > 0 && submitting && (
+                    <div className="text-xs text-gray-500 mt-1">Subiendo: {Math.round(uploadProgress)}%</div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -119,16 +162,24 @@ export default function ApplyPage(){
                 <div><label className="block text-sm font-semibold mb-2">N° oficinas</label><input type="number" value={form.offices} onChange={e=>setForm({...form,offices:+e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
                 <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2">CRM</label><input value={form.crm} onChange={e=>setForm({...form,crm:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
                 <div className="md:col-span-3 flex items-center gap-2 p-3 bg-blue-50 rounded-lg"><input type="checkbox" checked={form.insurance} onChange={e=>setForm({...form,insurance:e.target.checked})} className="w-5 h-5"/><label className="text-sm font-medium">Tenemos seguro E&O</label></div>
+                <div className="md:col-span-3">
+                  <label className="block text-sm font-semibold mb-2">Documento de negocio (PDF/DOC/DOCX, máx 10MB)</label>
+                  <input type="file" accept=".pdf,.doc,.docx,image/*" onChange={(e)=> setBizDocFile(e.target.files?.[0] || null)} className="w-full px-4 py-3 border rounded-lg" />
+                  {uploadProgress > 0 && submitting && (
+                    <div className="text-xs text-gray-500 mt-1">Subiendo: {Math.round(uploadProgress)}%</div>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
           <button 
             onClick={submit} 
-            className="w-full py-4 bg-gradient-to-r from-[#00A676] to-[#00A6A6] text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
+            disabled={submitting}
+            className="w-full py-4 bg-gradient-to-r from-[#00A676] to-[#00A6A6] text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <FiSend className="group-hover:translate-x-1 transition-transform" />
-            <span>Enviar Solicitud</span>
+            <span>{submitting ? 'Enviando…' : 'Enviar Solicitud'}</span>
           </button>
         </div>
       </div>

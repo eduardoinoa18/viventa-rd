@@ -50,6 +50,9 @@ export default function ApplicationsPage() {
       })
 
       if (!res.ok) throw new Error('Failed to update application')
+      const patchJson = await res.json().catch(() => null)
+      const resetLink = patchJson?.resetLink
+      const code = patchJson?.code
 
       // Send notification email
       await fetch('/api/admin/applications', {
@@ -62,6 +65,8 @@ export default function ApplicationsPage() {
           status,
           notes,
           type: app.type,
+          resetLink,
+          code,
         }),
       })
 
@@ -422,6 +427,19 @@ function ApplicationCard({ app, selected, onToggleSelect, onApprove, onReject, o
               <div className="md:col-span-2 mt-2">
                 <strong>Notas:</strong>
                 <p className="mt-1 text-gray-700">{app.notes}</p>
+              </div>
+            )}
+            {(app.resumeUrl || app.documentUrl) && (
+              <div className="md:col-span-2 mt-2">
+                <strong>Adjuntos:</strong>
+                <div className="mt-1 flex gap-3">
+                  {app.resumeUrl && (
+                    <a href={app.resumeUrl} target="_blank" className="text-[#004AAD] underline">Ver Currículum</a>
+                  )}
+                  {app.documentUrl && (
+                    <a href={app.documentUrl} target="_blank" className="text-[#004AAD] underline">Ver Documento</a>
+                  )}
+                </div>
               </div>
             )}
           </div>

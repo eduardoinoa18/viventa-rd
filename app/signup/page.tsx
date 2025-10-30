@@ -10,7 +10,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import toast from 'react-hot-toast'
 
 export default function SignupPage() {
-  const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' })
   const [error, setError] = useState('')
   const router = useRouter()
 
@@ -29,6 +29,7 @@ export default function SignupPage() {
           uid: cred.user.uid,
           email: form.email,
           name: form.name,
+          phone: form.phone || '',
           role: 'user',
           profileComplete: true,
           createdAt: serverTimestamp(),
@@ -55,6 +56,7 @@ export default function SignupPage() {
         <form className="bg-white rounded-lg shadow p-6 flex flex-col gap-4" onSubmit={handleSignup}>
           <input placeholder="Nombre completo" className="px-3 py-2 border rounded" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} />
           <input placeholder="Email" className="px-3 py-2 border rounded" value={form.email} onChange={e=>setForm({...form, email: e.target.value})} />
+          <input placeholder="Teléfono" className="px-3 py-2 border rounded" value={form.phone} onChange={e=>setForm({...form, phone: e.target.value})} />
           <input placeholder="Contraseña" type="password" className="px-3 py-2 border rounded" value={form.password} onChange={e=>setForm({...form, password: e.target.value})} />
           <button type="submit" className="px-6 py-2 bg-[#00A676] text-white rounded font-semibold">Registrarse</button>
           {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
