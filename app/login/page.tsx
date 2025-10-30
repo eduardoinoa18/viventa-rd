@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { saveSession } from '../../lib/authSession'
 import { auth, db } from '@/lib/firebaseClient'
 import { signInWithEmailAndPassword } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -29,12 +29,30 @@ export default function LoginPage() {
       let name: string | undefined = cred.user.displayName || undefined
       let profileComplete = true
       try {
-        const snap = await getDoc(doc(db, 'users', uid))
+        const userRef = doc(db, 'users', uid)
+        const snap = await getDoc(userRef)
         if (snap.exists()) {
           const data = snap.data() as any
           role = data?.role || role
           name = data?.name || name
           profileComplete = !!data?.profileComplete
+          // Update lastLoginAt
+          await setDoc(userRef, { lastLoginAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true })
+        } else {
+          // Upsert a minimal user profile so Admin can manage this user
+          await setDoc(userRef, {
+            uid,
+            email: cred.user.email?.toLowerCase() || '',
+            name: name || cred.user.email?.split('@')[0] || '',
+            role: 'user',
+            status: 'active',
+            profileComplete: true,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+          }, { merge: true })
+          role = 'user'
+          profileComplete = true
         }
       } catch {}
       // Save session for client and middleware
