@@ -181,7 +181,7 @@ export default function FeaturedProperties() {
               Vuelve pronto para ver nuevas propiedades destacadas
             </p>
             <Link
-              href="/properties"
+              href="/search"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#00A676] to-[#00A6A6] text-white rounded-xl font-semibold hover:shadow-lg transition-all"
             >
               Explorar todas las propiedades

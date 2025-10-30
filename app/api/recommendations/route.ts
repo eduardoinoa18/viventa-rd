@@ -1,4 +1,7 @@
 // app/api/recommendations/route.ts
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'default-no-store'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore'
