@@ -9,6 +9,7 @@ export default function AdminSidebar() {
   
   const links = [
     { href: '/admin', label: 'Dashboard', icon: <FiGrid /> },
+    { href: '/admin/diagnostics', label: 'System Status', icon: <FiSettings />, highlight: true },
     { href: '/admin/users', label: 'Users', icon: <FiUsers /> },
     { href: '/admin/brokers', label: 'Brokers', icon: <FiBriefcase /> },
     { href: '/admin/agents', label: 'Agents', icon: <FiUserCheck /> },
@@ -16,7 +17,7 @@ export default function AdminSidebar() {
     { href: '/admin/properties', label: 'Listings', icon: <FiHome /> },
     { href: '/admin/properties/create', label: 'Create Listing', icon: <FiPlusSquare /> },
     { href: '/admin/billing', label: 'Billing', icon: <FiCreditCard /> },
-  { href: '/admin/roles', label: 'Roles & Access', icon: <FiShield /> },
+    { href: '/admin/roles', label: 'Roles & Access', icon: <FiShield /> },
     { href: '/admin/chat', label: 'Chat', icon: <FiMessageSquare /> },
     { href: '/admin/settings', label: 'Settings', icon: <FiSettings /> },
   ]
@@ -31,6 +32,8 @@ export default function AdminSidebar() {
             className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
               pathname === link.href
                 ? 'bg-[#00A676] text-white font-semibold'
+                : (link as any).highlight
+                ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200'
                 : 'hover:bg-gray-100 text-gray-700'
             }`}
           >
