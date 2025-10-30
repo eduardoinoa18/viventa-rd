@@ -22,6 +22,8 @@ type User = {
   providerIds?: string[]
   lastLoginAt?: any
   uid?: string
+  agentCode?: string
+  brokerCode?: string
 }
 
 export default function AdminUsersPage() {
@@ -31,9 +33,22 @@ export default function AdminUsersPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'user', brokerage: '', company: '' })
   const [filterRole, setFilterRole] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
   const [details, setDetails] = useState<User | null>(null)
 
   useEffect(() => { load() }, [filterRole])
+
+  const filteredUsers = users.filter(u => {
+    if (!searchTerm) return true
+    const term = searchTerm.toLowerCase()
+    return (
+      u.name?.toLowerCase().includes(term) ||
+      u.email?.toLowerCase().includes(term) ||
+      u.phone?.toLowerCase().includes(term) ||
+      u.agentCode?.toLowerCase().includes(term) ||
+      u.brokerCode?.toLowerCase().includes(term)
+    )
+  })
 
   async function load() {
     setLoading(true)
@@ -172,15 +187,27 @@ export default function AdminUsersPage() {
           </div>
 
           {/* Filters */}
-          <div className="mb-4 flex items-center gap-2">
-            <label className="font-semibold text-gray-700">Filter by role:</label>
-            <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="px-3 py-2 border rounded">
-              <option value="all">All</option>
-              <option value="user">User</option>
-              <option value="agent">Agent</option>
-              <option value="broker">Broker</option>
-              <option value="admin">Admin</option>
-            </select>
+          <div className="mb-4 flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <label className="font-semibold text-gray-700">Filter by role:</label>
+              <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="px-3 py-2 border rounded">
+                <option value="all">All</option>
+                <option value="user">User</option>
+                <option value="agent">Agent</option>
+                <option value="broker">Broker</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 flex-1 max-w-md">
+              <label className="font-semibold text-gray-700">Search:</label>
+              <input
+                type="text"
+                placeholder="Name, email, phone, or code..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+              />
+            </div>
           </div>
 
           {/* User Form (Create/Edit) */}
@@ -214,6 +241,11 @@ export default function AdminUsersPage() {
 
           {/* Users Table */}
           <div className="bg-white rounded-lg shadow overflow-hidden">
+            {!loading && (
+              <div className="px-4 py-3 bg-gray-50 border-b text-sm text-gray-600">
+                Showing {filteredUsers.length} of {users.length} users
+              </div>
+            )}
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
@@ -221,22 +253,44 @@ export default function AdminUsersPage() {
                   <th className="text-left p-4">Email</th>
                   <th className="text-left p-4">Phone</th>
                   <th className="text-left p-4">Role</th>
+                  <th className="text-left p-4">Code</th>
                   <th className="text-left p-4">Status</th>
                   <th className="text-left p-4">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {loading ? (
-                  <tr><td colSpan={6} className="p-4 text-center text-gray-500">Loading...</td></tr>
-                ) : users.length === 0 ? (
-                  <tr><td colSpan={6} className="p-4 text-center text-gray-500">No users found</td></tr>
+                  <tr><td colSpan={7} className="p-4 text-center text-gray-500">Loading...</td></tr>
+                ) : filteredUsers.length === 0 ? (
+                  <tr><td colSpan={7} className="p-4 text-center text-gray-500">No users found</td></tr>
                 ) : (
-                  users.map(u => (
+                  filteredUsers.map(u => (
                     <tr key={u.id}>
                       <td className="p-4">{u.name}</td>
                       <td className="p-4 text-gray-600">{u.email}</td>
                       <td className="p-4">{u.phone || '-'}</td>
                       <td className="p-4"><span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">{u.role}</span></td>
+                      <td className="p-4">
+                        {u.agentCode ? (
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(u.agentCode!); toast.success('Code copied!') }}
+                            className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm font-mono hover:bg-purple-200 transition-colors"
+                            title="Click to copy"
+                          >
+                            {u.agentCode}
+                          </button>
+                        ) : u.brokerCode ? (
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(u.brokerCode!); toast.success('Code copied!') }}
+                            className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded text-sm font-mono hover:bg-indigo-200 transition-colors"
+                            title="Click to copy"
+                          >
+                            {u.brokerCode}
+                          </button>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
                       <td className="p-4">
                         <span className={`px-2 py-1 rounded text-sm ${
                           u.status === 'active' ? 'bg-green-100 text-green-800' :
@@ -311,6 +365,14 @@ export default function AdminUsersPage() {
                       <div className="text-gray-500 text-sm">Status</div>
                       <div className="font-semibold">{details.status}</div>
                     </div>
+                    {(details.agentCode || details.brokerCode) && (
+                      <div>
+                        <div className="text-gray-500 text-sm">Professional Code</div>
+                        <div className="font-mono font-bold text-lg text-[#00A676]">
+                          {details.agentCode || details.brokerCode}
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <div className="text-gray-500 text-sm">Email Verified</div>
                       <div className="font-semibold">{details.emailVerified ? 'Yes' : 'No'}</div>
