@@ -29,15 +29,27 @@ export default function MasterLoginPage() {
         setError(data.error || 'Credenciales inválidas')
         return
       }
-      // Set client-side session for UX continuity (cookies are set by the API)
+      // Step 2: Send 2FA code to email
+      const twofa = await fetch('/api/auth/send-master-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+      const twofaRes = await twofa.json()
+      if (!twofaRes.ok) {
+        setError(twofaRes.error || 'No se pudo enviar el código 2FA')
+        return
+      }
+      // Persist minimal session client-side for UX continuity (cookies set by API)
       await loginDemo(data.user.email, 'master_admin')
       saveSession({
         uid: 'admin_'+Math.random().toString(36).slice(2,9),
         role: 'master_admin',
         profileComplete: true,
         name: data.user.email.split('@')[0],
+        email: data.user.email
       })
-      router.push('/admin')
+      router.push(`/admin/verify?email=${encodeURIComponent(email)}`)
     } catch (e) {
       setError('Error de red. Inténtalo de nuevo.')
     } finally {
@@ -56,7 +68,7 @@ export default function MasterLoginPage() {
               <span className="text-4xl text-white font-bold">V</span>
             </div>
             <h1 className="text-3xl font-bold text-[#0B2545]">Master Admin Login</h1>
-            <p className="text-gray-600 mt-2">Acceso con contraseña (2FA pronto)</p>
+            <p className="text-gray-600 mt-2">Acceso con contraseña + 2FA</p>
           </div>
 
           {/* Main Card */}

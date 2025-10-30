@@ -157,9 +157,14 @@ export default function AdminPropertiesPage() {
                         </>
                       )}
                       <div className="flex gap-2">
-                        <button className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+                        <a
+                          href={`/listing/${l.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                        >
                           <FiEye /> View
-                        </button>
+                        </a>
                         <button className="inline-flex items-center gap-2 px-3 py-2 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm">
                           <FiEdit /> Edit
                         </button>

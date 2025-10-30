@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     // In production, create a session token here
     const sessionToken = generateSessionToken()
 
-    return NextResponse.json({ 
+    const res = NextResponse.json({ 
       ok: true,
       message: 'Verification successful',
       sessionToken,
@@ -75,6 +75,10 @@ export async function POST(request: Request) {
         name: email.split('@')[0]
       }
     })
+
+    // Set short-lived 2FA cookie (30 minutes)
+    res.cookies.set('admin_2fa_ok', '1', { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 30 })
+    return res
 
   } catch (error) {
     console.error('Error verifying code:', error)

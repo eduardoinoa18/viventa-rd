@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, serverTimestamp } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 
 function initFirebase() {
   const config = {
@@ -28,6 +29,18 @@ function initFirebase() {
 // GET /api/admin/properties - list all properties with optional status filter
 export async function GET(req: NextRequest) {
   try {
+    const adminDb = getAdminDb()
+    if (adminDb) {
+      const { searchParams } = new URL(req.url)
+      const statusFilter = searchParams.get('status')
+      // Use a loosely-typed reference to avoid CollectionReference/Query assignability issues
+      let ref: any = adminDb.collection('properties')
+      if (statusFilter) ref = ref.where('status', '==', statusFilter)
+      const snap = await ref.orderBy('createdAt', 'desc').get()
+      const properties = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      return NextResponse.json({ ok: true, data: properties })
+    }
+
     const db = initFirebase()
     if (!db) {
       return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
@@ -57,16 +70,42 @@ export async function GET(req: NextRequest) {
 // POST /api/admin/properties - create new property listing
 export async function POST(req: NextRequest) {
   try {
-    const db = initFirebase()
-    if (!db) {
-      return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
-    }
-
+    const adminDb = getAdminDb()
     const body = await req.json()
     const { title, description, price, location, lat, lng, bedrooms, bathrooms, area, propertyType, listingType, images, agentId, agentName } = body
 
     if (!title || !price || !location || !propertyType || !listingType || !agentId) {
       return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 })
+    }
+
+    if (adminDb) {
+      const propertyDoc = {
+        title,
+        description: description || '',
+        price: parseFloat(price),
+        location,
+        lat: lat || null,
+        lng: lng || null,
+        bedrooms: parseInt(bedrooms) || 0,
+        bathrooms: parseFloat(bathrooms) || 0,
+        area: parseFloat(area) || 0,
+        propertyType,
+        listingType,
+        images: images || [],
+        agentId,
+        agentName: agentName || '',
+        status: 'pending',
+        featured: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      const ref = await adminDb.collection('properties').add(propertyDoc)
+      return NextResponse.json({ ok: true, data: { id: ref.id, ...propertyDoc }, message: 'Property created successfully' })
+    }
+
+    const db = initFirebase()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
     }
 
     const propertyDoc = {
@@ -106,16 +145,24 @@ export async function POST(req: NextRequest) {
 // PATCH /api/admin/properties - update property status or details
 export async function PATCH(req: NextRequest) {
   try {
+    const body = await req.json()
+    const { id, status, featured } = body
+    if (!id) {
+      return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
+    }
+
+    const adminDb = getAdminDb()
+    if (adminDb) {
+      const updates: any = { updatedAt: new Date() }
+      if (status) updates.status = status
+      if (typeof featured === 'boolean') updates.featured = featured
+      await adminDb.collection('properties').doc(id).update(updates)
+      return NextResponse.json({ ok: true, message: 'Property updated successfully' })
+    }
+
     const db = initFirebase()
     if (!db) {
       return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
-    }
-
-    const body = await req.json()
-    const { id, status, featured } = body
-
-    if (!id) {
-      return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
     }
 
     const updates: any = { updatedAt: serverTimestamp() }
@@ -137,16 +184,21 @@ export async function PATCH(req: NextRequest) {
 // DELETE /api/admin/properties - delete a property
 export async function DELETE(req: NextRequest) {
   try {
+    const body = await req.json()
+    const { id } = body
+    if (!id) {
+      return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
+    }
+
+    const adminDb = getAdminDb()
+    if (adminDb) {
+      await adminDb.collection('properties').doc(id).delete()
+      return NextResponse.json({ ok: true, message: 'Property deleted successfully' })
+    }
+
     const db = initFirebase()
     if (!db) {
       return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
-    }
-
-    const body = await req.json()
-    const { id } = body
-
-    if (!id) {
-      return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
     }
 
     const { deleteDoc } = await import('firebase/firestore')

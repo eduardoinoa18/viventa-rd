@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, serverTimestamp } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 
 function initFirebase() {
   const config = {
@@ -28,10 +29,20 @@ function initFirebase() {
 // GET /api/admin/users - list users with optional role filter
 export async function GET(req: NextRequest) {
   try {
-    const db = initFirebase()
-    if (!db) {
-      return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
+    // Prefer Admin SDK for server-side reads (bypass client auth rules)
+    const adminDb = getAdminDb()
+    if (adminDb) {
+      const { searchParams } = new URL(req.url)
+      const roleFilter = searchParams.get('role')
+      let ref: any = adminDb.collection('users')
+      if (roleFilter) ref = ref.where('role', '==', roleFilter)
+      const snap = await ref.orderBy('createdAt', 'desc').get()
+  const users = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      return NextResponse.json({ ok: true, data: users })
     }
+
+    const db = initFirebase()
+    if (!db) return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
 
     const { searchParams } = new URL(req.url)
     const roleFilter = searchParams.get('role') // agent, broker, user, etc.
@@ -57,10 +68,30 @@ export async function GET(req: NextRequest) {
 // POST /api/admin/users - create or invite a new user
 export async function POST(req: NextRequest) {
   try {
-    const db = initFirebase()
-    if (!db) {
-      return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
+    const adminDb = getAdminDb()
+    if (adminDb) {
+      const body = await req.json()
+      const { name, email, phone, role, brokerage, company } = body
+      if (!name || !email || !role) {
+        return NextResponse.json({ ok: false, error: 'name, email, and role required' }, { status: 400 })
+      }
+      const userDoc = {
+        name,
+        email: String(email).toLowerCase(),
+        phone: phone || '',
+        role: role || 'user',
+        status: 'pending',
+        brokerage: brokerage || '',
+        company: company || '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      const docRef = await adminDb.collection('users').add(userDoc)
+      return NextResponse.json({ ok: true, data: { id: docRef.id, ...userDoc }, message: 'User created successfully' })
     }
+
+    const db = initFirebase()
+    if (!db) return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
 
     const body = await req.json()
     const { name, email, phone, role, brokerage, company } = body
@@ -97,17 +128,28 @@ export async function POST(req: NextRequest) {
 // PATCH /api/admin/users - update user status or role
 export async function PATCH(req: NextRequest) {
   try {
-    const db = initFirebase()
-    if (!db) {
-      return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
-    }
-
+    const adminDb = getAdminDb()
+    // Parse once; reuse across both admin and client paths
     const body = await req.json()
     const { id, status, role, name, phone, brokerage, company } = body
+    if (!id) return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
 
-    if (!id) {
-      return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
+    if (adminDb) {
+      const updates: any = { updatedAt: new Date() }
+      if (status) updates.status = status
+      if (role) updates.role = role
+      if (name) updates.name = name
+      if (phone !== undefined) updates.phone = phone
+      if (brokerage !== undefined) updates.brokerage = brokerage
+      if (company !== undefined) updates.company = company
+      await adminDb.collection('users').doc(id).update(updates)
+      return NextResponse.json({ ok: true, message: 'User updated successfully' })
     }
+
+    const db = initFirebase()
+    if (!db) return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
+
+    // Use same parsed body vars above; no re-declare
 
     const updates: any = { updatedAt: serverTimestamp() }
     if (status) updates.status = status // active, suspended, pending
@@ -132,25 +174,21 @@ export async function PATCH(req: NextRequest) {
 // DELETE /api/admin/users - delete a user
 export async function DELETE(req: NextRequest) {
   try {
-    const db = initFirebase()
-    if (!db) {
-      return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
-    }
-
     const body = await req.json()
     const { id } = body
+    if (!id) return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
 
-    if (!id) {
-      return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
+    const adminDb = getAdminDb()
+    if (adminDb) {
+      await adminDb.collection('users').doc(id).delete()
+      return NextResponse.json({ ok: true, message: 'User deleted successfully' })
     }
 
+    const db = initFirebase()
+    if (!db) return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
     const { deleteDoc } = await import('firebase/firestore')
     await deleteDoc(doc(db, 'users', id))
-
-    return NextResponse.json({
-      ok: true,
-      message: 'User deleted successfully',
-    })
+    return NextResponse.json({ ok: true, message: 'User deleted successfully' })
   } catch (e: any) {
     console.error('admin users DELETE error', e)
     return NextResponse.json({ ok: false, error: e.message || 'Failed to delete user' }, { status: 500 })

@@ -104,6 +104,35 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /leads/{leadId} {
+      allow read: if isElevated();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    match /favorites/{favoriteId} {
+      allow read: if isSignedIn() && (request.auth.uid == favoriteId.split('_')[0] || isAdmin());
+      allow write: if isSignedIn();
+    }
+
+    match /saved_searches/{searchId} {
+      allow read, write: if isSignedIn();
+    }
+
     match /{document=**} {
       allow read: if false;
     }

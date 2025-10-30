@@ -3,12 +3,33 @@ import { NextRequest, NextResponse } from "next/server";
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const { pathname } = url;
+  const path = pathname as string;
   const role = req.cookies.get("viventa_role")?.value;
+  const adminGate = req.cookies.get('admin_gate_ok')?.value === '1';
+  const admin2FA = req.cookies.get('admin_2fa_ok')?.value === '1';
 
-  // Protect admin routes
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    if (role !== "master_admin") {
-      return NextResponse.redirect(new URL("/admin/login", req.url));
+  // Admin pre-gate: require gate code before accessing admin login
+  if (path.startsWith('/admin') && (path === '/admin' || path === '/admin/login')) {
+    if (!adminGate) {
+      return NextResponse.redirect(new URL('/admin/gate', req.url));
+    }
+  }
+
+  // Protect admin routes (all other admin pages require role and 2FA)
+  if (path.startsWith('/admin') && !['/admin/login','/admin/gate','/admin/verify'].includes(path)) {
+    // Must have passed gate
+    if (!adminGate) {
+      return NextResponse.redirect(new URL('/admin/gate', req.url));
+    }
+    // Must be master admin
+    if (role !== 'master_admin') {
+      return NextResponse.redirect(new URL('/admin/login', req.url));
+    }
+    // Must have completed 2FA
+    if (!admin2FA) {
+      // Preserve email param if present
+      const verifyUrl = new URL('/admin/verify', req.url);
+      return NextResponse.redirect(verifyUrl);
     }
   }
 

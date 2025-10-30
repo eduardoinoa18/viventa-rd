@@ -2,9 +2,29 @@
 import { NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getCountFromServer, query, where } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 
 export async function GET() {
   try {
+    // Prefer Admin SDK for accurate counts without client auth
+    const adminDb = getAdminDb()
+    if (adminDb) {
+      const usersSnap = await adminDb.collection('users').get()
+      const activePropsSnap = await adminDb.collection('properties').where('status', '==', 'active').get()
+      const pendingPropsSnap = await adminDb.collection('properties').where('status', '==', 'pending').get()
+      const leadsSnap = await adminDb.collection('leads').get()
+      return NextResponse.json({
+        ok: true,
+        data: {
+          totalUsers: usersSnap.size || 0,
+          activeListings: activePropsSnap.size || 0,
+          pendingApprovals: pendingPropsSnap.size || 0,
+          leads: leadsSnap.size || 0,
+          monthlyRevenueUSD: 0,
+        },
+      })
+    }
+
     // Initialize Firebase for server-side if needed
     const firebaseConfig = {
       apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -42,20 +62,20 @@ export async function GET() {
     }
     const db = getFirestore()
     // Count users
-    const usersColl = collection(db, 'users')
-    const usersSnap = await getCountFromServer(usersColl)
+  const usersColl = collection(db, 'users')
+  const usersSnap = await getCountFromServer(usersColl)
 
     // Count active listings
-    const propsActiveQ = query(collection(db, 'properties'), where('status', '==', 'active'))
-    const propsActiveSnap = await getCountFromServer(propsActiveQ)
+  const propsActiveQ = query(collection(db, 'properties'), where('status', '==', 'active'))
+  const propsActiveSnap = await getCountFromServer(propsActiveQ)
 
     // Count pending approvals (properties pending)
-    const propsPendingQ = query(collection(db, 'properties'), where('status', '==', 'pending'))
-    const propsPendingSnap = await getCountFromServer(propsPendingQ)
+  const propsPendingQ = query(collection(db, 'properties'), where('status', '==', 'pending'))
+  const propsPendingSnap = await getCountFromServer(propsPendingQ)
 
     // Leads count
-    const leadsColl = collection(db, 'leads')
-    const leadsSnap = await getCountFromServer(leadsColl)
+  const leadsColl = collection(db, 'leads')
+  const leadsSnap = await getCountFromServer(leadsColl)
 
     // Monthly revenue placeholder (integrate Stripe later)
     const monthlyRevenueUSD = 0

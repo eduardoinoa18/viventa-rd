@@ -4,10 +4,25 @@ import { useState, useEffect } from 'react'
 import ProtectedClient from '../../auth/ProtectedClient'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
-import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiX } from 'react-icons/fi'
+import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiX, FiRefreshCcw, FiEye } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
-type User = { id: string; name: string; email: string; phone?: string; role: string; status: string; brokerage?: string; company?: string }
+type User = {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  role: string
+  status: string
+  brokerage?: string
+  company?: string
+  photoURL?: string
+  emailVerified?: boolean
+  disabled?: boolean
+  providerIds?: string[]
+  lastLoginAt?: any
+  uid?: string
+}
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
@@ -16,6 +31,7 @@ export default function AdminUsersPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'user', brokerage: '', company: '' })
   const [filterRole, setFilterRole] = useState('all')
+  const [details, setDetails] = useState<User | null>(null)
 
   useEffect(() => { load() }, [filterRole])
 
@@ -25,12 +41,29 @@ export default function AdminUsersPage() {
       const url = filterRole === 'all' ? '/api/admin/users' : `/api/admin/users?role=${filterRole}`
       const res = await fetch(url)
       const json = await res.json()
-      if (json.ok) setUsers(json.data || [])
+  if (json.ok) setUsers(json.data || [])
     } catch (e) {
       console.error('Failed to load users', e)
       toast.error('Failed to load users')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function syncFromAuth() {
+    try {
+      const res = await fetch('/api/admin/users/sync', { method: 'POST' })
+      const json = await res.json()
+      if (json.ok) {
+        const { created, updated } = json.data || {}
+        toast.success(`Synced users. Created: ${created || 0}, Updated: ${updated || 0}`)
+        load()
+      } else {
+        toast.error(json.error || 'Failed to sync users')
+      }
+    } catch (e) {
+      console.error('Failed to sync users', e)
+      toast.error('Failed to sync users')
     }
   }
 
@@ -128,9 +161,14 @@ export default function AdminUsersPage() {
         <main className="flex-1 p-6 bg-gray-50">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-[#0B2545]">User Management</h1>
-            <button onClick={openCreateForm} className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]">
-              <FiUserPlus /> New User
-            </button>
+            <div className="flex gap-2">
+              <button onClick={syncFromAuth} className="inline-flex items-center gap-2 px-4 py-2 border border-[#00A676] text-[#00A676] rounded-lg font-semibold hover:bg-[#00A676] hover:text-white">
+                <FiRefreshCcw /> Sync from Auth
+              </button>
+              <button onClick={openCreateForm} className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]">
+                <FiUserPlus /> New User
+              </button>
+            </div>
           </div>
 
           {/* Filters */}
@@ -210,6 +248,9 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="p-4">
                         <div className="flex gap-2">
+                          <button onClick={() => setDetails(u)} className="p-2 text-gray-700 hover:text-[#0B2545] hover:bg-gray-50 rounded transition-colors" title="View Details">
+                            <FiEye size={18} />
+                          </button>
                           {u.status === 'pending' && (
                             <button onClick={() => updateStatus(u.id, 'active')} className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors" title="Approve">
                               <FiUserCheck size={18} />
@@ -239,6 +280,54 @@ export default function AdminUsersPage() {
               </tbody>
             </table>
           </div>
+          {/* Details Modal */}
+          {details && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold">User Details</h2>
+                  <button onClick={() => setDetails(null)} className="text-gray-500 hover:text-gray-700"><FiX size={24} /></button>
+                </div>
+                <div className="flex gap-4 items-start">
+                  <img src={details.photoURL || '/icons/user.svg'} alt="avatar" className="w-16 h-16 rounded-full object-cover border" />
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 flex-1">
+                    <div>
+                      <div className="text-gray-500 text-sm">Name</div>
+                      <div className="font-semibold">{details.name}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm">Email</div>
+                      <div className="font-semibold">{details.email}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm">Phone</div>
+                      <div className="font-semibold">{details.phone || '-'}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm">Role</div>
+                      <div className="font-semibold">{details.role}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm">Status</div>
+                      <div className="font-semibold">{details.status}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm">Email Verified</div>
+                      <div className="font-semibold">{details.emailVerified ? 'Yes' : 'No'}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm">Providers</div>
+                      <div className="font-semibold">{(details.providerIds || []).join(', ') || '-'}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm">Last Login</div>
+                      <div className="font-semibold">{details.lastLoginAt ? new Date(details.lastLoginAt.seconds ? details.lastLoginAt.seconds * 1000 : details.lastLoginAt).toLocaleString() : '-'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </ProtectedClient>
