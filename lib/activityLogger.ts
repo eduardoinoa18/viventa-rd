@@ -30,11 +30,28 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
 
 // Convenience functions
 export const ActivityLogger = {
-  userCreated: (userId: string, userName: string, userEmail: string, role: string) =>
+  // Generic log method for flexible logging
+  log: (params: {
+    type: string
+    action: string
+    userId?: string
+    userName?: string
+    userEmail?: string
+    metadata?: Record<string, any>
+  }) => {
+    return fetch('/api/admin/activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    }).catch(error => {
+      console.debug('Activity log failed:', error)
+    })
+  },
+
+  userCreated: (userEmail: string, userName: string, role: string) =>
     logActivity({
       type: 'user',
       action: 'created',
-      userId,
       userName,
       userEmail,
       metadata: { role }
@@ -84,11 +101,12 @@ export const ActivityLogger = {
       metadata: { created, updated }
     }),
 
-  adminLogin: (adminEmail: string) =>
+  adminLogin: (adminEmail: string, adminName?: string) =>
     logActivity({
       type: 'auth',
       action: 'login',
       userEmail: adminEmail,
+      userName: adminName,
       metadata: { role: 'admin' }
     }),
 }
