@@ -32,6 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { route: '', priority: 1, changeFrequency: 'daily' as const },
     { route: '/search', priority: 0.9, changeFrequency: 'daily' as const },
     { route: '/agents', priority: 0.8, changeFrequency: 'weekly' as const },
+    { route: '/brokers', priority: 0.8, changeFrequency: 'weekly' as const },
     { route: '/professionals', priority: 0.7, changeFrequency: 'weekly' as const },
     { route: '/profesionales', priority: 0.7, changeFrequency: 'weekly' as const },
     { route: '/contact', priority: 0.6, changeFrequency: 'monthly' as const },
@@ -100,5 +101,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Error fetching agents for sitemap:', error)
   }
 
-  return [...staticPages, ...propertyPages, ...agentPages]
+  // Dynamic broker pages
+  let brokerPages: MetadataRoute.Sitemap = []
+  try {
+    const db = initFirebase()
+    if (db) {
+      const brokersQ = query(
+        collection(db, 'users'),
+        where('role', '==', 'broker'),
+        where('status', '==', 'active'),
+        limit(500)
+      )
+      const brokersSnap = await getDocs(brokersQ)
+      
+      brokerPages = brokersSnap.docs.map((doc: any) => {
+        const data = doc.data()
+        return {
+          url: `${baseUrl}/brokers/${doc.id}`,
+          lastModified: data.updatedAt?.toDate() || new Date(),
+          changeFrequency: 'monthly' as const,
+          priority: 0.7,
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Error fetching brokers for sitemap:', error)
+  }
+
+  return [...staticPages, ...propertyPages, ...agentPages, ...brokerPages]
 }
