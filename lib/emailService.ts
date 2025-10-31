@@ -11,9 +11,10 @@ interface EmailOptions {
   subject: string
   html: string
   from?: string
+  replyTo?: string
 }
 
-export async function sendEmail({ to, subject, html, from }: EmailOptions): Promise<void> {
+export async function sendEmail({ to, subject, html, from, replyTo }: EmailOptions): Promise<void> {
   const fromEmail = from || process.env.SMTP_FROM || process.env.SENDGRID_FROM_EMAIL || 'noreply@viventa.com'
 
   // Try SendGrid first
@@ -24,6 +25,7 @@ export async function sendEmail({ to, subject, html, from }: EmailOptions): Prom
         from: fromEmail,
         subject,
         html,
+        replyTo,
       })
       console.log(`Email sent via SendGrid to ${to}`)
       return
@@ -49,6 +51,7 @@ export async function sendEmail({ to, subject, html, from }: EmailOptions): Prom
       to,
       subject,
       html,
+      replyTo,
     })
     console.log(`Email sent via SMTP to ${to}`)
     return

@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
 </html>
     `
 
-    const result = await sendEmail({
+    await sendEmail({
       to: email,
       from: 'noreply@viventa-rd.com',
       replyTo: 'viventa.rd@gmail.com',
@@ -206,15 +206,7 @@ export async function POST(req: NextRequest) {
       html,
     })
 
-    if (!result.success) {
-      console.error('Failed to send welcome email:', result.error)
-      return NextResponse.json(
-        { error: 'Failed to send email', details: result.error },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ success: true, messageId: result.messageId })
+    return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('Welcome email error:', error)
     return NextResponse.json(
