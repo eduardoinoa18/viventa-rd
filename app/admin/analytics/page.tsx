@@ -24,6 +24,8 @@ interface AnalyticsData {
     favorites: number
     contacts: number
   }
+  premiumPros?: { agents: number; brokers: number }
+  leads?: { total: number; assigned: number; unassigned: number; last24h: number; avgAssignHours: number | null }
   aiInsights: Array<{
     id: string
     type: 'trend' | 'opportunity' | 'alert' | 'recommendation'
@@ -80,7 +82,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <ProtectedClient allowed={['master_admin']}>
+  <ProtectedClient allowed={['master_admin','admin']}>
       <div className="flex h-screen bg-gray-100">
         <AdminSidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -232,6 +234,58 @@ export default function AnalyticsPage() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Business KPIs */}
+                      {data.leads && (
+                        <div className="bg-white rounded-xl p-6 shadow">
+                          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <FiTarget className="text-[#00A676]" />
+                            Leads & Embudo
+                          </h3>
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <div className="text-center p-4 bg-gray-50 rounded-lg">
+                              <div className="text-xs text-gray-500 mb-1">Totales</div>
+                              <div className="text-2xl font-bold text-[#0B2545]">{data.leads.total.toLocaleString()}</div>
+                            </div>
+                            <div className="text-center p-4 bg-green-50 rounded-lg">
+                              <div className="text-xs text-gray-600 mb-1">Asignados</div>
+                              <div className="text-2xl font-bold text-green-600">{data.leads.assigned.toLocaleString()}</div>
+                            </div>
+                            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                              <div className="text-xs text-gray-600 mb-1">Sin asignar</div>
+                              <div className="text-2xl font-bold text-yellow-600">{data.leads.unassigned.toLocaleString()}</div>
+                            </div>
+                            <div className="text-center p-4 bg-blue-50 rounded-lg">
+                              <div className="text-xs text-gray-600 mb-1">Nuevos (24h)</div>
+                              <div className="text-2xl font-bold text-blue-600">{data.leads.last24h.toLocaleString()}</div>
+                            </div>
+                            <div className="text-center p-4 bg-purple-50 rounded-lg">
+                              <div className="text-xs text-gray-600 mb-1">Tiempo medio asignación</div>
+                              <div className="text-2xl font-bold text-purple-600">{data.leads.avgAssignHours == null ? '—' : `${data.leads.avgAssignHours}h`}</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Premium Pros */}
+                      {data.premiumPros && (
+                        <div className="bg-white rounded-xl p-6 shadow">
+                          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <FiTrendingUp className="text-[#00A676]" />
+                            Profesionales Premium
+                          </h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="text-center p-4 bg-indigo-50 rounded-lg">
+                              <div className="text-xs text-gray-600 mb-1">Agentes Premium</div>
+                              <div className="text-2xl font-bold text-indigo-600">{data.premiumPros.agents.toLocaleString()}</div>
+                            </div>
+                            <div className="text-center p-4 bg-pink-50 rounded-lg">
+                              <div className="text-xs text-gray-600 mb-1">Brokers Premium</div>
+                              <div className="text-2xl font-bold text-pink-600">{data.premiumPros.brokers.toLocaleString()}</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Activity Trends Chart */}
                       <div className="bg-white rounded-xl p-6 shadow">

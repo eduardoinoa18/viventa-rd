@@ -25,6 +25,7 @@ input, textarea, select, button {
 	-moz-appearance: none;
 	appearance: none;
 	outline: none;
+	line-height: 1.5;
 }
 
 /* Ensure consistent focus styles */
@@ -48,6 +49,30 @@ input[type=number] {
 /* Image rendering smoothing */
 img {
 	image-rendering: auto;
+}
+
+/* Mobile tap highlight removal for consistent feel */
+* {
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+/* Scrollbar consistency */
+/* Firefox */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: #cbd5e1 transparent; /* slate-300 */
+}
+/* WebKit */
+*::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+	background-color: #cbd5e1; /* slate-300 */
+	border-radius: 8px;
+}
+*::-webkit-scrollbar-track {
+	background: transparent;
 }
 
 /* Button baseline */

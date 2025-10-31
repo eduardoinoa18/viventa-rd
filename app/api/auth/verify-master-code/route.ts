@@ -7,7 +7,7 @@ import { ActivityLogger } from '@/lib/activityLogger'
 
 export async function POST(request: Request) {
   try {
-  const { email, code } = await request.json()
+  const { email, code, remember } = await request.json()
 
     // Security: Don't log sensitive data in production
     if (process.env.NODE_ENV === 'development') {
@@ -82,6 +82,25 @@ export async function POST(request: Request) {
 
     // Set short-lived 2FA cookie (30 minutes)
     res.cookies.set('admin_2fa_ok', '1', { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 30 })
+
+    // Optionally set a trusted-device cookie for 30 days
+    if (remember === true) {
+      const ua = request.headers.get('user-agent') || ''
+      const token = await createTrustedToken({
+        sub: String(email || '').trim().toLowerCase(),
+        type: 'admin',
+        ua,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30, // 30 days
+      })
+      res.cookies.set('trusted_admin', token, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 30,
+      })
+    }
     return res
 
   } catch (error) {
@@ -96,4 +115,23 @@ export async function POST(request: Request) {
 function generateSessionToken(): string {
   // In production, use JWT or proper session tokens
   return Math.random().toString(36).substring(2) + Date.now().toString(36)
+}
+
+// --- Trusted device token helpers (HMAC-SHA256 signed) ---
+import crypto from 'crypto'
+
+function b64url(input: Buffer | string) {
+  const b = Buffer.isBuffer(input) ? input : Buffer.from(input)
+  return b.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+async function createTrustedToken(payload: Record<string, any>): Promise<string> {
+  const secret = process.env.TRUSTED_DEVICE_SECRET || 'dev-secret-change-me'
+  const header = { alg: 'HS256', typ: 'TJ' } // Tiny-JWT style header
+  const encHeader = b64url(JSON.stringify(header))
+  const encPayload = b64url(JSON.stringify(payload))
+  const data = `${encHeader}.${encPayload}`
+  const sig = crypto.createHmac('sha256', secret).update(data).digest()
+  const encSig = b64url(sig)
+  return `${data}.${encSig}`
 }

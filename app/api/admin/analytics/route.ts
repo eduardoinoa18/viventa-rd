@@ -9,7 +9,8 @@ import {
   where,
   getDocs,
   orderBy,
-  limit
+  limit,
+  Timestamp
 } from 'firebase/firestore'
 
 function initFirebase() {
@@ -109,6 +110,48 @@ export async function GET(req: NextRequest) {
     const activePropsQ = query(collection(db, 'properties'), where('status', '==', 'active'))
     const activePropsCountSnap = await getCountFromServer(activePropsQ)
 
+    // Premium professionals (agents + brokers)
+    let premiumAgents = 0
+    let premiumBrokers = 0
+    try {
+      const premAgentsQ = query(collection(db, 'users'), where('role', '==', 'agent'), where('plan', '==', 'premium'))
+      const premBrokersQ = query(collection(db, 'users'), where('role', '==', 'broker'), where('plan', '==', 'premium'))
+      const [pa, pb] = await Promise.all([
+        getCountFromServer(premAgentsQ),
+        getCountFromServer(premBrokersQ),
+      ])
+      premiumAgents = pa.data().count || 0
+      premiumBrokers = pb.data().count || 0
+    } catch {}
+
+    // Leads (property_inquiries)
+    const leadsTotalSnap = await getCountFromServer(collection(db, 'property_inquiries'))
+    const leadsAssignedSnap = await getCountFromServer(query(collection(db, 'property_inquiries'), where('status', '==', 'assigned')))
+
+    const now = Timestamp.now()
+    const millisBack = 24 * 60 * 60 * 1000
+    const since = Timestamp.fromMillis(now.toMillis() - millisBack)
+    let leads24h = 0
+    try {
+      const leads24Snap = await getCountFromServer(query(collection(db, 'property_inquiries'), where('createdAt', '>=', since)))
+      leads24h = leads24Snap.data().count || 0
+    } catch {}
+
+    // Avg assignment time from recent assigned leads
+    let avgAssignHours: number | null = null
+    try {
+      const assignedQ = query(collection(db, 'property_inquiries'), where('status', '==', 'assigned'), orderBy('assignedAt', 'desc'), limit(200))
+      const assignedSnap = await getDocs(assignedQ)
+      const diffs: number[] = []
+      assignedSnap.docs.forEach((d: any) => {
+        const x = d.data()
+        const c = x.createdAt?.toDate?.()
+        const a = x.assignedAt?.toDate?.()
+        if (c && a) diffs.push(a.getTime() - c.getTime())
+      })
+      if (diffs.length) avgAssignHours = Math.round((diffs.reduce((s, v) => s + v, 0) / diffs.length) / (60 * 60 * 1000) * 10) / 10
+    } catch {}
+
     // Sample recent properties to build simple aggregates (limit to reduce cost)
     const recentPropsQ = query(collection(db, 'properties'), orderBy('createdAt', 'desc'), limit(200))
     const recentPropsSnap = await getDocs(recentPropsQ)
@@ -155,6 +198,14 @@ export async function GET(req: NextRequest) {
         views: 0,
         favorites: 0,
         contacts: 0,
+      },
+      premiumPros: { agents: premiumAgents, brokers: premiumBrokers },
+      leads: {
+        total: leadsTotalSnap.data().count || 0,
+        assigned: leadsAssignedSnap.data().count || 0,
+        unassigned: (leadsTotalSnap.data().count || 0) - (leadsAssignedSnap.data().count || 0),
+        last24h: leads24h,
+        avgAssignHours,
       },
       aiInsights: mockAnalytics().aiInsights,
     }

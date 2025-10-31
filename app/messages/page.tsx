@@ -6,6 +6,7 @@ import Footer from '@/components/Footer'
 import BottomNav from '@/components/BottomNav'
 import { getSession } from '@/lib/authSession'
 import { FiSend, FiSearch, FiMessageSquare, FiUser, FiArrowLeft } from 'react-icons/fi'
+import ChatQuitModal from '@/components/ChatQuitModal'
 
 export default function MessagesPage() {
   const router = useRouter()
@@ -17,6 +18,7 @@ export default function MessagesPage() {
   const [loadingConvos, setLoadingConvos] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [search, setSearch] = useState('')
+  const [quitOpen, setQuitOpen] = useState(false)
 
   useEffect(() => {
     if (!session) {
@@ -75,6 +77,16 @@ export default function MessagesPage() {
     }
   }
 
+  // Simple detector for user-agent conversation pattern
+  const isAgentConversation = useMemo(() => {
+    return (activeId || '').startsWith('user_agent:')
+  }, [activeId])
+  const agentIdFromConv = useMemo(() => {
+    if (!isAgentConversation || !activeId) return undefined
+    const parts = activeId.split(':')
+    return parts[2]
+  }, [activeId, isAgentConversation])
+
   const filteredConvos = useMemo(() => {
     if (!search.trim()) return conversations
     const q = search.toLowerCase()
@@ -82,6 +94,7 @@ export default function MessagesPage() {
   }, [conversations, search])
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
       {!session ? (
@@ -158,7 +171,10 @@ export default function MessagesPage() {
                   <FiArrowLeft />
                 </button>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0B2545] to-[#00A676] text-white flex items-center justify-center"><FiUser /></div>
-                <div className="font-semibold text-gray-800">Chat</div>
+                <div className="font-semibold text-gray-800 flex-1">Chat</div>
+                {isAgentConversation && (
+                  <button onClick={()=>setQuitOpen(true)} className="text-sm px-3 py-1.5 rounded border text-red-600 border-red-300 hover:bg-red-50">Dejar a mi agente</button>
+                )}
               </div>
 
               <div className="flex-1 overflow-auto p-4 space-y-2">
@@ -199,5 +215,7 @@ export default function MessagesPage() {
       <Footer />
       <BottomNav />
     </div>
+    <ChatQuitModal open={quitOpen} onClose={()=>setQuitOpen(false)} agentId={agentIdFromConv} />
+    </>
   )
 }

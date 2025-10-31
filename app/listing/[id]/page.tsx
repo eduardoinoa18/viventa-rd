@@ -82,6 +82,23 @@ export default function ListingDetail(){
       </>
     )
   }
+
+  // Restrict visibility for non-active listings
+  if (listing && listing.status && listing.status !== 'active') {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+          <div className="max-w-lg text-center bg-white rounded-xl shadow p-8">
+            <h1 className="text-2xl font-bold text-[#0B2545]">Listado en revisión</h1>
+            <p className="mt-2 text-gray-600">Esta propiedad está pendiente de aprobación y aún no es pública.</p>
+            <a href="/search" className="inline-block mt-6 px-5 py-3 bg-[#00A676] text-white rounded-lg font-medium hover:bg-[#008c5c]">Ver más propiedades</a>
+          </div>
+        </div>
+        <Footer />
+      </>
+    )
+  }
   
   // Prepare property data for components
   const favoriteData = {

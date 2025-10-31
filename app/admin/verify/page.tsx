@@ -10,6 +10,7 @@ function AdminVerifyForm() {
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [remember, setRemember] = useState(true)
 
   useEffect(() => {
     const e = params.get('email') || ''
@@ -24,7 +25,7 @@ function AdminVerifyForm() {
       const res = await fetch('/api/auth/verify-master-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code })
+        body: JSON.stringify({ email, code, remember })
       })
       const json = await res.json()
       if (!json.ok) {
@@ -74,7 +75,11 @@ function AdminVerifyForm() {
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
         />
         {error && <div className="mt-3 text-sm text-red-600">{error}</div>}
-        <button type="submit" disabled={loading} className="mt-4 w-full py-3 rounded-lg bg-[#00A676] text-white font-semibold disabled:opacity-50">
+        <div className="mt-3 flex items-center gap-2">
+          <input id="remember" type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)} className="h-4 w-4" />
+          <label htmlFor="remember" className="text-sm text-gray-700">Confiar en este dispositivo por 30 días</label>
+        </div>
+        <button type="submit" disabled={loading} className="mt-3 w-full py-3 rounded-lg bg-[#00A676] text-white font-semibold disabled:opacity-50">
           {loading ? 'Verificando…' : 'Verificar'}
         </button>
         <button type="button" onClick={resend} disabled={loading} className="mt-2 w-full py-3 rounded-lg border border-gray-300 font-semibold disabled:opacity-50">

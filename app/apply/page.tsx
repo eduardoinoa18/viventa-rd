@@ -58,41 +58,35 @@ export default function ApplyPage(){
         documentUrl,
       })
 
-      // Send confirmation email to applicant
-      try {
-        await fetch('/api/applications/email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: form.email,
-            name: form.contact,
-            type: form.type
-          })
-        })
-      } catch (emailErr) {
-        console.error('Email sending failed:', emailErr)
-        // Don't block submission if email fails
-      }
-
-      // Notify admin
-      try {
-        await fetch('/api/contact/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: form.contact,
-            email: form.email,
-            phone: form.phone,
-            message: `Nueva solicitud de ${form.type}: ${form.contact}\n\nID: ${docRef.id}\nEmail: ${form.email}\nTeléfono: ${form.phone}\nEmpresa: ${form.company}\n\nDetalles del negocio:\n${form.businessDetails}`,
-            subject: `Nueva Solicitud: ${form.type === 'agent' ? 'Agente' : 'Bróker'} - ${form.contact}`,
-            source: 'application_form'
-          })
-        })
-      } catch (notifyErr) {
-        console.error('Admin notification failed:', notifyErr)
-      }
-
+      // Immediately show success UI; background notifications won't block UX
       setSubmitted(true)
+
+      // Fire-and-forget notifications with a soft timeout so the UI never hangs
+      const withTimeout = (p: Promise<Response>, ms = 8000) => {
+        const t = new Promise<Response>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+        return Promise.race([p, t])
+      }
+
+      // Applicant confirmation (non-blocking)
+      void withTimeout(fetch('/api/applications/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email, name: form.contact, type: form.type })
+      })).catch((emailErr) => console.error('Email sending failed:', emailErr))
+
+      // Admin notification (non-blocking)
+      void withTimeout(fetch('/api/contact/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.contact,
+          email: form.email,
+          phone: form.phone,
+          message: `Nueva solicitud de ${form.type}: ${form.contact}\n\nID: ${docRef.id}\nEmail: ${form.email}\nTeléfono: ${form.phone}\nEmpresa: ${form.company}\n\nDetalles del negocio:\n${form.businessDetails}`,
+          subject: `Nueva Solicitud: ${form.type === 'agent' ? 'Agente' : 'Bróker'} - ${form.contact}`,
+          source: 'application_form'
+        })
+      })).catch((notifyErr) => console.error('Admin notification failed:', notifyErr))
     } catch (e: any) {
       console.error('Application submit failed', e)
       alert(e?.message || 'No se pudo enviar la solicitud. Intenta de nuevo.')

@@ -67,6 +67,12 @@ ALGOLIA_ADMIN_API_KEY=your_admin_api_key
 # Site Configuration
 NEXT_PUBLIC_SITE_URL=https://viventa-rd.com
 NEXT_PUBLIC_GOOGLE_VERIFICATION=your_google_verification_code
+
+# Security
+TRUSTED_DEVICE_SECRET=change_this_to_a_long_random_string
+
+# Analytics
+NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 ```
 
 ---

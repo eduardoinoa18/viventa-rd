@@ -1,8 +1,9 @@
 // app/api/admin/properties/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
-import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, serverTimestamp } from 'firebase/firestore'
+import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, serverTimestamp, getDoc } from 'firebase/firestore'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { sendEmail } from '@/lib/emailService'
 
 function initFirebase() {
   const config = {
@@ -156,7 +157,44 @@ export async function PATCH(req: NextRequest) {
       const updates: any = { updatedAt: new Date() }
       if (status) updates.status = status
       if (typeof featured === 'boolean') updates.featured = featured
-      await adminDb.collection('properties').doc(id).update(updates)
+      // Fetch property to get agent info
+      const ref = adminDb.collection('properties').doc(id)
+      const snap = await ref.get()
+      const before = snap.exists ? snap.data() : null
+      await ref.update(updates)
+
+      // If approved, email agent
+      try {
+        if (status === 'active' && before) {
+          const agentEmail = (before as any).agentEmail
+          const agentName = (before as any).agentName
+          const listingTitle = (before as any).title
+          if (agentEmail && listingTitle) {
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://viventa-rd.com'
+            const url = `${baseUrl}/listing/${id}`
+            const from = process.env.NEXT_PUBLIC_EMAIL_FROM || 'no-reply@viventa-rd.com'
+            const subject = `Tu listado ya está publicado: ${listingTitle}`
+            const html = `
+              <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#0B2545">
+                <div style="padding:24px;border-radius:12px;background:linear-gradient(135deg,#00A676,#00A6A6);color:#fff">
+                  <h1 style=\"margin:0;font-size:22px\">¡Tu propiedad está en vivo!</h1>
+                  <p style=\"margin:6px 0 0;opacity:.9\">Ya es visible en VIVENTA para todos los usuarios.</p>
+                </div>
+                <div style="padding:24px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-top:-12px;position:relative">
+                  <h2 style="margin:0 0 12px">${listingTitle}</h2>
+                  <p>Hola ${agentName || ''},</p>
+                  <p>Acabamos de publicar tu propiedad. Puedes verla aquí:</p>
+                  <p><a href="${url}" style="display:inline-block;padding:10px 16px;background:#00A676;color:#fff;border-radius:8px;text-decoration:none">Ver listado</a></p>
+                </div>
+              </div>
+            `
+            await sendEmail({ to: agentEmail, from, subject, html, replyTo: from })
+          }
+        }
+      } catch (e) {
+        console.error('Failed to send approval email:', e)
+      }
+
       return NextResponse.json({ ok: true, message: 'Property updated successfully' })
     }
 
@@ -169,7 +207,46 @@ export async function PATCH(req: NextRequest) {
     if (status) updates.status = status // pending, active, rejected, sold, draft
     if (typeof featured === 'boolean') updates.featured = featured
 
+    // Fetch property before update to get email info
+    let before: any = null
+    try {
+      const prevSnap = await getDoc(doc(db, 'properties', id))
+      before = prevSnap.exists() ? prevSnap.data() : null
+    } catch {}
+
     await updateDoc(doc(db, 'properties', id), updates)
+
+    // If approved, email agent
+    try {
+      if (status === 'active' && before) {
+        const agentEmail = (before as any).agentEmail
+        const agentName = (before as any).agentName
+        const listingTitle = (before as any).title
+        if (agentEmail && listingTitle) {
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://viventa-rd.com'
+          const url = `${baseUrl}/listing/${id}`
+          const from = process.env.NEXT_PUBLIC_EMAIL_FROM || 'no-reply@viventa-rd.com'
+          const subject = `Tu listado ya está publicado: ${listingTitle}`
+          const html = `
+            <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#0B2545">
+              <div style="padding:24px;border-radius:12px;background:linear-gradient(135deg,#00A676,#00A6A6);color:#fff">
+                <h1 style=\"margin:0;font-size:22px\">¡Tu propiedad está en vivo!</h1>
+                <p style=\"margin:6px 0 0;opacity:.9\">Ya es visible en VIVENTA para todos los usuarios.</p>
+              </div>
+              <div style="padding:24px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-top:-12px;position:relative">
+                <h2 style="margin:0 0 12px">${listingTitle}</h2>
+                <p>Hola ${agentName || ''},</p>
+                <p>Acabamos de publicar tu propiedad. Puedes verla aquí:</p>
+                <p><a href="${url}" style="display:inline-block;padding:10px 16px;background:#00A676;color:#fff;border-radius:8px;text-decoration:none">Ver listado</a></p>
+              </div>
+            </div>
+          `
+          await sendEmail({ to: agentEmail, from, subject, html, replyTo: from })
+        }
+      }
+    } catch (e) {
+      console.error('Failed to send approval email:', e)
+    }
 
     return NextResponse.json({
       ok: true,

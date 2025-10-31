@@ -1,91 +1,55 @@
+import { NextResponse } from 'next/server'
+import { getMessagesByConversation, sendMessage } from '@/lib/firestoreService'
+import { cookies } from 'next/headers'
+
 export const runtime = 'nodejs'
-import { NextRequest, NextResponse } from 'next/server'
-import {
-  getConversationsForUser,
-  getMessagesByConversation,
-  sendMessage,
-  markMessageAsRead,
-} from '@/lib/firestoreService'
-import { db } from '@/lib/firebaseClient'
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 
-function getCookie(req: NextRequest, name: string): string | null {
-  const cookie = req.headers.get('cookie') || ''
-  const match = cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'))
-  return match ? decodeURIComponent(match[1]) : null
-}
-
-export async function GET(req: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const conversationId = searchParams.get('conversationId')
-    const userId = searchParams.get('userId') || getCookie(req, 'viventa_uid')
-
-    if (conversationId) {
-      const messages = await getMessagesByConversation(conversationId)
-      return NextResponse.json({ messages })
-    }
-
-    if (!userId) {
-      return NextResponse.json({ conversations: [] })
-    }
-
-    // Fallback: return conversations derived from messages if called without /conversations path
-    const conversations = await getConversationsForUser(userId)
-    return NextResponse.json({ conversations })
-  } catch (error: any) {
-    console.error('Error fetching messages:', error)
-    return NextResponse.json({ error: error.message || 'Failed to fetch messages' }, { status: 500 })
+    const { searchParams } = new URL(request.url)
+    const conversationId = searchParams.get('conversationId') || ''
+    if (!conversationId) return NextResponse.json({ messages: [] })
+    const list = await getMessagesByConversation(conversationId)
+    const messages = list.map((m: any) => ({
+      id: m.id,
+      senderId: m.senderId,
+      senderName: m.senderName,
+      text: m.content,
+      createdAt: m.createdAt,
+    }))
+    return NextResponse.json({ messages })
+  } catch (e) {
+    console.error('messages GET error', e)
+    return NextResponse.json({ messages: [] })
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json()
-    const { action } = body || {}
+    const cookieStore = cookies()
+    const uid = cookieStore.get('viventa_uid')?.value
+    const name = decodeURIComponent(cookieStore.get('viventa_name')?.value || '')
+    if (!uid) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
 
-    // Backward-compatible actions API
-    if (action === 'send') {
-      const id = await sendMessage(body)
-      return NextResponse.json({ success: true, message: 'Message sent', id })
-    } else if (action === 'markRead') {
-      await markMessageAsRead(body.id)
-      return NextResponse.json({ success: true, message: 'Message marked as read' })
+    const { conversationId, text, receiverId, receiverName } = await request.json()
+    if (!conversationId || !text?.trim()) {
+      return NextResponse.json({ ok: false, error: 'invalid' }, { status: 400 })
     }
 
-    // New simple API used by UI: { conversationId, text }
-    const uid = getCookie(req, 'viventa_uid')
-    const name = getCookie(req, 'viventa_name') || 'Usuario'
-    const { conversationId, text } = body
-    if (!uid) return NextResponse.json({ ok: false, error: 'Not authenticated' }, { status: 401 })
-    if (!conversationId || !text) return NextResponse.json({ ok: false, error: 'Missing fields' }, { status: 400 })
-
-    // Find conversation participants to determine receiver
-    const convSnap = await getDoc(doc(db, 'conversations', conversationId))
-    if (!convSnap.exists()) return NextResponse.json({ ok: false, error: 'Conversation not found' }, { status: 404 })
-    const conv = convSnap.data() as any
-    const participants: string[] = conv.participants || []
-    const receiverId = participants.find((p) => p !== uid) || ''
-
+    // For this MVP, messages are stored in top-level 'messages' collection
     await sendMessage({
       conversationId,
       senderId: uid,
-      senderName: name,
-      receiverId,
-      receiverName: '',
-      content: text,
+      senderName: name || 'Usuario',
+      receiverId: receiverId || 'unknown',
+      receiverName: receiverName || 'Chat',
+      content: String(text).slice(0, 4000),
       read: false,
     })
 
-    // Update conversation metadata
-    await updateDoc(doc(db, 'conversations', conversationId), {
-      lastMessage: text,
-      updatedAt: serverTimestamp(),
-    })
-
     return NextResponse.json({ ok: true })
-  } catch (error: any) {
-    console.error('Error managing message:', error)
-    return NextResponse.json({ error: error.message || 'Failed to manage message' }, { status: 500 })
+  } catch (e) {
+    console.error('messages POST error', e)
+    return NextResponse.json({ ok: false }, { status: 500 })
   }
 }

@@ -6,6 +6,7 @@ import ErrorBoundary from '../components/ErrorBoundary'
 import ServiceWorkerManager from '../components/ServiceWorkerManager'
 import PwaInstallPrompt from '../components/PwaInstallPrompt'
 import OfflineIndicator from '../components/OfflineIndicator'
+import Script from 'next/script'
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com'),
@@ -76,6 +77,19 @@ export default function RootLayout({children}:{children:React.ReactNode}) {
   <meta name="apple-mobile-web-app-title" content="VIVENTA" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
+  {process.env.NEXT_PUBLIC_GA_ID ? (
+    <>
+      <Script src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`} strategy="afterInteractive" />
+      <Script id="ga-gtag" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);} 
+        gtag('js', new Date());
+        gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', {
+          anonymize_ip: true
+        });
+      `}} />
+    </>
+  ) : null}
       </head>
       <body suppressHydrationWarning>
   <ServiceWorkerManager />

@@ -44,8 +44,13 @@ export default function CreateListingPage() {
     latitude: '',
     longitude: '',
     features: [] as string[],
-    status: 'active',
-    featured: false
+    // Default to pending so listings go through admin approval
+    status: 'pending',
+    featured: false,
+    // Pro-to-pro information (not shown publicly)
+    showingInstructions: '',
+    compensationDetails: '',
+    proNotes: ''
   })
 
   const propertyTypes = [
@@ -120,6 +125,8 @@ export default function CreateListingPage() {
       return
     }
 
+    // Recommend adding pro info but not required
+
     setLoading(true)
 
     try {
@@ -147,7 +154,7 @@ export default function CreateListingPage() {
       toast.success('Imágenes subidas', { id: 'upload' })
 
       // Create property document with complete structure
-      const propertyData = {
+  const propertyData = {
         // Spanish content (primary)
         title: formData.title,
         description: formData.description,
@@ -191,9 +198,16 @@ export default function CreateListingPage() {
         agentName: session.name || session.displayName || session.email,
         agentEmail: session.email,
         
-        // Status and visibility
+        // Status and visibility (pending by default until admin approval)
         status: formData.status,
         featured: formData.featured,
+
+        // Pro-to-pro information (admin only)
+        proInfo: {
+          showingInstructions: formData.showingInstructions,
+          compensationDetails: formData.compensationDetails,
+          proNotes: formData.proNotes
+        },
         
         // Metrics (initialized)
         views: 0,
@@ -207,8 +221,21 @@ export default function CreateListingPage() {
 
       const docRef = await addDoc(collection(db, 'properties'), propertyData)
 
-      toast.success('¡Propiedad creada exitosamente!')
-      router.push(`/listing/${docRef.id}`)
+      // Fire-and-forget: notify agent via email that listing is under review
+      fetch('/api/listings/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'received',
+          listingId: docRef.id,
+          listingTitle: formData.title,
+          agentEmail: session.email,
+          agentName: session.name || session.displayName || session.email
+        })
+      }).catch(() => {})
+
+      toast.success('¡Propiedad enviada para revisión! (24-48h)')
+      router.push('/agent/listings')
     } catch (error: any) {
       console.error('Error creating property:', error)
       toast.error(error.message || 'Error al crear la propiedad. Intenta de nuevo.')
@@ -633,6 +660,54 @@ export default function CreateListingPage() {
             </div>
           </div>
 
+          {/* Información profesional (pro-to-pro) */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-bold text-[#0B2545] mb-4">
+              Información profesional (visible solo para agentes)
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Instrucciones de muestra
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.showingInstructions}
+                  onChange={(e) => setFormData({ ...formData, showingInstructions: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                  placeholder="Cómo agendar y mostrar la propiedad, requisitos de acceso, etc."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Detalles de compensación
+                </label>
+                <input
+                  type="text"
+                  value={formData.compensationDetails}
+                  onChange={(e) => setFormData({ ...formData, compensationDetails: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                  placeholder="Ej: 3% al agente comprador"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Notas privadas (pro-to-pro)
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.proNotes}
+                  onChange={(e) => setFormData({ ...formData, proNotes: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                  placeholder="Comentarios internos para otros profesionales"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Images */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-bold text-[#0B2545] mb-4 flex items-center gap-2">
@@ -729,10 +804,10 @@ export default function CreateListingPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">
-                      Publicación Inmediata
+                      Revisión y aprobación (24–48 horas)
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Tu propiedad se publicará automáticamente y será visible para todos los usuarios de inmediato.
+                      Tu propiedad se enviará para revisión del equipo de VIVENTA. Te notificaremos por correo cuando esté aprobada y visible para los usuarios.
                     </p>
                   </div>
                 </div>
