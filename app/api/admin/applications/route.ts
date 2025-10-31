@@ -3,6 +3,7 @@ import { db } from '@/lib/firebaseClient'
 import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 import { sendEmail } from '@/lib/emailService'
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin'
+import { ActivityLogger } from '@/lib/activityLogger'
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -21,15 +22,16 @@ export async function PATCH(req: NextRequest) {
     }
     if (notes) updateData.reviewNotes = notes
 
+    // Read application data for logging
+    const appSnap = await getDoc(appRef)
+    const appData = appSnap.exists() ? (appSnap.data() as any) : null
+
     // If approved, try to generate credentials and upsert user profile via Admin SDK
     let code: string | undefined
     let resetLink: string | undefined
     if (status === 'approved') {
       const adminDb = getAdminDb()
       const adminAuth = getAdminAuth()
-      // Read application data
-      const appSnap = await getDoc(appRef)
-      const appData = appSnap.exists() ? (appSnap.data() as any) : null
       if (appData && adminDb && adminAuth) {
         const email: string = (appData.email || '').toLowerCase()
         const name: string = appData.contact || ''
@@ -98,6 +100,13 @@ export async function PATCH(req: NextRequest) {
     }
 
     await updateDoc(appRef, updateData)
+
+    // Log activity
+    if (status === 'approved' && appData) {
+      ActivityLogger.applicationApproved(id, appData.email, appData.contact, appData.type, code)
+    } else if (status === 'rejected' && appData) {
+      ActivityLogger.applicationRejected(id, appData.email, appData.contact, appData.type)
+    }
 
     return NextResponse.json({ ok: true, code, resetLink })
   } catch (error: any) {

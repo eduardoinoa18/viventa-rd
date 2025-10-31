@@ -1,6 +1,7 @@
 // app/api/admin/users/sync/route.ts
 import { NextResponse } from 'next/server'
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin'
+import { ActivityLogger } from '@/lib/activityLogger'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,6 +70,9 @@ export async function POST() {
       }
       nextPageToken = res.pageToken
     } while (nextPageToken)
+
+    // Log sync activity
+    ActivityLogger.authSync('admin@viventa.com', created, updated)
 
     return NextResponse.json({ ok: true, data: { created, updated, total }, message: 'Sync completed' })
   } catch (e: any) {

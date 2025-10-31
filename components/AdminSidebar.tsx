@@ -2,7 +2,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FiGrid, FiUsers, FiHome, FiSettings, FiUserCheck, FiBriefcase, FiMessageSquare, FiPlusSquare, FiClipboard, FiCreditCard, FiShield } from 'react-icons/fi'
+import { FiGrid, FiUsers, FiHome, FiSettings, FiUserCheck, FiBriefcase, FiMessageSquare, FiPlusSquare, FiClipboard, FiCreditCard, FiShield, FiActivity } from 'react-icons/fi'
 
 export default function AdminSidebar() {
   const pathname = usePathname()
@@ -10,6 +10,7 @@ export default function AdminSidebar() {
   const links = [
     { href: '/admin', label: 'Dashboard', icon: <FiGrid /> },
     { href: '/admin/diagnostics', label: 'System Status', icon: <FiSettings />, highlight: true },
+    { href: '/admin/activity', label: 'Activity Feed', icon: <FiActivity /> },
     { href: '/admin/users', label: 'Users', icon: <FiUsers /> },
     { href: '/admin/brokers', label: 'Brokers', icon: <FiBriefcase /> },
     { href: '/admin/agents', label: 'Agents', icon: <FiUserCheck /> },

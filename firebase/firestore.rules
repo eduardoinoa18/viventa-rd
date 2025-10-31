@@ -104,6 +104,12 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /activity_logs/{logId} {
+      allow create: if true;
+      allow read: if isElevated();
+      allow update, delete: if false;
+    }
+
     match /leads/{leadId} {
       allow read: if isElevated();
       allow create: if isSignedIn();
