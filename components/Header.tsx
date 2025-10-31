@@ -33,7 +33,7 @@ export default function Header() {
             <Link href="/" className="hover:text-[#3BAFDA]">Inicio</Link>
             <Link href="/search" className="hover:text-[#3BAFDA]">Buscar</Link>
             <Link href="/agents" className="hover:text-[#3BAFDA]">Agentes</Link>
-            <Link href="/profesionales" className="hover:text-[#3BAFDA]">Profesionales</Link>
+            <Link href="/brokers" className="hover:text-[#3BAFDA]">Brokerages</Link>
             <Link href="/contact" className="hover:text-[#3BAFDA]">Contacto</Link>
           </nav>
           <div className="flex items-center space-x-2 sm:space-x-3">
@@ -58,7 +58,7 @@ export default function Header() {
               <Link href="/" className="hover:text-[#3BAFDA]">Inicio</Link>
               <Link href="/search" className="hover:text-[#3BAFDA]">Buscar</Link>
               <Link href="/agents" className="hover:text-[#3BAFDA]">Agentes</Link>
-              <Link href="/profesionales" className="hover:text-[#3BAFDA]">Profesionales</Link>
+              <Link href="/brokers" className="hover:text-[#3BAFDA]">Brokerages</Link>
               <Link href="/contact" className="hover:text-[#3BAFDA]">Contacto</Link>
             </>
           ) : (
