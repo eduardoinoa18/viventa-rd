@@ -4,6 +4,7 @@ import ProtectedClient from '../auth/ProtectedClient'
 import AdminWidget from '../../components/AdminWidget'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminTopbar from '../../components/AdminTopbar'
+import ActivityWidget from '../../components/ActivityWidget'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { FiUsers, FiHome, FiDollarSign, FiClock, FiUserPlus, FiCreditCard } from 'react-icons/fi'
@@ -86,32 +87,7 @@ export default function AdminPage() {
           </section>
 
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Recent Activity</h2>
-            <div className="bg-white rounded-lg shadow p-5">
-              <ul className="divide-y divide-gray-200">
-                <li className="py-3 flex items-start gap-3">
-                  <span className="text-xl text-[#0B2545]"><FiUserPlus /></span>
-                  <div>
-                    <div>User <strong className="text-[#00A676]">maría@demo.com</strong> requested Agent approval</div>
-                    <div className="text-xs text-gray-500">2 hours ago</div>
-                  </div>
-                </li>
-                <li className="py-3 flex items-start gap-3">
-                  <span className="text-xl text-[#0B2545]"><FiHome /></span>
-                  <div>
-                    <div>Listing <strong className="text-[#00A676]">#L-0012</strong> submitted by agent carlos@demo.com</div>
-                    <div className="text-xs text-gray-500">5 hours ago</div>
-                  </div>
-                </li>
-                <li className="py-3 flex items-start gap-3">
-                  <span className="text-xl text-[#0B2545]"><FiCreditCard /></span>
-                  <div>
-                    <div>Payment succeeded for Broker <strong className="text-[#00A676]">B-001</strong></div>
-                    <div className="text-xs text-gray-500">1 day ago</div>
-                  </div>
-                </li>
-              </ul>
-            </div>
+            <ActivityWidget />
           </section>
 
           <section>

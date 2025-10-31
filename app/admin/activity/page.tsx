@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
 import ProtectedClient from '../../auth/ProtectedClient'
-import { FiActivity, FiUser, FiFileText, FiHome, FiServer, FiClock, FiCheckCircle, FiXCircle, FiRefreshCw } from 'react-icons/fi'
+import { FiActivity, FiUser, FiFileText, FiHome, FiServer, FiClock, FiCheckCircle, FiXCircle, FiRefreshCw, FiDownload } from 'react-icons/fi'
 
 type ActivityLog = {
   id: string
@@ -21,15 +21,16 @@ export default function AdminActivityPage() {
   const [logs, setLogs] = useState<ActivityLog[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
+  const [limit, setLimit] = useState(50)
 
   useEffect(() => {
     loadLogs()
-  }, [])
+  }, [limit])
 
   async function loadLogs() {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/activity?limit=50')
+      const res = await fetch(`/api/admin/activity?limit=${limit}`)
       const json = await res.json()
       if (json.ok) {
         setLogs(json.data || [])
@@ -39,6 +40,25 @@ export default function AdminActivityPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function exportToCSV() {
+    const headers = ['Timestamp', 'Type', 'Action', 'User Name', 'User Email', 'Metadata']
+    const rows = filtered.map(log => [
+      new Date(log.timestamp).toLocaleString('es-DO'),
+      log.type,
+      log.action,
+      log.userName || '-',
+      log.userEmail || '-',
+      JSON.stringify(log.metadata || {})
+    ])
+
+    const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `activity_logs_${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
   }
 
   const filtered = logs.filter(log => filter === 'all' || log.type === filter)
@@ -101,12 +121,21 @@ export default function AdminActivityPage() {
                 </h1>
                 <p className="text-gray-600 text-sm mt-1">Monitor system events and user actions</p>
               </div>
-              <button
-                onClick={loadLogs}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]"
-              >
-                <FiRefreshCw /> Refresh
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={exportToCSV}
+                  disabled={filtered.length === 0}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2545] text-white rounded-lg font-semibold hover:bg-[#0a1f3a] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FiDownload /> Export CSV
+                </button>
+                <button
+                  onClick={loadLogs}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]"
+                >
+                  <FiRefreshCw /> Refresh
+                </button>
+              </div>
             </div>
 
             {/* Filters */}
@@ -138,40 +167,77 @@ export default function AdminActivityPage() {
                 <p className="text-gray-500">No hay actividad registrada</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {filtered.map(log => (
-                  <div key={log.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start gap-4">
-                      <div className="p-2 bg-gray-50 rounded-full">
-                        {getIcon(log.type)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${getActionBadge(log.action)}`}>
-                            {log.action}
-                          </span>
-                          <span className="text-xs text-gray-500 inline-flex items-center gap-1">
-                            <FiClock size={12} /> {formatTimestamp(log.timestamp)}
-                          </span>
+              <>
+                {/* Stats Bar */}
+                <div className="mb-4 flex items-center justify-between text-sm text-gray-600 px-2">
+                  <span>
+                    Mostrando <strong>{filtered.length}</strong> de <strong>{logs.length}</strong> actividades
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="limit-select" className="text-sm font-medium">
+                      Mostrar:
+                    </label>
+                    <select
+                      id="limit-select"
+                      value={limit}
+                      onChange={(e) => setLimit(Number(e.target.value))}
+                      className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    >
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={500}>500</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {filtered.map(log => (
+                    <div key={log.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start gap-4">
+                        <div className="p-2 bg-gray-50 rounded-full">
+                          {getIcon(log.type)}
                         </div>
-                        <div className="text-sm text-gray-900 font-medium">
-                          {log.userName || log.userEmail || 'Sistema'}
-                        </div>
-                        {log.metadata && Object.keys(log.metadata).length > 0 && (
-                          <div className="mt-2 text-xs text-gray-600 bg-gray-50 rounded p-2">
-                            {log.metadata.role && <span className="mr-3">Rol: <strong>{log.metadata.role}</strong></span>}
-                            {log.metadata.type && <span className="mr-3">Tipo: <strong>{log.metadata.type}</strong></span>}
-                            {log.metadata.code && <span className="mr-3">Código: <strong className="font-mono text-[#00A676]">{log.metadata.code}</strong></span>}
-                            {log.metadata.title && <span className="mr-3">Título: <strong>{log.metadata.title}</strong></span>}
-                            {log.metadata.created !== undefined && <span className="mr-3">Creados: <strong>{log.metadata.created}</strong></span>}
-                            {log.metadata.updated !== undefined && <span className="mr-3">Actualizados: <strong>{log.metadata.updated}</strong></span>}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${getActionBadge(log.action)}`}>
+                              {log.action}
+                            </span>
+                            <span className="text-xs text-gray-500 inline-flex items-center gap-1">
+                              <FiClock size={12} /> {formatTimestamp(log.timestamp)}
+                            </span>
                           </div>
-                        )}
+                          <div className="text-sm text-gray-900 font-medium">
+                            {log.userName || log.userEmail || 'Sistema'}
+                          </div>
+                          {log.metadata && Object.keys(log.metadata).length > 0 && (
+                            <div className="mt-2 text-xs text-gray-600 bg-gray-50 rounded p-2">
+                              {log.metadata.role && <span className="mr-3">Rol: <strong>{log.metadata.role}</strong></span>}
+                              {log.metadata.type && <span className="mr-3">Tipo: <strong>{log.metadata.type}</strong></span>}
+                              {log.metadata.code && <span className="mr-3">Código: <strong className="font-mono text-[#00A676]">{log.metadata.code}</strong></span>}
+                              {log.metadata.title && <span className="mr-3">Título: <strong>{log.metadata.title}</strong></span>}
+                              {log.metadata.created !== undefined && <span className="mr-3">Creados: <strong>{log.metadata.created}</strong></span>}
+                              {log.metadata.updated !== undefined && <span className="mr-3">Actualizados: <strong>{log.metadata.updated}</strong></span>}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* Load More Button */}
+                {logs.length >= limit && (
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={() => setLimit(limit + 50)}
+                      className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                    >
+                      Cargar más actividades
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         </main>
