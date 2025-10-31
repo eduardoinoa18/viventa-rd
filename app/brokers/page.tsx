@@ -28,7 +28,7 @@ export default function BrokersPage() {
         where('status', '==', 'active')
       )
       const snapshot = await getDocs(q)
-      const brokersList = snapshot.docs.map((doc) => ({
+      const brokersList = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data(),
         // Normalize fields for BrokerCard

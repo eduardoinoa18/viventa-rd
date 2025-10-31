@@ -27,7 +27,7 @@ export default function AgentsPage() {
         where('status', '==', 'active')
       )
       const snapshot = await getDocs(q)
-      const agentsList = snapshot.docs.map((doc) => ({
+      const agentsList = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data(),
         // Normalize fields for AgentCard
