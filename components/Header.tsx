@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import LocaleSwitcher from './LocaleSwitcher'
 import CurrencySwitcher from './CurrencySwitcher'
+import NotificationCenter from './NotificationCenter'
 import { useEffect, useState } from 'react'
 import { getSession, clearSession } from '../lib/authSession'
 
@@ -75,6 +76,7 @@ export default function Header() {
           <LocaleSwitcher />
           {session ? (
             <>
+              {session.uid && <NotificationCenter userId={session.uid} />}
               <Link href="/dashboard" className="px-3 py-2 text-sm border rounded font-semibold hover:bg-gray-50 transition hidden sm:inline-block">Dashboard</Link>
               <button onClick={logout} className="px-3 py-2 text-sm bg-red-500 text-white rounded font-semibold hover:bg-red-600 transition hidden md:inline-block">Logout</button>
             </>
