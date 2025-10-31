@@ -3,6 +3,7 @@
 export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { verificationCodes } from '@/lib/verificationStore'
+import { ActivityLogger } from '@/lib/activityLogger'
 
 export async function POST(request: Request) {
   try {
@@ -64,6 +65,9 @@ export async function POST(request: Request) {
 
     // In production, create a session token here
     const sessionToken = generateSessionToken()
+
+    // Log admin login
+    await ActivityLogger.adminLogin(email, email.split('@')[0])
 
     const res = NextResponse.json({ 
       ok: true,

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, serverTimestamp } from 'firebase/firestore'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { ActivityLogger } from '@/lib/activityLogger'
 
 function initFirebase() {
   const config = {
@@ -87,6 +88,10 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date(),
       }
       const docRef = await adminDb.collection('users').add(userDoc)
+      
+      // Log user creation
+      await ActivityLogger.userCreated(email, name, role)
+      
       return NextResponse.json({ ok: true, data: { id: docRef.id, ...userDoc }, message: 'User created successfully' })
     }
 
@@ -113,6 +118,9 @@ export async function POST(req: NextRequest) {
     }
 
     const docRef = await addDoc(collection(db, 'users'), userDoc)
+
+    // Log user creation
+    await ActivityLogger.userCreated(email, name, role)
 
     return NextResponse.json({
       ok: true,
@@ -143,6 +151,25 @@ export async function PATCH(req: NextRequest) {
       if (brokerage !== undefined) updates.brokerage = brokerage
       if (company !== undefined) updates.company = company
       await adminDb.collection('users').doc(id).update(updates)
+      
+      // Log user update
+      const userDoc = await adminDb.collection('users').doc(id).get()
+      const userData = userDoc.data()
+      if (userData) {
+        await ActivityLogger.log({
+          type: 'user',
+          action: 'User Updated',
+          userId: id,
+          userName: userData.name,
+          userEmail: userData.email,
+          metadata: {
+            role: userData.role,
+            status: updates.status || userData.status,
+            updatedFields: Object.keys(updates).filter(k => k !== 'updatedAt')
+          }
+        })
+      }
+      
       return NextResponse.json({ ok: true, message: 'User updated successfully' })
     }
 
@@ -160,6 +187,25 @@ export async function PATCH(req: NextRequest) {
     if (company !== undefined) updates.company = company
 
     await updateDoc(doc(db, 'users', id), updates)
+
+    // Log user update
+    const { getDoc } = await import('firebase/firestore')
+    const userDoc = await getDoc(doc(db, 'users', id))
+    const userData = userDoc.data()
+    if (userData) {
+      await ActivityLogger.log({
+        type: 'user',
+        action: 'User Updated',
+        userId: id,
+        userName: userData.name,
+        userEmail: userData.email,
+        metadata: {
+          role: userData.role,
+          status: updates.status || userData.status,
+          updatedFields: Object.keys(updates).filter(k => k !== 'updatedAt')
+        }
+      })
+    }
 
     return NextResponse.json({
       ok: true,
@@ -180,14 +226,49 @@ export async function DELETE(req: NextRequest) {
 
     const adminDb = getAdminDb()
     if (adminDb) {
+      // Get user data before deletion for logging
+      const userDoc = await adminDb.collection('users').doc(id).get()
+      const userData = userDoc.data()
+      
       await adminDb.collection('users').doc(id).delete()
+      
+      // Log user deletion
+      if (userData) {
+        await ActivityLogger.log({
+          type: 'user',
+          action: 'User Deleted',
+          userId: id,
+          userName: userData.name,
+          userEmail: userData.email,
+          metadata: { role: userData.role }
+        })
+      }
+      
       return NextResponse.json({ ok: true, message: 'User deleted successfully' })
     }
 
     const db = initFirebase()
     if (!db) return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
-    const { deleteDoc } = await import('firebase/firestore')
+    
+    // Get user data before deletion for logging
+    const { deleteDoc, getDoc } = await import('firebase/firestore')
+    const userDoc = await getDoc(doc(db, 'users', id))
+    const userData = userDoc.data()
+    
     await deleteDoc(doc(db, 'users', id))
+    
+    // Log user deletion
+    if (userData) {
+      await ActivityLogger.log({
+        type: 'user',
+        action: 'User Deleted',
+        userId: id,
+        userName: userData.name,
+        userEmail: userData.email,
+        metadata: { role: userData.role }
+      })
+    }
+    
     return NextResponse.json({ ok: true, message: 'User deleted successfully' })
   } catch (e: any) {
     console.error('admin users DELETE error', e)
