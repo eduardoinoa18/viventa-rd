@@ -13,7 +13,8 @@ export default function ApplyPage(){
     type:'agent',
     contact:'', email:'', phone:'', company:'', address:'', markets:'', currency:'USD',
     license:'', years:0, volume12m:0, brokerage:'', languages:'', specialties:'',
-    agents:0, annualVolume12m:0, offices:1, crm:'', insurance:false
+    agents:0, annualVolume12m:0, offices:1, crm:'', insurance:false,
+    businessDetails:'', website:'', socialMedia:'', referralSource:''
   })
   const [submitted,setSubmitted] = useState(false)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
@@ -22,7 +23,14 @@ export default function ApplyPage(){
   const [submitting, setSubmitting] = useState(false)
 
   async function submit(){
-    if(!form.email || !form.contact){ alert('Completa los campos requeridos'); return }
+    if(!form.email || !form.contact || !form.phone){ 
+      alert('Por favor completa todos los campos requeridos (*)'); 
+      return 
+    }
+    if(!form.businessDetails || form.businessDetails.length < 50){ 
+      alert('Por favor describe por qué quieres unirte a VIVENTA (mínimo 50 caracteres). Esto ayuda a acelerar tu aprobación.'); 
+      return 
+    }
     try {
       setSubmitting(true)
       let resumeUrl: string | undefined
@@ -42,13 +50,48 @@ export default function ApplyPage(){
         documentUrl = await uploadFile(bizDocFile, path, (p) => setUploadProgress(p))
       }
 
-      await addDoc(collection(db,'applications'), {
+      const docRef = await addDoc(collection(db,'applications'), {
         ...form,
         status:'pending',
         createdAt: serverTimestamp(),
         resumeUrl,
         documentUrl,
       })
+
+      // Send confirmation email to applicant
+      try {
+        await fetch('/api/applications/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: form.email,
+            name: form.contact,
+            type: form.type
+          })
+        })
+      } catch (emailErr) {
+        console.error('Email sending failed:', emailErr)
+        // Don't block submission if email fails
+      }
+
+      // Notify admin
+      try {
+        await fetch('/api/contact/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.contact,
+            email: form.email,
+            phone: form.phone,
+            message: `Nueva solicitud de ${form.type}: ${form.contact}\n\nID: ${docRef.id}\nEmail: ${form.email}\nTeléfono: ${form.phone}\nEmpresa: ${form.company}\n\nDetalles del negocio:\n${form.businessDetails}`,
+            subject: `Nueva Solicitud: ${form.type === 'agent' ? 'Agente' : 'Bróker'} - ${form.contact}`,
+            source: 'application_form'
+          })
+        })
+      } catch (notifyErr) {
+        console.error('Admin notification failed:', notifyErr)
+      }
+
       setSubmitted(true)
     } catch (e: any) {
       console.error('Application submit failed', e)
@@ -143,15 +186,58 @@ export default function ApplyPage(){
                 <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2">Idiomas</label><input value={form.languages} onChange={e=>setForm({...form,languages:e.target.value})} className="w-full px-4 py-3 border rounded-lg" placeholder="Español, Inglés"/></div>
                 <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2">Especialidades</label><input value={form.specialties} onChange={e=>setForm({...form,specialties:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold mb-2">Currículum (PDF/DOC/DOCX, máx 10MB)</label>
+                  <label className="block text-sm font-semibold mb-2">Currículum (Opcional - Recomendado)</label>
                   <input type="file" accept=".pdf,.doc,.docx,image/*" onChange={(e)=> setResumeFile(e.target.files?.[0] || null)} className="w-full px-4 py-3 border rounded-lg" />
+                  <p className="text-xs text-gray-500 mt-1">Adjuntar tu currículum ayuda a acelerar el proceso de aprobación</p>
                   {uploadProgress > 0 && submitting && (
-                    <div className="text-xs text-gray-500 mt-1">Subiendo: {Math.round(uploadProgress)}%</div>
+                    <div className="text-xs text-blue-600 mt-1">Subiendo: {Math.round(uploadProgress)}%</div>
                   )}
                 </div>
               </div>
             </div>
           )}
+
+          {/* Business Details Section - Both Agent & Broker */}
+          <div className="mb-6 border-t pt-6">
+            <h3 className="font-bold text-lg mb-2">Detalles de tu Negocio</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              📝 <strong>Importante:</strong> Completar esta sección aumenta tus posibilidades de aprobación rápida
+            </p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold mb-2">
+                  ¿Por qué quieres unirte a VIVENTA? *
+                </label>
+                <textarea 
+                  value={form.businessDetails} 
+                  onChange={e=>setForm({...form,businessDetails:e.target.value})} 
+                  className="w-full px-4 py-3 border rounded-lg resize-none"
+                  rows={4}
+                  placeholder="Cuéntanos sobre tu experiencia, objetivos, y cómo planeas usar la plataforma..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">Sitio Web</label>
+                <input value={form.website} onChange={e=>setForm({...form,website:e.target.value})} className="w-full px-4 py-3 border rounded-lg" placeholder="https://tuempresa.com"/>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">Redes Sociales</label>
+                <input value={form.socialMedia} onChange={e=>setForm({...form,socialMedia:e.target.value})} className="w-full px-4 py-3 border rounded-lg" placeholder="Instagram, Facebook, LinkedIn"/>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold mb-2">¿Cómo nos conociste?</label>
+                <select value={form.referralSource} onChange={e=>setForm({...form,referralSource:e.target.value})} className="w-full px-4 py-3 border rounded-lg">
+                  <option value="">Selecciona una opción</option>
+                  <option value="google">Google</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="referral">Referido de otro agente</option>
+                  <option value="event">Evento/Conferencia</option>
+                  <option value="other">Otro</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
           {form.type==='broker' && (
             <div className="mb-6 border-t pt-6">
@@ -163,10 +249,11 @@ export default function ApplyPage(){
                 <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2">CRM</label><input value={form.crm} onChange={e=>setForm({...form,crm:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
                 <div className="md:col-span-3 flex items-center gap-2 p-3 bg-blue-50 rounded-lg"><input type="checkbox" checked={form.insurance} onChange={e=>setForm({...form,insurance:e.target.checked})} className="w-5 h-5"/><label className="text-sm font-medium">Tenemos seguro E&O</label></div>
                 <div className="md:col-span-3">
-                  <label className="block text-sm font-semibold mb-2">Documento de negocio (PDF/DOC/DOCX, máx 10MB)</label>
+                  <label className="block text-sm font-semibold mb-2">Documento de negocio (Opcional - Recomendado)</label>
                   <input type="file" accept=".pdf,.doc,.docx,image/*" onChange={(e)=> setBizDocFile(e.target.files?.[0] || null)} className="w-full px-4 py-3 border rounded-lg" />
+                  <p className="text-xs text-gray-500 mt-1">Licencia de negocio, certificaciones o documentos corporativos</p>
                   {uploadProgress > 0 && submitting && (
-                    <div className="text-xs text-gray-500 mt-1">Subiendo: {Math.round(uploadProgress)}%</div>
+                    <div className="text-xs text-blue-600 mt-1">Subiendo: {Math.round(uploadProgress)}%</div>
                   )}
                 </div>
               </div>

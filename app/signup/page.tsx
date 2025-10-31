@@ -35,11 +35,27 @@ export default function SignupPage() {
           createdAt: serverTimestamp(),
         }, { merge: true })
 
+        // Send welcome email
+        try {
+          await fetch('/api/users/welcome', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: form.email,
+              name: form.name,
+              userType: 'user'
+            })
+          })
+        } catch (emailErr) {
+          console.error('Welcome email failed:', emailErr)
+          // Don't block registration if email fails
+        }
+
         // Save session locally for client routing and middleware cookies
         saveSession({ uid: cred.user.uid, role: 'user', profileComplete: true, name: form.name })
         setError('')
         router.push('/dashboard')
-        toast.success('¡Cuenta creada exitosamente!')
+        toast.success('¡Cuenta creada exitosamente! Revisa tu email.')
       }
     } catch (err: any) {
       const msg = err?.message || 'No se pudo crear la cuenta.'
