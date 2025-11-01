@@ -25,8 +25,12 @@ export interface Property {
   id?: string
   title: string
   description: string
+  publicRemarks?: string // Public-facing description for buyers/renters
+  professionalRemarks?: string // Private notes for agents/brokers only
   price: number
   location: string
+  city?: string
+  neighborhood?: string
   lat?: number
   lng?: number
   bedrooms: number

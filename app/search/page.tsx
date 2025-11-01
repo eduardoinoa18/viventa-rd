@@ -202,9 +202,9 @@ function SearchPageContent() {
               </button>
             </div>
 
-            <div className="grid lg:grid-cols-[1fr_400px] gap-6">
+            <div className="grid lg:grid-cols-[1fr_420px] gap-6">
               {/* Main content */}
-              <div className={`${mobileView !== 'list' ? 'hidden lg:block' : ''} space-y-4`}>
+              <div className={`${mobileView !== 'list' ? 'hidden lg:block' : ''} space-y-4 min-w-0`}>
                 {/* Search bar */}
                 <div className="bg-white rounded-lg shadow-sm p-4">
                   <div className="relative">
@@ -299,9 +299,9 @@ function SearchPageContent() {
                 </div>
               </div>
 
-              {/* Sidebar filters */}
+              {/* Sidebar filters and map */}
               <div className={`${mobileView !== 'map' && !showFilters ? 'hidden lg:block' : ''} space-y-4`}>
-                <div className="bg-white rounded-lg shadow-sm p-4 sticky top-20">
+                <div className="bg-white rounded-lg shadow-sm p-4 sticky top-20 max-h-[calc(100vh-120px)] overflow-y-auto">
                   <h3 className="font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
                     <FiFilter /> Filtros
                   </h3>
@@ -429,8 +429,8 @@ function SearchPageContent() {
                 </div>
 
                 {/* Map view on desktop */}
-                <div className="hidden lg:block">
-                  <div className="bg-white rounded-lg shadow-sm p-4 h-full">
+                <div className="hidden lg:block mt-4">
+                  <div className="bg-white rounded-lg shadow-sm p-4 h-[500px] sticky top-[calc(100vh-520px)]">
                     <CustomMapSearch 
                       listings={results}
                       onMarkerClick={(id: string) => router.push(`/listing/${id}`)}

@@ -77,13 +77,16 @@ export default function ApplyPage(){
       }
 
       console.log('[Apply] Creating Firestore application doc...')
-      const docRef = await withTimeout(addDoc(collection(db,'applications'), {
+      // Only include resumeUrl/documentUrl if they are defined (Firestore rejects undefined)
+      const applicationData: any = {
         ...form,
         status:'pending',
         createdAt: serverTimestamp(),
-        resumeUrl,
-        documentUrl,
-      }), 15000) as any
+      }
+      if (resumeUrl) applicationData.resumeUrl = resumeUrl
+      if (documentUrl) applicationData.documentUrl = documentUrl
+      
+      const docRef = await withTimeout(addDoc(collection(db,'applications'), applicationData), 15000) as any
       console.log('[Apply] Application created:', { id: docRef.id })
 
       // Immediately show success UI; background notifications won't block UX
