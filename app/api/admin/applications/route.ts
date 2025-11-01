@@ -95,6 +95,24 @@ export async function PATCH(req: NextRequest) {
 
         await adminDb.collection('users').doc(uid).set(payload, { merge: true })
 
+        // Build password setup link (fallback to our custom flow if admin reset link not available)
+        try {
+          if (!resetLink) {
+            const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com'
+            const token = createPasswordSetupToken(uid)
+            resetLink = `${site}/auth/setup-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}&id=${code}`
+          }
+
+          // Send professional credentials email (Spanish, Caribbean styling)
+          const roleEs: 'agent' | 'broker' = (role === 'broker' ? 'broker' : 'agent')
+          if (code && resetLink) {
+            await sendProfessionalCredentials(email, name || 'Profesional', roleEs, code, resetLink)
+            logger.info('Professional credentials email sent', { email, role: roleEs, code })
+          }
+        } catch (e) {
+          logger.error('Failed to send professional credentials email', e)
+        }
+
         // Annotate application doc
         updateData.approvedAt = serverTimestamp()
         updateData.assignedCode = code
