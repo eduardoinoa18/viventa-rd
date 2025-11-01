@@ -39,8 +39,8 @@ export default function Header() {
           <div className="flex items-center space-x-2 sm:space-x-3">
             <CurrencySwitcher />
             <LocaleSwitcher />
-            <Link href="/login" className="px-3 py-2 min-h-[44px] min-w-[60px] flex items-center justify-center text-sm border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition active:scale-95">Login</Link>
-            <Link href="/signup" className="px-3 py-2 min-h-[44px] text-sm bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008f5f] transition active:scale-95 shadow-sm">Sign Up</Link>
+            <Link href="/login" className="px-4 py-2 min-h-[44px] min-w-[68px] flex items-center justify-center text-sm border-2 border-viventa-navy text-viventa-navy rounded-lg font-bold hover:bg-viventa-navy hover:text-white transition-all active:scale-95">Login</Link>
+            <Link href="/signup" className="px-4 py-2 min-h-[44px] text-sm bg-gradient-to-r from-viventa-teal to-viventa-cyan text-white rounded-lg font-bold hover:shadow-lg hover:scale-105 transition-all active:scale-95">Sign Up</Link>
           </div>
         </div>
       </header>
@@ -55,19 +55,19 @@ export default function Header() {
         <nav className="space-x-4 lg:space-x-6 hidden md:flex text-sm lg:text-base">
           {!session ? (
             <>
-              <Link href="/" className="hover:text-[#3BAFDA]">Inicio</Link>
-              <Link href="/search" className="hover:text-[#3BAFDA]">Buscar</Link>
-              <Link href="/agents" className="hover:text-[#3BAFDA]">Agentes</Link>
-              <Link href="/brokers" className="hover:text-[#3BAFDA]">Brokerages</Link>
-              <Link href="/contact" className="hover:text-[#3BAFDA]">Contacto</Link>
+              <Link href="/" className="text-viventa-navy hover:text-viventa-teal transition-colors font-medium">Inicio</Link>
+              <Link href="/search" className="text-viventa-navy hover:text-viventa-teal transition-colors font-medium">Buscar</Link>
+              <Link href="/agents" className="text-viventa-navy hover:text-viventa-teal transition-colors font-medium">Agentes</Link>
+              <Link href="/brokers" className="text-viventa-navy hover:text-viventa-teal transition-colors font-medium">Brokerages</Link>
+              <Link href="/contact" className="text-viventa-navy hover:text-viventa-teal transition-colors font-medium">Contacto</Link>
             </>
           ) : (
             <>
-              <Link href="/dashboard" className="hover:text-[#3BAFDA]">Dashboard</Link>
-              <Link href="/search" className="hover:text-[#3BAFDA]">Explorar</Link>
-              <Link href="/favorites" className="hover:text-[#3BAFDA]">Favoritos</Link>
-              <Link href="/dashboard/social" className="hover:text-[#3BAFDA]">Social</Link>
-              <Link href="/contact" className="hover:text-[#3BAFDA]">Soporte</Link>
+              <Link href="/dashboard" className="text-viventa-navy hover:text-viventa-teal transition-colors font-medium">Dashboard</Link>
+              <Link href="/search" className="text-viventa-navy hover:text-viventa-teal transition-colors font-medium">Explorar</Link>
+              <Link href="/favorites" className="text-viventa-navy hover:text-viventa-teal transition-colors font-medium">Favoritos</Link>
+              <Link href="/dashboard/social" className="text-viventa-navy hover:text-viventa-teal transition-colors font-medium">Social</Link>
+              <Link href="/contact" className="text-viventa-navy hover:text-viventa-teal transition-colors font-medium">Soporte</Link>
             </>
           )}
         </nav>

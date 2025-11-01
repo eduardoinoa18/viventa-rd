@@ -54,10 +54,10 @@ export default function PropertyCard({ property }: { property: any }) {
         )}
       </div>
       <div className="p-5 flex flex-col flex-grow">
-        <div className="font-bold text-2xl text-[#FF6B35] mb-2">
+        <div className="font-bold text-2xl text-viventa-coral mb-2">
           {formatCurrency(favoriteData.price, { currency: favoriteData.currency })}
         </div>
-        <h3 className="font-semibold text-lg text-[#0B2545] mb-2 line-clamp-2 min-h-[56px]">
+        <h3 className="font-semibold text-lg text-viventa-navy mb-2 line-clamp-2 min-h-[56px]">
           {property.title || 'Propiedad'}
         </h3>
         <div className="text-sm text-gray-600 mb-3 flex items-center gap-1">
@@ -86,7 +86,7 @@ export default function PropertyCard({ property }: { property: any }) {
         <Link 
           href={`/listing/${favoriteData.id}`} 
           onClick={handleClick}
-          className="mt-auto w-full px-4 py-3 bg-gradient-to-r from-[#00A676] to-[#00A6A6] text-white rounded-xl font-semibold text-center hover:shadow-lg transition-all"
+          className="mt-auto w-full px-4 py-3 bg-gradient-to-r from-viventa-teal to-viventa-cyan text-white rounded-xl font-bold text-center hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
         >
           Ver detalles
         </Link>

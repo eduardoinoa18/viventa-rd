@@ -51,18 +51,19 @@ export default function OptimizedImage({
     setIsLoading(false)
   }
 
-  // Use standard img for external URLs (Algolia, Firebase Storage, etc.)
+  // Use standard img for external URLs (Algolia, Firebase Storage, etc.) with lazy loading
   if (src?.startsWith('http') || src?.startsWith('https')) {
     return (
       <div className={`relative ${className} ${isLoading ? 'animate-pulse bg-gray-200' : ''}`}>
         <img
           src={imgSrc}
           alt={alt}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
           className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
           style={{ objectFit }}
           onLoad={handleLoad}
           onError={handleError}
-          loading={priority ? 'eager' : 'lazy'}
         />
         {isLoading && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">

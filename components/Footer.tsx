@@ -39,7 +39,7 @@ export default function Footer() {
           </div>
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-center">
             {links.map(l => (
-              <Link key={l.href} href={l.href} className="hover:text-[#3BAFDA]">{l.label}</Link>
+              <Link key={l.href} href={l.href} className="text-viventa-navy hover:text-viventa-teal transition-colors font-medium">{l.label}</Link>
             ))}
           </div>
           <div className="text-xs text-center md:text-right">
