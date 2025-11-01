@@ -1,0 +1,6 @@
+# Ignore legacy Algolia code and backups
+components/_algolia_backup/**
+components/algolia/**
+lib/_algolia_backup/**
+lib/algolia/**
+**/*.algolia-backup
