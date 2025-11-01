@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, serverTimestamp, getDoc } from 'firebase/firestore'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { upsertListingToAlgolia, removeListingFromAlgolia } from '@/lib/algoliaAdmin'
 import { sendEmail } from '@/lib/emailService'
 
 function initFirebase() {
@@ -195,6 +196,19 @@ export async function PATCH(req: NextRequest) {
         console.error('Failed to send approval email:', e)
       }
 
+      // Keep Algolia index in sync
+      try {
+        const afterSnap = await ref.get()
+        const after = afterSnap.exists ? afterSnap.data() : null
+        if (status === 'active' && after) {
+          await upsertListingToAlgolia(id, { ...after, status: 'active' })
+        } else if (status && status !== 'active') {
+          await removeListingFromAlgolia(id)
+        }
+      } catch (e) {
+        console.error('Algolia sync failed (admin):', e)
+      }
+
       return NextResponse.json({ ok: true, message: 'Property updated successfully' })
     }
 
@@ -214,7 +228,7 @@ export async function PATCH(req: NextRequest) {
       before = prevSnap.exists() ? prevSnap.data() : null
     } catch {}
 
-    await updateDoc(doc(db, 'properties', id), updates)
+  await updateDoc(doc(db, 'properties', id), updates)
 
     // If approved, email agent
     try {
@@ -248,6 +262,18 @@ export async function PATCH(req: NextRequest) {
       console.error('Failed to send approval email:', e)
     }
 
+    // Keep Algolia index in sync (client SDK path)
+    try {
+      if (status === 'active') {
+        const latest = before ? { ...before, status: 'active' } : { status: 'active' }
+        await upsertListingToAlgolia(id, latest)
+      } else if (status && status !== 'active') {
+        await removeListingFromAlgolia(id)
+      }
+    } catch (e) {
+      console.error('Algolia sync failed:', e)
+    }
+
     return NextResponse.json({
       ok: true,
       message: 'Property updated successfully',
@@ -270,6 +296,7 @@ export async function DELETE(req: NextRequest) {
     const adminDb = getAdminDb()
     if (adminDb) {
       await adminDb.collection('properties').doc(id).delete()
+      try { await removeListingFromAlgolia(id) } catch {}
       return NextResponse.json({ ok: true, message: 'Property deleted successfully' })
     }
 
@@ -279,7 +306,8 @@ export async function DELETE(req: NextRequest) {
     }
 
     const { deleteDoc } = await import('firebase/firestore')
-    await deleteDoc(doc(db, 'properties', id))
+  await deleteDoc(doc(db, 'properties', id))
+  try { await removeListingFromAlgolia(id) } catch {}
 
     return NextResponse.json({
       ok: true,
