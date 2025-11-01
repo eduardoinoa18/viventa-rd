@@ -4,10 +4,15 @@ import { useRouter } from 'next/navigation'
 import { getSession } from '@/lib/authSession'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import dynamic from 'next/dynamic'
 import { FiUsers, FiHome, FiTrendingUp, FiDollarSign, FiAward, FiSettings, FiUserPlus, FiBarChart2, FiCheckCircle, FiClock, FiAlertCircle, FiEdit } from 'react-icons/fi'
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { db } from '@/lib/firebaseClient'
 import { collection, query, where, getDocs, onSnapshot, orderBy, limit } from 'firebase/firestore'
+
+const BrokerCharts = dynamic(() => import('./BrokerCharts'), {
+  loading: () => <div className="text-center py-8 text-gray-400">Loading charts...</div>,
+  ssr: false
+})
 
 type Agent = {
   id: string
@@ -244,33 +249,14 @@ export default function BrokerDashboard() {
                   </div>
                 </div>
 
-                {/* Charts */}
+                {/* Charts - Dynamically imported */}
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-white rounded-xl shadow p-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Ingresos Mensuales</h3>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <LineChart data={revenueData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip formatter={(value: any) => `RD$ ${Number(value).toLocaleString()}`} />
-                        <Line type="monotone" dataKey="revenue" stroke="#0B2545" strokeWidth={2} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  <div className="bg-white rounded-xl shadow p-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Top 5 Agentes (Ingresos)</h3>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={agentPerformance.slice(0, 5)}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip formatter={(value: any) => `RD$ ${Number(value).toLocaleString()}`} />
-                        <Bar dataKey="revenue" fill="#00A676" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <BrokerCharts
+                    revenueData={revenueData}
+                    agentPerformance={agentPerformance}
+                    statusDistribution={[]}
+                    COLORS={['#0B2545', '#00A676', '#00A6A6', '#FF6B35']}
+                  />
                 </div>
 
                 {/* Quick Actions */}

@@ -1,10 +1,10 @@
 'use client'
 import { useMemo, useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { InstantSearch, SearchBox, Configure, useSearchBox, SortBy } from 'react-instantsearch'
 import { getAlgoliaClient, isAlgoliaConfigured, ALGOLIA_INDEX } from '../../lib/algoliaClient'
 import InstantHits from '../../components/InstantHits'
-import MapSearch from '../../components/MapSearch'
 import SavedSearchModal from '../../components/SavedSearchModal'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
@@ -18,6 +18,11 @@ import AdvancedFilters from '../../components/AdvancedFilters'
 import { FiList, FiMap, FiSave, FiSearch, FiSliders, FiFilter } from 'react-icons/fi'
 import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore'
+
+const MapSearch = dynamic(() => import('../../components/MapSearch'), {
+  loading: () => <div className="text-center py-8 text-gray-400">Loading map...</div>,
+  ssr: false
+})
 
 function SearchPageContent() {
   const searchClient = useMemo(() => getAlgoliaClient(), [])
