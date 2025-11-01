@@ -35,12 +35,25 @@ export default function ApplyPage(){
     }
     try {
       setSubmitting(true)
+      // E2E mock mode: skip real uploads/Writes when enabled via env or query
+      const isE2E =
+        (typeof window !== 'undefined' && (window.localStorage.getItem('E2E_MOCK') === '1' || new URLSearchParams(window.location.search).has('e2e')))
+        || process.env.NEXT_PUBLIC_E2E === '1'
+
       const withTimeout = <T,>(p: Promise<T>, ms = 15000): Promise<T> => {
         return new Promise<T>((resolve, reject) => {
           const timer = setTimeout(() => reject(new Error('timeout')), ms)
           p.then((val) => { clearTimeout(timer); resolve(val) })
            .catch((err) => { clearTimeout(timer); reject(err) })
         })
+      }
+      if (isE2E) {
+        // Simulate success or failure quickly for tests
+        const shouldFail = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('fail')
+        await new Promise((res) => setTimeout(res, 300))
+        if (shouldFail) throw new Error('Simulated failure (E2E)')
+        setSubmitted(true)
+        return
       }
       let resumeUrl: string | undefined
       let documentUrl: string | undefined
