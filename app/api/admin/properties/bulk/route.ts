@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
-import { upsertListingToAlgolia, removeListingFromAlgolia } from '@/lib/algoliaAdmin'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 
@@ -46,12 +45,6 @@ export async function POST(req: NextRequest) {
           const ref = adminDb.collection('properties').doc(id)
           const beforeSnap = await ref.get()
           await ref.update({ status, updatedAt: new Date() })
-          const afterSnap = await ref.get()
-          const after = afterSnap.exists ? afterSnap.data() : null
-          try {
-            if (status === 'active' && after) await upsertListingToAlgolia(id, { ...after, status: 'active' })
-            else await removeListingFromAlgolia(id)
-          } catch {}
         } catch (e: any) {
           errors[id] = e?.message || 'update failed'
         }
@@ -69,11 +62,6 @@ export async function POST(req: NextRequest) {
         const ref = doc(db, 'properties', id)
         const before = await getDoc(ref)
         await updateDoc(ref, { status, updatedAt: serverTimestamp() })
-        const after = await getDoc(ref)
-        try {
-          if (status === 'active' && after.exists()) await upsertListingToAlgolia(id, { ...after.data(), status: 'active' })
-          else await removeListingFromAlgolia(id)
-        } catch {}
       } catch (e: any) {
         errors[id] = e?.message || 'update failed'
       }
