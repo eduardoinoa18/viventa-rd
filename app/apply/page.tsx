@@ -23,6 +23,7 @@ export default function ApplyPage(){
   const [submitting, setSubmitting] = useState(false)
 
   async function submit(){
+    console.log('[Apply] Submit clicked', { type: form.type })
     if(!form.email || !form.contact || !form.phone){ 
       alert('Por favor completa todos los campos requeridos (*)'); 
       return 
@@ -33,6 +34,13 @@ export default function ApplyPage(){
     }
     try {
       setSubmitting(true)
+      const withTimeout = <T,>(p: Promise<T>, ms = 15000): Promise<T> => {
+        return new Promise<T>((resolve, reject) => {
+          const timer = setTimeout(() => reject(new Error('timeout')), ms)
+          p.then((val) => { clearTimeout(timer); resolve(val) })
+           .catch((err) => { clearTimeout(timer); reject(err) })
+        })
+      }
       let resumeUrl: string | undefined
       let documentUrl: string | undefined
 
@@ -40,39 +48,41 @@ export default function ApplyPage(){
         const v = validateFile(resumeFile)
         if (!v.valid) { alert(v.error); setSubmitting(false); return }
         const path = generateApplicationFilePath('agent', resumeFile.name)
-        resumeUrl = await uploadFile(resumeFile, path, (p) => setUploadProgress(p))
+        console.log('[Apply] Uploading agent resume...')
+        resumeUrl = await withTimeout(uploadFile(resumeFile, path, (p) => setUploadProgress(p)), 20000)
+        console.log('[Apply] Resume uploaded:', { resumeUrl })
       }
 
       if (form.type === 'broker' && bizDocFile) {
         const v = validateFile(bizDocFile)
         if (!v.valid) { alert(v.error); setSubmitting(false); return }
         const path = generateApplicationFilePath('broker', bizDocFile.name)
-        documentUrl = await uploadFile(bizDocFile, path, (p) => setUploadProgress(p))
+        console.log('[Apply] Uploading broker document...')
+        documentUrl = await withTimeout(uploadFile(bizDocFile, path, (p) => setUploadProgress(p)), 20000)
+        console.log('[Apply] Broker document uploaded:', { documentUrl })
       }
 
-      const docRef = await addDoc(collection(db,'applications'), {
+      console.log('[Apply] Creating Firestore application doc...')
+      const docRef = await withTimeout(addDoc(collection(db,'applications'), {
         ...form,
         status:'pending',
         createdAt: serverTimestamp(),
         resumeUrl,
         documentUrl,
-      })
+      }), 15000) as any
+      console.log('[Apply] Application created:', { id: docRef.id })
 
       // Immediately show success UI; background notifications won't block UX
       setSubmitted(true)
 
       // Fire-and-forget notifications with a soft timeout so the UI never hangs
-      const withTimeout = (p: Promise<Response>, ms = 8000) => {
-        const t = new Promise<Response>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
-        return Promise.race([p, t])
-      }
 
       // Applicant confirmation (non-blocking)
       void withTimeout(fetch('/api/applications/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email, name: form.contact, type: form.type })
-      })).catch((emailErr) => console.error('Email sending failed:', emailErr))
+      }), 8000).catch((emailErr) => console.error('Email sending failed:', emailErr))
 
       // Admin notification (non-blocking)
       void withTimeout(fetch('/api/contact/submit', {
@@ -86,11 +96,12 @@ export default function ApplyPage(){
           subject: `Nueva Solicitud: ${form.type === 'agent' ? 'Agente' : 'Bróker'} - ${form.contact}`,
           source: 'application_form'
         })
-      })).catch((notifyErr) => console.error('Admin notification failed:', notifyErr))
+      }), 8000).catch((notifyErr) => console.error('Admin notification failed:', notifyErr))
     } catch (e: any) {
       console.error('Application submit failed', e)
       alert(e?.message || 'No se pudo enviar la solicitud. Intenta de nuevo.')
     } finally {
+      console.log('[Apply] Submit finished (success or error), resetting state')
       setSubmitting(false)
     }
   }
