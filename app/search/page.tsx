@@ -15,11 +15,10 @@ import { collection, getDocs } from 'firebase/firestore'
 import { getUserCurrency, type Currency } from '../../lib/currency'
 import { searchListings, getFacetValues, type SearchFilters, type Listing } from '../../lib/customSearchService'
 
-// TODO: Implement custom MapSearch without Algolia dependency
-// const MapSearch = dynamic(() => import('../../components/MapSearch'), {
-//   loading: () => <div className="text-center py-8 text-gray-400">Loading map...</div>,
-//   ssr: false
-// })
+const CustomMapSearch = dynamic(() => import('../../components/CustomMapSearch'), {
+  loading: () => <div className="text-center py-8 text-gray-400">Cargando mapa...</div>,
+  ssr: false
+})
 
 function SearchPageContent() {
   const searchParams = useSearchParams()
@@ -394,8 +393,12 @@ function SearchPageContent() {
 
                 {/* Map view on desktop */}
                 <div className="hidden lg:block">
-                  <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-                    <p className="text-gray-600">Mapa en desarrollo - próximamente</p>
+                  <div className="bg-white rounded-lg shadow-sm p-4 h-full">
+                    <CustomMapSearch 
+                      listings={results}
+                      onMarkerClick={(id: string) => router.push(`/listing/${id}`)}
+                      currency={currency}
+                    />
                   </div>
                 </div>
               </div>
@@ -404,8 +407,12 @@ function SearchPageContent() {
             {/* Mobile Map View */}
             {mobileView === 'map' && (
               <div className="lg:hidden">
-                <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-                  <p className="text-gray-600">Mapa en desarrollo - próximamente</p>
+                <div className="bg-white rounded-lg shadow-sm p-4">
+                  <CustomMapSearch 
+                    listings={results}
+                    onMarkerClick={(id: string) => router.push(`/listing/${id}`)}
+                    currency={currency}
+                  />
                 </div>
               </div>
             )}
