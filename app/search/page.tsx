@@ -59,16 +59,25 @@ function SearchPageContent() {
     bathrooms: searchParams?.get('bathrooms') ? Number(searchParams.get('bathrooms')) : undefined,
   })
 
-  // Load saved searches
+  // Cached facets with timestamp
+  const [facetsCache, setFacetsCache] = useState<{ data: typeof facets; timestamp: number } | null>(null)
+  const FACETS_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+  // Load saved searches and facets
   useEffect(() => {
     loadSaved()
-    loadFacets()
+    loadFacetsWithCache()
     setCurrency(getUserCurrency())
   }, [])
 
-  // Perform search when filters change
+  // Debounced search when filters change
   useEffect(() => {
-    performSearch()
+    // Debounce text search by 300ms
+    const debounceTimer = setTimeout(() => {
+      performSearch()
+    }, filters.query ? 300 : 0) // Only debounce if there's text search
+
+    return () => clearTimeout(debounceTimer)
   }, [filters, currentPage])
 
   async function loadSaved() {
@@ -81,6 +90,21 @@ function SearchPageContent() {
   async function loadFacets() {
     const facetValues = await getFacetValues()
     setFacets(facetValues)
+  }
+
+  async function loadFacetsWithCache() {
+    // Check if we have valid cached facets
+    if (facetsCache && Date.now() - facetsCache.timestamp < FACETS_CACHE_TTL) {
+      console.log('[CustomSearch] Using cached facets')
+      setFacets(facetsCache.data)
+      return
+    }
+
+    // Fetch fresh facets
+    console.log('[CustomSearch] Fetching fresh facets')
+    const facetValues = await getFacetValues()
+    setFacets(facetValues)
+    setFacetsCache({ data: facetValues, timestamp: Date.now() })
   }
 
   async function performSearch() {
@@ -216,11 +240,24 @@ function SearchPageContent() {
                   </div>
 
                   {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="bg-gray-100 rounded-lg h-64 animate-pulse" />
-                      ))}
-                    </div>
+                    <>
+                      <div className="mb-4 flex items-center gap-2 text-sm text-gray-600">
+                        <div className="w-4 h-4 border-2 border-[#00A6A6] border-t-transparent rounded-full animate-spin"></div>
+                        <span>Buscando propiedades...</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div key={i} className="bg-white rounded-2xl shadow-md overflow-hidden">
+                            <div className="bg-gray-200 h-64 animate-pulse" />
+                            <div className="p-4 space-y-3">
+                              <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
+                              <div className="h-6 bg-gray-200 rounded animate-pulse w-1/2" />
+                              <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   ) : results.length > 0 ? (
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
