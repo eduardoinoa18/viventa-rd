@@ -46,4 +46,27 @@ const withPWA = require('next-pwa')({
 
 module.exports = withPWA({
 	reactStrictMode: true,
+	async headers() {
+		const csp = [
+			"default-src 'self'",
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://cdn.jsdelivr.net",
+			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+			"img-src 'self' data: blob: https://*",
+			"connect-src 'self' https://* wss://*",
+			"font-src 'self' https://fonts.gstatic.com data:",
+			"frame-src https://js.stripe.com https://hooks.stripe.com",
+		].join('; ')
+		return [
+			{
+				source: '/(.*)',
+				headers: [
+					{ key: 'Content-Security-Policy', value: csp },
+					{ key: 'X-Content-Type-Options', value: 'nosniff' },
+					{ key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+					{ key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+					{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+				],
+			},
+		]
+	},
 })

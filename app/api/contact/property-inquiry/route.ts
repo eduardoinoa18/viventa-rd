@@ -5,9 +5,13 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { sendEmail } from '@/lib/emailService'
 import { sendInquiryConfirmation } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
+import { rateLimit, keyFromRequest } from '@/lib/rateLimiter'
 
 export async function POST(request: Request) {
   try {
+    // limit to 15 inquiries per hour per IP
+    const rl = rateLimit(keyFromRequest(request), 15, 60 * 60 * 1000)
+    if (!rl.allowed) return NextResponse.json({ ok: false, error: 'Rate limit exceeded' }, { status: 429 })
     const data = await request.json()
     const { 
       name, 

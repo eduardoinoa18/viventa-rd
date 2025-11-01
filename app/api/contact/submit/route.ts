@@ -1,5 +1,6 @@
 // app/api/contact/submit/route.ts
 import { NextResponse } from 'next/server'
+import { rateLimit, keyFromRequest } from '@/lib/rateLimiter'
 import { db } from '@/lib/firebaseClient'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { sendEmail } from '@/lib/emailService'
@@ -8,6 +9,11 @@ import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
+    // Basic rate limit: 10 submissions per hour per IP
+    const rl = rateLimit(keyFromRequest(request), 10, 60 * 60 * 1000)
+    if (!rl.allowed) {
+      return NextResponse.json({ ok: false, error: 'Rate limit exceeded' }, { status: 429 })
+    }
     const data = await request.json()
     const { name, email, phone, type, message, source } = data
 

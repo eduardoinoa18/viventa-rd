@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyPasswordSetupToken } from '@/lib/credentialGenerator'
 import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin'
+import { keyFromRequest, rateLimit } from '@/lib/rateLimiter'
 
 export async function POST(req: NextRequest) {
   try {
+    // Basic rate limit: 5 attempts per minute per IP/email
+    const bodyText = await req.clone().text()
+    let emailForKey = ''
+    try { emailForKey = (JSON.parse(bodyText).email || '').toLowerCase() } catch {}
+    const rl = rateLimit(keyFromRequest(req, emailForKey), 5, 60_000)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many attempts. Try again later.' }, { status: 429 })
+    }
     const { token, email, password } = await req.json()
 
     if (!token || !email || !password) {
