@@ -7,6 +7,7 @@ import AdminTopbar from '../../../components/AdminTopbar'
 import Link from 'next/link'
 import { FiCheck, FiX, FiMapPin, FiDollarSign, FiEye, FiPlusSquare, FiEdit, FiTrash2 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import { computeQualityScore } from '@/lib/searchUtils'
 
 type Listing = { id: string; title: string; location?: string; city?: string; price: number; status: string; agentName?: string; agent?: string }
 
@@ -14,6 +15,8 @@ export default function AdminPropertiesPage() {
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [selected, setSelected] = useState<Record<string, boolean>>({})
+  const allSelected = listings.length > 0 && listings.every(l => selected[l.id])
 
   useEffect(() => { load() }, [statusFilter])
 
@@ -70,6 +73,47 @@ export default function AdminPropertiesPage() {
     }
   }
 
+  function toggleAll() {
+    if (allSelected) {
+      setSelected({})
+    } else {
+      const next: Record<string, boolean> = {}
+      listings.forEach(l => { next[l.id] = true })
+      setSelected(next)
+    }
+  }
+
+  function toggleOne(id: string) {
+    setSelected(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  async function bulkUpdate(nextStatus: 'active'|'rejected') {
+    const ids = listings.filter(l => selected[l.id]).map(l => l.id)
+    if (ids.length === 0) {
+      toast('Select at least one listing')
+      return
+    }
+    try {
+      const res = await fetch('/api/admin/properties/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, status: nextStatus })
+      })
+      const json = await res.json()
+      if (res.ok && json.ok) {
+        toast.success(`Updated ${ids.length} listings`)
+        // Instant UI refresh without full reload
+        setListings(prev => prev.map(l => selected[l.id] ? { ...l, status: nextStatus } : l))
+        setSelected({})
+      } else {
+        toast.error(json.error || 'Bulk update failed')
+      }
+    } catch (e) {
+      console.error('Bulk update error', e)
+      toast.error('Bulk update failed')
+    }
+  }
+
   async function deleteListing(id: string) {
     if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) return
     try {
@@ -112,6 +156,19 @@ export default function AdminPropertiesPage() {
             </div>
           </div>
 
+          {/* Bulk actions toolbar */}
+          <div className="bg-white rounded-lg shadow p-4 mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-4 w-4" />
+              <span className="text-sm text-gray-700">Select all</span>
+              <span className="ml-3 text-sm text-gray-500">Selected: {Object.values(selected).filter(Boolean).length}</span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => bulkUpdate('active')} className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-sm"><FiCheck/> Approve Selected</button>
+              <button onClick={() => bulkUpdate('rejected')} className="inline-flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"><FiX/> Reject Selected</button>
+            </div>
+          </div>
+
           <div className="space-y-4">
             {loading ? (
               <div className="bg-white rounded-lg shadow p-5 text-center text-gray-500">Loading...</div>
@@ -123,6 +180,7 @@ export default function AdminPropertiesPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
+                        <input type="checkbox" checked={!!selected[l.id]} onChange={() => toggleOne(l.id)} className="h-4 w-4" />
                         <h3 className="text-xl font-semibold text-gray-900">{l.title}</h3>
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                           l.status === 'active' ? 'bg-green-100 text-green-800' :
@@ -131,6 +189,10 @@ export default function AdminPropertiesPage() {
                           'bg-red-100 text-red-800'
                         }`}>
                           {l.status}
+                        </span>
+                        {/* Quality score */}
+                        <span className="ml-auto text-xs px-2 py-1 rounded bg-gray-100 text-gray-700" title="Listing quality score (photos, description, amenities)">
+                          QS: {computeQualityScore(l as any).toFixed(2)}
                         </span>
                       </div>
                       <div className="text-gray-600 space-y-1">
