@@ -30,3 +30,13 @@ Functions utilities
 - Reindex:
 	- $env:ALGOLIA_APP_ID=...; $env:ALGOLIA_ADMIN_KEY=...; $env:ALGOLIA_INDEX=viventa_listings_dev; npx ts-node src/reindex.ts
 
+
+Server-side Search Indexing (Algolia)
+- Set these env vars in your hosting platform for API routes to sync listings with Algolia upon approval/deletion:
+	- ALGOLIA_APP_ID (or reuse NEXT_PUBLIC_ALGOLIA_APP_ID)
+	- ALGOLIA_ADMIN_KEY (server-only)
+	- ALGOLIA_INDEX (or NEXT_PUBLIC_ALGOLIA_INDEX)
+- Behavior:
+	- When an admin sets a property status to active, it will be upserted to the index.
+	- When a property is set to a non-active status or deleted, it will be removed from the index.
+

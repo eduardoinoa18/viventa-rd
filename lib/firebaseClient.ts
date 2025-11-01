@@ -43,11 +43,14 @@ function initializeFirebase() {
       } else {
         app = getApps()[0];
       }
-      _db = getFirestore(app);
-      // Auth is only available in browser contexts; guard for server
-      try { _auth = getAuth(app); } catch {}
-      _storage = getStorage(app);
-      _functions = getFunctions(app);
+      // Firestore can be accessed in SSR for read-only operations, but guard if needed
+      try { _db = getFirestore(app); } catch {}
+      // Only initialize browser-only SDKs in the client
+      if (typeof window !== 'undefined') {
+        try { _auth = getAuth(app); } catch {}
+        try { _storage = getStorage(app); } catch {}
+        try { _functions = getFunctions(app); } catch {}
+      }
     } catch (error) {
       console.error('Firebase initialization error:', error);
     }

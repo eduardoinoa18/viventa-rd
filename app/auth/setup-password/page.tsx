@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { auth } from '@/lib/firebaseClient'
-import { signInWithEmailAndPassword, updatePassword } from 'firebase/auth'
 import { FiLock, FiCheck, FiX } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
