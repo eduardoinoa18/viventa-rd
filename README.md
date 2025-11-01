@@ -1,42 +1,61 @@
-VIVENTA — Lean MVP (Phase 1)
+VIVENTA — Real Estate Platform for Dominican Republic
 
-Foundation quick start
-1) Install deps
-- npm install
-- cd functions && npm install && cd ..
+## Quick Start
 
-2) Env vars
-- Create .env.local with NEXT_PUBLIC_* Firebase + Algolia + optional Mapbox
+1) **Install dependencies**
+   ```bash
+   npm install
+   cd functions && npm install && cd ..
+   ```
 
-3) Firebase config (server-side Algolia for Functions)
-- firebase functions:config:set algolia.app_id="ALG_APP_ID" algolia.api_key="ALGOLIA_ADMIN_KEY" algolia.index="viventa_listings_dev"
+2) **Environment variables**
+   - Create `.env.local` with Firebase configuration
+   - See `.env.local.example` for required vars
 
-4) Emulators (local dev)
-- firebase emulators:start --only auth,firestore,functions,storage
-- npm run dev
+3) **Local development**
+   ```bash
+   # Start Firebase emulators (optional)
+   firebase emulators:start --only auth,firestore,functions,storage
+   
+   # Start Next.js dev server
+   npm run dev
+   ```
 
-CI/CD
-- .github/workflows/ci.yml: builds Next.js on main/dev
-- .github/workflows/functions-deploy.yml: deploys Functions on main (set secrets FIREBASE_TOKEN, FIREBASE_PROJECT_ID)
+## Custom Search (Zero Cost)
 
-Branches
-- main (prod), dev (staging), feature/* for PRs
+VIVENTA uses a **custom Firestore-based search** solution (no Algolia required):
+- 📚 See **[CUSTOM-SEARCH.md](./CUSTOM-SEARCH.md)** for full architecture
+- 🔍 Features: text search, geo-distance, faceted filters, pagination
+- 💰 Cost: ~$3/month vs. $99-299/month for Algolia
+- 🚀 No external dependencies or API keys needed
 
-Functions utilities
-- Seed master admin: in functions/
-	- $env:MASTER_ADMIN_EMAIL="you@example.com"; npx ts-node src/seedMasterAdmin.ts
-- Configure Algolia index:
-	- $env:ALGOLIA_APP_ID=...; $env:ALGOLIA_ADMIN_KEY=...; $env:ALGOLIA_INDEX=viventa_listings_dev; npx ts-node src/configureAlgolia.ts
-- Reindex:
-	- $env:ALGOLIA_APP_ID=...; $env:ALGOLIA_ADMIN_KEY=...; $env:ALGOLIA_INDEX=viventa_listings_dev; npx ts-node src/reindex.ts
+## Deployment
 
+### Vercel (Recommended)
+1. Connect GitHub repo to Vercel
+2. Add environment variables from `.env.local`
+3. Deploy (automatic on push to `main`)
 
-Server-side Search Indexing (Algolia)
-- Set these env vars in your hosting platform for API routes to sync listings with Algolia upon approval/deletion:
-	- ALGOLIA_APP_ID (or reuse NEXT_PUBLIC_ALGOLIA_APP_ID)
-	- ALGOLIA_ADMIN_KEY (server-only)
-	- ALGOLIA_INDEX (or NEXT_PUBLIC_ALGOLIA_INDEX)
-- Behavior:
-	- When an admin sets a property status to active, it will be upserted to the index.
+See **[VERCEL-DEPLOYMENT.md](./VERCEL-DEPLOYMENT.md)** for detailed steps.
+
+## Testing
+
+```bash
+# Run E2E tests
+npm run test:e2e
+
+# Run E2E tests in headed mode
+npm run test:e2e:headed
+```
+
+See **[TESTING.md](./TESTING.md)** for manual QA checklist and CI/CD setup.
+
+## Documentation
+
+- **[CUSTOM-SEARCH.md](./CUSTOM-SEARCH.md)** - Search architecture and troubleshooting
+- **[TESTING.md](./TESTING.md)** - Playwright E2E tests and manual QA
+- **[VERCEL-DEPLOYMENT.md](./VERCEL-DEPLOYMENT.md)** - Production deployment guide
+- **[ADMIN-LOGIN-GUIDE.md](./ADMIN-LOGIN-GUIDE.md)** - Admin portal access
+- **[MASTER-ADMIN-SETUP.md](./MASTER-ADMIN-SETUP.md)** - Master admin configuration
 	- When a property is set to a non-active status or deleted, it will be removed from the index.
 

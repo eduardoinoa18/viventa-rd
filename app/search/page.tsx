@@ -15,10 +15,11 @@ import { collection, getDocs } from 'firebase/firestore'
 import { getUserCurrency, type Currency } from '../../lib/currency'
 import { searchListings, getFacetValues, type SearchFilters, type Listing } from '../../lib/customSearchService'
 
-const MapSearch = dynamic(() => import('../../components/MapSearch'), {
-  loading: () => <div className="text-center py-8 text-gray-400">Loading map...</div>,
-  ssr: false
-})
+// TODO: Implement custom MapSearch without Algolia dependency
+// const MapSearch = dynamic(() => import('../../components/MapSearch'), {
+//   loading: () => <div className="text-center py-8 text-gray-400">Loading map...</div>,
+//   ssr: false
+// })
 
 function SearchPageContent() {
   const searchParams = useSearchParams()
@@ -393,7 +394,9 @@ function SearchPageContent() {
 
                 {/* Map view on desktop */}
                 <div className="hidden lg:block">
-                  <MapSearch />
+                  <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+                    <p className="text-gray-600">Mapa en desarrollo - próximamente</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -401,7 +404,9 @@ function SearchPageContent() {
             {/* Mobile Map View */}
             {mobileView === 'map' && (
               <div className="lg:hidden">
-                <MapSearch />
+                <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+                  <p className="text-gray-600">Mapa en desarrollo - próximamente</p>
+                </div>
               </div>
             )}
           </div>
