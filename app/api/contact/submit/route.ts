@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { sendEmail } from '@/lib/emailService'
+import { sendContactConfirmation } from '@/lib/emailTemplates'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
@@ -96,25 +98,13 @@ export async function POST(request: Request) {
         await sendEmail({ to, subject: `🔔 Nuevo Contacto desde ${source || 'Website'} - ${type || 'General'}`, html })
       }
 
-      // Auto-reply to the sender
-      await sendEmail({
-        to: email,
-        subject: 'Recibimos tu mensaje - VIVENTA',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 20px;">
-            <h2 style="color:#0B2545;">¡Gracias por contactarnos, ${name}!</h2>
-            <p>Hemos recibido tu mensaje y nuestro equipo te responderá dentro de 24 horas.</p>
-            <div style="margin-top: 16px; padding: 12px 16px; background:#f7f7f7; border-left:4px solid #00A676;">
-              <div style="font-weight:600; color:#0B2545; margin-bottom:8px;">Tu mensaje:</div>
-              <div style="white-space: pre-wrap; color:#333;">${message}</div>
-            </div>
-            <p style="margin-top: 16px; color:#555; font-size: 12px;">Este es un correo automático de confirmación.</p>
-          </div>
-        `
-      })
+      // Auto-reply to the sender with Caribbean-styled template
+      await sendContactConfirmation(email, name)
+      
+      logger.info('Contact form submitted', { email, name, type, source })
     }
     catch (emailError) {
-      console.error('Failed to send notification email:', emailError)
+      logger.error('Failed to send notification email', emailError)
       // Don't fail the request if email fails
     }
 

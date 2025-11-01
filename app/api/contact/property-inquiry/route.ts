@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { sendEmail } from '@/lib/emailService'
+import { sendInquiryConfirmation } from '@/lib/emailTemplates'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
@@ -127,34 +129,12 @@ export async function POST(request: Request) {
         })
       }
 
-      // Auto-reply to the client
-      await sendEmail({
-        to: email,
-        subject: `Recibimos tu consulta sobre ${propertyTitle}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 20px;">
-            <h2 style="color:#0B2545;">¡Gracias por tu interés, ${name}!</h2>
-            <p>Hemos recibido tu consulta sobre:</p>
-            <div style="margin: 16px 0; padding: 16px; background: linear-gradient(135deg, #0B2545 0%, #00A676 100%); border-radius: 12px; color: white;">
-              <h3 style="margin: 0 0 8px 0;">${propertyTitle}</h3>
-              <p style="margin: 0; font-size: 14px; opacity: 0.9;">ID: ${propertyId}</p>
-            </div>
-            <p><strong>${agentName || 'Nuestro equipo'}</strong> te contactará dentro de las próximas 24 horas ${preferredContact === 'email' ? 'por email' : preferredContact === 'phone' ? 'por teléfono' : 'vía WhatsApp'}.</p>
-            ${visitDate ? `<p style="padding: 12px; background: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 4px; margin: 16px 0;"><strong>📅 Fecha de visita solicitada:</strong> ${new Date(visitDate).toLocaleDateString('es-DO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>` : ''}
-            <div style="margin-top: 24px; padding: 16px; background:#f7f7f7; border-left:4px solid #00A676; border-radius: 4px;">
-              <div style="font-weight:600; color:#0B2545; margin-bottom:8px;">Tu mensaje:</div>
-              <div style="white-space: pre-wrap; color:#333; font-size: 14px;">${message}</div>
-            </div>
-            <p style="margin-top: 24px; color:#555; font-size: 12px;">Este es un correo automático de confirmación. No respondas a este mensaje.</p>
-            <div style="margin-top: 24px; padding: 16px; background: #f0f9ff; border-radius: 8px; text-align: center;">
-              <p style="margin: 0; font-weight: 600; color: #0B2545;">¿Necesitas ayuda inmediata?</p>
-              <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">Llámanos al +1 (809) 555-1234</p>
-            </div>
-          </div>
-        `
-      })
+      // Auto-reply to the client with Caribbean-styled template
+      await sendInquiryConfirmation(email, name, propertyTitle)
+      
+      logger.info('Property inquiry submitted', { email, name, propertyId, propertyTitle })
     } catch (emailError) {
-      console.error('Failed to send notification email:', emailError)
+      logger.error('Failed to send notification email', emailError)
       // Don't fail the request if email fails
     }
 

@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { sendEmail } from '@/lib/emailService'
+import { sendApplicationConfirmation } from '@/lib/emailTemplates'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   try {
@@ -144,17 +145,14 @@ export async function POST(req: NextRequest) {
 </html>
     `
 
-    await sendEmail({
-      to: email,
-      from: 'noreply@viventa-rd.com',
-      replyTo: 'viventa.rd@gmail.com',
-      subject,
-      html,
-    })
+    // Use our new Caribbean-styled template instead
+    await sendApplicationConfirmation(email, name, type as 'agent' | 'broker')
+    
+    logger.info('Application confirmation email sent', { email, name, type })
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Application email error:', error)
+    logger.error('Application email error', error)
     return NextResponse.json(
       { error: error?.message || 'Internal server error' },
       { status: 500 }

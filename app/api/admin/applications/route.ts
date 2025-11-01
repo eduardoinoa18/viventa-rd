@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
-import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
+import { doc, updateDoc, serverTimestamp, getDoc, addDoc, collection } from 'firebase/firestore'
 import { sendEmail } from '@/lib/emailService'
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
+import { generateProfessionalId, createPasswordSetupToken } from '@/lib/credentialGenerator'
+import { sendProfessionalCredentials } from '@/lib/emailTemplates'
+import { logger } from '@/lib/logger'
 
 export async function PATCH(req: NextRequest) {
   try {
