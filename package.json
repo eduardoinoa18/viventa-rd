@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "check-config": "node scripts/check-config.js"
+    "check-config": "node scripts/check-config.js",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
@@ -34,6 +36,7 @@
     "workbox-window": "^7.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.2",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20.16.5",
     "@types/nodemailer": "^7.0.3",
