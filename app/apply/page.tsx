@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import { db } from '../../lib/firebaseClient'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { FiSend, FiUsers, FiBriefcase, FiArrowLeft } from 'react-icons/fi'
@@ -25,11 +26,11 @@ export default function ApplyPage(){
   async function submit(){
     console.log('[Apply] Submit clicked', { type: form.type })
     if(!form.email || !form.contact || !form.phone){ 
-      alert('Por favor completa todos los campos requeridos (*)'); 
+      toast.error('Por favor completa todos los campos requeridos (*)')
       return 
     }
     if(!form.businessDetails || form.businessDetails.length < 50){ 
-      alert('Por favor describe por qué quieres unirte a VIVENTA (mínimo 50 caracteres). Esto ayuda a acelerar tu aprobación.'); 
+      toast.error('Por favor describe por qué quieres unirte a VIVENTA (mínimo 50 caracteres). Esto ayuda a acelerar tu aprobación.')
       return 
     }
     try {
@@ -45,8 +46,8 @@ export default function ApplyPage(){
       let documentUrl: string | undefined
 
       if (form.type === 'agent' && resumeFile) {
-        const v = validateFile(resumeFile)
-        if (!v.valid) { alert(v.error); setSubmitting(false); return }
+  const v = validateFile(resumeFile)
+  if (!v.valid) { toast.error(v.error || 'Archivo inválido'); setSubmitting(false); return }
         const path = generateApplicationFilePath('agent', resumeFile.name)
         console.log('[Apply] Uploading agent resume...')
         resumeUrl = await withTimeout(uploadFile(resumeFile, path, (p) => setUploadProgress(p)), 20000)
@@ -54,8 +55,8 @@ export default function ApplyPage(){
       }
 
       if (form.type === 'broker' && bizDocFile) {
-        const v = validateFile(bizDocFile)
-        if (!v.valid) { alert(v.error); setSubmitting(false); return }
+  const v = validateFile(bizDocFile)
+  if (!v.valid) { toast.error(v.error || 'Archivo inválido'); setSubmitting(false); return }
         const path = generateApplicationFilePath('broker', bizDocFile.name)
         console.log('[Apply] Uploading broker document...')
         documentUrl = await withTimeout(uploadFile(bizDocFile, path, (p) => setUploadProgress(p)), 20000)
@@ -99,7 +100,7 @@ export default function ApplyPage(){
       }), 8000).catch((notifyErr) => console.error('Admin notification failed:', notifyErr))
     } catch (e: any) {
       console.error('Application submit failed', e)
-      alert(e?.message || 'No se pudo enviar la solicitud. Intenta de nuevo.')
+      toast.error(e?.message || 'No se pudo enviar la solicitud. Intenta de nuevo.')
     } finally {
       console.log('[Apply] Submit finished (success or error), resetting state')
       setSubmitting(false)
