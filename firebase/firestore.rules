@@ -1,0 +1,146 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isSignedIn() { return request.auth != null; }
+    function getUserRole() { 
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role 
+        : null; 
+    }
+    function isAdmin() { return getUserRole() in ['master_admin','admin']; }
+    function isBrokerAdmin() { return getUserRole() == 'broker_admin'; }
+    function isMasterAdmin() { return getUserRole() == 'master_admin'; }
+    function isElevated() { return isAdmin() || isBrokerAdmin(); }
+    function isAgentOrAbove() { return isSignedIn() && (getUserRole() in ['agent','admin','broker_admin','master_admin']); }
+    function isOwnerOrAdmin() { return isSignedIn() && (resource.data.createdBy == request.auth.uid || isAdmin() || isBrokerAdmin()); }
+
+    match /marketing_leads/{doc} { 
+      allow create: if true; 
+      allow read: if isAdmin(); 
+    }
+
+    match /listings/{listingId} {
+      allow read: if true;
+      allow create: if isAgentOrAbove();
+      allow update, delete: if isOwnerOrAdmin();
+    }
+
+    match /users/{userId} {
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isMasterAdmin();
+    }
+
+    match /invites/{inviteId} {
+      allow create: if isSignedIn() && isAdmin();
+      allow read, update, delete: if isSignedIn() && isAdmin();
+    }
+
+    match /applications/{appId} {
+      allow read: if isElevated();
+      allow create: if true;
+      allow update: if isElevated();
+      allow delete: if isMasterAdmin();
+    }
+
+    match /properties/{propertyId} {
+      allow read: if true;
+      allow create: if isAgentOrAbove();
+      allow update: if isSignedIn() && (resource.data.agentId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow create: if isElevated();
+      allow update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    match /contact_submissions/{submissionId} {
+      allow read: if isElevated();
+      allow create: if true;
+      allow update: if isElevated();
+      allow delete: if isAdmin();
+    }
+
+    match /property_inquiries/{inquiryId} {
+      allow read: if isElevated();
+      allow create: if true;
+      allow update: if isElevated();
+      allow delete: if isAdmin();
+    }
+
+    match /billing_customers/{customerId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /billing_subscriptions/{subscriptionId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /billing_invoices/{invoiceId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /brokerages/{bId} {
+      allow read: if true;
+      allow create, update, delete: if isElevated();
+    }
+
+    match /counters/{doc} {
+      allow read: if isElevated();
+      allow write: if isElevated();
+    }
+
+    match /audit_logs/{logId} {
+      allow create: if isElevated();
+      allow read: if isElevated();
+      allow update, delete: if false;
+    }
+
+    match /activity_logs/{logId} {
+      allow create: if true;
+      allow read: if isElevated();
+      allow update, delete: if false;
+    }
+
+    match /leads/{leadId} {
+      allow read: if isElevated();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    match /favorites/{favoriteId} {
+      allow read: if isSignedIn() && (request.auth.uid == favoriteId.split('_')[0] || isAdmin());
+      allow write: if isSignedIn();
+    }
+
+    match /saved_searches/{searchId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /{document=**} {
+      allow read: if false;
+    }
+  }
+}

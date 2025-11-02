@@ -1,0 +1,45 @@
+# Node / Next.js
+node_modules/
+.next/
+.turbo/
+out/
+.vercel/
+
+# Env files
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+firebase-debug.log*
+
+# Functions build outputs
+functions/lib/
+functions/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
