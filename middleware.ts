@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { initAuth } from "./lib/middlewareAuth";
 
 export async function middleware(req: NextRequest) {
   const url = req.nextUrl;
@@ -8,6 +9,21 @@ export async function middleware(req: NextRequest) {
   const adminGate = req.cookies.get('admin_gate_ok')?.value === '1';
   let admin2FA = req.cookies.get('admin_2fa_ok')?.value === '1';
   const trustedAdmin = req.cookies.get('trusted_admin')?.value;
+
+  // Server-side protection using Firebase Admin (proxied via API) for critical areas
+  const needsStrictAuth = (p: string) => {
+    // Allow unauthenticated access only to admin login flows
+    if (p.startsWith('/admin') && ['/admin', '/admin/login', '/admin/gate', '/admin/verify'].includes(p)) return false;
+    return p.startsWith('/admin') || p.startsWith('/dashboard');
+  }
+  if (needsStrictAuth(path)) {
+    const verified = await initAuth(req);
+    if (!verified.ok) {
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('redirect', path);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
 
   // Admin pre-gate: require gate code before accessing admin login
   if (path.startsWith('/admin') && (path === '/admin' || path === '/admin/login')) {
