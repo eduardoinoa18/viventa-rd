@@ -3,6 +3,7 @@ import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, Auth } from "firebase/auth";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getFunctions, Functions } from "firebase/functions";
+import { getMessaging, Messaging, isSupported } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -31,6 +32,7 @@ let _db: any = null;
 let _auth: any = null;
 let _storage: any = null;
 let _functions: any = null;
+let _messaging: Messaging | null = null;
 
 function initializeFirebase() {
   if (app) return; // Already initialized
@@ -50,6 +52,12 @@ function initializeFirebase() {
         try { _auth = getAuth(app); } catch {}
         try { _storage = getStorage(app); } catch {}
         try { _functions = getFunctions(app); } catch {}
+        // Messaging requires browser support check
+        isSupported().then(supported => {
+          if (supported) {
+            try { _messaging = getMessaging(app); } catch {}
+          }
+        }).catch(() => {})
       }
     } catch (error) {
       console.error('Firebase initialization error:', error);
@@ -66,4 +74,19 @@ export const db = _db;
 export const auth = _auth;
 export const storage = _storage;
 export const functions = _functions;
+export const messaging = _messaging;
 export const isFirebaseConfigured = isFirebaseConfigValid();
+
+// Helper to get messaging instance (async due to isSupported check)
+export async function getMessagingInstance(): Promise<Messaging | null> {
+  if (_messaging) return _messaging;
+  if (typeof window === 'undefined') return null;
+  const supported = await isSupported();
+  if (!supported || !app) return null;
+  try {
+    _messaging = getMessaging(app);
+    return _messaging;
+  } catch {
+    return null;
+  }
+}
