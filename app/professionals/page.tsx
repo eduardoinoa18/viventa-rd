@@ -1,18 +1,8 @@
 'use client'
-import { useState } from 'react'
-import { db } from '../../lib/firebaseClient'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { FiDollarSign, FiUsers, FiTrendingUp, FiMessageSquare, FiMail, FiPhone } from 'react-icons/fi'
+import ProfessionalContactForm from '../../components/ProfessionalContactForm'
 
 export default function ProfessionalsPage(){
-  const [name,setName]=useState(''); const [email,setEmail]=useState(''); const [message,setMessage]=useState('')
-
-  async function submitLead(){
-    if(!email) return alert('Email requerido')
-    await addDoc(collection(db,'marketing_leads'), { name,email,message, createdAt: serverTimestamp(), source:'professionals' })
-    setName(''); setEmail(''); setMessage(''); alert('¡Gracias! Te contactaremos pronto.')
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 py-12 px-4">
       <div className="max-w-7xl mx-auto">
@@ -144,25 +134,7 @@ export default function ProfessionalsPage(){
         {/* Contact Section */}
         <section id="contact" className="grid md:grid-cols-2 gap-8">
           <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">¿Listo para comenzar?</h2>
-            <p className="text-gray-600 mb-6">Déjanos tus datos y un miembro de nuestro equipo te contactará para conocer tus necesidades y ayudarte a elegir el mejor plan.</p>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre completo</label>
-                <input value={name} onChange={e=>setName(e.target.value)} placeholder="Juan Pérez" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Correo electrónico</label>
-                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="juan@ejemplo.com" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Mensaje (opcional)</label>
-                <textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Cuéntanos sobre tu empresa o tus necesidades..." className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows={4}/>
-              </div>
-              <button onClick={submitLead} className="w-full px-6 py-3 bg-[#00A6A6] text-white rounded-lg font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#008f8f] transition-colors">
-                <FiMessageSquare /> Enviar Mensaje
-              </button>
-            </div>
+            <ProfessionalContactForm locale="en" source="professionals" />
           </div>
 
           <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl shadow-lg p-8 text-white">
