@@ -390,7 +390,7 @@ export default function AgentDashboard() {
                           .slice(0, 3)
                           .map((task) => (
                             <div key={task.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                              <input type="checkbox" className="w-5 h-5" />
+                              <input type="checkbox" className="w-5 h-5" aria-label={`Mark task "${task.title}" as complete`} />
                               <div className="flex-1">
                                 <div className="font-semibold text-gray-800">{task.title}</div>
                                 <div className="text-sm text-gray-600 flex items-center gap-2">
@@ -469,7 +469,7 @@ export default function AgentDashboard() {
                             <a href={`/listing/${listing.id}`} className="flex-1 text-center px-3 py-2 bg-[#00A676] text-white rounded-lg text-sm font-semibold hover:bg-[#008F64]">
                               <FiEye className="inline mr-1" /> Ver
                             </a>
-                            <button className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
+                            <button className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50" aria-label="Edit listing">
                               <FiEdit />
                             </button>
                           </div>
@@ -541,13 +541,13 @@ export default function AgentDashboard() {
                             </td>
                             <td className="p-4">
                               <div className="flex gap-2">
-                                <button className="p-2 text-blue-600 hover:bg-blue-50 rounded">
+                                <button className="p-2 text-blue-600 hover:bg-blue-50 rounded" aria-label="Call client">
                                   <FiPhone />
                                 </button>
-                                <button className="p-2 text-green-600 hover:bg-green-50 rounded">
+                                <button className="p-2 text-green-600 hover:bg-green-50 rounded" aria-label="Email client">
                                   <FiMail />
                                 </button>
-                                <button className="p-2 text-purple-600 hover:bg-purple-50 rounded">
+                                <button className="p-2 text-purple-600 hover:bg-purple-50 rounded" aria-label="Message client">
                                   <FiMessageSquare />
                                 </button>
                               </div>
@@ -587,7 +587,7 @@ export default function AgentDashboard() {
                           .map((task) => (
                             <div key={task.id} className="p-3 border rounded-lg hover:bg-gray-50">
                               <div className="flex items-start gap-3">
-                                <input type="checkbox" className="mt-1 w-5 h-5" />
+                                <input type="checkbox" className="mt-1 w-5 h-5" aria-label={`Mark task "${task.title}" as complete`} />
                                 <div className="flex-1">
                                   <div className="font-semibold text-gray-800">{task.title}</div>
                                   <div className="text-sm text-gray-600 mt-1 flex items-center gap-2">

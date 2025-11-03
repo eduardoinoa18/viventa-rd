@@ -294,21 +294,25 @@ export default function UserDashboard() {
                 <h2 className="text-xl font-bold mb-6">Mi Perfil</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre</label>
+                    <label htmlFor="user-name" className="block text-sm font-semibold text-gray-700 mb-2">Nombre</label>
                     <input 
+                      id="user-name"
                       type="text" 
                       value={user.name || ''} 
                       readOnly
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
+                      aria-label="User name"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                    <label htmlFor="user-email" className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
                     <input 
+                      id="user-email"
                       type="email" 
                       value={user.email || auth.currentUser?.email || ''} 
                       readOnly
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
+                      aria-label="User email"
                     />
                   </div>
                   <div>
@@ -324,12 +328,14 @@ export default function UserDashboard() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de cuenta</label>
+                    <label htmlFor="user-account-type" className="block text-sm font-semibold text-gray-700 mb-2">Tipo de cuenta</label>
                     <input 
+                      id="user-account-type"
                       type="text" 
                       value="Usuario" 
                       readOnly
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
+                      aria-label="Account type"
                     />
                   </div>
                   <div className="pt-4 border-t">

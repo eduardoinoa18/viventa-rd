@@ -145,27 +145,27 @@ export default function ProfessionalContactForm({ locale, source = 'professional
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">{t('name')}</label>
-          <input value={name} onChange={e=>setName(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          <label htmlFor="contact-name" className="block text-sm font-semibold text-gray-700 mb-2">{t('name')}</label>
+          <input id="contact-name" value={name} onChange={e=>setName(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" aria-label="Your name" />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">{t('email')}</label>
-          <input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          <label htmlFor="contact-email" className="block text-sm font-semibold text-gray-700 mb-2">{t('email')}</label>
+          <input id="contact-email" type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" aria-label="Your email" />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">{t('phone')}</label>
-          <input inputMode="tel" value={phone} onChange={e=>setPhone(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          <label htmlFor="contact-phone" className="block text-sm font-semibold text-gray-700 mb-2">{t('phone')}</label>
+          <input id="contact-phone" inputMode="tel" value={phone} onChange={e=>setPhone(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" aria-label="Your phone number" />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">{t('company')}</label>
-          <input value={company} onChange={e=>setCompany(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          <label htmlFor="contact-company" className="block text-sm font-semibold text-gray-700 mb-2">{t('company')}</label>
+          <input id="contact-company" value={company} onChange={e=>setCompany(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" aria-label="Your company" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">{t('role')}</label>
-          <select value={role} onChange={e=>setRole(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+          <label htmlFor="contact-role" className="block text-sm font-semibold text-gray-700 mb-2">{t('role')}</label>
+          <select id="contact-role" value={role} onChange={e=>setRole(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white" aria-label="Your role">
             {roles.map(r => (
               <option key={r} value={r}>{r}</option>
             ))}
@@ -192,12 +192,12 @@ export default function ProfessionalContactForm({ locale, source = 'professional
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('message')}</label>
-        <textarea value={message} onChange={e=>setMessage(e.target.value)} rows={4} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        <label htmlFor="contact-message" className="block text-sm font-semibold text-gray-700 mb-2">{t('message')}</label>
+        <textarea id="contact-message" value={message} onChange={e=>setMessage(e.target.value)} rows={4} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" aria-label="Your message" />
       </div>
 
-      <label className="flex items-start gap-3 text-sm text-gray-700">
-        <input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)} className="mt-1" />
+      <label htmlFor="contact-consent" className="flex items-start gap-3 text-sm text-gray-700">
+        <input id="contact-consent" type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)} className="mt-1" />
         <span>
           {t('consent')}{' '}(
           <a href="/disclosures" className="underline text-blue-600 hover:text-blue-800" target="_blank" rel="noreferrer">{t('privacy')}</a>

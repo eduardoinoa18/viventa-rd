@@ -86,13 +86,15 @@ export default function SettingsPage() {
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Idioma</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Preferencia</label>
+                <label htmlFor="language-select" className="block text-sm font-semibold text-gray-700 mb-2">Preferencia</label>
                 <div className="relative">
                   <FiGlobe className="absolute left-3 top-3 text-gray-400" />
                   <select
+                    id="language-select"
                     className="w-full appearance-none pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viventa-turquoise-400 focus:border-transparent"
                     value={lang}
                     onChange={(e) => setLang(e.target.value as 'es' | 'en')}
+                    aria-label="Language preference"
                   >
                     <option value="es">Español</option>
                     <option value="en">English</option>
