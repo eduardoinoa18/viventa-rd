@@ -1,12 +1,17 @@
 "use client"
 import { useState } from 'react'
-import { FiStar, FiBell } from 'react-icons/fi'
+import { FiStar, FiBell, FiMessageCircle } from 'react-icons/fi'
+import { FaWhatsapp } from 'react-icons/fa'
 import { analytics } from '@/lib/analytics'
 
 export default function SocialComingSoon() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [error, setError] = useState('')
+  
+  // WhatsApp group link - admin will configure this in env or leave as placeholder
+  const whatsappGroupLink = process.env.NEXT_PUBLIC_SOCIAL_WHATSAPP_GROUP || '#'
+  const hasWhatsappLink = whatsappGroupLink !== '#'
 
   async function subscribe(e?: React.FormEvent) {
     e?.preventDefault()
@@ -130,6 +135,54 @@ export default function SocialComingSoon() {
           {status==='error' && (
             <p className="mt-3 text-sm text-viventa-sunset/90">{error}</p>
           )}
+        </div>
+
+        {/* WhatsApp Group Option */}
+        <div className="mt-6 bg-white rounded-2xl shadow-xl p-6 border-2 border-green-500/20">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <FaWhatsapp className="text-4xl text-green-500" />
+            <h3 className="text-xl font-bold text-viventa-navy">
+              Únete al Grupo de WhatsApp
+            </h3>
+          </div>
+          <p className="text-gray-600 mb-4 text-center">
+            Sé parte de nuestra comunidad exclusiva y recibe actualizaciones directamente en WhatsApp
+          </p>
+          
+          {hasWhatsappLink ? (
+            <a
+              href={whatsappGroupLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full max-w-sm mx-auto px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-bold text-center hover:from-green-600 hover:to-green-700 hover:scale-105 transition-all shadow-lg"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <FaWhatsapp className="text-2xl" />
+                Unirme al Grupo
+              </span>
+            </a>
+          ) : (
+            <div className="max-w-sm mx-auto">
+              <button
+                disabled
+                className="w-full px-6 py-4 bg-gray-300 text-gray-500 rounded-xl font-bold text-center cursor-not-allowed shadow-lg"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <FaWhatsapp className="text-2xl" />
+                  Próximamente Disponible
+                </span>
+              </button>
+              <p className="text-xs text-gray-500 mt-2 text-center italic">
+                El enlace del grupo será agregado pronto
+              </p>
+            </div>
+          )}
+          
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500 text-center">
+              💡 <strong>Tip:</strong> En el grupo compartiremos sneak peeks, fecha de lanzamiento y acceso prioritario
+            </p>
+          </div>
         </div>
       </div>
     </main>
