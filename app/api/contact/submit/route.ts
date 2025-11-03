@@ -121,8 +121,15 @@ export async function POST(request: Request) {
           </div>
         `
 
+      // Send admin notifications from noreply address with admin as reply-to
       for (const to of notifyEmails) {
-        await sendEmail({ to, subject: `🔔 Nuevo Contacto desde ${source || 'Website'} - ${type || 'General'}`, html })
+        await sendEmail({ 
+          to, 
+          subject: `🔔 Nuevo Contacto desde ${source || 'Website'} - ${type || 'General'}`, 
+          html,
+          from: 'noreply@viventa.com',
+          replyTo: email // Allow admin to reply directly to the user
+        })
       }
 
       // Auto-reply to the sender with Caribbean-styled template

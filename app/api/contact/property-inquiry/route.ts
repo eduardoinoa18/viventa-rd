@@ -129,7 +129,9 @@ export async function POST(request: Request) {
         await sendEmail({ 
           to, 
           subject: `🏠 Nueva Consulta: ${propertyTitle}`, 
-          html 
+          html,
+          from: 'noreply@viventa.com',
+          replyTo: email // Allow admin/agent to reply directly to the inquirer
         })
       }
 

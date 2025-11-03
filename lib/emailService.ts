@@ -16,13 +16,15 @@ interface EmailOptions {
 
 export async function sendEmail({ to, subject, html, from, replyTo }: EmailOptions): Promise<void> {
   const fromEmail = from || process.env.SMTP_FROM || process.env.SENDGRID_FROM_EMAIL || 'noreply@viventa.com'
+  // Format with friendly sender name for better email client display
+  const fromFormatted = `VIVENTA <${fromEmail}>`
 
   // Try SendGrid first
   if (process.env.SENDGRID_API_KEY) {
     try {
       await sgMail.send({
         to,
-        from: fromEmail,
+        from: fromFormatted,
         subject,
         html,
         replyTo,
@@ -47,7 +49,7 @@ export async function sendEmail({ to, subject, html, from, replyTo }: EmailOptio
     })
 
     await transporter.sendMail({
-      from: fromEmail,
+      from: fromFormatted,
       to,
       subject,
       html,

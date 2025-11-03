@@ -316,11 +316,21 @@ export async function sendInquiryConfirmation(
           <p style="color: #6B7280; font-style: italic;">
             💡 <strong>Tip:</strong> Ten lista tu disponibilidad para visitar la propiedad cuando el agente te contacte.
           </p>
+
+          <div style="background: #FFF4ED; padding: 15px; border-radius: 8px; margin-top: 25px; text-align: center;">
+            <p style="margin: 0; color: #6B7280; font-size: 14px;">
+              <strong>Nota:</strong> Este correo es enviado automáticamente desde una cuenta no monitoreada. 
+              Por favor no respondas a este email. El agente te contactará directamente.
+            </p>
+          </div>
         </div>
 
         <div class="footer">
           <p><strong>VIVENTA</strong> - Tu Espacio, Tu Futuro</p>
           <p>República Dominicana</p>
+          <p style="margin-top: 10px; font-size: 12px;">
+            📧 Correo de confirmación automática - No responder
+          </p>
         </div>
         <div class="caribbean-wave"></div>
       </div>
@@ -331,6 +341,8 @@ export async function sendInquiryConfirmation(
   return sendEmail({
     to: email,
     subject: '🏠 Consulta Recibida - VIVENTA',
-    html
+    html,
+    from: 'noreply@viventa.com',
+    replyTo: process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com'
   })
 }
