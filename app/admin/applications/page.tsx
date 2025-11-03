@@ -2,11 +2,20 @@
 import { useEffect, useState } from 'react'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
+import ProtectedClient from '@/app/auth/ProtectedClient'
 import { db } from '../../../lib/firebaseClient'
 import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore'
 import { FiCheck, FiX, FiUser, FiUsers, FiBriefcase, FiMail, FiPhone, FiCalendar, FiMessageSquare } from 'react-icons/fi'
 
 export default function ApplicationsPage() {
+  return (
+    <ProtectedClient allowed={['master_admin']}>
+      <ApplicationsPageContent />
+    </ProtectedClient>
+  )
+}
+
+function ApplicationsPageContent() {
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')

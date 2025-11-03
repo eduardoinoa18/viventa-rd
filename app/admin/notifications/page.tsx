@@ -32,7 +32,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     const s = getSession()
-    if (!s || !['admin', 'master', 'master-admin'].includes(s.role || '')) {
+    if (!s || s.role !== 'master_admin') {
       router.replace('/login')
       return
     }

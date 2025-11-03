@@ -9,7 +9,7 @@ import AdminTopbar from '@/components/AdminTopbar'
 import toast from 'react-hot-toast'
 import { db } from '@/lib/firebaseClient'
 import { collection, query, where, orderBy, limit, getDocs, updateDoc, doc, arrayUnion, addDoc, Timestamp, onSnapshot } from 'firebase/firestore'
-import { getCurrentUser } from '@/lib/authClient'
+import { getSession } from '@/lib/authSession'
 
 type Conversation = {
   id: string
@@ -93,7 +93,7 @@ function AdminChatPageContent() {
   const [searchingUsers, setSearchingUsers] = useState(false)
   const [onlinePros, setOnlinePros] = useState<OnlinePro[]>([])
 
-  const currentUser = getCurrentUser()
+  const currentUser = getSession()
 
   useEffect(() => { 
     loadConversations()

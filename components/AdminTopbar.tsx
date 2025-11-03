@@ -1,7 +1,7 @@
 // components/AdminTopbar.tsx
 'use client'
 import React, { useState, useEffect, useRef } from 'react'
-import { getCurrentUser, logout } from '../lib/authClient'
+import { getSession, clearSession } from '../lib/authSession'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { FiBell, FiX, FiCheck } from 'react-icons/fi'
@@ -20,7 +20,7 @@ type Notification = {
 
 export default function AdminTopbar() {
   const router = useRouter()
-  const u = getCurrentUser()
+  const u = getSession()
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(false)
@@ -71,7 +71,7 @@ export default function AdminTopbar() {
     try {
       const q = query(
         collection(db, 'notifications'),
-        where('audience', 'array-contains-any', [u.role || 'admin', 'all']),
+        where('audience', 'array-contains-any', [u.role || 'master_admin', 'all']),
         orderBy('createdAt', 'desc'),
         limit(10)
       )
@@ -100,7 +100,7 @@ export default function AdminTopbar() {
   }
 
   async function doLogout() {
-    await logout()
+    clearSession()
     router.push('/')
   }
 

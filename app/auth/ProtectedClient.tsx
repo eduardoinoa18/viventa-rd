@@ -2,9 +2,9 @@
 'use client'
 import React, { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getCurrentUser } from '../../lib/authClient'
+import { getSession } from '../../lib/authSession'
 
-export default function ProtectedClient({ children, allowed = ['master_admin','admin'] }: { children: ReactNode, allowed?: string[] }) {
+export default function ProtectedClient({ children, allowed = ['master_admin'] }: { children: ReactNode, allowed?: string[] }) {
   const router = useRouter()
   const [ok, setOk] = useState<boolean | null>(null)
 
@@ -20,14 +20,14 @@ export default function ProtectedClient({ children, allowed = ['master_admin','a
       }
     } catch {}
 
-    const u = getCurrentUser()
-    if (!u) {
+    const session = getSession()
+    if (!session) {
       // not logged in — redirect to login
       setTimeout(() => router.push('/login'), 200)
       setOk(false)
       return
     }
-    if (!allowed.includes(u.role)) {
+    if (!allowed.includes(session.role)) {
       // not authorized
       setTimeout(() => router.push('/'), 200)
       setOk(false)
