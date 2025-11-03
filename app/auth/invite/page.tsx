@@ -1,15 +1,22 @@
 "use client"
 import { useEffect, useState } from 'react'
-import { auth, db } from '../../../lib/firebaseClient'
+import { auth } from '../../../lib/firebaseClient'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '../../../lib/firebaseClient'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function InviteAcceptPage(){
   const [code, setCode] = useState('')
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<string| null>(null)
   const router = useRouter()
+  const search = useSearchParams()
+
+  useEffect(()=> {
+    // Prefill from ?code=
+    const qCode = (search.get('code') || '').toUpperCase()
+    if (qCode) setCode(qCode)
+  }, [search])
 
   useEffect(()=> {
     const unsub = auth.onAuthStateChanged((u: any)=> {
@@ -38,7 +45,8 @@ export default function InviteAcceptPage(){
       <h1 className="text-2xl font-bold">Canjear Invitación</h1>
       <p className="mt-2 text-gray-600">Ingresa tu código de invitación para obtener acceso como agente.</p>
       <div className="mt-4 max-w-md space-y-3">
-        <input className="w-full px-3 py-2 border rounded" placeholder="Código" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} />
+        <label className="block text-sm font-medium text-gray-700" htmlFor="invite-code">Código</label>
+        <input id="invite-code" aria-label="Código de invitación" className="w-full px-3 py-2 border rounded" placeholder="Código" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} />
         <button onClick={redeem} className="px-4 py-2 bg-[#00A6A6] text-white rounded">Canjear</button>
         {status && <div className="text-sm text-gray-700">{status}</div>}
       </div>

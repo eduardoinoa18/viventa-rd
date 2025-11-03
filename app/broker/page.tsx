@@ -5,9 +5,9 @@ import { getSession } from '@/lib/authSession'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import dynamic from 'next/dynamic'
-import { FiUsers, FiHome, FiTrendingUp, FiDollarSign, FiAward, FiSettings, FiUserPlus, FiBarChart2, FiCheckCircle, FiClock, FiAlertCircle, FiEdit } from 'react-icons/fi'
+import { FiUsers, FiHome, FiTrendingUp, FiDollarSign, FiAward, FiSettings, FiUserPlus, FiBarChart2, FiCheckCircle, FiClock, FiAlertCircle, FiEdit, FiX } from 'react-icons/fi'
 import { db } from '@/lib/firebaseClient'
-import { collection, query, where, getDocs, onSnapshot, orderBy, limit, doc, getDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, onSnapshot, doc, getDoc } from 'firebase/firestore'
 
 const BrokerCharts = dynamic(() => import('./BrokerCharts'), {
   loading: () => <div className="text-center py-8 text-gray-400">Loading charts...</div>,
@@ -47,6 +47,15 @@ export default function BrokerDashboard() {
   const [agentPerformance, setAgentPerformance] = useState<any[]>([])
   const [revenueData, setRevenueData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Invite modal state
+  const [showInvite, setShowInvite] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteName, setInviteName] = useState('')
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [inviteStatus, setInviteStatus] = useState<string | null>(null)
+  const [inviteToken, setInviteToken] = useState<string | null>(null)
+
   const router = useRouter()
 
   useEffect(() => {
@@ -370,12 +379,14 @@ export default function BrokerDashboard() {
                       <option value="pending">Pendientes</option>
                       <option value="inactive">Inactivos</option>
                     </select>
-                    <a
-                      href="/apply"
+                    <button
+                      type="button"
+                      onClick={() => { setInviteEmail(''); setInviteName(''); setInviteStatus(null); setInviteToken(null); setShowInvite(true) }}
                       className="px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] inline-flex items-center gap-2"
+                      aria-label="Invitar agente"
                     >
                       <FiUserPlus /> Invitar Agente
-                    </a>
+                    </button>
                   </div>
                 </div>
 
@@ -456,7 +467,94 @@ export default function BrokerDashboard() {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              {/* Invite Modal */}
+              {showInvite && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" aria-labelledby="invite-title">
+                  <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 id="invite-title" className="text-lg font-bold text-gray-800">Invitar Agente</h3>
+                      <button onClick={() => setShowInvite(false)} className="text-gray-500 hover:text-gray-700" aria-label="Cerrar">
+                        <FiX className="text-xl" />
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="invite-email" className="block text-sm font-semibold text-gray-700 mb-1">Email del agente</label>
+                        <input
+                          id="invite-email"
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          placeholder="agente@correo.com"
+                          aria-required="true"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="invite-name" className="block text-sm font-semibold text-gray-700 mb-1">Nombre (opcional)</label>
+                        <input
+                          id="invite-name"
+                          type="text"
+                          value={inviteName}
+                          onChange={(e) => setInviteName(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          placeholder="Nombre del agente"
+                        />
+                      </div>
+                      {inviteStatus && (
+                        <div className="text-sm text-gray-700 bg-gray-50 border rounded p-2">
+                          {inviteStatus}
+                          {inviteToken && (
+                            <div className="mt-2">
+                              <div className="text-xs text-gray-500">Código:</div>
+                              <div className="font-mono text-sm inline-flex items-center gap-2">
+                                <span className="bg-gray-100 rounded px-2 py-1">{inviteToken}</span>
+                                <a href={`/auth/invite?code=${inviteToken}`} className="text-blue-600 hover:underline">Abrir enlace</a>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-6 flex justify-end gap-2">
+                      <button onClick={() => setShowInvite(false)} className="px-4 py-2 rounded border">Cancelar</button>
+                      <button
+                        onClick={async () => {
+                          setInviteStatus(null)
+                          setInviteToken(null)
+                          if (!inviteEmail) { setInviteStatus('El email es requerido'); return }
+                          setInviteLoading(true)
+                          try {
+                            const res = await fetch('/api/broker/invites', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ email: inviteEmail, name: inviteName })
+                            })
+                            const data = await res.json()
+                            if (!res.ok || !data.ok) {
+                              setInviteStatus(data.error ? `Error: ${data.error}` : 'No se pudo crear la invitación')
+                            } else {
+                              setInviteStatus(data.emailed ? 'Invitación enviada por email' : 'Invitación creada (no se pudo enviar el email)')
+                              setInviteToken(data.token)
+                            }
+                          } catch (e: any) {
+                            setInviteStatus('Error del servidor')
+                          } finally {
+                            setInviteLoading(false)
+                          }
+                        }}
+                        className="px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] disabled:opacity-60"
+                        disabled={inviteLoading}
+                        aria-busy={inviteLoading ? 'true' : 'false'}
+                      >
+                        {inviteLoading ? 'Enviando…' : 'Enviar invitación'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
             )}
 
             {/* Listings Tab */}
