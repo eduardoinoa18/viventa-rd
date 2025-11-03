@@ -6,6 +6,7 @@ import ErrorBoundary from '../components/ErrorBoundary'
 import ServiceWorkerManager from '../components/ServiceWorkerManager'
 import PwaInstallPrompt from '../components/PwaInstallPrompt'
 import OfflineIndicator from '../components/OfflineIndicator'
+import WaitlistPopup from '../components/WaitlistPopup'
 import Script from 'next/script'
 
 export const metadata = {
@@ -95,6 +96,7 @@ export default function RootLayout({children}:{children:React.ReactNode}) {
   <ServiceWorkerManager />
   <PwaInstallPrompt />
   <OfflineIndicator />
+  <WaitlistPopup />
         <ErrorBoundary>
           {children}
         </ErrorBoundary>

@@ -97,6 +97,23 @@ export default function HomePage() {
               Encuentra tu próximo hogar <br/>con <span className="text-[#00A6A6]">VIVENTA</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-gray-200">Tu espacio, tu futuro en República Dominicana</p>
+            
+            {/* Waitlist CTA Banner */}
+            <div className="bg-gradient-to-r from-purple-600/90 to-blue-600/90 backdrop-blur-sm rounded-xl p-6 mb-8 border border-white/20 max-w-2xl mx-auto">
+              <p className="text-lg font-semibold mb-3">🚀 Platform in Development - Join the Waitlist!</p>
+              <p className="text-sm text-gray-100 mb-4">Be first to access beta features, get exclusive updates, and enjoy special launch perks.</p>
+              <button 
+                onClick={() => {
+                  if ((window as any).openWaitlistPopup) {
+                    (window as any).openWaitlistPopup()
+                  }
+                }}
+                className="px-6 py-3 bg-white text-purple-600 font-bold rounded-lg hover:bg-gray-100 transition-all shadow-lg"
+              >
+                Reserve My Spot →
+              </button>
+            </div>
+
             <div className="flex flex-wrap gap-4 justify-center">
               <a 
                 href="/search" 
