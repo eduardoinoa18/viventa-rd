@@ -41,16 +41,17 @@ export default function BottomNav() {
       active: pathname?.startsWith('/search')
     },
     {
+      name: 'Social',
+      icon: FiStar,
+      path: '/social',
+      active: pathname?.startsWith('/social'),
+      comingSoon: true
+    },
+    {
       name: 'Favoritos',
       icon: FiHeart,
       path: '/favorites',
       active: pathname?.startsWith('/favorites')
-    },
-    {
-      name: 'Mensajes',
-      icon: FiMessageCircle,
-      path: '/messages',
-      active: pathname?.startsWith('/messages')
     },
     {
       name: (session.role === 'master_admin' || session.role === 'admin') ? 'Admin' : 'Perfil',
@@ -72,16 +73,17 @@ export default function BottomNav() {
       active: pathname?.startsWith('/search')
     },
     {
+      name: 'Social',
+      icon: FiStar,
+      path: '/social',
+      active: pathname?.startsWith('/social'),
+      comingSoon: true
+    },
+    {
       name: 'Agentes',
       icon: FiUser,
       path: '/agents',
       active: pathname?.startsWith('/agents')
-    },
-    {
-      name: 'Contacto',
-      icon: FiMessageCircle,
-      path: '/contact',
-      active: pathname?.startsWith('/contact')
     },
     {
       name: 'Login',
@@ -98,38 +100,49 @@ export default function BottomNav() {
       <div className="h-20 md:hidden" />
       
       {/* Bottom Navigation - Only visible on mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 w-full bg-white/98 border-t border-gray-200 shadow-2xl md:hidden z-50 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm supports-[backdrop-filter]:bg-white/95">
+      <nav className="fixed bottom-0 left-0 right-0 w-full bg-gradient-to-t from-white via-white to-white/95 border-t border-viventa-turquoise/20 shadow-2xl md:hidden z-50 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm">
         <div className="flex items-center justify-around h-16 px-1 max-w-[640px] mx-auto">
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = item.active
             const isHighlight = 'highlight' in item && item.highlight
+            const isComingSoon = 'comingSoon' in item && item.comingSoon
             
             return (
               <button
                 key={item.name}
                 onClick={() => router.push(item.path)}
                 aria-label={item.name}
+                disabled={isComingSoon}
                 className={`relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 active:scale-95 min-w-[60px] ${
                   isActive 
-                    ? 'text-[#00A676]' 
+                    ? 'text-viventa-turquoise' 
                     : isHighlight
-                    ? 'text-[#00A676]'
+                    ? 'text-viventa-teal'
+                    : isComingSoon
+                    ? 'text-gray-400 opacity-60'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
+                {isComingSoon && (
+                  <span className="absolute -top-1 right-1/4 bg-viventa-sunset text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                    Pronto
+                  </span>
+                )}
                 <div className={`transition-transform ${isActive ? 'scale-110' : ''}`}>
                   <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
                     isActive 
-                      ? 'bg-gradient-to-br from-[#00A6A6] to-[#004AAD] text-white shadow-lg' 
+                      ? 'bg-gradient-to-br from-viventa-turquoise to-viventa-ocean text-white shadow-lg' 
                       : isHighlight
-                      ? 'bg-gradient-to-br from-[#00A676] to-[#00A6A6] text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600'
+                      ? 'bg-gradient-to-br from-viventa-teal to-viventa-turquoise text-white shadow-md'
+                      : isComingSoon
+                      ? 'bg-gray-200 text-gray-400'
+                      : 'bg-viventa-sand text-viventa-ocean'
                   }`}>
                     <Icon className="text-xl" />
                   </div>
                 </div>
-                <span className={`text-[11px] font-medium ${isActive ? 'text-[#0B2545]' : isHighlight ? 'text-[#00A676]' : ''}`}>
+                <span className={`text-[11px] font-medium ${isActive ? 'text-viventa-navy' : isHighlight ? 'text-viventa-teal' : ''}`}>
                   {item.name}
                 </span>
               </button>

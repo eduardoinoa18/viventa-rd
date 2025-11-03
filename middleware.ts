@@ -10,21 +10,10 @@ export async function middleware(req: NextRequest) {
   let admin2FA = req.cookies.get('admin_2fa_ok')?.value === '1';
   const trustedAdmin = req.cookies.get('trusted_admin')?.value;
 
-  // Server-side protection using Firebase Admin (proxied via API) for critical areas
-  const needsStrictAuth = (p: string) => {
-    // Allow unauthenticated access only to admin login flows
-    if (p.startsWith('/admin') && ['/admin', '/admin/login', '/admin/gate', '/admin/verify'].includes(p)) return false;
-    return p.startsWith('/admin') || p.startsWith('/dashboard');
-  }
-  if (needsStrictAuth(path)) {
-    const verified = await initAuth(req);
-    if (!verified.ok) {
-      const loginUrl = new URL('/login', req.url);
-      loginUrl.searchParams.set('redirect', path);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
+  // ============ ADMIN PORTAL AUTHENTICATION ============
+  // Admin routes have their own auth system (gate + password + 2FA)
+  // Handle these BEFORE the general Firebase auth check
+  
   // Admin pre-gate: require gate code before accessing admin login
   if (path.startsWith('/admin') && (path === '/admin' || path === '/admin/login')) {
     if (!adminGate) {
@@ -57,6 +46,23 @@ export async function middleware(req: NextRequest) {
       // Otherwise, redirect to 2FA verify
       const verifyUrl = new URL('/admin/verify', req.url);
       return NextResponse.redirect(verifyUrl);
+    }
+  }
+
+  // ============ GENERAL USER/PRO AUTHENTICATION ============
+  // Server-side protection using Firebase Admin (proxied via API) for critical areas
+  const needsStrictAuth = (p: string) => {
+    // Admin routes already handled above
+    if (p.startsWith('/admin')) return false;
+    // Protect dashboard and other authenticated routes
+    return p.startsWith('/dashboard') || p.startsWith('/broker') || p.startsWith('/agent');
+  }
+  if (needsStrictAuth(path)) {
+    const verified = await initAuth(req);
+    if (!verified.ok) {
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('redirect', path);
+      return NextResponse.redirect(loginUrl);
     }
   }
 

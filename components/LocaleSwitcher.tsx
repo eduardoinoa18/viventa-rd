@@ -1,8 +1,46 @@
 'use client'
-import {useState,useEffect} from 'react'
-export default function LocaleSwitcher(){
-  const [lang,setLang]=useState('es')
-  useEffect(()=>{ const l = localStorage.getItem('viventa_lang')||'es'; setLang(l) },[])
-  function toggle(){ const next = lang==='es'?'en':'es'; localStorage.setItem('viventa_lang',next); setLang(next); location.reload() }
-  return <button onClick={toggle} className="px-3 py-1 border rounded text-sm">{lang==='es'?'ES':'EN'}</button>
+import { useState, useEffect } from 'react'
+import { FiGlobe } from 'react-icons/fi'
+
+export default function LocaleSwitcher() {
+  const [lang, setLang] = useState('es')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    const l = localStorage.getItem('viventa_lang') || 'es'
+    setLang(l)
+  }, [])
+
+  function toggle() {
+    const next = lang === 'es' ? 'en' : 'es'
+    localStorage.setItem('viventa_lang', next)
+    setLang(next)
+    // Reload to apply changes
+    if (typeof window !== 'undefined') {
+      window.location.reload()
+    }
+  }
+
+  if (!mounted) {
+    return (
+      <button className="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg border-2 border-viventa-turquoise text-viventa-turquoise font-semibold hover:bg-viventa-turquoise hover:text-white transition-all">
+        <FiGlobe className="text-lg" />
+        <span className="hidden sm:inline text-sm">ES</span>
+      </button>
+    )
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      className="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg border-2 border-viventa-turquoise text-viventa-turquoise font-semibold hover:bg-viventa-turquoise hover:text-white transition-all active:scale-95"
+      aria-label={`Switch to ${lang === 'es' ? 'English' : 'Spanish'}`}
+    >
+      <FiGlobe className="text-lg" />
+      <span className="hidden sm:inline text-sm font-bold">
+        {lang === 'es' ? 'ES' : 'EN'}
+      </span>
+    </button>
+  )
 }

@@ -11,6 +11,17 @@ module.exports = {
           cyan: '#00A6A6',
           coral: '#FF6B35',
           'coral-light': '#FF8C35',
+          // Caribbean-inspired palette
+          turquoise: '#1FCECB',
+          'turquoise-light': '#67E8E5',
+          sunset: '#FF8B5B',
+          'sunset-light': '#FFA57D',
+          sand: '#F8E5D4',
+          'sand-dark': '#E6D4BC',
+          ocean: '#2C77BF',
+          'ocean-deep': '#1B5A8D',
+          palm: '#4CAF79',
+          'palm-light': '#6FD99A',
         },
       },
       animation: {

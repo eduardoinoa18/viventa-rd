@@ -18,7 +18,7 @@ export default function SocialPage() {
 
   const wrapperClass = allowFeed
     ? 'min-h-screen flex flex-col'
-    : 'min-h-screen bg-gradient-to-br from-blue-50 to-teal-50 flex flex-col'
+    : 'min-h-screen flex flex-col'
 
   return (
     <div className={wrapperClass}>
