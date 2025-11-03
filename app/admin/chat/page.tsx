@@ -8,7 +8,7 @@ import AdminSidebar from '@/components/AdminSidebar'
 import AdminTopbar from '@/components/AdminTopbar'
 import toast from 'react-hot-toast'
 import { db } from '@/lib/firebaseClient'
-import { collection, query, where, orderBy, limit, getDocs, updateDoc, doc, arrayUnion, addDoc, Timestamp } from 'firebase/firestore'
+import { collection, query, where, orderBy, limit, getDocs, updateDoc, doc, arrayUnion, addDoc, Timestamp, onSnapshot } from 'firebase/firestore'
 import { getCurrentUser } from '@/lib/authClient'
 
 type Conversation = {
@@ -53,6 +53,15 @@ type SearchUser = {
   photoURL?: string
 }
 
+type OnlinePro = {
+  id: string
+  name: string
+  email: string
+  role: 'agent' | 'broker'
+  online?: boolean
+  lastSeen?: any
+}
+
 function AdminChatPageContent() {
   const searchParams = useSearchParams()
   const tabParam = searchParams?.get('tab')
@@ -82,6 +91,7 @@ function AdminChatPageContent() {
   const [userSearchQuery, setUserSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchUser[]>([])
   const [searchingUsers, setSearchingUsers] = useState(false)
+  const [onlinePros, setOnlinePros] = useState<OnlinePro[]>([])
 
   const currentUser = getCurrentUser()
 
@@ -89,6 +99,21 @@ function AdminChatPageContent() {
     loadConversations()
     const interval = setInterval(loadConversations, 10000)
     return () => clearInterval(interval)
+  }, [])
+
+  // Live online roster (agents/brokers)
+  useEffect(() => {
+    const qOnline = query(
+      collection(db, 'users'),
+      where('role', 'in', ['agent', 'broker']),
+      where('online', '==', true),
+      limit(50)
+    )
+    const unsub = onSnapshot(qOnline, (snap: any) => {
+      const list = snap.docs.map((d: any) => ({ id: d.id, ...d.data() })) as OnlinePro[]
+      setOnlinePros(list)
+    })
+    return () => unsub()
   }, [])
   
   useEffect(() => { 
@@ -334,6 +359,25 @@ function AdminChatPageContent() {
     }
   }
 
+  function formatLastSeen(ts: any) {
+    if (!ts) return ''
+    let date: Date | null = null
+    if (typeof ts?.toDate === 'function') date = ts.toDate()
+    else if (typeof ts === 'number') date = new Date(ts)
+    else if (ts instanceof Date) date = ts
+    if (!date) return ''
+    const diffMs = Date.now() - date.getTime()
+    const minutes = Math.floor(diffMs / 60000)
+    if (minutes < 1) return 'hace un momento'
+    if (minutes === 1) return 'hace 1 min'
+    if (minutes < 60) return `hace ${minutes} min`
+    const hours = Math.floor(minutes / 60)
+    if (hours === 1) return 'hace 1 hora'
+    if (hours < 24) return `hace ${hours} horas`
+    const days = Math.floor(hours / 24)
+    return days === 1 ? 'hace 1 día' : `hace ${days} días`
+  }
+
   const filtered = useMemo(() => {
     let result = conversations
     
@@ -486,7 +530,7 @@ function AdminChatPageContent() {
               <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
                 <div className="p-6 border-b flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-gray-800">Start New Conversation</h2>
-                  <button onClick={() => setShowUserSearch(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                  <button onClick={() => setShowUserSearch(false)} className="p-2 hover:bg-gray-100 rounded-lg" aria-label="Close" title="Close">
                     <FiX className="text-xl" />
                   </button>
                 </div>
@@ -557,6 +601,45 @@ function AdminChatPageContent() {
           {/* Chat Tab Content */}
           {mainTab === 'chat' && (
             <>
+              {/* Online Pros Roster */}
+              <div className="bg-white rounded-xl shadow border p-4 mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-600"></span>
+                    </span>
+                    <h3 className="font-semibold text-gray-800">Pros en línea</h3>
+                    <span className="text-xs text-gray-500">{onlinePros.length}</span>
+                  </div>
+                </div>
+                {onlinePros.length === 0 ? (
+                  <div className="text-sm text-gray-500">No hay agentes o brokers en línea ahora mismo.</div>
+                ) : (
+                  <div className="flex gap-3 overflow-x-auto py-1">
+                    {onlinePros.map(p => (
+                      <div key={p.id} className="flex items-center gap-3 px-3 py-2 border rounded-lg hover:bg-gray-50 shrink-0">
+                        <div className="relative">
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-r from-[#0B2545] to-[#00A676] text-white flex items-center justify-center font-bold">
+                            {(p.name || p.email || '?').charAt(0).toUpperCase()}
+                          </div>
+                          <span className="absolute -bottom-0 -right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-white" title="En línea"></span>
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-[#0B2545]">{p.name || p.email}</div>
+                          <div className="text-[11px] text-gray-500 uppercase">{p.role}</div>
+                        </div>
+                        <button
+                          onClick={() => startConversationWithUser({ id: p.id, name: p.name || p.email, email: p.email, role: p.role })}
+                          className="ml-1 px-2 py-1 text-xs bg-[#00A676] text-white rounded hover:bg-[#008F64]"
+                        >
+                          Chatear
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               {/* Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-white rounded-lg shadow p-4 border-l-4 border-[#00A676]">

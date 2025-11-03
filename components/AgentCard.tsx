@@ -29,13 +29,26 @@ export default function AgentCard({ agent }: { agent: any }) {
               e.currentTarget.src = '/agent-placeholder.jpg'
             }}
           />
-          <div className="absolute -bottom-1 -right-1 bg-green-500 w-5 h-5 rounded-full border-2 border-white"></div>
+          {/* Presence badge */}
+          {agent.online ? (
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center" title="En línea">
+              <span className="relative flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-green-600"></span>
+              </span>
+            </div>
+          ) : (
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white bg-gray-300" title={agent.lastSeen ? `Últ. vez ${new Date(agent.lastSeen?.toDate?.() || agent.lastSeen).toLocaleString('es-DO')}` : 'Desconectado'}></div>
+          )}
         </div>
       </div>
 
       {/* Content */}
       <div className="p-5 text-center">
-        <h3 className="font-bold text-lg text-[#0B2545] mb-2 leading-tight">{agent.name}</h3>
+        <h3 className="font-bold text-lg text-[#0B2545] mb-1 leading-tight">{agent.name}</h3>
+        {!agent.online && agent.lastSeen && (
+          <div className="text-xs text-gray-500 mb-2">Últ. vez {new Date(agent.lastSeen?.toDate?.() || agent.lastSeen).toLocaleString('es-DO')}</div>
+        )}
         
         {/* Location */}
         <div className="text-sm text-gray-600 flex items-center justify-center gap-1 mb-2">

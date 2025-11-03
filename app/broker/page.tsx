@@ -7,7 +7,7 @@ import Footer from '@/components/Footer'
 import dynamic from 'next/dynamic'
 import { FiUsers, FiHome, FiTrendingUp, FiDollarSign, FiAward, FiSettings, FiUserPlus, FiBarChart2, FiCheckCircle, FiClock, FiAlertCircle, FiEdit } from 'react-icons/fi'
 import { db } from '@/lib/firebaseClient'
-import { collection, query, where, getDocs, onSnapshot, orderBy, limit } from 'firebase/firestore'
+import { collection, query, where, getDocs, onSnapshot, orderBy, limit, doc, getDoc } from 'firebase/firestore'
 
 const BrokerCharts = dynamic(() => import('./BrokerCharts'), {
   loading: () => <div className="text-center py-8 text-gray-400">Loading charts...</div>,
@@ -24,12 +24,16 @@ type Agent = {
   listingsCount?: number
   soldCount?: number
   revenue?: number
+  online?: boolean
+  lastSeen?: any
 }
 
 export default function BrokerDashboard() {
   const [activeTab, setActiveTab] = useState('overview')
   const [user, setUser] = useState<any>(null)
   const [agents, setAgents] = useState<Agent[]>([])
+  const [brokerageId, setBrokerageId] = useState<string | null>(null)
+  const [brokerageName, setBrokerageName] = useState<string | null>(null)
   // UI filters for Team tab
   const [teamSearch, setTeamSearch] = useState('')
   const [teamStatus, setTeamStatus] = useState<'all' | 'active' | 'pending' | 'inactive'>('all')
@@ -53,7 +57,34 @@ export default function BrokerDashboard() {
     }
     setUser(s)
     loadDashboard()
+    // Load broker profile to determine brokerage filter
+    ;(async () => {
+      try {
+        const snap = await getDoc(doc(db, 'users', s.uid))
+        const data: any = snap.data() || {}
+        setBrokerageId(data.brokerage_id || data.brokerId || null)
+        setBrokerageName(data.brokerage || data.company || null)
+      } catch {}
+    })()
   }, [])
+
+  // Live subscribe to agents to reflect presence, filtered by brokerage when available
+  useEffect(() => {
+    if (!user) return
+    let qRef: any
+    if (brokerageId) {
+      qRef = query(collection(db, 'users'), where('role', '==', 'agent'), where('brokerage_id', '==', brokerageId))
+    } else if (brokerageName) {
+      qRef = query(collection(db, 'users'), where('role', '==', 'agent'), where('brokerage', '==', brokerageName))
+    } else {
+      qRef = query(collection(db, 'users'), where('role', '==', 'agent'))
+    }
+    const unsub = onSnapshot(qRef, (snap: any) => {
+      const list = snap.docs.map((d: any) => ({ id: d.id, ...d.data() })) as Agent[]
+      setAgents(list)
+    })
+    return () => unsub()
+  }, [user, brokerageId, brokerageName])
 
   async function loadDashboard() {
     setLoading(true)
@@ -127,6 +158,25 @@ export default function BrokerDashboard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function formatLastSeen(ts: any) {
+    if (!ts) return ''
+    let date: Date | null = null
+    if (typeof ts?.toDate === 'function') date = ts.toDate()
+    else if (typeof ts === 'number') date = new Date(ts)
+    else if (ts instanceof Date) date = ts
+    if (!date) return ''
+    const diffMs = Date.now() - date.getTime()
+    const minutes = Math.floor(diffMs / 60000)
+    if (minutes < 1) return 'hace un momento'
+    if (minutes === 1) return 'hace 1 min'
+    if (minutes < 60) return `hace ${minutes} min`
+    const hours = Math.floor(minutes / 60)
+    if (hours === 1) return 'hace 1 hora'
+    if (hours < 24) return `hace ${hours} horas`
+    const days = Math.floor(hours / 24)
+    return days === 1 ? 'hace 1 día' : `hace ${days} días`
   }
 
   if (!user) return null
@@ -313,6 +363,7 @@ export default function BrokerDashboard() {
                       value={teamStatus}
                       onChange={(e) => setTeamStatus((e.target.value as any) || 'all')}
                       className="px-3 py-2 border border-gray-300 rounded-lg"
+                      aria-label="Filtrar por estado"
                     >
                       <option value="all">Todos</option>
                       <option value="active">Activos</option>
@@ -360,7 +411,22 @@ export default function BrokerDashboard() {
                           return (
                             <tr key={agent.id} className="hover:bg-gray-50">
                               <td className="p-4">
-                                <div className="font-semibold text-gray-800">{agent.name}</div>
+                                <div className="font-semibold text-gray-800 flex items-center gap-2">
+                                  {/* Online badge */}
+                                  {agent.online ? (
+                                    <span className="relative flex h-2.5 w-2.5" title="En línea">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-600"></span>
+                                    </span>
+                                  ) : (
+                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-gray-300" title="Desconectado"></span>
+                                  )}
+                                  <span>{agent.name}</span>
+                                  {/* Last seen hint */}
+                                  {!agent.online && (
+                                    <span className="text-xs text-gray-500">(Últ. vez {formatLastSeen(agent.lastSeen)})</span>
+                                  )}
+                                </div>
                               </td>
                               <td className="p-4 text-gray-600">{agent.email}</td>
                               <td className="p-4 text-gray-600">{agent.phone || '-'}</td>
