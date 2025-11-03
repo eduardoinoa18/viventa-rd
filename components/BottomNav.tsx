@@ -21,6 +21,12 @@ export default function BottomNav() {
   }
 
   // Build nav items based on auth state
+  const adminHome = session?.role === 'master_admin' ? '/admin'
+    : session?.role === 'admin' ? '/admin'
+    : session?.role === 'broker' ? '/broker'
+    : session?.role === 'agent' ? '/agent'
+    : '/dashboard'
+
   const navItems = session ? [
     {
       name: 'Inicio',
@@ -47,10 +53,10 @@ export default function BottomNav() {
       active: pathname?.startsWith('/messages')
     },
     {
-      name: 'Perfil',
+      name: (session.role === 'master_admin' || session.role === 'admin') ? 'Admin' : 'Perfil',
       icon: FiUser,
-      path: '/dashboard',
-      active: pathname?.startsWith('/dashboard')
+      path: adminHome,
+      active: pathname?.startsWith(adminHome)
     }
   ] : [
     {

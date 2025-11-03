@@ -7,7 +7,22 @@ import AdminCodeModal from '../../../components/AdminCodeModal'
 import ListingsModeration from './ListingsModeration'
 
 const TABS = [
-  'Dashboard', 'Listings', 'Users', 'Brokerages', 'Applications', 'Clients & CRM', 'Inbox', 'Settings', 'Analytics', 'Audit Logs', 'Billing'
+  'Dashboard',
+  'Listings',
+  'Property Search',
+  'Users',
+  'Roles',
+  'Brokerages',
+  'Applications',
+  'Clients & CRM',
+  'Messages',
+  'Social',
+  'Calendar',
+  'Integrations',
+  'Settings',
+  'Analytics',
+  'Audit Logs',
+  'Billing'
 ]
 
 export default function MasterAdminPage() {
@@ -33,7 +48,7 @@ export default function MasterAdminPage() {
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="font-bold text-2xl">VIVENTA Master Admin</div>
-          <nav className="space-x-4 flex items-center">
+          <nav className="space-x-2 flex items-center overflow-x-auto">
             {TABS.map(t => (
               <button key={t} onClick={() => setTab(t)} className={`text-sm px-3 py-1 rounded ${tab === t ? 'bg-[#00A6A6] text-white' : 'hover:bg-gray-200'}`}>{t}</button>
             ))}
@@ -41,16 +56,23 @@ export default function MasterAdminPage() {
         </div>
       </header>
       <main className="max-w-7xl mx-auto px-4 py-8">
-  {tab === 'Dashboard' && <DashboardKPIs stats={stats} />}
-           {tab === 'Listings' && <ListingsModeration />}
-           {tab === 'Users' && <UsersManagement />}
-           {tab === 'Brokerages' && <BrokeragesManagement />}
-           {tab === 'Applications' && <ApplicationsQueue />}
-           {tab === 'Audit Logs' && <AuditLogs />}
-           {tab === 'Clients & CRM' && <CRMClients />}
-           {tab === 'Inbox' && <InboxSupport />}
-           {tab === 'Settings' && <SettingsPage />}
-           {tab === 'Billing' && <BillingPage />}
+        {tab === 'Dashboard' && <DashboardKPIs stats={stats} />}
+        {tab === 'Listings' && <ListingsModeration />}
+        {tab === 'Users' && <UsersManagement />}
+        {tab === 'Brokerages' && <BrokeragesManagement />}
+        {tab === 'Applications' && <ApplicationsQueue />}
+        {tab === 'Audit Logs' && <AuditLogs />}
+        {tab === 'Clients & CRM' && <CRMClients />}
+        {tab === 'Settings' && <PendingBlock label="Settings" />}
+        {tab === 'Billing' && <PendingBlock label="Billing" />}
+        {tab === 'Roles' && <PendingBlock label="Roles & Access" />}
+        {tab === 'Property Search' && <ComingSoonBlock label="Property Search (Admin)" />}
+        {tab === 'Calendar' && <ComingSoonBlock label="Calendar" />}
+        {tab === 'Integrations' && <ComingSoonBlock label="Integrations" />}
+        {tab === 'Messages' && <PendingBlock label="Messages" description="Centralized messaging is currently pending." />}
+        {tab === 'Social' && <ComingSoonBlock label="Social Master Management" />}
+        {tab === 'Analytics' && <PendingBlock label="Analytics" />}
+        {tab === 'Inbox' && <InboxSupport />}
   {/* TODO: Add tab content components for Users, Brokerages, etc. */}
       </main>
     </div>
@@ -82,6 +104,24 @@ function KPIWidget({ label, value }: { label: string, value: number }) {
     <div className="bg-white rounded shadow p-6 flex flex-col items-center justify-center">
       <div className="text-3xl font-bold text-[#004AAD]">{value}</div>
       <div className="mt-2 text-gray-600 text-sm">{label}</div>
+    </div>
+  )
+}
+
+function ComingSoonBlock({ label }: { label: string }) {
+  return (
+    <div className="bg-white rounded-lg border border-dashed border-gray-300 p-8 text-center">
+      <div className="text-lg font-semibold text-gray-800 mb-1">{label}</div>
+      <div className="text-sm text-gray-600">Coming Soon</div>
+    </div>
+  )
+}
+
+function PendingBlock({ label, description }: { label: string, description?: string }) {
+  return (
+    <div className="bg-yellow-50 rounded-lg border border-yellow-200 p-8">
+      <div className="text-lg font-semibold text-yellow-900 mb-1">{label}</div>
+      <div className="text-sm text-yellow-800">{description || 'Currently Pending'}</div>
     </div>
   )
 }

@@ -205,27 +205,7 @@ export default function HomePage() {
 
             {/* RIGHT — Properties */}
             <div className="lg:w-2/3">
-              {/* Quick Stats */}
-              {stats && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-                    <div className="text-2xl font-bold text-[#00A6A6]">{stats.totalProperties.toLocaleString()}</div>
-                    <div className="text-xs text-gray-600 mt-1">Propiedades</div>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-                    <div className="text-2xl font-bold text-[#0B2545]">{stats.totalAgents}</div>
-                    <div className="text-xs text-gray-600 mt-1">Agentes</div>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-                    <div className="text-2xl font-bold text-[#00A676]">{stats.totalSales}</div>
-                    <div className="text-xs text-gray-600 mt-1">Ventas</div>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-                    <div className="text-2xl font-bold text-[#134074]">${(stats.avgPrice / 1000).toFixed(0)}K</div>
-                    <div className="text-xs text-gray-600 mt-1">Precio Promedio</div>
-                  </div>
-                </div>
-              )}
+              {/* Quick Stats — removed per request to simplify the homepage */}
               {!user && (
                 <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2 text-yellow-800">
                   <FiLock className="text-lg" />

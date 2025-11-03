@@ -2,10 +2,23 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FiGrid, FiUsers, FiHome, FiSettings, FiUserCheck, FiBriefcase, FiMessageSquare, FiPlusSquare, FiClipboard, FiCreditCard, FiShield, FiActivity, FiTarget, FiBarChart2 } from 'react-icons/fi'
+import { useEffect, useState } from 'react'
+import { FiGrid, FiUsers, FiHome, FiSettings, FiUserCheck, FiBriefcase, FiMessageSquare, FiPlusSquare, FiClipboard, FiCreditCard, FiShield, FiActivity, FiTarget, FiBarChart2, FiChevronLeft } from 'react-icons/fi'
 
 export default function AdminSidebar() {
   const pathname = usePathname()
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Persist collapsed state
+  useEffect(() => {
+    const saved = localStorage.getItem('admin_sidebar_collapsed')
+    if (saved) setCollapsed(saved === '1')
+  }, [])
+  function toggleCollapsed() {
+    const next = !collapsed
+    setCollapsed(next)
+    try { localStorage.setItem('admin_sidebar_collapsed', next ? '1' : '0') } catch {}
+  }
   
   const links = [
     { href: '/admin', label: 'Dashboard', icon: <FiGrid /> },
@@ -26,8 +39,14 @@ export default function AdminSidebar() {
   ]
 
   return (
-    <aside className="w-64 bg-white border-r min-h-screen p-4">
-      <nav className="space-y-2">
+    <aside className={`${collapsed ? 'w-16' : 'w-64'} bg-white border-r min-h-screen p-2 transition-all duration-200`}>
+      <div className="flex items-center justify-between mb-2 px-2">
+        {!collapsed && <div className="text-sm font-semibold text-gray-700">Admin</div>}
+        <button onClick={toggleCollapsed} className="p-2 rounded hover:bg-gray-100 text-gray-600" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+          <FiChevronLeft className={`${collapsed ? 'rotate-180' : ''} transition-transform`} />
+        </button>
+      </div>
+      <nav className="space-y-1">
         {links.map(link => (
           <Link
             key={link.href}
@@ -40,17 +59,18 @@ export default function AdminSidebar() {
                 : 'hover:bg-gray-100 text-gray-700'
             }`}
           >
-            <span className="text-xl">{link.icon}</span>
-            <span>{link.label}</span>
+            <span className="text-xl shrink-0">{link.icon}</span>
+            {!collapsed && <span className="truncate">{link.label}</span>}
           </Link>
         ))}
       </nav>
-      
-      <div className="mt-8 p-3 bg-blue-50 rounded-lg">
-        <div className="text-xs font-semibold text-blue-900 mb-1">Quick Actions</div>
-        <Link href="/" className="text-sm text-blue-600 hover:underline block">View Public Site</Link>
-        <Link href="/dashboard" className="text-sm text-blue-600 hover:underline block mt-1">User Dashboard</Link>
-      </div>
+      {!collapsed && (
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+          <div className="text-xs font-semibold text-blue-900 mb-1">Quick Actions</div>
+          <Link href="/" className="text-sm text-blue-600 hover:underline block">View Public Site</Link>
+          <Link href="/dashboard" className="text-sm text-blue-600 hover:underline block mt-1">User Dashboard</Link>
+        </div>
+      )}
     </aside>
   )
 }

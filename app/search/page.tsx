@@ -1,24 +1,20 @@
 'use client'
 import { useState, useEffect, useMemo, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import BottomNav from '../../components/BottomNav'
 import PropertyCard from '../../components/PropertyCard'
-import SearchStatsBar from '../../components/SearchStatsBar'
+// SearchStatsBar removed per request to simplify the page
 import AdvancedFilters from '../../components/AdvancedFilters'
 import SavedSearchModal from '../../components/SavedSearchModal'
-import { FiList, FiMap, FiSave, FiSearch, FiSliders, FiFilter, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { FiSave, FiSearch, FiSliders, FiFilter, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs } from 'firebase/firestore'
 import { getUserCurrency, type Currency } from '../../lib/currency'
 import { searchListings, getFacetValues, type SearchFilters, type Listing } from '../../lib/customSearchService'
 
-const CustomMapSearch = dynamic(() => import('../../components/CustomMapSearch'), {
-  loading: () => <div className="text-center py-8 text-gray-400">Cargando mapa...</div>,
-  ssr: false
-})
+// Map view removed per request
 
 function SearchPageContent() {
   const searchParams = useSearchParams()
@@ -27,7 +23,7 @@ function SearchPageContent() {
   // UI state
   const [showSave, setShowSave] = useState(false)
   const [saved, setSaved] = useState<any[]>([])
-  const [mobileView, setMobileView] = useState<'list' | 'map'>('list')
+  // Map view disabled; keep list-only
   const [showFilters, setShowFilters] = useState(false)
   const [currency, setCurrency] = useState<Currency>('USD')
   
@@ -179,21 +175,8 @@ function SearchPageContent() {
             </div>
 
             {/* Mobile view toggle */}
-            <div className="lg:hidden mb-4 flex items-center justify-between gap-2">
-              <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden">
-                <button
-                  onClick={() => setMobileView('list')}
-                  className={`px-4 py-2 flex items-center gap-2 ${mobileView === 'list' ? 'bg-[#0B2545] text-white' : 'bg-white text-gray-700'}`}
-                >
-                  <FiList /> Lista
-                </button>
-                <button
-                  onClick={() => setMobileView('map')}
-                  className={`px-4 py-2 flex items-center gap-2 ${mobileView === 'map' ? 'bg-[#0B2545] text-white' : 'bg-white text-gray-700'}`}
-                >
-                  <FiMap /> Mapa
-                </button>
-              </div>
+            {/* Mobile quick filter toggle only (map removed) */}
+            <div className="lg:hidden mb-4 flex items-center justify-end">
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center gap-2 text-gray-700 hover:bg-gray-50"
@@ -204,7 +187,7 @@ function SearchPageContent() {
 
             <div className="grid lg:grid-cols-[1fr_420px] gap-6">
               {/* Main content */}
-              <div className={`${mobileView !== 'list' ? 'hidden lg:block' : ''} space-y-4 min-w-0`}>
+              <div className={`space-y-4 min-w-0`}>
                 {/* Search bar */}
                 <div className="bg-white rounded-lg shadow-sm p-4">
                   <div className="relative">
@@ -219,8 +202,7 @@ function SearchPageContent() {
                   </div>
                 </div>
 
-                {/* Stats */}
-                <SearchStatsBar items={results} currency={currency} />
+                {/* Stats removed per request */}
 
                 {/* Results */}
                 <div className="bg-white rounded-lg shadow-sm p-4">
@@ -299,8 +281,8 @@ function SearchPageContent() {
                 </div>
               </div>
 
-              {/* Sidebar filters and map */}
-              <div className={`${mobileView !== 'map' && !showFilters ? 'hidden lg:block' : ''} space-y-4`}>
+              {/* Sidebar filters only (map removed) */}
+              <div className={`${!showFilters ? 'hidden lg:block' : ''} space-y-4`}>
                 <div className="bg-white rounded-lg shadow-sm p-4 sticky top-20 max-h-[calc(100vh-120px)] overflow-y-auto">
                   <h3 className="font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
                     <FiFilter /> Filtros
@@ -428,31 +410,11 @@ function SearchPageContent() {
                   </div>
                 </div>
 
-                {/* Map view on desktop */}
-                <div className="hidden lg:block mt-4">
-                  <div className="bg-white rounded-lg shadow-sm p-4 h-[500px] sticky top-[calc(100vh-520px)]">
-                    <CustomMapSearch 
-                      listings={results}
-                      onMarkerClick={(id: string) => router.push(`/listing/${id}`)}
-                      currency={currency}
-                    />
-                  </div>
-                </div>
+                {/* Map removed */}
               </div>
             </div>
 
-            {/* Mobile Map View */}
-            {mobileView === 'map' && (
-              <div className="lg:hidden">
-                <div className="bg-white rounded-lg shadow-sm p-4">
-                  <CustomMapSearch 
-                    listings={results}
-                    onMarkerClick={(id: string) => router.push(`/listing/${id}`)}
-                    currency={currency}
-                  />
-                </div>
-              </div>
-            )}
+            {/* Map removed on mobile */}
           </div>
         </div>
       </main>
