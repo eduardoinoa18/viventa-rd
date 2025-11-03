@@ -145,6 +145,7 @@ export default function AdminTopbar() {
                   <button 
                     onClick={() => setShowNotifications(false)}
                     className="p-1 hover:bg-gray-200 rounded"
+                    aria-label="Close notifications"
                   >
                     <FiX />
                   </button>

@@ -227,7 +227,7 @@ export default function MessagesPage() {
           ) : (
             <>
               <div className="p-4 border-b flex items-center gap-3 bg-gradient-to-r from-white to-viventa-sand/20">
-                <button className="md:hidden p-2 rounded hover:bg-viventa-sand transition-colors" onClick={()=>setActiveId(null)}>
+                <button className="md:hidden p-2 rounded hover:bg-viventa-sand transition-colors" onClick={()=>setActiveId(null)} aria-label="Back to conversations list">
                   <FiArrowLeft className="text-viventa-ocean" />
                 </button>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-viventa-turquoise to-viventa-ocean text-white flex items-center justify-center shadow-md"><FiUser /></div>
@@ -263,7 +263,7 @@ export default function MessagesPage() {
                   placeholder="Escribe un mensaje..."
                   className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-viventa-turquoise focus:border-transparent transition-all"
                 />
-                <button onClick={sendMessage} disabled={!text.trim()} className="px-5 py-3 bg-gradient-to-r from-viventa-turquoise to-viventa-ocean text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                <button onClick={sendMessage} disabled={!text.trim()} className="px-5 py-3 bg-gradient-to-r from-viventa-turquoise to-viventa-ocean text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Send message">
                   <FiSend />
                 </button>
               </div>
@@ -284,7 +284,7 @@ export default function MessagesPage() {
         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
           <div className="p-6 border-b flex items-center justify-between bg-gradient-to-r from-viventa-turquoise to-viventa-ocean text-white">
             <h3 className="text-xl font-bold">Nuevo Chat</h3>
-            <button onClick={() => setShowNewChatModal(false)} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+            <button onClick={() => setShowNewChatModal(false)} className="p-2 hover:bg-white/20 rounded-lg transition-colors" aria-label="Close modal">
               <FiX className="text-xl" />
             </button>
           </div>

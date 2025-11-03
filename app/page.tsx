@@ -164,12 +164,14 @@ export default function HomePage() {
                   className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
                   value={filters.location}
                   onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+                  aria-label="Search by location"
                 />
 
                 <select
                   className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
                   value={filters.type}
                   onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+                  aria-label="Filter by property type"
                 >
                   <option value="">Tipo de propiedad</option>
                   <option value="Villa">Villa</option>
