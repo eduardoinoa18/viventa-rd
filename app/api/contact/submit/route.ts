@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'Rate limit exceeded' }, { status: 429 })
     }
     const data = await request.json()
-    const { name, email, phone, type, message, source } = data
+    const { name, email, phone, type, role, company, interests, message, source } = data
 
     // Validation
     if (!name || !email || !message) {
@@ -31,6 +31,9 @@ export async function POST(request: Request) {
       email,
       phone: phone || '',
       type: type || 'general',
+      role: role || null,
+      company: company || null,
+      interests: interests || [],
       message,
       source: source || 'website',
       status: 'new',
@@ -75,6 +78,24 @@ export async function POST(request: Request) {
                     <td style="padding: 10px 0; font-weight: bold; color: #666;">Tipo:</td>
                     <td style="padding: 10px 0; color: #333;">${type || 'General'}</td>
                   </tr>
+                  ${role ? `
+                  <tr>
+                    <td style="padding: 10px 0; font-weight: bold; color: #666;">Rol:</td>
+                    <td style="padding: 10px 0; color: #333;">${role}</td>
+                  </tr>
+                  ` : ''}
+                  ${company ? `
+                  <tr>
+                    <td style="padding: 10px 0; font-weight: bold; color: #666;">Empresa:</td>
+                    <td style="padding: 10px 0; color: #333;">${company}</td>
+                  </tr>
+                  ` : ''}
+                  ${interests && interests.length > 0 ? `
+                  <tr>
+                    <td style="padding: 10px 0; font-weight: bold; color: #666;">Intereses:</td>
+                    <td style="padding: 10px 0; color: #333;">${interests.join(', ')}</td>
+                  </tr>
+                  ` : ''}
                   <tr>
                     <td style="padding: 10px 0; font-weight: bold; color: #666;">Origen:</td>
                     <td style="padding: 10px 0; color: #333;">${source || 'Website'}</td>

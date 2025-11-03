@@ -1,7 +1,6 @@
 import Footer from '../../components/Footer'
 import Header from '../../components/Header'
-import { FiHome, FiBarChart2, FiCpu, FiCompass, FiShield, FiDollarSign, FiUsers, FiTrendingUp, FiStar, FiMail, FiPhone, FiMessageSquare } from 'react-icons/fi'
-import ProfessionalContactForm from '../../components/ProfessionalContactForm'
+import { FiHome, FiBarChart2, FiCpu, FiCompass, FiShield, FiDollarSign, FiUsers, FiTrendingUp, FiStar } from 'react-icons/fi'
 
 // Avoid static generation timeouts by rendering this page dynamically at runtime
 export const dynamic = 'force-dynamic'
@@ -19,7 +18,7 @@ export default function ProfesionalesLanding() {
             <p className="mb-8 text-lg text-white/90">El MLS más completo para profesionales del Caribe.</p>
             <div className="flex flex-col md:flex-row gap-4 justify-center">
               <a href="/apply" className="px-8 py-3 bg-white text-[#004AAD] font-bold rounded-lg shadow hover:bg-gray-100 transition-colors">Solicitar Acceso</a>
-              <a href="/profesionales#contact" className="px-8 py-3 bg-[#00A6A6] text-white font-bold rounded-lg shadow hover:bg-[#008f8f] transition-colors border-2 border-white">Más Información</a>
+              <a href="/contact" className="px-8 py-3 bg-[#00A6A6] text-white font-bold rounded-lg shadow hover:bg-[#008f8f] transition-colors border-2 border-white">Más Información</a>
             </div>
           </div>
         </section>
@@ -125,7 +124,7 @@ export default function ProfesionalesLanding() {
                   <li className="flex items-start gap-2">✓ Marketing destacado</li>
                   <li className="flex items-start gap-2">✓ Análisis de mercado</li>
                 </ul>
-                <a href="/professionals#contact" className="block w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold text-center hover:bg-orange-700 transition-colors">
+                <a href="/contact" className="block w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold text-center hover:bg-orange-700 transition-colors">
                   Contactar
                 </a>
               </div>
@@ -224,46 +223,16 @@ export default function ProfesionalesLanding() {
           </div>
         </section>
 
-        {/* Contacto */}
-        <section id="contact" className="max-w-7xl mx-auto px-4 py-12 grid md:grid-cols-2 gap-8">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <ProfessionalContactForm locale="es" source="profesionales" />
-          </div>
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl shadow-lg p-8 text-white">
-            <h2 className="text-2xl font-bold mb-4">Información de Contacto</h2>
-            <p className="mb-8 text-blue-100">Estamos aquí para ayudarte. Contáctanos por cualquiera de estos medios.</p>
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <FiMail className="text-2xl mt-1 flex-shrink-0" />
-                <div>
-                  <div className="font-semibold mb-1">Email</div>
-                  <a href="mailto:info@viventa.com.do" className="text-blue-100 hover:text-white">info@viventa.com.do</a>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <FiPhone className="text-2xl mt-1 flex-shrink-0" />
-                <div>
-                  <div className="font-semibold mb-1">Teléfono</div>
-                  <a href="tel:+18095551234" className="text-blue-100 hover:text-white">+1 (809) 555-1234</a>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <FiMessageSquare className="text-2xl mt-1 flex-shrink-0" />
-                <div>
-                  <div className="font-semibold mb-1">WhatsApp</div>
-                  <a href="https://wa.me/18095551234" target="_blank" rel="noopener noreferrer" className="text-blue-100 hover:text-white">+1 (809) 555-1234</a>
-                </div>
-              </div>
-            </div>
-            <div className="mt-8 pt-8 border-t border-blue-400">
-              <p className="text-sm text-blue-100">Horario de atención:</p>
-              <p className="font-semibold">Lunes a Viernes: 9:00 AM - 6:00 PM</p>
-              <p className="font-semibold">Sábados: 9:00 AM - 1:00 PM</p>
-            </div>
+        {/* Contacto CTA Section */}
+        <section className="bg-gradient-to-r from-[#004AAD] to-[#00A6A6] py-16 px-4">
+          <div className="max-w-6xl mx-auto text-center text-white">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">¿Listo para unirte a VIVENTA?</h2>
+            <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">Contáctanos hoy y descubre cómo podemos ayudarte a crecer tu negocio inmobiliario.</p>
+            <a href="/contact" className="inline-block px-8 py-4 bg-white text-[#004AAD] rounded-lg font-bold hover:bg-gray-100 transition-colors shadow-lg text-lg">
+              Contáctanos Ahora
+            </a>
           </div>
         </section>
-
-        {/* CTA merged into affiliates section above to avoid repetition */}
       </main>
       <Footer />
     </div>

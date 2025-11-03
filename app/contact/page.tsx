@@ -13,6 +13,9 @@ export default function ContactPage() {
     email: '',
     phone: '',
     type: 'general',
+    role: '',
+    company: '',
+    interests: [] as string[],
     message: ''
   });
   const [submitting, setSubmitting] = useState(false);
@@ -35,7 +38,7 @@ export default function ContactPage() {
       if (!data.ok) throw new Error(data.error || 'Failed to send message');
 
       toast.success('¡Mensaje enviado! Te contactaremos pronto.');
-      setFormData({ name: '', email: '', phone: '', type: 'general', message: '' });
+      setFormData({ name: '', email: '', phone: '', type: 'general', role: '', company: '', interests: [], message: '' });
     } catch (error) {
       toast.error('Error al enviar el mensaje. Intenta de nuevo.');
       console.error('Contact form error:', error);
@@ -127,22 +130,57 @@ export default function ContactPage() {
                 </div>
               </div>
 
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    ¿En qué podemos ayudarte? <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all appearance-none bg-white"
+                  >
+                    <option value="general">Consulta general</option>
+                    <option value="buyer">Quiero comprar una propiedad</option>
+                    <option value="seller">Quiero vender mi propiedad</option>
+                    <option value="agent">Información sobre ser agente</option>
+                    <option value="broker">Información sobre ser bróker</option>
+                    <option value="developer">Información sobre constructoras</option>
+                    <option value="support">Soporte técnico</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Rol profesional (opcional)
+                  </label>
+                  <select
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all appearance-none bg-white"
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="agent">Agente</option>
+                    <option value="broker">Bróker</option>
+                    <option value="developer">Constructora/Desarrollador</option>
+                    <option value="investor">Inversionista</option>
+                    <option value="other">Otro</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  ¿En qué podemos ayudarte? <span className="text-red-500">*</span>
+                  Empresa/Compañía (opcional)
                 </label>
-                <select
-                  required
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all appearance-none bg-white"
-                >
-                  <option value="general">Consulta general</option>
-                  <option value="buyer">Quiero comprar una propiedad</option>
-                  <option value="seller">Quiero vender mi propiedad</option>
-                  <option value="agent">Información sobre ser agente</option>
-                  <option value="support">Soporte técnico</option>
-                </select>
+                <input
+                  type="text"
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all"
+                  placeholder="Nombre de tu empresa"
+                />
               </div>
 
               <div>

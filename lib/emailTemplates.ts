@@ -226,24 +226,35 @@ export async function sendContactConfirmation(
 
           <div class="highlight-box">
             <p style="margin: 0;">
-              <strong>⏱️ Tiempo de respuesta:</strong> 24 a 48 horas
+              <strong>⏱️ Tiempo de respuesta:</strong> Te responderemos en un plazo de <strong>24 a 48 horas</strong>
             </p>
           </div>
 
           <p>
-            Nuestro equipo revisará tu consulta y te responderá lo antes posible. 
-            Apreciamos tu paciencia y estamos aquí para ayudarte a encontrar la propiedad perfecta.
+            Nuestro equipo revisará tu consulta cuidadosamente y te responderá lo antes posible. 
+            Apreciamos tu paciencia y estamos aquí para ayudarte con cualquier consulta sobre propiedades, 
+            servicios profesionales, o cualquier otra pregunta que tengas.
           </p>
 
           <p style="color: #6B7280; margin-top: 30px;">
             Mientras tanto, puedes explorar nuestras propiedades disponibles en 
-            <a href="${process.env.NEXT_PUBLIC_SITE_URL}" style="color: ${VIVENTA_COLORS.secondary};">www.viventa-rd.com</a>
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com'}" style="color: ${VIVENTA_COLORS.secondary};">www.viventa-rd.com</a>
           </p>
+
+          <div style="background: #FFF4ED; padding: 15px; border-radius: 8px; margin-top: 25px; text-align: center;">
+            <p style="margin: 0; color: #6B7280; font-size: 14px;">
+              <strong>Nota:</strong> Este correo es enviado automáticamente desde una cuenta no monitoreada. 
+              Por favor no respondas a este email. Te contactaremos desde nuestro correo oficial de soporte.
+            </p>
+          </div>
         </div>
 
         <div class="footer">
           <p><strong>VIVENTA</strong> - Tu Espacio, Tu Futuro</p>
           <p>República Dominicana</p>
+          <p style="margin-top: 10px; font-size: 12px;">
+            📧 Correo de confirmación automática - No responder
+          </p>
         </div>
         <div class="caribbean-wave"></div>
       </div>
@@ -254,7 +265,9 @@ export async function sendContactConfirmation(
   return sendEmail({
     to: email,
     subject: '✅ Hemos Recibido tu Mensaje - VIVENTA',
-    html
+    html,
+    from: process.env.SMTP_FROM || 'noreply@viventa.com',
+    replyTo: process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com'
   })
 }
 

@@ -1,6 +1,5 @@
 'use client'
-import { FiDollarSign, FiUsers, FiTrendingUp, FiMessageSquare, FiMail, FiPhone } from 'react-icons/fi'
-import ProfessionalContactForm from '../../components/ProfessionalContactForm'
+import { FiDollarSign, FiUsers, FiTrendingUp, FiMessageSquare } from 'react-icons/fi'
 
 export default function ProfessionalsPage(){
   return (
@@ -15,7 +14,7 @@ export default function ProfessionalsPage(){
               <a href="#pricing" className="px-6 py-3 bg-white text-[#004AAD] rounded-lg font-semibold inline-flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors">
                 <FiDollarSign /> Ver Planes
               </a>
-              <a href="#contact" className="px-6 py-3 bg-[#00A6A6] text-white rounded-lg font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#008f8f] transition-colors">
+              <a href="/contact" className="px-6 py-3 bg-[#00A6A6] text-white rounded-lg font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#008f8f] transition-colors">
                 <FiMessageSquare /> Contáctanos
               </a>
             </div>
@@ -88,7 +87,7 @@ export default function ProfessionalsPage(){
                 <li className="flex items-start gap-2">✓ Marketing destacado</li>
                 <li className="flex items-start gap-2">✓ Análisis de mercado</li>
               </ul>
-              <a href="#contact" className="block w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold text-center hover:bg-orange-700 transition-colors">
+              <a href="/contact" className="block w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold text-center hover:bg-orange-700 transition-colors">
                 Contactar para más información
               </a>
             </div>
@@ -131,51 +130,14 @@ export default function ProfessionalsPage(){
           </div>
         </section>
 
-        {/* Contact Section */}
-        <section id="contact" className="grid md:grid-cols-2 gap-8">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <ProfessionalContactForm locale="en" source="professionals" />
-          </div>
-
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl shadow-lg p-8 text-white">
-            <h2 className="text-2xl font-bold mb-4">Información de Contacto</h2>
-            <p className="mb-8 text-blue-100">Estamos aquí para ayudarte. Contáctanos por cualquiera de estos medios.</p>
-            
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <FiMail className="text-2xl mt-1 flex-shrink-0" />
-                <div>
-                  <div className="font-semibold mb-1">Email</div>
-                  <a href="mailto:info@viventa.com.do" className="text-blue-100 hover:text-white">info@viventa.com.do</a>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <FiPhone className="text-2xl mt-1 flex-shrink-0" />
-                <div>
-                  <div className="font-semibold mb-1">Teléfono</div>
-                  <a href="tel:+18095551234" className="text-blue-100 hover:text-white">+1 (809) 555-1234</a>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <FiMessageSquare className="text-2xl mt-1 flex-shrink-0" />
-                <div>
-                  <div className="font-semibold mb-1">WhatsApp</div>
-                  <a href="https://wa.me/18095551234" target="_blank" rel="noopener noreferrer" className="text-blue-100 hover:text-white">+1 (809) 555-1234</a>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-8 border-t border-blue-400">
-              <p className="text-sm text-blue-100">Horario de atención:</p>
-              <p className="font-semibold">Lunes a Viernes: 9:00 AM - 6:00 PM</p>
-              <p className="font-semibold">Sábados: 9:00 AM - 1:00 PM</p>
-            </div>
-          </div>
+        {/* Contact CTA Section */}
+        <section className="bg-gradient-to-r from-[#004AAD] to-[#00A6A6] rounded-2xl overflow-hidden p-10 md:p-16 text-center text-white">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">¿Listo para unirte a VIVENTA?</h2>
+          <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">Contáctanos hoy y descubre cómo podemos ayudarte a crecer tu negocio inmobiliario.</p>
+          <a href="/contact" className="inline-block px-8 py-4 bg-white text-[#004AAD] rounded-lg font-semibold hover:bg-gray-100 transition-colors text-lg">
+            Contáctanos Ahora
+          </a>
         </section>
-
-        {/* CTA merged with affiliates above to avoid repetition */}
       </div>
     </div>
   )
