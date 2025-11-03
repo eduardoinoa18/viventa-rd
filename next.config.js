@@ -66,6 +66,7 @@ module.exports = withPWA({
 			"connect-src 'self' https://* wss://*",
 			"font-src 'self' https://fonts.gstatic.com data:",
 			"frame-src https://js.stripe.com https://hooks.stripe.com",
+			"manifest-src 'self'",
 		].join('; ')
 		return [
 			{
@@ -76,6 +77,21 @@ module.exports = withPWA({
 					{ key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
 					{ key: 'X-Frame-Options', value: 'SAMEORIGIN' },
 					{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+				],
+			},
+			{
+				source: '/manifest.json',
+				headers: [
+					{ key: 'Content-Type', value: 'application/manifest+json' },
+					{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+				],
+			},
+			{
+				source: '/service-worker.js',
+				headers: [
+					{ key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+					{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+					{ key: 'Service-Worker-Allowed', value: '/' },
 				],
 			},
 		]
