@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+export const dynamic = 'force-dynamic'
+import { useEffect, useMemo, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { FiMessageSquare, FiSearch, FiSend, FiRefreshCw, FiCheckCircle, FiXCircle, FiClock, FiUser, FiBell, FiMail, FiHome, FiUsers, FiCheck, FiX, FiUserPlus } from 'react-icons/fi'
 import ProtectedClient from '@/app/auth/ProtectedClient'
@@ -52,7 +53,7 @@ type SearchUser = {
   photoURL?: string
 }
 
-export default function AdminChatPage() {
+function AdminChatPageContent() {
   const searchParams = useSearchParams()
   const tabParam = searchParams?.get('tab')
   const [mainTab, setMainTab] = useState<'chat' | 'notifications' | 'contacts' | 'inquiries' | 'waitlist'>(
@@ -1029,5 +1030,26 @@ export default function AdminChatPage() {
         </main>
       </div>
     </ProtectedClient>
+  )
+}
+
+export default function AdminChatPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen bg-gray-100">
+        <AdminSidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <AdminTopbar />
+          <main className="flex-1 overflow-y-auto p-6 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00A676] mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading...</p>
+            </div>
+          </main>
+        </div>
+      </div>
+    }>
+      <AdminChatPageContent />
+    </Suspense>
   )
 }
