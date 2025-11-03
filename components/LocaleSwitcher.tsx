@@ -14,11 +14,13 @@ export default function LocaleSwitcher() {
 
   function toggle() {
     const next = lang === 'es' ? 'en' : 'es'
-    localStorage.setItem('viventa_lang', next)
-    setLang(next)
-    // Reload to apply changes
-    if (typeof window !== 'undefined') {
-      window.location.reload()
+    try {
+      localStorage.setItem('viventa_lang', next)
+      setLang(next)
+      // Force reload to apply language changes
+      window.location.href = window.location.href
+    } catch (error) {
+      console.error('Failed to change language:', error)
     }
   }
 

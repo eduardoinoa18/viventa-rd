@@ -50,12 +50,13 @@ export async function middleware(req: NextRequest) {
   }
 
   // ============ GENERAL USER/PRO AUTHENTICATION ============
-  // Server-side protection using Firebase Admin (proxied via API) for critical areas
+  // For most user routes, rely on client-side session checks and cookie-based role
+  // Only use strict Firebase auth for critical pro routes (broker/agent dashboards)
   const needsStrictAuth = (p: string) => {
     // Admin routes already handled above
     if (p.startsWith('/admin')) return false;
-    // Protect dashboard and other authenticated routes
-    return p.startsWith('/dashboard') || p.startsWith('/broker') || p.startsWith('/agent');
+    // Only strict auth for pro dashboards
+    return p.startsWith('/broker') || (p.startsWith('/agent') && p !== '/agent/assistant');
   }
   if (needsStrictAuth(path)) {
     const verified = await initAuth(req);

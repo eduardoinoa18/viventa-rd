@@ -54,6 +54,12 @@ export default function BottomNav() {
       active: pathname?.startsWith('/favorites')
     },
     {
+      name: 'Chat',
+      icon: FiMessageCircle,
+      path: '/messages',
+      active: pathname?.startsWith('/messages')
+    },
+    {
       name: (session.role === 'master_admin' || session.role === 'admin') ? 'Admin' : 'Perfil',
       icon: FiUser,
       path: adminHome,
@@ -84,6 +90,12 @@ export default function BottomNav() {
       icon: FiUser,
       path: '/agents',
       active: pathname?.startsWith('/agents')
+    },
+    {
+      name: 'Chat',
+      icon: FiMessageCircle,
+      path: '/messages',
+      active: pathname?.startsWith('/messages')
     },
     {
       name: 'Login',

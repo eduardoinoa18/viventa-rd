@@ -5,7 +5,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import BottomNav from '@/components/BottomNav'
 import { getSession } from '@/lib/authSession'
-import { FiSend, FiSearch, FiMessageSquare, FiUser, FiArrowLeft } from 'react-icons/fi'
+import { FiSend, FiSearch, FiMessageSquare, FiUser, FiArrowLeft, FiHelpCircle, FiUserPlus, FiPlus, FiX } from 'react-icons/fi'
 import ChatQuitModal from '@/components/ChatQuitModal'
 
 export default function MessagesPage() {
@@ -19,6 +19,10 @@ export default function MessagesPage() {
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [search, setSearch] = useState('')
   const [quitOpen, setQuitOpen] = useState(false)
+  const [showNewChatModal, setShowNewChatModal] = useState(false)
+  const [chatType, setChatType] = useState<'support' | 'agent' | null>(null)
+  const [newChatMessage, setNewChatMessage] = useState('')
+  const [newChatSubject, setNewChatSubject] = useState('')
 
   useEffect(() => {
     if (!session) {
@@ -77,6 +81,53 @@ export default function MessagesPage() {
     }
   }
 
+  async function createNewChat() {
+    if (!chatType || !newChatMessage.trim()) return
+    
+    try {
+      if (chatType === 'support') {
+        // Create support ticket
+        const res = await fetch('/api/support/tickets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subject: newChatSubject || 'Solicitud de ayuda',
+            message: newChatMessage,
+            priority: 'normal'
+          })
+        })
+        const data = await res.json()
+        if (data.ok && data.conversationId) {
+          setActiveId(data.conversationId)
+          setShowNewChatModal(false)
+          setNewChatMessage('')
+          setNewChatSubject('')
+          loadConversations()
+        }
+      } else if (chatType === 'agent') {
+        // Create agent chat request (lead)
+        const res = await fetch('/api/leads/chat-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: newChatMessage,
+            subject: newChatSubject || 'Consulta sobre propiedades'
+          })
+        })
+        const data = await res.json()
+        if (data.ok && data.conversationId) {
+          setActiveId(data.conversationId)
+          setShowNewChatModal(false)
+          setNewChatMessage('')
+          setNewChatSubject('')
+          loadConversations()
+        }
+      }
+    } catch (error) {
+      console.error('Error creating chat:', error)
+    }
+  }
+
   // Simple detector for user-agent conversation pattern
   const isAgentConversation = useMemo(() => {
     return (activeId || '').startsWith('user_agent:')
@@ -98,24 +149,24 @@ export default function MessagesPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
       {!session ? (
-        <main className="flex-1 flex items-center justify-center px-4 py-20">
-          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-[#00A676] to-[#00A6A6] rounded-full flex items-center justify-center mx-auto mb-6">
+        <main className="flex-1 flex items-center justify-center px-4 py-20 bg-gradient-to-br from-viventa-sand/30 via-white to-viventa-turquoise/10">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border-2 border-viventa-turquoise/20">
+            <div className="w-20 h-20 bg-gradient-to-br from-viventa-turquoise to-viventa-ocean rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
               <FiMessageSquare className="text-4xl text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-[#0B2545] mb-4">Mensajes</h2>
+            <h2 className="text-3xl font-bold text-viventa-navy mb-4">Mensajes</h2>
             <p className="text-gray-600 mb-8">
-              Inicia sesión para ver y enviar mensajes a otros usuarios de la plataforma
+              Inicia sesión para chatear con agentes, recibir soporte y gestionar tus conversaciones
             </p>
             <button
               onClick={() => router.push('/login')}
-              className="w-full px-8 py-4 bg-gradient-to-r from-[#00A676] to-[#00A6A6] text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              className="w-full px-8 py-4 bg-gradient-to-r from-viventa-turquoise to-viventa-ocean text-white rounded-xl font-semibold hover:shadow-lg transition-all"
             >
               Iniciar Sesión
             </button>
             <button
               onClick={() => router.push('/signup')}
-              className="w-full mt-3 px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all"
+              className="w-full mt-3 px-8 py-4 border-2 border-viventa-ocean text-viventa-ocean rounded-xl font-semibold hover:bg-viventa-sand/30 transition-all"
             >
               Crear Cuenta
             </button>
@@ -125,9 +176,18 @@ export default function MessagesPage() {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 grid md:grid-cols-3 gap-4">
         {/* Conversations List */}
         <div className="md:col-span-1 bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b flex items-center gap-2">
-            <FiMessageSquare />
-            <h2 className="font-bold text-gray-800">Mensajes</h2>
+          <div className="p-4 border-b flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2">
+              <FiMessageSquare />
+              <h2 className="font-bold text-gray-800">Mensajes</h2>
+            </div>
+            <button
+              onClick={() => setShowNewChatModal(true)}
+              className="p-2 rounded-lg bg-gradient-to-r from-viventa-turquoise to-viventa-teal text-white hover:shadow-lg transition-all"
+              aria-label="Nuevo chat"
+            >
+              <FiPlus className="text-lg" />
+            </button>
           </div>
           <div className="p-3 border-b">
             <div className="flex items-center gap-2 border rounded px-2">
@@ -142,13 +202,13 @@ export default function MessagesPage() {
               <div className="p-6 text-center text-gray-500">No tienes conversaciones</div>
             ) : (
               filteredConvos.map((c: any) => (
-                <button key={c.id} onClick={()=>setActiveId(c.id)} className={`w-full text-left p-4 border-b hover:bg-gray-50 ${activeId === c.id ? 'bg-blue-50' : ''}`}>
+                <button key={c.id} onClick={()=>setActiveId(c.id)} className={`w-full text-left p-4 border-b hover:bg-viventa-sand/30 transition-colors ${activeId === c.id ? 'bg-viventa-turquoise/10 border-l-4 border-l-viventa-turquoise' : ''}`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0B2545] to-[#00A676] text-white flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-viventa-turquoise to-viventa-ocean text-white flex items-center justify-center shadow-md">
                       <FiUser />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-800 truncate">{c.title || 'Conversación'}</div>
+                      <div className="font-semibold text-viventa-navy truncate">{c.title || 'Conversación'}</div>
                       <div className="text-sm text-gray-600 truncate">{c.lastMessage || 'Sin mensajes'}</div>
                     </div>
                   </div>
@@ -166,14 +226,14 @@ export default function MessagesPage() {
             </div>
           ) : (
             <>
-              <div className="p-4 border-b flex items-center gap-3">
-                <button className="md:hidden p-2 rounded hover:bg-gray-100" onClick={()=>setActiveId(null)}>
-                  <FiArrowLeft />
+              <div className="p-4 border-b flex items-center gap-3 bg-gradient-to-r from-white to-viventa-sand/20">
+                <button className="md:hidden p-2 rounded hover:bg-viventa-sand transition-colors" onClick={()=>setActiveId(null)}>
+                  <FiArrowLeft className="text-viventa-ocean" />
                 </button>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0B2545] to-[#00A676] text-white flex items-center justify-center"><FiUser /></div>
-                <div className="font-semibold text-gray-800 flex-1">Chat</div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-viventa-turquoise to-viventa-ocean text-white flex items-center justify-center shadow-md"><FiUser /></div>
+                <div className="font-semibold text-viventa-navy flex-1">Chat</div>
                 {isAgentConversation && (
-                  <button onClick={()=>setQuitOpen(true)} className="text-sm px-3 py-1.5 rounded border text-red-600 border-red-300 hover:bg-red-50">Dejar a mi agente</button>
+                  <button onClick={()=>setQuitOpen(true)} className="text-sm px-3 py-1.5 rounded border-2 text-viventa-sunset border-viventa-sunset hover:bg-viventa-sunset/10 transition-colors">Dejar a mi agente</button>
                 )}
               </div>
 
@@ -186,24 +246,24 @@ export default function MessagesPage() {
                   messages.map(m => {
                     const mine = m.senderId === session?.uid
                     return (
-                      <div key={m.id} className={`max-w-[80%] rounded-lg px-3 py-2 ${mine ? 'ml-auto bg-[#00A676] text-white' : 'bg-gray-100 text-gray-800'}`}>
+                      <div key={m.id} className={`max-w-[80%] rounded-lg px-4 py-3 shadow-sm ${mine ? 'ml-auto bg-gradient-to-r from-viventa-turquoise to-viventa-ocean text-white' : 'bg-viventa-sand text-viventa-navy'}`}>
                         <div className="whitespace-pre-wrap text-sm">{m.text ?? m.content}</div>
-                        <div className={`text-[10px] mt-1 ${mine ? 'text-white/80' : 'text-gray-500'}`}>{new Date(m.createdAt?.toDate?.() || m.createdAt).toLocaleString()}</div>
+                        <div className={`text-[10px] mt-1 ${mine ? 'text-white/80' : 'text-gray-600'}`}>{new Date(m.createdAt?.toDate?.() || m.createdAt).toLocaleString()}</div>
                       </div>
                     )
                   })
                 )}
               </div>
 
-              <div className="p-3 border-t flex items-center gap-2">
+              <div className="p-3 border-t flex items-center gap-2 bg-gray-50">
                 <input
                   value={text}
                   onChange={e=>setText(e.target.value)}
-                  onKeyDown={(e:any)=>{ if(e.key==='Enter') sendMessage() }}
-                  placeholder="Escribe un mensaje"
-                  className="flex-1 border rounded px-3 py-2 outline-none"
+                  onKeyDown={(e:any)=>{ if(e.key==='Enter' && !e.shiftKey) sendMessage() }}
+                  placeholder="Escribe un mensaje..."
+                  className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-viventa-turquoise focus:border-transparent transition-all"
                 />
-                <button onClick={sendMessage} className="px-4 py-2 bg-[#0B2545] text-white rounded-lg font-semibold hover:opacity-90">
+                <button onClick={sendMessage} disabled={!text.trim()} className="px-5 py-3 bg-gradient-to-r from-viventa-turquoise to-viventa-ocean text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                   <FiSend />
                 </button>
               </div>
@@ -215,7 +275,121 @@ export default function MessagesPage() {
       <Footer />
       <BottomNav />
     </div>
+    
     <ChatQuitModal open={quitOpen} onClose={()=>setQuitOpen(false)} agentId={agentIdFromConv} />
+    
+    {/* New Chat Modal */}
+    {showNewChatModal && (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
+          <div className="p-6 border-b flex items-center justify-between bg-gradient-to-r from-viventa-turquoise to-viventa-ocean text-white">
+            <h3 className="text-xl font-bold">Nuevo Chat</h3>
+            <button onClick={() => setShowNewChatModal(false)} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+              <FiX className="text-xl" />
+            </button>
+          </div>
+          
+          {!chatType ? (
+            <div className="p-6 space-y-4">
+              <p className="text-gray-600 mb-6">¿Cómo podemos ayudarte?</p>
+              
+              <button
+                onClick={() => setChatType('agent')}
+                className="w-full p-6 border-2 border-viventa-ocean rounded-xl hover:bg-viventa-sand/30 transition-all text-left group"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-viventa-turquoise to-viventa-teal flex items-center justify-center text-white flex-shrink-0">
+                    <FiUserPlus className="text-xl" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-viventa-navy text-lg mb-1">Hablar con un Agente</h4>
+                    <p className="text-sm text-gray-600">Conecta con un agente inmobiliario para consultas sobre propiedades, visitas o asesoría personalizada.</p>
+                  </div>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setChatType('support')}
+                className="w-full p-6 border-2 border-viventa-sunset rounded-xl hover:bg-viventa-sand/30 transition-all text-left group"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-viventa-sunset to-viventa-coral flex items-center justify-center text-white flex-shrink-0">
+                    <FiHelpCircle className="text-xl" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-viventa-navy text-lg mb-1">Soporte Técnico</h4>
+                    <p className="text-sm text-gray-600">Crea un ticket de soporte para problemas con la plataforma, cuenta o cualquier asistencia técnica.</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          ) : (
+            <div className="p-6 space-y-4 max-h-[calc(90vh-80px)] overflow-y-auto">
+              <button
+                onClick={() => setChatType(null)}
+                className="flex items-center gap-2 text-viventa-ocean hover:text-viventa-teal transition-colors mb-2"
+              >
+                <FiArrowLeft />
+                <span className="text-sm">Volver</span>
+              </button>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {chatType === 'agent' ? 'Asunto de la consulta' : 'Asunto del ticket'}
+                </label>
+                <input
+                  type="text"
+                  value={newChatSubject}
+                  onChange={(e) => setNewChatSubject(e.target.value)}
+                  placeholder={chatType === 'agent' ? 'Ej: Consulta sobre apartamento en Punta Cana' : 'Ej: Problema con mi cuenta'}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-viventa-turquoise focus:border-transparent transition-all"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {chatType === 'agent' ? 'Tu mensaje' : 'Describe el problema'}
+                </label>
+                <textarea
+                  value={newChatMessage}
+                  onChange={(e) => setNewChatMessage(e.target.value)}
+                  placeholder={chatType === 'agent' 
+                    ? 'Cuéntale al agente qué estás buscando...' 
+                    : 'Describe el problema con el mayor detalle posible...'
+                  }
+                  rows={6}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-viventa-turquoise focus:border-transparent transition-all resize-none"
+                />
+              </div>
+              
+              <div className="bg-viventa-sand/30 rounded-lg p-4">
+                <p className="text-sm text-gray-600">
+                  {chatType === 'agent' ? (
+                    <>
+                      <strong>Nota:</strong> Un agente disponible responderá tu consulta lo antes posible. 
+                      Recibirás una notificación cuando te respondan.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Nota:</strong> Nuestro equipo de soporte revisará tu ticket y te responderá 
+                      en un plazo de 24-48 horas.
+                    </>
+                  )}
+                </p>
+              </div>
+              
+              <button
+                onClick={createNewChat}
+                disabled={!newChatMessage.trim()}
+                className="w-full px-6 py-4 bg-gradient-to-r from-viventa-turquoise to-viventa-ocean text-white rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {chatType === 'agent' ? 'Solicitar Agente' : 'Crear Ticket de Soporte'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
     </>
   )
 }
