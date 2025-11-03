@@ -72,7 +72,7 @@ type SettingsData = {
 }
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<'general' | 'email' | 'security' | 'integrations' | 'notifications' | 'advanced' | 'status'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'email' | 'security' | 'integrations' | 'notifications' | 'gamification' | 'advanced' | 'status'>('general')
   const [settings, setSettings] = useState<SettingsData>({
     siteTitle: 'VIVENTA',
     siteDescription: 'Tu Espacio, Tu Futuro',
@@ -190,6 +190,7 @@ export default function AdminSettingsPage() {
     { id: 'security', label: 'Security', icon: <FiShield /> },
     { id: 'integrations', label: 'Integrations', icon: <FiLink /> },
     { id: 'notifications', label: 'Notifications', icon: <FiBell /> },
+    { id: 'gamification', label: 'Gamification', icon: <FiZap /> },
     { id: 'advanced', label: 'Advanced', icon: <FiZap /> },
     { id: 'status', label: 'System Status', icon: <FiServer /> },
   ]
@@ -819,6 +820,143 @@ export default function AdminSettingsPage() {
                           }`}
                         />
                       </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Gamification */}
+            {activeTab === 'gamification' && (
+              <div className="space-y-6">
+                {/* Coming Soon Banner */}
+                <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-8 text-white text-center shadow-lg">
+                  <FiZap className="text-6xl mx-auto mb-4 opacity-90" />
+                  <h2 className="text-3xl font-bold mb-2">Gamification System</h2>
+                  <p className="text-lg opacity-90">Coming Soon</p>
+                  <p className="text-sm opacity-75 mt-2">Advanced points, badges, levels & rewards system in development</p>
+                </div>
+
+                {/* Preview: Points System */}
+                <div className="bg-white rounded-lg shadow p-6 opacity-75">
+                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545] flex items-center gap-2">
+                    <FiDollarSign /> Points System
+                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-normal">Preview</span>
+                  </h2>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="p-4 border border-gray-200 rounded-lg">
+                      <div className="font-medium mb-2">Action Rewards</div>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div className="flex justify-between"><span>Profile completion</span><span>+100 pts</span></div>
+                        <div className="flex justify-between"><span>Property view</span><span>+5 pts</span></div>
+                        <div className="flex justify-between"><span>Save favorite</span><span>+10 pts</span></div>
+                        <div className="flex justify-between"><span>Property inquiry</span><span>+50 pts</span></div>
+                        <div className="flex justify-between"><span>Property listing</span><span>+200 pts</span></div>
+                        <div className="flex justify-between"><span>Social post</span><span>+25 pts</span></div>
+                        <div className="flex justify-between"><span>Referral signup</span><span>+500 pts</span></div>
+                      </div>
+                    </div>
+                    <div className="p-4 border border-gray-200 rounded-lg">
+                      <div className="font-medium mb-2">Point Redemption</div>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div className="flex justify-between"><span>Premium listing boost</span><span>1,000 pts</span></div>
+                        <div className="flex justify-between"><span>Featured badge (7 days)</span><span>2,500 pts</span></div>
+                        <div className="flex justify-between"><span>Profile verification</span><span>500 pts</span></div>
+                        <div className="flex justify-between"><span>Analytics access (30d)</span><span>3,000 pts</span></div>
+                        <div className="flex justify-between"><span>Gift card $10</span><span>5,000 pts</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview: Badges */}
+                <div className="bg-white rounded-lg shadow p-6 opacity-75">
+                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545] flex items-center gap-2">
+                    <FiImage /> Achievement Badges
+                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-normal">Preview</span>
+                  </h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg text-center border-2 border-yellow-300">
+                      <div className="text-3xl mb-2">🏆</div>
+                      <div className="font-semibold text-sm">First Listing</div>
+                      <div className="text-xs text-gray-600">Post your first property</div>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg text-center border-2 border-blue-300">
+                      <div className="text-3xl mb-2">⭐</div>
+                      <div className="font-semibold text-sm">Power User</div>
+                      <div className="text-xs text-gray-600">30 days active streak</div>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg text-center border-2 border-green-300">
+                      <div className="text-3xl mb-2">💎</div>
+                      <div className="font-semibold text-sm">Verified Pro</div>
+                      <div className="text-xs text-gray-600">Complete verification</div>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg text-center border-2 border-purple-300">
+                      <div className="text-3xl mb-2">🚀</div>
+                      <div className="font-semibold text-sm">Top Referrer</div>
+                      <div className="text-xs text-gray-600">Refer 10+ users</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview: Leaderboards */}
+                <div className="bg-white rounded-lg shadow p-6 opacity-75">
+                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545] flex items-center gap-2">
+                    <FiZap /> Leaderboards & Levels
+                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-normal">Preview</span>
+                  </h2>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="font-medium mb-3">User Levels</div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span className="text-sm">🥉 Bronze (0-999 pts)</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span className="text-sm">🥈 Silver (1,000-4,999 pts)</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span className="text-sm">🥇 Gold (5,000-14,999 pts)</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-gradient-to-r from-purple-100 to-blue-100 rounded">
+                          <span className="text-sm font-semibold">💎 Platinum (15,000+ pts)</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-medium mb-3">Leaderboard Types</div>
+                      <div className="space-y-2 text-sm text-gray-700">
+                        <div className="p-2 bg-blue-50 rounded">📊 Most Active Users (Weekly)</div>
+                        <div className="p-2 bg-green-50 rounded">🏠 Top Listers (Monthly)</div>
+                        <div className="p-2 bg-purple-50 rounded">💬 Social Champions (All-time)</div>
+                        <div className="p-2 bg-yellow-50 rounded">🎯 Referral Masters (All-time)</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview: Metrics Dashboard */}
+                <div className="bg-white rounded-lg shadow p-6 opacity-75">
+                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545] flex items-center gap-2">
+                    <FiServer /> Gamification Analytics
+                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-normal">Preview</span>
+                  </h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">-</div>
+                      <div className="text-sm text-gray-600">Total Points Awarded</div>
+                    </div>
+                    <div className="p-4 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">-</div>
+                      <div className="text-sm text-gray-600">Active Players</div>
+                    </div>
+                    <div className="p-4 bg-purple-50 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">-</div>
+                      <div className="text-sm text-gray-600">Badges Earned</div>
+                    </div>
+                    <div className="p-4 bg-yellow-50 rounded-lg">
+                      <div className="text-2xl font-bold text-yellow-600">-</div>
+                      <div className="text-sm text-gray-600">Rewards Redeemed</div>
                     </div>
                   </div>
                 </div>

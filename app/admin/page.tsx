@@ -102,6 +102,9 @@ export default function AdminPage() {
               <Link href="/admin/properties" className="px-6 py-3 bg-[#0B2545] text-white rounded-lg font-semibold hover:bg-[#0a1f3a] transition-colors inline-flex items-center gap-2">
                 <FiHome /> Review Listings
               </Link>
+              <Link href="/social" className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors inline-flex items-center gap-2">
+                <FiUsers /> Social Network
+              </Link>
               <Link href="/admin/settings" className="px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors">
                 System Settings
               </Link>
