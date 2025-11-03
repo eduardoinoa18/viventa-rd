@@ -114,30 +114,31 @@ export default function HomePage() {
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 justify-center max-w-4xl mx-auto">
               <a 
                 href="/search" 
-                className="px-8 py-4 bg-[#00A6A6] hover:bg-[#008c8c] text-white font-bold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center gap-2"
+                className="px-6 sm:px-8 py-3 sm:py-4 bg-[#00A6A6] hover:bg-[#008c8c] text-white font-bold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center gap-2 text-sm sm:text-base min-h-[48px]"
               >
-                <FiSearch className="text-xl" /> Buscar Propiedades
+                <FiSearch className="text-lg sm:text-xl flex-shrink-0" /> 
+                <span>Buscar Propiedades</span>
               </a>
               <a 
                 href="/agents" 
-                className="px-8 py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold rounded-lg border-2 border-white/30 transition-all duration-300 inline-flex items-center gap-2"
+                className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold rounded-lg border-2 border-white/30 transition-all duration-300 inline-flex items-center justify-center gap-2 text-sm sm:text-base min-h-[48px]"
               >
-                <FiUsers className="text-xl" /> Conoce a nuestros Agentes
+                <FiUsers className="text-lg sm:text-xl flex-shrink-0" /> 
+                <span>Nuestros Agentes</span>
               </a>
               <a 
                 href="/social" 
-                className="px-8 py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold rounded-lg border-2 border-white/30 transition-all duration-300 inline-flex items-center gap-2"
+                className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold rounded-lg border-2 border-white/30 transition-all duration-300 inline-flex items-center justify-center gap-2 text-sm sm:text-base min-h-[48px]"
                 aria-label="Social (Próximamente)"
               >
-                <span className="relative">
+                <span className="relative flex-shrink-0">
                   <span className="absolute -top-2 -right-3 text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">Soon</span>
-                  {/* Using the same search icon for consistency; could swap for a social icon */}
-                  <FiTrendingUp className="text-xl" />
+                  <FiTrendingUp className="text-lg sm:text-xl" />
                 </span>
-                Social
+                <span>Social</span>
               </a>
             </div>
           </div>

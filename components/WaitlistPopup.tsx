@@ -28,8 +28,13 @@ export default function WaitlistPopup() {
 
     // Exit intent detection
     const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 0 && !dismissed && !alreadySubmitted) {
-        setIsOpen(true)
+      if (e.clientY <= 0) {
+        // Re-check localStorage every time to ensure we respect user's choice
+        const currentDismissed = localStorage.getItem('waitlist_dismissed')
+        const currentSubmitted = localStorage.getItem('waitlist_submitted')
+        if (!currentDismissed && !currentSubmitted) {
+          setIsOpen(true)
+        }
       }
     }
 
@@ -37,7 +42,8 @@ export default function WaitlistPopup() {
 
     // Listen for manual trigger from CTA buttons
     const handleManualTrigger = () => {
-      if (!alreadySubmitted) {
+      const currentSubmitted = localStorage.getItem('waitlist_submitted')
+      if (!currentSubmitted) {
         setIsOpen(true)
       }
     }
@@ -126,12 +132,12 @@ export default function WaitlistPopup() {
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-4 animate-fade-in pt-20 md:pt-4"
       onClick={handleBackdropClick}
     >
       <div 
         data-waitlist-modal
-        className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[95vh] overflow-y-auto relative animate-slide-up"
+        className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] md:max-h-[90vh] overflow-y-auto relative animate-slide-up"
       >
         {/* Close Button - Only show after submission or with confirmation */}
         {!submitted && (

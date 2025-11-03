@@ -15,6 +15,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Database not available' }, { status: 500 })
     }
 
+    // Save waitlist entry to database (using waitlist_social collection for admin portal compatibility)
+    await adminDb.collection('waitlist_social').add({
+      name,
+      email,
+      phone: phone || '',
+      interest,
+      createdAt: Timestamp.now(),
+      status: 'pending',
+      source: 'popup',
+      readBy: []
+    })
+
     // Create admin notification
     await adminDb.collection('notifications').add({
       type: 'waitlist_submission',
@@ -37,7 +49,9 @@ export async function POST(req: NextRequest) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: process.env.ADMIN_EMAIL || 'admin@viventa.com',
+          to: process.env.ADMIN_EMAIL || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com',
+          from: 'noreply@viventa.com',
+          replyTo: email,
           subject: `🎯 New Waitlist Signup - ${name}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -94,6 +108,8 @@ export async function POST(req: NextRequest) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: email,
+          from: 'noreply@viventa.com',
+          replyTo: process.env.ADMIN_EMAIL || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com',
           subject: '🎉 Welcome to the VIVENTA Waitlist!',
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
