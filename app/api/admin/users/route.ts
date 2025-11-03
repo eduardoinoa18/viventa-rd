@@ -37,9 +37,19 @@ export async function GET(req: NextRequest) {
       const roleFilter = searchParams.get('role')
       let ref: any = adminDb.collection('users')
       if (roleFilter) ref = ref.where('role', '==', roleFilter)
-      const snap = await ref.orderBy('createdAt', 'desc').get()
-  const users = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
-      return NextResponse.json({ ok: true, data: users })
+      
+      // Try with orderBy, fall back to unordered if index doesn't exist
+      try {
+        const snap = await ref.orderBy('createdAt', 'desc').get()
+        const users = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+        return NextResponse.json({ ok: true, data: users })
+      } catch (orderError: any) {
+        // If orderBy fails (missing index), just get all docs
+        console.warn('OrderBy failed, fetching without ordering:', orderError.message)
+        const snap = await ref.get()
+        const users = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+        return NextResponse.json({ ok: true, data: users })
+      }
     }
 
     const db = initFirebase()

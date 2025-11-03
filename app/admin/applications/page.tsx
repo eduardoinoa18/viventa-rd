@@ -33,8 +33,13 @@ function ApplicationsPageContent() {
       const snap = await getDocs(q)
       const apps = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
       setApplications(apps)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading applications:', err)
+      if (err?.message?.includes('Missing or insufficient permissions')) {
+        alert('⚠️ Firestore permissions not configured. Please deploy firestore.rules via Firebase Console.')
+      } else if (err?.message?.includes('index')) {
+        alert('⚠️ Missing Firestore index. Click the link in console to create it.')
+      }
     } finally {
       setLoading(false)
     }
