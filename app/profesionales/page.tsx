@@ -145,12 +145,9 @@ export default function ProfesionalesLanding() {
             <div className="grid md:grid-cols-3 gap-6 md:gap-8">
               {/* Professional Story 1 */}
               <div className="bg-gradient-to-br from-viventa-sand/50 to-white rounded-2xl p-6 shadow-lg border-2 border-viventa-turquoise/20 hover:border-viventa-turquoise/40 transition-all">
-                <div className="flex items-center gap-3 mb-4">
-                  <img src="/agent1.jpg" alt="Roberto Sánchez" className="w-12 h-12 rounded-full object-cover border-2 border-viventa-turquoise" onError={(e) => { e.currentTarget.src = '/agent-placeholder.jpg' }} />
-                  <div>
-                    <h4 className="font-bold text-viventa-navy">Roberto Sánchez</h4>
-                    <p className="text-sm text-gray-600">Agente Top • Santo Domingo</p>
-                  </div>
+                <div className="mb-3">
+                  <h4 className="font-bold text-viventa-navy">Roberto Sánchez</h4>
+                  <p className="text-sm text-gray-600">Agente Top • Santo Domingo</p>
                 </div>
                 <div className="flex mb-3">
                   {[...Array(5)].map((_, i) => (
@@ -164,12 +161,9 @@ export default function ProfesionalesLanding() {
 
               {/* Professional Story 2 */}
               <div className="bg-gradient-to-br from-viventa-sand/50 to-white rounded-2xl p-6 shadow-lg border-2 border-viventa-ocean/20 hover:border-viventa-ocean/40 transition-all">
-                <div className="flex items-center gap-3 mb-4">
-                  <img src="/agent2.jpg" alt="Patricia Jiménez" className="w-12 h-12 rounded-full object-cover border-2 border-viventa-ocean" onError={(e) => { e.currentTarget.src = '/agent-placeholder.jpg' }} />
-                  <div>
-                    <h4 className="font-bold text-viventa-navy">Patricia Jiménez</h4>
-                    <p className="text-sm text-gray-600">Broker • Punta Cana</p>
-                  </div>
+                <div className="mb-3">
+                  <h4 className="font-bold text-viventa-navy">Patricia Jiménez</h4>
+                  <p className="text-sm text-gray-600">Broker • Punta Cana</p>
                 </div>
                 <div className="flex mb-3">
                   {[...Array(5)].map((_, i) => (
@@ -183,12 +177,9 @@ export default function ProfesionalesLanding() {
 
               {/* Professional Story 3 */}
               <div className="bg-gradient-to-br from-viventa-sand/50 to-white rounded-2xl p-6 shadow-lg border-2 border-viventa-palm/20 hover:border-viventa-palm/40 transition-all">
-                <div className="flex items-center gap-3 mb-4">
-                  <img src="/agent3.jpg" alt="Miguel Fernández" className="w-12 h-12 rounded-full object-cover border-2 border-viventa-palm" onError={(e) => { e.currentTarget.src = '/agent-placeholder.jpg' }} />
-                  <div>
-                    <h4 className="font-bold text-viventa-navy">Miguel Fernández</h4>
-                    <p className="text-sm text-gray-600">Desarrollador • Santiago</p>
-                  </div>
+                <div className="mb-3">
+                  <h4 className="font-bold text-viventa-navy">Miguel Fernández</h4>
+                  <p className="text-sm text-gray-600">Desarrollador • Santiago</p>
                 </div>
                 <div className="flex mb-3">
                   {[...Array(5)].map((_, i) => (
@@ -214,18 +205,10 @@ export default function ProfesionalesLanding() {
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center mb-8">
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg">
-                <span className="font-bold text-xl text-gray-700">RE/MAX</span>
-              </div>
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg">
-                <span className="font-bold text-xl text-gray-700">Century 21</span>
-              </div>
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg">
-                <span className="font-bold text-xl text-gray-700">Coldwell Banker</span>
-              </div>
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg">
-                <span className="font-bold text-xl text-gray-700">Sotheby's</span>
-              </div>
+              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">RE/MAX RD</span></div>
+              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Century 21 Dominicana</span></div>
+              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Keller Williams RD</span></div>
+              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Santo Domingo Sotheby's</span></div>
             </div>
             
             <div className="text-center">
@@ -240,21 +223,7 @@ export default function ProfesionalesLanding() {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="bg-gradient-to-r from-viventa-turquoise to-viventa-teal py-16 px-4">
-          <div className="max-w-4xl mx-auto text-center text-white">
-            <h2 className="text-3xl font-bold mb-4">¿Listo para llevar tu negocio al siguiente nivel?</h2>
-            <p className="text-lg mb-8">Únete a los profesionales inmobiliarios que ya confían en VIVENTA</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/apply" className="px-8 py-4 bg-white text-viventa-ocean font-bold rounded-xl shadow-lg hover:scale-105 transition-all">
-                Solicitar Acceso Ahora
-              </a>
-              <a href="/contact" className="px-8 py-4 bg-transparent border-2 border-white text-white font-bold rounded-xl hover:bg-white/10 transition-all">
-                Hablar con un Asesor
-              </a>
-            </div>
-          </div>
-        </section>
+        {/* CTA merged into affiliates section above to avoid repetition */}
       </main>
       <Footer />
     </div>

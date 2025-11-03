@@ -41,12 +41,6 @@ export default function BottomNav() {
       active: pathname?.startsWith('/search')
     },
     {
-      name: 'Agentes',
-      icon: FiUser,
-      path: '/agents',
-      active: pathname?.startsWith('/agents')
-    },
-    {
       name: 'Social',
       icon: FiStar,
       path: '/social',
@@ -90,12 +84,6 @@ export default function BottomNav() {
       path: '/social',
       active: pathname?.startsWith('/social'),
       comingSoon: true
-    },
-    {
-      name: 'Agentes',
-      icon: FiUser,
-      path: '/agents',
-      active: pathname?.startsWith('/agents')
     },
     {
       name: 'Chat',

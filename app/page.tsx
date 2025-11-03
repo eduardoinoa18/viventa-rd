@@ -305,12 +305,9 @@ export default function HomePage() {
             <div className="grid md:grid-cols-3 gap-6 md:gap-8">
               {/* Success Story 1 */}
               <div className="bg-gradient-to-br from-viventa-sand/50 to-white rounded-2xl p-6 shadow-lg border-2 border-viventa-turquoise/20 hover:border-viventa-turquoise/40 transition-all">
-                <div className="flex items-center gap-3 mb-4">
-                  <img src="/user-avatar-1.jpg" alt="María Torres" className="w-12 h-12 rounded-full object-cover border-2 border-viventa-turquoise" onError={(e) => { e.currentTarget.src = '/agent-placeholder.jpg' }} />
-                  <div>
-                    <h4 className="font-bold text-viventa-navy">María Torres</h4>
-                    <p className="text-sm text-gray-600">Santo Domingo</p>
-                  </div>
+                <div className="mb-3">
+                  <h4 className="font-bold text-viventa-navy">María Torres</h4>
+                  <p className="text-sm text-gray-600">Santo Domingo</p>
                 </div>
                 <div className="flex mb-3">
                   {[...Array(5)].map((_, i) => (
@@ -324,12 +321,9 @@ export default function HomePage() {
 
               {/* Success Story 2 */}
               <div className="bg-gradient-to-br from-viventa-sand/50 to-white rounded-2xl p-6 shadow-lg border-2 border-viventa-ocean/20 hover:border-viventa-ocean/40 transition-all">
-                <div className="flex items-center gap-3 mb-4">
-                  <img src="/user-avatar-2.jpg" alt="Carlos Méndez" className="w-12 h-12 rounded-full object-cover border-2 border-viventa-ocean" onError={(e) => { e.currentTarget.src = '/agent-placeholder.jpg' }} />
-                  <div>
-                    <h4 className="font-bold text-viventa-navy">Carlos Méndez</h4>
-                    <p className="text-sm text-gray-600">Punta Cana</p>
-                  </div>
+                <div className="mb-3">
+                  <h4 className="font-bold text-viventa-navy">Carlos Méndez</h4>
+                  <p className="text-sm text-gray-600">Punta Cana</p>
                 </div>
                 <div className="flex mb-3">
                   {[...Array(5)].map((_, i) => (
@@ -343,12 +337,9 @@ export default function HomePage() {
 
               {/* Success Story 3 */}
               <div className="bg-gradient-to-br from-viventa-sand/50 to-white rounded-2xl p-6 shadow-lg border-2 border-viventa-palm/20 hover:border-viventa-palm/40 transition-all">
-                <div className="flex items-center gap-3 mb-4">
-                  <img src="/user-avatar-3.jpg" alt="Ana Rodríguez" className="w-12 h-12 rounded-full object-cover border-2 border-viventa-palm" onError={(e) => { e.currentTarget.src = '/agent-placeholder.jpg' }} />
-                  <div>
-                    <h4 className="font-bold text-viventa-navy">Ana Rodríguez</h4>
-                    <p className="text-sm text-gray-600">Santiago</p>
-                  </div>
+                <div className="mb-3">
+                  <h4 className="font-bold text-viventa-navy">Ana Rodríguez</h4>
+                  <p className="text-sm text-gray-600">Santiago</p>
                 </div>
                 <div className="flex mb-3">
                   {[...Array(5)].map((_, i) => (
@@ -363,48 +354,29 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Affiliated Companies */}
+        {/* Affiliated Companies + CTA */}
         <section className="bg-gradient-to-br from-viventa-navy to-viventa-ocean py-12 md:py-16">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-8">
               <h2 className="text-2xl md:text-3xl font-bold mb-3 text-white">Empresas Afiliadas</h2>
               <p className="text-viventa-sand/90 max-w-2xl mx-auto">
-                Trabajamos con las mejores compañías inmobiliarias de República Dominicana
+                Trabajamos con brókers líderes en República Dominicana
               </p>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center">
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg">
-                <span className="font-bold text-xl text-gray-700">RE/MAX</span>
-              </div>
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg">
-                <span className="font-bold text-xl text-gray-700">Century 21</span>
-              </div>
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg">
-                <span className="font-bold text-xl text-gray-700">Coldwell Banker</span>
-              </div>
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg">
-                <span className="font-bold text-xl text-gray-700">Sotheby's</span>
-              </div>
+              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">RE/MAX RD</span></div>
+              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Century 21 Dominicana</span></div>
+              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Keller Williams RD</span></div>
+              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Santo Domingo Sotheby's</span></div>
             </div>
             
-            <div className="text-center mt-8">
-              <p className="text-viventa-sand mb-4">¿Tu empresa quiere unirse a VIVENTA?</p>
-              <a 
-                href="/contact" 
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-viventa-ocean rounded-xl font-bold hover:bg-viventa-sand transition-all shadow-lg"
-              >
-                Contáctanos →
-              </a>
+            <div className="text-center mt-10">
+              <h3 className="text-xl font-semibold text-white mb-2">¿Eres agente, bróker o desarrollador?</h3>
+              <p className="text-viventa-sand/90 mb-4">Únete a VIVENTA Pro y potencia tu negocio inmobiliario.</p>
+              <a href="/profesionales" className="inline-block px-8 py-3 bg-white text-viventa-ocean font-bold rounded-xl shadow-lg hover:scale-105 transition-all">Descubre VIVENTA para Profesionales</a>
             </div>
           </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="bg-gradient-to-r from-viventa-turquoise to-viventa-teal py-12 text-white text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3">¿Eres agente o desarrollador?</h2>
-          <p className="mb-6 text-lg">Únete a VIVENTA PRO y lleva tu carrera al siguiente nivel.</p>
-          <a href="/profesionales" className="inline-block px-8 py-3 bg-white text-viventa-ocean font-bold rounded-xl shadow-lg hover:scale-105 transition-all">Descubre VIVENTA para Profesionales</a>
         </section>
       </main>
       <Footer />

@@ -119,19 +119,23 @@ export default function ProfessionalsPage(){
           </div>
         </section>
 
-        {/* Affiliated Companies Banner */}
+        {/* Affiliated Companies + CTA */}
         <section className="mb-12">
           <div className="rounded-2xl bg-gradient-to-r from-viventa-turquoise-500 to-viventa-ocean-500 p-6 md:p-8 text-white">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div>
+            <div className="flex flex-col gap-6">
+              <div className="text-center">
                 <h3 className="text-2xl font-bold">Empresas Afiliadas</h3>
-                <p className="text-viventa-sand-50/90">Trabajamos con corredores, brókers y constructoras líderes en el Caribe.</p>
+                <p className="text-white/85">Trabajamos con corredores y brókers líderes en República Dominicana.</p>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-white/90">
-                <div className="bg-white/10 rounded-lg px-4 py-2">Caribe Realty</div>
-                <div className="bg-white/10 rounded-lg px-4 py-2">Dominicana Homes</div>
-                <div className="bg-white/10 rounded-lg px-4 py-2">Blue Coast</div>
-                <div className="bg-white/10 rounded-lg px-4 py-2">Isla Proyectos</div>
+                <div className="bg-white/10 rounded-lg px-4 py-2">RE/MAX RD</div>
+                <div className="bg-white/10 rounded-lg px-4 py-2">Century 21 Dominicana</div>
+                <div className="bg-white/10 rounded-lg px-4 py-2">Keller Williams RD</div>
+                <div className="bg-white/10 rounded-lg px-4 py-2">Santo Domingo Sotheby's</div>
+              </div>
+              <div className="text-center mt-2">
+                <p className="text-white/90 mb-3">Join VIVENTA Pro and grow with the leading MLS in the Caribbean.</p>
+                <a href="/apply" className="inline-block px-8 py-3 bg-white text-viventa-ocean font-bold rounded-xl shadow-lg hover:scale-105 transition-all">Apply Now</a>
               </div>
             </div>
           </div>
@@ -199,17 +203,7 @@ export default function ProfessionalsPage(){
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="mt-12">
-          <div className="rounded-2xl bg-gradient-to-r from-viventa-sunset-400 to-viventa-palm-500 p-8 text-white text-center">
-            <h2 className="text-3xl font-bold mb-2">Únete a VIVENTA Pro</h2>
-            <p className="mb-6 text-white/90">Impulsa tu equipo con herramientas MLS modernas y colaboración real.</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a href="/apply" className="px-6 py-3 rounded-xl bg-white text-viventa-palm-700 font-semibold hover:bg-white/90">Solicitar Acceso</a>
-              <a href="https://wa.me/18095551234" target="_blank" rel="noopener noreferrer" className="px-6 py-3 rounded-xl bg-black/20 text-white font-semibold hover:bg-black/30">Habla con nosotros</a>
-            </div>
-          </div>
-        </section>
+        {/* CTA merged with affiliates above to avoid repetition */}
       </div>
     </div>
   )
