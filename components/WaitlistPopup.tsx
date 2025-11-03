@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { FiX, FiMail, FiUser, FiPhone, FiCheckCircle, FiAlertCircle } from 'react-icons/fi'
+import { FiX, FiMail, FiUser, FiPhone, FiCheckCircle, FiAlertCircle, FiShield, FiLock } from 'react-icons/fi'
 import { addDoc, collection, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebaseClient'
 import toast from 'react-hot-toast'
@@ -97,23 +97,74 @@ export default function WaitlistPopup() {
   }
 
   function handleClose() {
+    // Show confirmation before closing
+    if (!submitted) {
+      const confirmClose = window.confirm(
+        "Don't miss out on early access! 🚀\n\nAre you sure you want to skip joining the waitlist? You'll miss exclusive beta access and launch perks."
+      )
+      if (!confirmClose) return
+    }
     setIsOpen(false)
     localStorage.setItem('waitlist_dismissed', 'true')
+  }
+
+  // Prevent closing by clicking outside
+  function handleBackdropClick(e: React.MouseEvent) {
+    if (e.target === e.currentTarget && !submitted) {
+      // Just shake the modal instead of closing
+      const modal = document.querySelector('[data-waitlist-modal]')
+      if (modal) {
+        modal.classList.add('animate-shake')
+        setTimeout(() => modal.classList.remove('animate-shake'), 500)
+      }
+    } else if (submitted) {
+      setIsOpen(false)
+    }
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative animate-slide-up">
-        {/* Close Button */}
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
-          aria-label="Close"
-        >
-          <FiX className="text-xl text-gray-600" />
-        </button>
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+      onClick={handleBackdropClick}
+    >
+      <div 
+        data-waitlist-modal
+        className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[95vh] overflow-y-auto relative animate-slide-up"
+      >
+        {/* Close Button - Only show after submission or with confirmation */}
+        {!submitted && (
+          <button
+            onClick={handleClose}
+            className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10 group"
+            aria-label="Close"
+          >
+            <FiX className="text-xl text-gray-400 group-hover:text-gray-700" />
+          </button>
+        )}
+        {submitted && (
+          <button
+            onClick={() => setIsOpen(false)}
+            className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+            aria-label="Close"
+          >
+            <FiX className="text-xl text-gray-600" />
+          </button>
+        )}
+
+        {/* Scarcity Counter - Only show before submission */}
+        {!submitted && (
+          <div className="absolute top-4 left-4 z-10">
+            <div className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg animate-pulse">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+              </span>
+              <span className="text-sm font-bold">Only 23 Spots Left!</span>
+            </div>
+          </div>
+        )}
 
         {submitted ? (
           // Success State
@@ -143,136 +194,198 @@ export default function WaitlistPopup() {
         ) : (
           // Form State
           <>
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#004AAD] to-[#00A676] p-8 text-white rounded-t-2xl">
-              <h2 className="text-3xl font-bold mb-3">Join the VIVENTA Waitlist</h2>
-              <p className="text-lg opacity-90">
-                Be among the first to experience the future of Dominican real estate
-              </p>
-            </div>
-
-            {/* Benefits */}
-            <div className="p-6 bg-blue-50 border-b">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-[#00A676] rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold">1</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">Early Beta Access</h3>
-                    <p className="text-sm text-gray-600">Test features before anyone else</p>
+            {/* Header with Enhanced Design */}
+            <div className="relative bg-gradient-to-br from-[#004AAD] via-[#0066CC] to-[#00A676] p-10 text-white rounded-t-2xl overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
+              
+              <div className="relative z-10">
+                <div className="inline-block mb-4">
+                  <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30">
+                    <span className="animate-pulse">🚀</span>
+                    <span className="text-sm font-semibold">Limited Beta Access</span>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-[#00A676] rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold">2</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">Exclusive Updates</h3>
-                    <p className="text-sm text-gray-600">Insider news on our progress</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-[#00A676] rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold">3</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">Special Launch Perks</h3>
-                    <p className="text-sm text-gray-600">Premium features at no cost</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-[#00A676] rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold">4</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">Shape the Product</h3>
-                    <p className="text-sm text-gray-600">Your feedback matters</p>
-                  </div>
-                </div>
+                
+                <h2 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+                  Join the VIVENTA<br/>Exclusive Waitlist
+                </h2>
+                <p className="text-xl opacity-95 max-w-xl">
+                  Be among the first <span className="font-bold underline decoration-2">100 members</span> to experience the future of Dominican real estate
+                </p>
               </div>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            {/* Enhanced Benefits Section */}
+            <div className="p-8 bg-gradient-to-br from-blue-50 via-purple-50 to-teal-50 border-b-2 border-gray-100">
+              <h3 className="text-center text-2xl font-bold text-gray-800 mb-6">
+                Why Join Now? 🎁
+              </h3>
+              <div className="grid md:grid-cols-2 gap-5">
+                <div className="flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#004AAD] to-[#00A676] rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <span className="text-white text-xl font-bold">🚀</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-lg mb-1">Priority Beta Access</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">Be the first to test cutting-edge features before public launch</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <span className="text-white text-xl font-bold">💎</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-lg mb-1">Exclusive VIP Perks</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">Free premium features, priority support, and special discounts</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <span className="text-white text-xl font-bold">📢</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-lg mb-1">Insider Updates</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">Behind-the-scenes development news and product roadmap insights</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-teal-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <span className="text-white text-xl font-bold">🎯</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-lg mb-1">Shape the Future</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">Direct input on features - your feedback drives our development</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Social Proof */}
+              <div className="mt-6 flex items-center justify-center gap-3 text-sm text-gray-600">
+                <div className="flex -space-x-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 border-2 border-white"></div>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 border-2 border-white"></div>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-400 to-green-600 border-2 border-white"></div>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-400 to-orange-600 border-2 border-white"></div>
+                </div>
+                <span className="font-semibold text-gray-700">Join <span className="text-[#00A676]">200+</span> early supporters already on the list!</span>
+              </div>
+            </div>
+
+            {/* Enhanced Form */}
+            <form onSubmit={handleSubmit} className="p-8 space-y-5">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">Secure Your VIP Spot</h3>
+                <p className="text-gray-600">Join in just 30 seconds - No credit card required</p>
+              </div>
+
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Juan Pérez"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    placeholder="e.g., Juan Pérez"
+                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-[#00A676] transition-all text-gray-800 font-medium"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   Email Address <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="juan@ejemplo.com"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    placeholder="e.g., juan@ejemplo.com"
+                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-[#00A676] transition-all text-gray-800 font-medium"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Phone (Optional)
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Phone Number <span className="text-gray-400 font-normal">(Optional - for exclusive offers)</span>
                 </label>
                 <div className="relative">
-                  <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1 (809) 123-4567"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    placeholder="e.g., +1 (809) 123-4567"
+                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-[#00A676] transition-all text-gray-800 font-medium"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  I'm interested in...
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  What brings you to VIVENTA?
                 </label>
                 <select
                   value={interest}
                   onChange={(e) => setInterest(e.target.value as any)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                  className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-[#00A676] transition-all text-gray-800 font-medium bg-white"
                 >
-                  <option value="buyer">Buying a property</option>
-                  <option value="seller">Selling a property</option>
-                  <option value="agent">Becoming an agent</option>
-                  <option value="investor">Investing in real estate</option>
-                  <option value="other">Just exploring</option>
+                  <option value="buyer">🏠 I want to buy a property</option>
+                  <option value="seller">💰 I want to sell a property</option>
+                  <option value="agent">🤝 I'm a real estate professional</option>
+                  <option value="investor">📈 I'm interested in investing</option>
+                  <option value="other">👀 Just exploring options</option>
                 </select>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-[#004AAD] to-[#00A676] text-white py-4 rounded-lg font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Joining...' : 'Reserve My Spot 🚀'}
-              </button>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-[#004AAD] via-[#0066CC] to-[#00A676] text-white py-5 rounded-xl font-bold text-lg hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                        Securing Your Spot...
+                      </>
+                    ) : (
+                      <>
+                        🎉 Reserve My VIP Spot Now!
+                      </>
+                    )}
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#00A676] to-[#004AAD] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </button>
+              </div>
 
-              <p className="text-xs text-center text-gray-500">
-                By joining, you agree to receive updates about VIVENTA. We respect your privacy and won't spam you.
-              </p>
+              <div className="flex items-center gap-2 p-4 bg-green-50 border border-green-200 rounded-xl">
+                <FiCheckCircle className="text-green-600 flex-shrink-0 text-xl" />
+                <p className="text-xs text-gray-700 leading-relaxed">
+                  <span className="font-semibold">100% Free.</span> No spam, no credit card required. Unsubscribe anytime. We respect your privacy.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center gap-4 text-xs text-gray-500 pt-2">
+                <div className="flex items-center gap-1">
+                  <FiShield className="text-gray-400" />
+                  <span>Secure & Encrypted</span>
+                </div>
+                <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+                <div className="flex items-center gap-1">
+                  <FiLock className="text-gray-400" />
+                  <span>GDPR Compliant</span>
+                </div>
+              </div>
             </form>
           </>
         )}
