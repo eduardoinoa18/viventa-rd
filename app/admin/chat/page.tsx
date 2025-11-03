@@ -1,10 +1,14 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { FiMessageSquare, FiSearch, FiSend, FiRefreshCw, FiCheckCircle, FiXCircle, FiClock, FiUser } from 'react-icons/fi'
+import { useSearchParams } from 'next/navigation'
+import { FiMessageSquare, FiSearch, FiSend, FiRefreshCw, FiCheckCircle, FiXCircle, FiClock, FiUser, FiBell, FiMail, FiHome, FiUsers, FiCheck, FiX, FiUserPlus } from 'react-icons/fi'
 import ProtectedClient from '@/app/auth/ProtectedClient'
 import AdminSidebar from '@/components/AdminSidebar'
 import AdminTopbar from '@/components/AdminTopbar'
 import toast from 'react-hot-toast'
+import { db } from '@/lib/firebaseClient'
+import { collection, query, where, orderBy, limit, getDocs, updateDoc, doc, arrayUnion, addDoc, Timestamp } from 'firebase/firestore'
+import { getCurrentUser } from '@/lib/authClient'
 
 type Conversation = {
   id: string
@@ -28,7 +32,34 @@ type Message = {
   readAt?: any
 }
 
+type Notification = {
+  id: string
+  type: string
+  title: string
+  message: string
+  refId?: string
+  propertyId?: string
+  createdAt: any
+  audience: string[]
+  readBy: string[]
+}
+
+type SearchUser = {
+  id: string
+  name: string
+  email: string
+  role: string
+  photoURL?: string
+}
+
 export default function AdminChatPage() {
+  const searchParams = useSearchParams()
+  const tabParam = searchParams?.get('tab')
+  const [mainTab, setMainTab] = useState<'chat' | 'notifications' | 'contacts' | 'inquiries' | 'waitlist'>(
+    (tabParam as any) || 'chat'
+  )
+
+  // Chat state
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -37,6 +68,21 @@ export default function AdminChatPage() {
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'closed'>('all')
+
+  // Notifications state
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [contactSubmissions, setContactSubmissions] = useState<any[]>([])
+  const [propertyInquiries, setPropertyInquiries] = useState<any[]>([])
+  const [waitlist, setWaitlist] = useState<any[]>([])
+  const [loadingNotifications, setLoadingNotifications] = useState(false)
+
+  // User search state
+  const [showUserSearch, setShowUserSearch] = useState(false)
+  const [userSearchQuery, setUserSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<SearchUser[]>([])
+  const [searchingUsers, setSearchingUsers] = useState(false)
+
+  const currentUser = getCurrentUser()
 
   useEffect(() => { 
     loadConversations()
@@ -51,6 +97,12 @@ export default function AdminChatPage() {
       return () => clearInterval(interval)
     } 
   }, [activeId])
+
+  useEffect(() => {
+    if (mainTab !== 'chat') {
+      loadNotificationsData()
+    }
+  }, [mainTab])
 
   async function loadConversations() {
     setLoadingConvos(true)
@@ -99,7 +151,7 @@ export default function AdminChatPage() {
     } catch (e) {
       console.error('Failed to send message', e)
       toast.error('Failed to send message')
-      setText(messageText) // Restore text on error
+      setText(messageText)
     }
   }
 
@@ -135,15 +187,159 @@ export default function AdminChatPage() {
     }
   }
 
+  async function loadNotificationsData() {
+    if (!currentUser) return
+    setLoadingNotifications(true)
+    try {
+      // Load system notifications
+      const notifQuery = query(
+        collection(db, 'notifications'),
+        where('audience', 'array-contains-any', [currentUser.role || 'admin', 'all']),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      )
+      const notifSnap = await getDocs(notifQuery)
+      const notifs = notifSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as Notification))
+      setNotifications(notifs)
+
+      // Load contact submissions
+      const contactQuery = query(
+        collection(db, 'contact_submissions'),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      )
+      const contactSnap = await getDocs(contactQuery)
+      const contacts = contactSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      setContactSubmissions(contacts)
+
+      // Load property inquiries
+      const inquiryQuery = query(
+        collection(db, 'property_inquiries'),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      )
+      const inquirySnap = await getDocs(inquiryQuery)
+      const inquiries = inquirySnap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      setPropertyInquiries(inquiries)
+
+      // Load social waitlist
+      const waitlistQuery = query(
+        collection(db, 'waitlist_social'),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      )
+      const waitlistSnap = await getDocs(waitlistQuery)
+      const wl = waitlistSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      setWaitlist(wl)
+    } catch (e) {
+      console.error('Failed to load notifications', e)
+      toast.error('Failed to load notifications')
+    } finally {
+      setLoadingNotifications(false)
+    }
+  }
+
+  async function markNotificationAsRead(notificationId: string) {
+    if (!currentUser) return
+    try {
+      await updateDoc(doc(db, 'notifications', notificationId), {
+        readBy: arrayUnion(currentUser.uid)
+      })
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, readBy: [...n.readBy, currentUser.uid] } : n)
+      )
+    } catch (e) {
+      console.error('Failed to mark as read', e)
+    }
+  }
+
+  async function markSubmissionAsRead(submissionId: string, type: 'contact' | 'inquiry' | 'waitlist') {
+    if (!currentUser) return
+    try {
+      const collectionName = type === 'contact' ? 'contact_submissions' : type === 'inquiry' ? 'property_inquiries' : 'waitlist_social'
+      await updateDoc(doc(db, collectionName, submissionId), {
+        readBy: arrayUnion(currentUser.uid),
+        status: 'read'
+      })
+      
+      if (type === 'contact') {
+        setContactSubmissions(prev => 
+          prev.map(c => c.id === submissionId ? { ...c, readBy: [...(c.readBy || []), currentUser.uid], status: 'read' } : c)
+        )
+      } else if (type === 'inquiry') {
+        setPropertyInquiries(prev => 
+          prev.map(i => i.id === submissionId ? { ...i, readBy: [...(i.readBy || []), currentUser.uid], status: 'read' } : i)
+        )
+      } else if (type === 'waitlist') {
+        setWaitlist(prev =>
+          prev.map(w => w.id === submissionId ? { ...w, readBy: [...(w.readBy || []), currentUser.uid], status: 'read' } : w)
+        )
+      }
+    } catch (e) {
+      console.error('Failed to mark submission as read', e)
+    }
+  }
+
+  async function searchUsers() {
+    if (!userSearchQuery.trim()) {
+      setSearchResults([])
+      return
+    }
+    setSearchingUsers(true)
+    try {
+      const res = await fetch(`/api/admin/users?search=${encodeURIComponent(userSearchQuery)}`)
+      const data = await res.json()
+      if (data.ok && data.data) {
+        setSearchResults(data.data.map((u: any) => ({
+          id: u.id,
+          name: u.name || u.email,
+          email: u.email,
+          role: u.role || 'user',
+          photoURL: u.photoURL
+        })))
+      }
+    } catch (e) {
+      console.error('Failed to search users', e)
+      toast.error('Failed to search users')
+    } finally {
+      setSearchingUsers(false)
+    }
+  }
+
+  async function startConversationWithUser(user: SearchUser) {
+    try {
+      // Create new conversation
+      const conversationRef = await addDoc(collection(db, 'conversations'), {
+        title: `Chat with ${user.name}`,
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        status: 'open',
+        createdAt: Timestamp.now(),
+        lastMessageAt: Timestamp.now(),
+        unreadCount: 0
+      })
+      
+      toast.success(`Conversation started with ${user.name}`)
+      setShowUserSearch(false)
+      setUserSearchQuery('')
+      setSearchResults([])
+      await loadConversations()
+      setActiveId(conversationRef.id)
+      setMainTab('chat')
+    } catch (e) {
+      console.error('Failed to start conversation', e)
+      toast.error('Failed to start conversation')
+    }
+  }
+
   const filtered = useMemo(() => {
     let result = conversations
     
-    // Filter by status
     if (statusFilter !== 'all') {
       result = result.filter(c => c.status === statusFilter)
     }
     
-    // Filter by search
     const q = search.toLowerCase().trim()
     if (q) {
       result = result.filter(c => 
@@ -166,6 +362,11 @@ export default function AdminChatPage() {
     unread: conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
   }), [conversations])
 
+  const unreadNotifications = notifications.filter(n => !n.readBy.includes(currentUser?.uid || '')).length
+  const unreadContacts = contactSubmissions.filter(c => !(c.readBy || []).includes(currentUser?.uid || '')).length
+  const unreadInquiries = propertyInquiries.filter(i => !(i.readBy || []).includes(currentUser?.uid || '')).length
+  const unreadWaitlist = waitlist.filter(w => !(w.readBy || []).includes(currentUser?.uid || '')).length
+
   return (
     <ProtectedClient allowed={['master_admin', 'admin']}>
       <AdminTopbar />
@@ -176,228 +377,655 @@ export default function AdminChatPage() {
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-3xl font-bold text-[#0B2545] flex items-center gap-2">
-                  <FiMessageSquare /> Chat & Support
+                  <FiMessageSquare /> Communications Hub
                 </h1>
-                <p className="text-gray-600 mt-1">Gestiona conversaciones y soporte con usuarios</p>
+                <p className="text-gray-600 mt-1">Chat, notifications, contacts & property inquiries</p>
               </div>
-              <button 
-                onClick={loadConversations} 
-                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                <FiRefreshCw className={loadingConvos ? 'animate-spin' : ''} /> Actualizar
-              </button>
+              <div className="flex gap-2">
+                {mainTab === 'chat' && (
+                  <button 
+                    onClick={() => setShowUserSearch(!showUserSearch)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg hover:bg-[#008F64] font-semibold"
+                  >
+                    <FiUserPlus /> New Message
+                  </button>
+                )}
+                <button 
+                  onClick={mainTab === 'chat' ? loadConversations : loadNotificationsData} 
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <FiRefreshCw className={loadingConvos || loadingNotifications ? 'animate-spin' : ''} /> Refresh
+                </button>
+              </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-              <div className="bg-white rounded-lg shadow p-4 border-l-4 border-[#00A676]">
-                <div className="text-sm text-gray-600">Total Conversaciones</div>
-                <div className="text-2xl font-bold text-[#0B2545]">{stats.total}</div>
-              </div>
-              <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-                <div className="text-sm text-gray-600">Abiertas</div>
-                <div className="text-2xl font-bold text-green-600">{stats.open}</div>
-              </div>
-              <div className="bg-white rounded-lg shadow p-4 border-l-4 border-gray-400">
-                <div className="text-sm text-gray-600">Cerradas</div>
-                <div className="text-2xl font-bold text-gray-600">{stats.closed}</div>
-              </div>
-              <div className="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
-                <div className="text-sm text-gray-600">Mensajes sin leer</div>
-                <div className="text-2xl font-bold text-orange-600">{stats.unread}</div>
-              </div>
+            {/* Main Tabs */}
+            <div className="mt-6 flex gap-2 border-b overflow-x-auto bg-white rounded-t-lg px-2 pt-2">
+              <button
+                onClick={() => setMainTab('chat')}
+                className={`px-6 py-3 font-semibold whitespace-nowrap transition-all ${
+                  mainTab === 'chat'
+                    ? 'border-b-2 border-[#00A676] text-[#00A676]'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <FiMessageSquare className="inline mr-2" />
+                Chat Support
+              </button>
+              <button
+                onClick={() => setMainTab('notifications')}
+                className={`px-6 py-3 font-semibold whitespace-nowrap transition-all relative ${
+                  mainTab === 'notifications'
+                    ? 'border-b-2 border-[#00A676] text-[#00A676]'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <FiBell className="inline mr-2" />
+                Notifications
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadNotifications}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setMainTab('contacts')}
+                className={`px-6 py-3 font-semibold whitespace-nowrap transition-all relative ${
+                  mainTab === 'contacts'
+                    ? 'border-b-2 border-[#00A676] text-[#00A676]'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <FiMail className="inline mr-2" />
+                Contacts
+                {unreadContacts > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadContacts}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setMainTab('inquiries')}
+                className={`px-6 py-3 font-semibold whitespace-nowrap transition-all relative ${
+                  mainTab === 'inquiries'
+                    ? 'border-b-2 border-[#00A676] text-[#00A676]'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <FiHome className="inline mr-2" />
+                Property Inquiries
+                {unreadInquiries > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadInquiries}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setMainTab('waitlist')}
+                className={`px-6 py-3 font-semibold whitespace-nowrap transition-all relative ${
+                  mainTab === 'waitlist'
+                    ? 'border-b-2 border-[#00A676] text-[#00A676]'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <FiUsers className="inline mr-2" />
+                Social Waitlist
+                {unreadWaitlist > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadWaitlist}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
-          {/* Chat Interface */}
-          <div className="grid md:grid-cols-3 gap-4 h-[calc(100vh-280px)]">
-            {/* Conversations List */}
-            <div className="bg-white rounded-xl shadow border overflow-hidden flex flex-col">
-              <div className="p-4 border-b">
-                <div className="flex items-center gap-2 mb-3">
-                  <FiSearch className="text-gray-400" />
-                  <input 
-                    value={search} 
-                    onChange={e => setSearch(e.target.value)} 
-                    placeholder="Buscar conversaciones..." 
-                    className="w-full outline-none text-sm" 
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setStatusFilter('all')}
-                    className={`flex-1 px-3 py-1.5 text-sm rounded ${statusFilter === 'all' ? 'bg-[#00A676] text-white' : 'bg-gray-100 text-gray-700'}`}
-                  >
-                    Todas
-                  </button>
-                  <button 
-                    onClick={() => setStatusFilter('open')}
-                    className={`flex-1 px-3 py-1.5 text-sm rounded ${statusFilter === 'open' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}
-                  >
-                    Abiertas
-                  </button>
-                  <button 
-                    onClick={() => setStatusFilter('closed')}
-                    className={`flex-1 px-3 py-1.5 text-sm rounded ${statusFilter === 'closed' ? 'bg-gray-600 text-white' : 'bg-gray-100 text-gray-700'}`}
-                  >
-                    Cerradas
+          {/* User Search Modal */}
+          {showUserSearch && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+                <div className="p-6 border-b flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-800">Start New Conversation</h2>
+                  <button onClick={() => setShowUserSearch(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                    <FiX className="text-xl" />
                   </button>
                 </div>
-              </div>
-              <div className="flex-1 overflow-auto">
-                {loadingConvos ? (
-                  <div className="p-4 text-center text-gray-500">Cargando...</div>
-                ) : filtered.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">No hay conversaciones</div>
-                ) : (
-                  filtered.map(c => (
-                    <button 
-                      key={c.id} 
-                      onClick={() => setActiveId(c.id)} 
-                      className={`w-full text-left p-4 border-b hover:bg-gray-50 transition-colors ${
-                        activeId === c.id ? 'bg-blue-50 border-l-4 border-[#00A676]' : ''
-                      }`}
+                <div className="p-6 border-b">
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && searchUsers()}
+                        placeholder="Search by name, email, or role..."
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                      />
+                    </div>
+                    <button
+                      onClick={searchUsers}
+                      disabled={searchingUsers}
+                      className="px-6 py-2 bg-[#00A676] text-white rounded-lg hover:bg-[#008F64] disabled:opacity-50 font-semibold"
                     >
-                      <div className="flex items-start justify-between mb-1">
-                        <div className="font-semibold text-gray-800 flex items-center gap-2">
-                          <FiUser className="text-gray-400" />
-                          {c.userName || c.userEmail || c.title || 'Usuario'}
-                        </div>
-                        {c.unreadCount && c.unreadCount > 0 && (
-                          <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
-                            {c.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-600 truncate">{c.lastMessage || 'Sin mensajes'}</div>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          c.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {c.status === 'open' ? 'Abierta' : 'Cerrada'}
-                        </span>
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <FiClock />
-                          {c.lastMessageAt ? new Date(c.lastMessageAt.toDate?.() || c.lastMessageAt).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' }) : ''}
-                        </span>
-                      </div>
+                      Search
                     </button>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Messages Panel */}
-            <div className="md:col-span-2 bg-white rounded-xl shadow border flex flex-col">
-              {!activeId ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-                  <FiMessageSquare className="text-6xl mb-4" />
-                  <p>Selecciona una conversación para comenzar</p>
-                </div>
-              ) : (
-                <>
-                  {/* Header */}
-                  <div className="p-4 border-b flex items-center justify-between bg-gray-50">
-                    <div>
-                      <div className="font-semibold text-gray-800 flex items-center gap-2">
-                        <FiUser />
-                        {activeConversation?.userName || activeConversation?.userEmail || 'Usuario'}
-                      </div>
-                      {activeConversation?.userEmail && (
-                        <div className="text-sm text-gray-600">{activeConversation.userEmail}</div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {activeConversation?.status === 'closed' ? (
-                        <button 
-                          onClick={reopenConversation} 
-                          className="px-3 py-1.5 rounded border text-green-700 border-green-300 hover:bg-green-50 flex items-center gap-1 text-sm font-medium"
-                        >
-                          <FiCheckCircle /> Reabrir
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={closeConversation} 
-                          className="px-3 py-1.5 rounded border text-red-700 border-red-300 hover:bg-red-50 flex items-center gap-1 text-sm font-medium"
-                        >
-                          <FiXCircle /> Cerrar
-                        </button>
-                      )}
-                    </div>
                   </div>
-
-                  {/* Messages */}
-                  <div className="flex-1 overflow-auto p-4 space-y-3 bg-gray-50">
-                    {loadingMessages ? (
-                      <div className="text-center text-gray-500">Cargando mensajes...</div>
-                    ) : messages.length === 0 ? (
-                      <div className="text-center text-gray-500">No hay mensajes</div>
-                    ) : (
-                      messages.map(m => (
-                        <div 
-                          key={m.id} 
-                          className={`flex ${m.senderId === 'admin_support' || m.senderId.includes('admin') ? 'justify-end' : 'justify-start'}`}
+                </div>
+                <div className="flex-1 overflow-y-auto p-6">
+                  {searchingUsers ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00A676] mx-auto"></div>
+                      <p className="text-gray-600 mt-4">Searching...</p>
+                    </div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="text-center py-12">
+                      <FiUsers className="text-6xl text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-600">
+                        {userSearchQuery ? 'No users found' : 'Enter a search query to find users'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {searchResults.map(user => (
+                        <button
+                          key={user.id}
+                          onClick={() => startConversationWithUser(user)}
+                          className="w-full p-4 border border-gray-200 rounded-lg hover:border-[#00A676] hover:bg-blue-50 transition-all text-left"
                         >
-                          <div className={`max-w-[75%] rounded-lg px-4 py-2 ${
-                            m.senderId === 'admin_support' || m.senderId.includes('admin')
-                              ? 'bg-[#00A676] text-white' 
-                              : 'bg-white text-gray-800 shadow'
-                          }`}>
-                            <div className={`text-xs font-medium mb-1 ${
-                              m.senderId === 'admin_support' || m.senderId.includes('admin') 
-                                ? 'text-white/80' 
-                                : 'text-gray-600'
-                            }`}>
-                              {m.senderName || m.senderId}
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                              {user.name.charAt(0).toUpperCase()}
                             </div>
-                            <div className="whitespace-pre-wrap text-sm">{m.content}</div>
-                            <div className={`text-[10px] mt-1 ${
-                              m.senderId === 'admin_support' || m.senderId.includes('admin')
-                                ? 'text-white/70' 
-                                : 'text-gray-500'
-                            }`}>
-                              {new Date(m.createdAt?.toDate?.() || m.createdAt).toLocaleString('es-DO', { 
-                                month: 'short', 
-                                day: 'numeric', 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
+                            <div className="flex-1">
+                              <div className="font-semibold text-gray-800">{user.name}</div>
+                              <div className="text-sm text-gray-600">{user.email}</div>
+                            </div>
+                            <div className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">
+                              {user.role}
                             </div>
                           </div>
-                        </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Chat Tab Content */}
+          {mainTab === 'chat' && (
+            <>
+              {/* Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white rounded-lg shadow p-4 border-l-4 border-[#00A676]">
+                  <div className="text-sm text-gray-600">Total Conversations</div>
+                  <div className="text-2xl font-bold text-[#0B2545]">{stats.total}</div>
+                </div>
+                <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+                  <div className="text-sm text-gray-600">Open</div>
+                  <div className="text-2xl font-bold text-green-600">{stats.open}</div>
+                </div>
+                <div className="bg-white rounded-lg shadow p-4 border-l-4 border-gray-400">
+                  <div className="text-sm text-gray-600">Closed</div>
+                  <div className="text-2xl font-bold text-gray-600">{stats.closed}</div>
+                </div>
+                <div className="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
+                  <div className="text-sm text-gray-600">Unread Messages</div>
+                  <div className="text-2xl font-bold text-orange-600">{stats.unread}</div>
+                </div>
+              </div>
+
+              {/* Chat Interface */}
+              <div className="grid md:grid-cols-3 gap-4 h-[calc(100vh-380px)]">
+                {/* Conversations List */}
+                <div className="bg-white rounded-xl shadow border overflow-hidden flex flex-col">
+                  <div className="p-4 border-b">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FiSearch className="text-gray-400" />
+                      <input 
+                        value={search} 
+                        onChange={e => setSearch(e.target.value)} 
+                        placeholder="Search conversations..." 
+                        className="w-full outline-none text-sm" 
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setStatusFilter('all')}
+                        className={`flex-1 px-3 py-1.5 text-sm rounded ${statusFilter === 'all' ? 'bg-[#00A676] text-white' : 'bg-gray-100 text-gray-700'}`}
+                      >
+                        All
+                      </button>
+                      <button 
+                        onClick={() => setStatusFilter('open')}
+                        className={`flex-1 px-3 py-1.5 text-sm rounded ${statusFilter === 'open' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                      >
+                        Open
+                      </button>
+                      <button 
+                        onClick={() => setStatusFilter('closed')}
+                        className={`flex-1 px-3 py-1.5 text-sm rounded ${statusFilter === 'closed' ? 'bg-gray-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                      >
+                        Closed
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-auto">
+                    {loadingConvos ? (
+                      <div className="p-4 text-center text-gray-500">Loading...</div>
+                    ) : filtered.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">No conversations</div>
+                    ) : (
+                      filtered.map(c => (
+                        <button 
+                          key={c.id} 
+                          onClick={() => setActiveId(c.id)} 
+                          className={`w-full text-left p-4 border-b hover:bg-gray-50 transition-colors ${
+                            activeId === c.id ? 'bg-blue-50 border-l-4 border-[#00A676]' : ''
+                          }`}
+                        >
+                          <div className="flex items-start justify-between mb-1">
+                            <div className="font-semibold text-gray-800 flex items-center gap-2">
+                              <FiUser className="text-gray-400" />
+                              {c.userName || c.userEmail || c.title || 'User'}
+                            </div>
+                            {c.unreadCount && c.unreadCount > 0 && (
+                              <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                                {c.unreadCount}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-600 truncate">{c.lastMessage || 'No messages'}</div>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              c.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {c.status === 'open' ? 'Open' : 'Closed'}
+                            </span>
+                            <span className="text-xs text-gray-500 flex items-center gap-1">
+                              <FiClock />
+                              {c.lastMessageAt ? new Date(c.lastMessageAt.toDate?.() || c.lastMessageAt).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' }) : ''}
+                            </span>
+                          </div>
+                        </button>
                       ))
                     )}
                   </div>
+                </div>
 
-                  {/* Input */}
-                  <div className="p-4 border-t bg-white">
-                    <div className="flex items-center gap-2">
-                      <input 
-                        value={text} 
-                        onChange={e => setText(e.target.value)} 
-                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} 
-                        placeholder="Escribe tu respuesta..." 
-                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-[#00A676] focus:border-transparent" 
-                        disabled={activeConversation?.status === 'closed'}
-                      />
-                      <button 
-                        onClick={send} 
-                        disabled={!text.trim() || activeConversation?.status === 'closed'}
-                        className="px-6 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                      >
-                        <FiSend /> Enviar
-                      </button>
+                {/* Messages Panel */}
+                <div className="md:col-span-2 bg-white rounded-xl shadow border flex flex-col">
+                  {!activeId ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                      <FiMessageSquare className="text-6xl mb-4" />
+                      <p>Select a conversation to start</p>
                     </div>
-                    {activeConversation?.status === 'closed' && (
-                      <div className="mt-2 text-sm text-gray-500 text-center">
-                        Esta conversación está cerrada. Reábrela para enviar mensajes.
+                  ) : (
+                    <>
+                      {/* Header */}
+                      <div className="p-4 border-b flex items-center justify-between bg-gray-50">
+                        <div>
+                          <div className="font-semibold text-gray-800 flex items-center gap-2">
+                            <FiUser />
+                            {activeConversation?.userName || activeConversation?.userEmail || 'User'}
+                          </div>
+                          {activeConversation?.userEmail && (
+                            <div className="text-sm text-gray-600">{activeConversation.userEmail}</div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {activeConversation?.status === 'closed' ? (
+                            <button 
+                              onClick={reopenConversation} 
+                              className="px-3 py-1.5 rounded border text-green-700 border-green-300 hover:bg-green-50 flex items-center gap-1 text-sm font-medium"
+                            >
+                              <FiCheckCircle /> Reopen
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={closeConversation} 
+                              className="px-3 py-1.5 rounded border text-red-700 border-red-300 hover:bg-red-50 flex items-center gap-1 text-sm font-medium"
+                            >
+                              <FiXCircle /> Close
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </>
+
+                      {/* Messages */}
+                      <div className="flex-1 overflow-auto p-4 space-y-3 bg-gray-50">
+                        {loadingMessages ? (
+                          <div className="text-center text-gray-500">Loading messages...</div>
+                        ) : messages.length === 0 ? (
+                          <div className="text-center text-gray-500">No messages</div>
+                        ) : (
+                          messages.map(m => (
+                            <div 
+                              key={m.id} 
+                              className={`flex ${m.senderId === 'admin_support' || m.senderId.includes('admin') ? 'justify-end' : 'justify-start'}`}
+                            >
+                              <div className={`max-w-[75%] rounded-lg px-4 py-2 ${
+                                m.senderId === 'admin_support' || m.senderId.includes('admin')
+                                  ? 'bg-[#00A676] text-white' 
+                                  : 'bg-white text-gray-800 shadow'
+                              }`}>
+                                <div className={`text-xs font-medium mb-1 ${
+                                  m.senderId === 'admin_support' || m.senderId.includes('admin') 
+                                    ? 'text-white/80' 
+                                    : 'text-gray-600'
+                                }`}>
+                                  {m.senderName || m.senderId}
+                                </div>
+                                <div className="whitespace-pre-wrap text-sm">{m.content}</div>
+                                <div className={`text-[10px] mt-1 ${
+                                  m.senderId === 'admin_support' || m.senderId.includes('admin')
+                                    ? 'text-white/70' 
+                                    : 'text-gray-500'
+                                }`}>
+                                  {new Date(m.createdAt?.toDate?.() || m.createdAt).toLocaleString('es-DO', { 
+                                    month: 'short', 
+                                    day: 'numeric', 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Input */}
+                      <div className="p-4 border-t bg-white">
+                        <div className="flex items-center gap-2">
+                          <input 
+                            value={text} 
+                            onChange={e => setText(e.target.value)} 
+                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} 
+                            placeholder="Type your response..." 
+                            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-[#00A676] focus:border-transparent" 
+                            disabled={activeConversation?.status === 'closed'}
+                          />
+                          <button 
+                            onClick={send} 
+                            disabled={!text.trim() || activeConversation?.status === 'closed'}
+                            className="px-6 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                          >
+                            <FiSend /> Send
+                          </button>
+                        </div>
+                        {activeConversation?.status === 'closed' && (
+                          <div className="mt-2 text-sm text-gray-500 text-center">
+                            This conversation is closed. Reopen it to send messages.
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Notifications Tab Content */}
+          {mainTab === 'notifications' && (
+            <div className="space-y-4">
+              {loadingNotifications ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-600 mt-4">Loading...</p>
+                </div>
+              ) : notifications.length === 0 ? (
+                <div className="bg-white rounded-xl shadow p-12 text-center">
+                  <FiBell className="text-6xl text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600">No notifications</p>
+                </div>
+              ) : (
+                notifications.map(notif => {
+                  const isRead = notif.readBy.includes(currentUser?.uid || '')
+                  return (
+                    <div
+                      key={notif.id}
+                      className={`bg-white rounded-xl shadow p-6 border-l-4 ${
+                        isRead ? 'border-gray-300' : 'border-[#00A676]'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              notif.type === 'contact_submission' ? 'bg-blue-100 text-blue-800' :
+                              notif.type === 'property_inquiry' ? 'bg-green-100 text-green-800' :
+                              'bg-purple-100 text-purple-800'
+                            }`}>
+                              {notif.type}
+                            </span>
+                            {!isRead && (
+                              <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">
+                                New
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="font-bold text-gray-800 mb-1">{notif.title}</h3>
+                          <p className="text-gray-600 text-sm mb-2">{notif.message}</p>
+                          <p className="text-xs text-gray-500">
+                            {notif.createdAt?.toDate?.().toLocaleString('es-DO') || 'Unknown date'}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          {!isRead && (
+                            <button
+                              onClick={() => markNotificationAsRead(notif.id)}
+                              className="p-2 text-green-600 hover:bg-green-50 rounded"
+                              title="Mark as read"
+                            >
+                              <FiCheck />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
               )}
             </div>
-          </div>
+          )}
+
+          {/* Contacts Tab Content */}
+          {mainTab === 'contacts' && (
+            <div className="space-y-4">
+              {loadingNotifications ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-600 mt-4">Loading...</p>
+                </div>
+              ) : contactSubmissions.length === 0 ? (
+                <div className="bg-white rounded-xl shadow p-12 text-center">
+                  <FiMail className="text-6xl text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600">No contact submissions</p>
+                </div>
+              ) : (
+                contactSubmissions.map(contact => {
+                  const isRead = (contact.readBy || []).includes(currentUser?.uid || '')
+                  return (
+                    <div
+                      key={contact.id}
+                      className={`bg-white rounded-xl shadow p-6 border-l-4 ${
+                        isRead ? 'border-gray-300' : 'border-blue-500'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold">
+                              {contact.type || 'general'}
+                            </span>
+                            {!isRead && (
+                              <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">
+                                New
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="font-bold text-gray-800 text-lg">{contact.name}</h3>
+                          <p className="text-sm text-gray-600">
+                            {contact.email} • {contact.phone}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {contact.createdAt?.toDate?.().toLocaleString('es-DO') || 'Unknown date'}
+                          </p>
+                        </div>
+                        {!isRead && (
+                          <button
+                            onClick={() => markSubmissionAsRead(contact.id, 'contact')}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded"
+                            title="Mark as read"
+                          >
+                            <FiCheck />
+                          </button>
+                        )}
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{contact.message}</p>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          )}
+
+          {/* Property Inquiries Tab Content */}
+          {mainTab === 'inquiries' && (
+            <div className="space-y-4">
+              {loadingNotifications ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-600 mt-4">Loading...</p>
+                </div>
+              ) : propertyInquiries.length === 0 ? (
+                <div className="bg-white rounded-xl shadow p-12 text-center">
+                  <FiHome className="text-6xl text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600">No property inquiries</p>
+                </div>
+              ) : (
+                propertyInquiries.map(inquiry => {
+                  const isRead = (inquiry.readBy || []).includes(currentUser?.uid || '')
+                  return (
+                    <div
+                      key={inquiry.id}
+                      className={`bg-white rounded-xl shadow p-6 border-l-4 ${
+                        isRead ? 'border-gray-300' : 'border-green-500'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                              Property
+                            </span>
+                            {!isRead && (
+                              <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">
+                                New
+                              </span>
+                            )}
+                            {inquiry.visitDate && (
+                              <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
+                                📅 Visit: {new Date(inquiry.visitDate).toLocaleDateString('es-DO')}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="font-bold text-[#0B2545] text-lg mb-2">{inquiry.propertyTitle}</h3>
+                          <p className="text-sm text-gray-600 font-semibold">{inquiry.name}</p>
+                          <p className="text-sm text-gray-600">
+                            {inquiry.email} • {inquiry.phone}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Preferred contact: {inquiry.preferredContact === 'email' ? 'Email' : inquiry.preferredContact === 'phone' ? 'Phone' : 'WhatsApp'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {inquiry.createdAt?.toDate?.().toLocaleString('es-DO') || 'Unknown date'}
+                          </p>
+                        </div>
+                        {!isRead && (
+                          <button
+                            onClick={() => markSubmissionAsRead(inquiry.id, 'inquiry')}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded"
+                            title="Mark as read"
+                          >
+                            <FiCheck />
+                          </button>
+                        )}
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{inquiry.message}</p>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          )}
+
+          {/* Waitlist Tab Content */}
+          {mainTab === 'waitlist' && (
+            <div className="space-y-4">
+              {loadingNotifications ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-600 mt-4">Loading...</p>
+                </div>
+              ) : waitlist.length === 0 ? (
+                <div className="bg-white rounded-xl shadow p-12 text-center">
+                  <FiUsers className="text-6xl text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600">No social waitlist entries</p>
+                </div>
+              ) : (
+                waitlist.map(wl => {
+                  const isRead = (wl.readBy || []).includes(currentUser?.uid || '')
+                  return (
+                    <div
+                      key={wl.id}
+                      className={`bg-white rounded-xl shadow p-6 border-l-4 ${
+                        isRead ? 'border-gray-300' : 'border-purple-500'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
+                              Social Network
+                            </span>
+                            {!isRead && (
+                              <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">
+                                New
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="font-bold text-gray-800 text-lg mb-2">{wl.email}</h3>
+                          <p className="text-xs text-gray-500">
+                            Source: {wl.source || 'social_coming_soon'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {wl.createdAt?.toDate?.().toLocaleString('es-DO') || 'Unknown date'}
+                          </p>
+                        </div>
+                        {!isRead && (
+                          <button
+                            onClick={() => markSubmissionAsRead(wl.id, 'waitlist')}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded"
+                            title="Mark as read"
+                          >
+                            <FiCheck />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          )}
         </main>
       </div>
     </ProtectedClient>

@@ -159,7 +159,7 @@ export default function AdminTopbar() {
                 </div>
                 <div className="p-3 border-t bg-gray-50 text-center">
                   <Link 
-                    href="/admin/notifications" 
+                    href="/admin/chat?tab=notifications" 
                     className="text-sm text-[#00A676] hover:underline font-medium"
                     onClick={() => setShowNotifications(false)}
                   >
