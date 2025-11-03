@@ -295,7 +295,7 @@ export default function AdminLeadsPage() {
                       ) : candidates.length === 0 ? (
                         <div className="text-gray-500">No hay candidatos disponibles</div>
                       ) : (
-                        <select value={selectedAssignee} onChange={e=>setSelectedAssignee(e.target.value)} className="w-full px-3 py-2 border rounded">
+                        <select value={selectedAssignee} onChange={e=>setSelectedAssignee(e.target.value)} className="w-full px-3 py-2 border rounded" aria-label="Select professional to assign lead">
                           <option value="">Selecciona profesional</option>
                           {candidates.map(c => (
                             <option key={c.id} value={c.id}>{c.role === 'broker' ? 'Broker' : 'Agente'} — {c.name || c.company} {c.status !== 'active' ? '(pendiente)' : ''}</option>

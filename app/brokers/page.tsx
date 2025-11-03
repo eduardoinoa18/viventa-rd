@@ -100,6 +100,7 @@ export default function BrokersPage() {
                 value={minRating} 
                 onChange={e=>setMinRating(Number(e.target.value))} 
                 className="px-3 py-2 border rounded focus:ring-2 focus:ring-[#3BAFDA]"
+                aria-label="Filter by minimum rating"
               >
                 <option value={0}>Todos</option>
                 <option value={4.0}>4.0+</option>
@@ -117,6 +118,7 @@ export default function BrokersPage() {
                 value={minTeamSize} 
                 onChange={e=>setMinTeamSize(Number(e.target.value))} 
                 className="px-3 py-2 border rounded focus:ring-2 focus:ring-[#3BAFDA]"
+                aria-label="Filter by minimum team size"
               >
                 <option value={0}>Todos</option>
                 <option value={5}>5+ agentes</option>

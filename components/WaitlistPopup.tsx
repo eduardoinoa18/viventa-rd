@@ -341,13 +341,15 @@ export default function WaitlistPopup() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label htmlFor="interest-select" className="block text-sm font-bold text-gray-700 mb-2">
                   ¿Qué te trae a VIVENTA?
                 </label>
                 <select
+                  id="interest-select"
                   value={interest}
                   onChange={(e) => setInterest(e.target.value as any)}
                   className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-[#00A676] transition-all text-gray-800 font-medium bg-white"
+                  aria-label="Select your interest"
                 >
                   <option value="buyer">🏠 Quiero comprar una propiedad</option>
                   <option value="seller">💰 Quiero vender una propiedad</option>

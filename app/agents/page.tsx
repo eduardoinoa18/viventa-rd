@@ -81,7 +81,7 @@ export default function AgentsPage() {
             <label className="text-sm text-gray-700 inline-flex items-center gap-2">
               <FiStar className="text-yellow-500" /> Rating mín:
             </label>
-            <select value={minRating} onChange={e=>setMinRating(Number(e.target.value))} className="px-3 py-2 border rounded">
+            <select value={minRating} onChange={e=>setMinRating(Number(e.target.value))} className="px-3 py-2 border rounded" aria-label="Filter by minimum rating">
               <option value={0}>Todos</option>
               <option value={4.0}>4.0+</option>
               <option value={4.5}>4.5+</option>
