@@ -24,6 +24,7 @@ export default function AdminTopbar() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(false)
+  const [onlineProCount, setOnlineProCount] = useState<number>(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -31,6 +32,28 @@ export default function AdminTopbar() {
       loadNotifications()
     }
   }, [u, showNotifications])
+
+  // Load online pro users (agent/broker)
+  useEffect(() => {
+    async function loadOnline() {
+      try {
+        const q = query(
+          collection(db, 'users'),
+          // Firestore 'in' to match agent or broker
+          where('role', 'in', ['agent', 'broker']),
+          where('online', '==', true),
+          limit(100)
+        )
+        const snap = await getDocs(q)
+        setOnlineProCount(snap.docs.length)
+      } catch (e) {
+        // ignore
+      }
+    }
+    loadOnline()
+    const id = setInterval(loadOnline, 30000)
+    return () => clearInterval(id)
+  }, [])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -93,6 +116,14 @@ export default function AdminTopbar() {
           <div className="text-lg font-semibold text-[#0B2545]">VIVENTA — Admin</div>
         </Link>
         <div className="flex items-center gap-4">
+          {/* Online count */}
+          <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full bg-green-50 border border-green-200">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-600"></span>
+            </span>
+            <span className="text-xs text-green-700 font-medium">Pros en línea: {onlineProCount}</span>
+          </div>
           {/* Notifications Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button 

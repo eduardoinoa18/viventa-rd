@@ -76,6 +76,14 @@ export default function Header() {
           {session ? (
             <>
               {session.uid && <NotificationCenter userId={session.uid} />}
+              {/* Online indicator (client-side presence) */}
+              <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full bg-green-50 border border-green-200">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-600"></span>
+                </span>
+                <span className="text-xs text-green-700 font-medium">En línea</span>
+              </div>
               {/* Hamburger menu for logged-in users on mobile */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

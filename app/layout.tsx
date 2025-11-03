@@ -8,6 +8,7 @@ import PwaInstallPrompt from '../components/PwaInstallPrompt'
 import OfflineIndicator from '../components/OfflineIndicator'
 import WaitlistPopup from '../components/WaitlistPopup'
 import Script from 'next/script'
+import PresenceManager from '../components/PresenceManager'
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com'),
@@ -97,6 +98,7 @@ export default function RootLayout({children}:{children:React.ReactNode}) {
   <PwaInstallPrompt />
   <OfflineIndicator />
   <WaitlistPopup />
+  <PresenceManager />
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
