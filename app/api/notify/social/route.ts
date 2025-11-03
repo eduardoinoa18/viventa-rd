@@ -1,7 +1,7 @@
 // app/api/notify/social/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { collection, doc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
+import { FieldValue } from 'firebase-admin/firestore'
 import { sendEmail } from '@/lib/emailService'
 
 function validateEmail(email: string): boolean {
@@ -17,21 +17,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Email inválido' }, { status: 400 })
     }
 
+    const adminDb = getAdminDb()
+    if (!adminDb) {
+      return NextResponse.json({ ok: false, error: 'Servicio no disponible' }, { status: 500 })
+    }
+
     const headers = req.headers
     const ip = headers.get('x-forwarded-for') || headers.get('cf-connecting-ip') || ''
     const userAgent = headers.get('user-agent') || ''
     const referer = headers.get('referer') || ''
 
     // Use email as document id to dedupe
-    const ref = doc(collection(db, 'waitlist_social'), emailLower)
+    const ref = adminDb.collection('waitlist_social').doc(emailLower)
 
-    await setDoc(ref, {
+    await ref.set({
       email: emailLower,
       ip,
       userAgent,
       referer,
-      updatedAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       source: 'social_coming_soon',
       status: 'waitlist'
     }, { merge: true })
@@ -155,12 +160,12 @@ export async function POST(req: NextRequest) {
 
     // Create in-app notification for admins
     try {
-      await addDoc(collection(db, 'notifications'), {
+      await adminDb.collection('notifications').add({
         type: 'social_waitlist',
         title: 'Nueva suscripción - Red Social',
         message: `${emailLower} se unió a la lista de espera`,
         refId: emailLower,
-        createdAt: serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
         audience: ['admin', 'master'],
         readBy: [],
       })

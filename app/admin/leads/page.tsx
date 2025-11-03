@@ -20,11 +20,55 @@ export default function AdminLeadsPage() {
   async function loadLeads() {
     try {
       setLoading(true)
-      const q = query(collection(db as any, 'property_inquiries'), orderBy('createdAt', 'desc'), limit(25))
-      const snap = await getDocs(q as any)
-      const rows = snap.docs.map((d: any) => ({ id: d.id, ...(d.data() as any) }))
-      setLeads(rows)
+      
+      // Load from all lead sources
+      const [inquiriesSnap, contactsSnap, waitlistSnap] = await Promise.all([
+        getDocs(query(collection(db as any, 'property_inquiries'), orderBy('createdAt', 'desc'), limit(50))),
+        getDocs(query(collection(db as any, 'contact_submissions'), orderBy('createdAt', 'desc'), limit(50))),
+        getDocs(query(collection(db as any, 'waitlist_social'), orderBy('createdAt', 'desc'), limit(50)))
+      ])
+      
+      // Map each source with a source tag
+      const inquiries = inquiriesSnap.docs.map((d: any) => ({
+        id: d.id,
+        ...d.data(),
+        source: 'property_inquiry',
+        name: d.data().name,
+        email: d.data().email,
+        phone: d.data().phone,
+        message: d.data().message
+      }))
+      
+      const contacts = contactsSnap.docs.map((d: any) => ({
+        id: d.id,
+        ...d.data(),
+        source: 'contact_form',
+        name: d.data().name,
+        email: d.data().email,
+        phone: d.data().phone,
+        message: d.data().message
+      }))
+      
+      const waitlist = waitlistSnap.docs.map((d: any) => ({
+        id: d.id,
+        ...d.data(),
+        source: 'social_waitlist',
+        name: 'Waitlist Signup',
+        email: d.data().email,
+        phone: '-',
+        message: 'User interested in social network features'
+      }))
+      
+      // Combine and sort by createdAt
+      const allLeads = [...inquiries, ...contacts, ...waitlist].sort((a, b) => {
+        const aTime = a.createdAt?.toDate?.()?.getTime?.() || 0
+        const bTime = b.createdAt?.toDate?.()?.getTime?.() || 0
+        return bTime - aTime
+      })
+      
+      setLeads(allLeads)
     } catch (e) {
+      console.error('Failed to load leads:', e)
       setLeads([])
     } finally {
       setLoading(false)
@@ -117,17 +161,18 @@ export default function AdminLeadsPage() {
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-full bg-blue-50 text-blue-600"><FiInfo /></div>
                 <div>
-                  <h2 className="text-xl font-semibold text-[#0B2545] mb-1">Próximamente: Asignación automática de leads</h2>
+                  <h2 className="text-xl font-semibold text-[#0B2545] mb-1">Gestión de Leads Consolidada</h2>
                   <p className="text-gray-600 mb-4">
-                    Estamos preparando un módulo de enrutamiento inteligente de leads. Cuando un usuario solicite ayuda (por ejemplo, para comprar una propiedad), su lead
-                    aparecerá aquí para revisión y asignación automática según reglas de prioridad y suscripciones premium.
+                    Aquí aparecen <strong>todos los leads</strong> generados desde múltiples fuentes:
                   </p>
                   <ul className="list-disc pl-6 text-gray-700 space-y-1">
-                    <li>Reglas por zona, idioma y disponibilidad</li>
-                    <li>Prioridad para agentes y brokers con suscripción premium</li>
-                    <li>Reasignación automática si no hay respuesta</li>
-                    <li>KPIs de tiempo de respuesta y conversión</li>
+                    <li><strong>Consultas de Propiedades:</strong> Usuarios interesados en propiedades específicas</li>
+                    <li><strong>Formulario de Contacto:</strong> Solicitudes generales de información y ayuda</li>
+                    <li><strong>Waitlist Social:</strong> Usuarios interesados en la red social (fase beta)</li>
                   </ul>
+                  <p className="text-gray-600 mt-4">
+                    💡 <strong>Próximos pasos:</strong> Asigna leads manualmente a agentes activos o usa el botón "Auto-asignar" para distribución inteligente.
+                  </p>
                 </div>
               </div>
 
@@ -163,9 +208,9 @@ export default function AdminLeadsPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b">
                       <tr>
+                        <th className="text-left p-3">Source</th>
                         <th className="text-left p-3">Cliente</th>
-                        <th className="text-left p-3">Propiedad</th>
-                        <th className="text-left p-3">Preferencia</th>
+                        <th className="text-left p-3">Detalles</th>
                         <th className="text-left p-3">Fecha</th>
                         <th className="text-left p-3">Estado</th>
                         <th className="text-left p-3">Asignación</th>
@@ -180,15 +225,32 @@ export default function AdminLeadsPage() {
                         visibleLeads.map((l) => (
                           <tr key={l.id}>
                             <td className="p-3">
-                              <div className="font-medium text-[#0B2545]">{l.name}</div>
-                              <div className="text-gray-500">{l.email} · {l.phone}</div>
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                l.source === 'property_inquiry' ? 'bg-green-100 text-green-800' :
+                                l.source === 'contact_form' ? 'bg-blue-100 text-blue-800' :
+                                'bg-purple-100 text-purple-800'
+                              }`}>
+                                {l.source === 'property_inquiry' ? '🏠 Propiedad' :
+                                 l.source === 'contact_form' ? '📧 Contacto' :
+                                 '👥 Waitlist'}
+                              </span>
                             </td>
                             <td className="p-3">
-                              <div className="font-medium">{l.propertyTitle || '—'}</div>
-                              <div className="text-gray-500 text-xs">{l.propertyId}</div>
+                              <div className="font-medium text-[#0B2545]">{l.name}</div>
+                              <div className="text-gray-500 text-sm">{l.email}</div>
+                              <div className="text-gray-500 text-xs">{l.phone}</div>
                             </td>
-                            <td className="p-3">{l.preferredContact || 'email'}</td>
-                            <td className="p-3">{l.createdAt?.toDate?.()?.toLocaleString?.('es-DO') || '—'}</td>
+                            <td className="p-3">
+                              {l.source === 'property_inquiry' ? (
+                                <>
+                                  <div className="font-medium text-sm">{l.propertyTitle || 'Property'}</div>
+                                  <div className="text-gray-500 text-xs">Contacto: {l.preferredContact || 'email'}</div>
+                                </>
+                              ) : (
+                                <div className="text-sm text-gray-600 line-clamp-2">{l.message?.substring(0, 100) || 'Sin mensaje'}</div>
+                              )}
+                            </td>
+                            <td className="p-3 text-sm">{l.createdAt?.toDate?.()?.toLocaleString?.('es-DO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) || '—'}</td>
                             <td className="p-3">
                               <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800">{l.status || 'new'}</span>
                             </td>

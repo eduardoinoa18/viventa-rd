@@ -63,7 +63,7 @@ export async function GET() {
       const firestoreData: any = {}
       const adminDb = getAdminDb()
       if (adminDb) {
-        const collections_to_check = ['users', 'properties', 'leads', 'applications', 'messages', 'contact_submissions']
+        const collections_to_check = ['users', 'properties', 'leads', 'applications', 'messages', 'contact_submissions', 'property_inquiries', 'waitlist_social', 'activity_logs']
         for (const collectionName of collections_to_check) {
           try {
             const snap = await adminDb.collection(collectionName).limit(3).get()

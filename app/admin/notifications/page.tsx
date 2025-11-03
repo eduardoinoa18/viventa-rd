@@ -6,7 +6,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { db } from '@/lib/firebaseClient'
 import { collection, query, where, orderBy, limit, getDocs, updateDoc, doc, arrayUnion } from 'firebase/firestore'
-import { FiBell, FiMail, FiHome, FiMessageSquare, FiCheck, FiX, FiEye, FiTrash2 } from 'react-icons/fi'
+import { FiBell, FiMail, FiHome, FiMessageSquare, FiCheck, FiX, FiEye, FiTrash2, FiUsers } from 'react-icons/fi'
 
 type Notification = {
   id: string
@@ -26,7 +26,8 @@ export default function NotificationsPage() {
   const [contactSubmissions, setContactSubmissions] = useState<any[]>([])
   const [propertyInquiries, setPropertyInquiries] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'notifications' | 'contacts' | 'inquiries'>('notifications')
+  const [waitlist, setWaitlist] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState<'notifications' | 'contacts' | 'inquiries' | 'waitlist'>('notifications')
   const router = useRouter()
 
   useEffect(() => {
@@ -72,6 +73,16 @@ export default function NotificationsPage() {
       const inquirySnap = await getDocs(inquiryQuery)
       const inquiries = inquirySnap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
       setPropertyInquiries(inquiries)
+
+      // Load social waitlist
+      const waitlistQuery = query(
+        collection(db, 'waitlist_social'),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      )
+      const waitlistSnap = await getDocs(waitlistQuery)
+      const wl = waitlistSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      setWaitlist(wl)
     } catch (e) {
       console.error('Failed to load notifications', e)
     } finally {
@@ -93,10 +104,10 @@ export default function NotificationsPage() {
     }
   }
 
-  async function markSubmissionAsRead(submissionId: string, type: 'contact' | 'inquiry') {
+  async function markSubmissionAsRead(submissionId: string, type: 'contact' | 'inquiry' | 'waitlist') {
     if (!user) return
     try {
-      const collectionName = type === 'contact' ? 'contact_submissions' : 'property_inquiries'
+      const collectionName = type === 'contact' ? 'contact_submissions' : type === 'inquiry' ? 'property_inquiries' : 'waitlist_social'
       await updateDoc(doc(db, collectionName, submissionId), {
         readBy: arrayUnion(user.uid),
         status: 'read'
@@ -106,9 +117,13 @@ export default function NotificationsPage() {
         setContactSubmissions(prev => 
           prev.map(c => c.id === submissionId ? { ...c, readBy: [...(c.readBy || []), user.uid], status: 'read' } : c)
         )
-      } else {
+      } else if (type === 'inquiry') {
         setPropertyInquiries(prev => 
           prev.map(i => i.id === submissionId ? { ...i, readBy: [...(i.readBy || []), user.uid], status: 'read' } : i)
+        )
+      } else if (type === 'waitlist') {
+        setWaitlist(prev =>
+          prev.map(w => w.id === submissionId ? { ...w, readBy: [...(w.readBy || []), user.uid], status: 'read' } : w)
         )
       }
     } catch (e) {
@@ -121,6 +136,7 @@ export default function NotificationsPage() {
   const unreadNotifications = notifications.filter(n => !n.readBy.includes(user.uid)).length
   const unreadContacts = contactSubmissions.filter(c => !(c.readBy || []).includes(user.uid)).length
   const unreadInquiries = propertyInquiries.filter(i => !(i.readBy || []).includes(user.uid)).length
+  const unreadWaitlist = waitlist.filter(w => !(w.readBy || []).includes(user.uid)).length
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -176,6 +192,20 @@ export default function NotificationsPage() {
               {unreadInquiries > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                   {unreadInquiries}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('waitlist')}
+              className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors relative ${
+                activeTab === 'waitlist' ? 'bg-[#0B2545] text-white' : 'hover:bg-gray-100'
+              }`}
+            >
+              <FiUsers className="inline mr-2" />
+              Waitlist Social
+              {unreadWaitlist > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {unreadWaitlist}
                 </span>
               )}
             </button>
@@ -365,6 +395,61 @@ export default function NotificationsPage() {
                         </div>
                         <div className="bg-gray-50 rounded-lg p-4">
                           <p className="text-sm text-gray-700 whitespace-pre-wrap">{inquiry.message}</p>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            )}
+
+            {/* Waitlist Social Tab */}
+            {activeTab === 'waitlist' && (
+              <div className="space-y-4">
+                {waitlist.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow p-12 text-center">
+                    <FiUsers className="text-6xl text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600">No hay entradas en la waitlist social</p>
+                  </div>
+                ) : (
+                  waitlist.map(wl => {
+                    const isRead = (wl.readBy || []).includes(user.uid)
+                    return (
+                      <div
+                        key={wl.id}
+                        className={`bg-white rounded-xl shadow p-6 border-l-4 ${
+                          isRead ? 'border-gray-300' : 'border-purple-500'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
+                                Red Social
+                              </span>
+                              {!isRead && (
+                                <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">
+                                  Nuevo
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="font-bold text-gray-800 text-lg mb-2">{wl.email}</h3>
+                            <p className="text-xs text-gray-500">
+                              Origen: {wl.source || 'social_coming_soon'}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {wl.createdAt?.toDate?.().toLocaleString('es-DO') || 'Fecha desconocida'}
+                            </p>
+                          </div>
+                          {!isRead && (
+                            <button
+                              onClick={() => markSubmissionAsRead(wl.id, 'waitlist')}
+                              className="p-2 text-green-600 hover:bg-green-50 rounded"
+                              title="Marcar como leído"
+                            >
+                              <FiCheck />
+                            </button>
+                          )}
                         </div>
                       </div>
                     )

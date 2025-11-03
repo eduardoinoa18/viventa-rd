@@ -53,10 +53,18 @@ export default function AdminUsersPage() {
   async function load() {
     setLoading(true)
     try {
-      const url = filterRole === 'all' ? '/api/admin/users' : `/api/admin/users?role=${filterRole}`
+      // Always filter for role=user ONLY (regular users, not agents/brokers)
+      const url = '/api/admin/users?role=user'
       const res = await fetch(url)
       const json = await res.json()
-  if (json.ok) setUsers(json.data || [])
+      if (json.ok) {
+        // Client-side filter by status if needed
+        let filtered = json.data || []
+        if (filterRole !== 'all') {
+          filtered = filtered.filter((u: User) => u.status === filterRole)
+        }
+        setUsers(filtered)
+      }
     } catch (e) {
       console.error('Failed to load users', e)
       toast.error('Failed to load users')
@@ -186,23 +194,35 @@ export default function AdminUsersPage() {
             </div>
           </div>
 
+          {/* Info Banner */}
+          <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+            <div className="flex items-start gap-3">
+              <div className="text-blue-600 mt-0.5">ℹ️</div>
+              <div>
+                <p className="text-sm text-blue-900 font-medium">Esta página muestra únicamente usuarios regulares (role: 'user')</p>
+                <p className="text-xs text-blue-800 mt-1">
+                  Los <strong>Agentes</strong> y <strong>Brokers</strong> se gestionan en sus respectivas pestañas con credenciales y permisos especiales.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Filters */}
           <div className="mb-4 flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <label className="font-semibold text-gray-700">Filter by role:</label>
+              <label className="font-semibold text-gray-700">Filter by status:</label>
               <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="px-3 py-2 border rounded">
-                <option value="all">All</option>
-                <option value="user">User</option>
-                <option value="agent">Agent</option>
-                <option value="broker">Broker</option>
-                <option value="admin">Admin</option>
+                <option value="all">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="suspended">Suspended</option>
               </select>
             </div>
             <div className="flex items-center gap-2 flex-1 max-w-md">
               <label className="font-semibold text-gray-700">Search:</label>
               <input
                 type="text"
-                placeholder="Name, email, phone, or code..."
+                placeholder="Name, email, or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-3 py-2 border rounded focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
@@ -223,14 +243,10 @@ export default function AdminUsersPage() {
                 <input className="px-3 py-2 border rounded" placeholder="Full name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
                 <input className="px-3 py-2 border rounded" placeholder="Email" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
                 <input className="px-3 py-2 border rounded" placeholder="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-                <select className="px-3 py-2 border rounded" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} required>
-                  <option value="user">User</option>
-                  <option value="agent">Agent</option>
-                  <option value="broker">Broker</option>
-                  <option value="admin">Admin</option>
-                </select>
-                <input className="px-3 py-2 border rounded" placeholder="Brokerage" value={form.brokerage} onChange={e => setForm({ ...form, brokerage: e.target.value })} />
-                <input className="px-3 py-2 border rounded" placeholder="Company" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
+                <input type="hidden" value="user" />
+                <p className="md:col-span-2 text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                  <strong>Nota:</strong> Usuarios creados aquí tendrán role='user'. Para crear Agentes o Brokers, usa sus respectivas páginas.
+                </p>
                 <div className="md:col-span-2 flex gap-2">
                   <button type="submit" className="px-4 py-2 bg-[#0B2545] text-white rounded hover:bg-[#0B2545]/90">{editingId ? 'Update' : 'Create'}</button>
                   <button type="button" onClick={() => { setShowForm(false); setEditingId(null) }} className="px-4 py-2 border rounded hover:bg-gray-50">Cancel</button>
@@ -252,8 +268,7 @@ export default function AdminUsersPage() {
                   <th className="text-left p-4">Name</th>
                   <th className="text-left p-4">Email</th>
                   <th className="text-left p-4">Phone</th>
-                  <th className="text-left p-4">Role</th>
-                  <th className="text-left p-4">Code</th>
+                  <th className="text-left p-4">Joined</th>
                   <th className="text-left p-4">Status</th>
                   <th className="text-left p-4">Actions</th>
                 </tr>
@@ -262,34 +277,15 @@ export default function AdminUsersPage() {
                 {loading ? (
                   <tr><td colSpan={7} className="p-4 text-center text-gray-500">Loading...</td></tr>
                 ) : filteredUsers.length === 0 ? (
-                  <tr><td colSpan={7} className="p-4 text-center text-gray-500">No users found</td></tr>
+                  <tr><td colSpan={6} className="p-4 text-center text-gray-500">No users found</td></tr>
                 ) : (
                   filteredUsers.map(u => (
                     <tr key={u.id}>
-                      <td className="p-4">{u.name}</td>
+                      <td className="p-4 font-medium">{u.name}</td>
                       <td className="p-4 text-gray-600">{u.email}</td>
                       <td className="p-4">{u.phone || '-'}</td>
-                      <td className="p-4"><span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">{u.role}</span></td>
-                      <td className="p-4">
-                        {u.agentCode ? (
-                          <button
-                            onClick={() => { navigator.clipboard.writeText(u.agentCode!); toast.success('Code copied!') }}
-                            className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm font-mono hover:bg-purple-200 transition-colors"
-                            title="Click to copy"
-                          >
-                            {u.agentCode}
-                          </button>
-                        ) : u.brokerCode ? (
-                          <button
-                            onClick={() => { navigator.clipboard.writeText(u.brokerCode!); toast.success('Code copied!') }}
-                            className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded text-sm font-mono hover:bg-indigo-200 transition-colors"
-                            title="Click to copy"
-                          >
-                            {u.brokerCode}
-                          </button>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
+                      <td className="p-4 text-sm text-gray-500">
+                        {u.lastLoginAt ? new Date(u.lastLoginAt.seconds ? u.lastLoginAt.seconds * 1000 : u.lastLoginAt).toLocaleDateString('es-DO') : 'Never'}
                       </td>
                       <td className="p-4">
                         <span className={`px-2 py-1 rounded text-sm ${
