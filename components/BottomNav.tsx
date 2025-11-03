@@ -41,6 +41,12 @@ export default function BottomNav() {
       active: pathname?.startsWith('/search')
     },
     {
+      name: 'Agentes',
+      icon: FiUser,
+      path: '/agents',
+      active: pathname?.startsWith('/agents')
+    },
+    {
       name: 'Social',
       icon: FiStar,
       path: '/social',

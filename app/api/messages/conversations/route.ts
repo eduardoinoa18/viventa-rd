@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { getConversationsForUser } from '@/lib/firestoreService'
-
-export const runtime = 'nodejs'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 
 export async function GET() {
   try {
@@ -11,26 +9,44 @@ export async function GET() {
     if (!uid) {
       return NextResponse.json({ conversations: [] })
     }
-    const convos = await getConversationsForUser(uid)
-    const conversations = convos.map((m: any) => ({
-      id: m.conversationId,
-      title: deriveTitleFromConversationId(m.conversationId, uid, m),
-      lastMessage: m.content,
-      createdAt: m.createdAt,
-    }))
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ conversations: [] })
+    }
+
+    // Fetch messages where user is sender or receiver
+    const [sentSnap, recvSnap] = await Promise.all([
+      db.collection('messages').where('senderId', '==', uid).orderBy('createdAt', 'desc').limit(200).get(),
+      db.collection('messages').where('receiverId', '==', uid).orderBy('createdAt', 'desc').limit(200).get(),
+    ])
+
+    const byConv = new Map<string, any>()
+    for (const doc of [...sentSnap.docs, ...recvSnap.docs]) {
+      const msg = doc.data()
+      const convId: string = msg.conversationId
+      const lastTime = (msg.createdAt?.toMillis?.() || msg.createdAt?.getTime?.() || 0)
+      const item = byConv.get(convId)
+      if (!item || (lastTime > item._last)) {
+        byConv.set(convId, {
+          id: convId,
+          title: deriveTitle(convId),
+          lastMessage: msg.content || msg.text || '',
+          _last: lastTime,
+        })
+      }
+    }
+
+    const conversations = Array.from(byConv.values()).sort((a, b) => b._last - a._last)
+    conversations.forEach((c: any) => delete c._last)
     return NextResponse.json({ conversations })
   } catch (e) {
-    console.error('conversations GET error', e)
     return NextResponse.json({ conversations: [] })
   }
 }
 
-function deriveTitleFromConversationId(convId: string, uid: string, m: any): string {
-  if (!convId) return m?.receiverName || 'Conversación'
-  if (convId.startsWith('support:')) return 'Soporte VIVENTA'
-  if (convId.startsWith('user_agent:')) return 'Tu Agente'
-  if (convId.startsWith('broker_team:')) return 'Equipo / Broker'
-  // Fallback: other participant name
-  if (m?.senderId === uid) return m?.receiverName || 'Chat'
-  return m?.senderName || 'Chat'
+function deriveTitle(convId: string) {
+  if (convId.startsWith('support:')) return 'Soporte'
+  if (convId.startsWith('user_agent:')) return 'Agente'
+  return 'Conversación'
 }
+ 

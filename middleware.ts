@@ -10,6 +10,11 @@ export async function middleware(req: NextRequest) {
   let admin2FA = req.cookies.get('admin_2fa_ok')?.value === '1';
   const trustedAdmin = req.cookies.get('trusted_admin')?.value;
 
+  // Public directories that should never trigger auth redirects
+  if (path.startsWith('/agents') || path.startsWith('/brokers') || path.startsWith('/contact') || path === '/' ) {
+    return NextResponse.next()
+  }
+
   // ============ ADMIN PORTAL AUTHENTICATION ============
   // Admin routes have their own auth system (gate + password + 2FA)
   // Handle these BEFORE the general Firebase auth check

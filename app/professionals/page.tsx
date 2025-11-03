@@ -105,6 +105,38 @@ export default function ProfessionalsPage(){
           </div>
         </section>
 
+        {/* Success Stories */}
+        <section className="mb-12">
+          <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Historias de Éxito</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[1,2,3].map((i)=> (
+              <div key={i} className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+                <div className="text-gray-700 italic">“Desde que nos unimos a VIVENTA, nuestro flujo de leads cualificados creció y cerramos ventas más rápido.”</div>
+                <div className="mt-4 font-semibold text-gray-900">Agencia {i}</div>
+                <div className="text-sm text-gray-500">Santo Domingo</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Affiliated Companies Banner */}
+        <section className="mb-12">
+          <div className="rounded-2xl bg-gradient-to-r from-viventa-turquoise-500 to-viventa-ocean-500 p-6 md:p-8 text-white">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div>
+                <h3 className="text-2xl font-bold">Empresas Afiliadas</h3>
+                <p className="text-viventa-sand-50/90">Trabajamos con corredores, brókers y constructoras líderes en el Caribe.</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-white/90">
+                <div className="bg-white/10 rounded-lg px-4 py-2">Caribe Realty</div>
+                <div className="bg-white/10 rounded-lg px-4 py-2">Dominicana Homes</div>
+                <div className="bg-white/10 rounded-lg px-4 py-2">Blue Coast</div>
+                <div className="bg-white/10 rounded-lg px-4 py-2">Isla Proyectos</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Contact Section */}
         <section id="contact" className="grid md:grid-cols-2 gap-8">
           <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -163,6 +195,18 @@ export default function ProfessionalsPage(){
               <p className="text-sm text-blue-100">Horario de atención:</p>
               <p className="font-semibold">Lunes a Viernes: 9:00 AM - 6:00 PM</p>
               <p className="font-semibold">Sábados: 9:00 AM - 1:00 PM</p>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="mt-12">
+          <div className="rounded-2xl bg-gradient-to-r from-viventa-sunset-400 to-viventa-palm-500 p-8 text-white text-center">
+            <h2 className="text-3xl font-bold mb-2">Únete a VIVENTA Pro</h2>
+            <p className="mb-6 text-white/90">Impulsa tu equipo con herramientas MLS modernas y colaboración real.</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="/apply" className="px-6 py-3 rounded-xl bg-white text-viventa-palm-700 font-semibold hover:bg-white/90">Solicitar Acceso</a>
+              <a href="https://wa.me/18095551234" target="_blank" rel="noopener noreferrer" className="px-6 py-3 rounded-xl bg-black/20 text-white font-semibold hover:bg-black/30">Habla con nosotros</a>
             </div>
           </div>
         </section>

@@ -34,8 +34,8 @@ export default function AgentCard({ agent }: { agent: any }) {
       </div>
 
       {/* Content */}
-      <div className="p-4 text-center">
-        <h3 className="font-bold text-lg text-[#0B2545] mb-1">{agent.name}</h3>
+      <div className="p-5 text-center">
+        <h3 className="font-bold text-lg text-[#0B2545] mb-2 leading-tight">{agent.name}</h3>
         
         {/* Location */}
         <div className="text-sm text-gray-600 flex items-center justify-center gap-1 mb-2">
@@ -63,7 +63,7 @@ export default function AgentCard({ agent }: { agent: any }) {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+        <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
           <div className="bg-gray-50 rounded-lg p-2">
             <div className="text-gray-500">Experiencia</div>
             <div className="font-bold text-[#0B2545]">{yearsExp || 'N/A'} años</div>
@@ -91,11 +91,11 @@ export default function AgentCard({ agent }: { agent: any }) {
         )}
 
         {/* Contact Actions */}
-        <div className="flex gap-2 mb-3">
+        <div className="flex flex-col sm:flex-row gap-2 mb-4 text-sm">
           {agent.phone && (
             <a
               href={`tel:${agent.phone}`}
-              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-[#0B2545] text-white rounded-lg hover:bg-[#134074] transition text-sm font-medium"
+              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-[#0B2545] text-white rounded-lg hover:bg-[#134074] transition font-medium"
             >
               <FiPhone size={14} /> Llamar
             </a>
@@ -103,7 +103,7 @@ export default function AgentCard({ agent }: { agent: any }) {
           {agent.email && (
             <a
               href={`mailto:${agent.email}`}
-              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-[#00A676] text-white rounded-lg hover:bg-[#008c8c] transition text-sm font-medium"
+              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-[#00A676] text-white rounded-lg hover:bg-[#008c8c] transition font-medium"
             >
               <FiMail size={14} /> Email
             </a>

@@ -70,22 +70,6 @@ export default function ContactPage() {
           </p>
         </div>
 
-        {/* Future Chat Notice */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-teal-50 border-2 border-blue-200 rounded-xl">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-10 h-10 bg-[#00A6A6] rounded-full flex items-center justify-center text-white">
-              <FiMessageCircle className="text-xl" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 mb-1">Chat en vivo próximamente</h3>
-              <p className="text-sm text-gray-600">
-                Estamos trabajando en un sistema de chat en tiempo real para usuarios registrados. 
-                Podrás hablar con soporte y comunicarte con tu agente directamente desde la plataforma.
-              </p>
-            </div>
-          </div>
-        </div>
-
         <div className="grid lg:grid-cols-5 gap-6">
           {/* Contact Form - Takes more space on desktop */}
           <div className="lg:col-span-3 bg-white rounded-2xl shadow-lg p-6 sm:p-8">

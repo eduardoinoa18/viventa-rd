@@ -312,6 +312,18 @@ export default function UserDashboard() {
                     />
                   </div>
                   <div>
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                      <FiPhone /> Teléfono
+                    </label>
+                    <input 
+                      type="tel" 
+                      value={user.phone || ''} 
+                      readOnly
+                      placeholder="No registrado"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
+                    />
+                  </div>
+                  <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de cuenta</label>
                     <input 
                       type="text" 

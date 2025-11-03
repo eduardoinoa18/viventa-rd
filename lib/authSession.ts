@@ -6,6 +6,7 @@ export type UserSession = {
   profileComplete?: boolean;
   name?: string;
   displayName?: string;
+  phone?: string;
 };
 
 const KEY = 'viventa:session';
@@ -26,6 +27,9 @@ export function saveSession(session: UserSession) {
     if (session.name) {
       document.cookie = `viventa_name=${encodeURIComponent(session.name)}; path=/; max-age=${maxAge}; samesite=lax`;
     }
+    if (session.phone) {
+      document.cookie = `viventa_phone=${encodeURIComponent(session.phone)}; path=/; max-age=${maxAge}; samesite=lax`;
+    }
   } catch {}
 }
 
@@ -44,5 +48,6 @@ export function clearSession() {
     document.cookie = `viventa_profile=; ${expired}`;
     document.cookie = `viventa_uid=; ${expired}`;
     document.cookie = `viventa_name=; ${expired}`;
+    document.cookie = `viventa_phone=; ${expired}`;
   } catch {}
 }

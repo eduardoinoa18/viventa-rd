@@ -65,6 +65,7 @@ export default function Header() {
           ) : (
             <>
               <Link href="/search" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Explorar</Link>
+              <Link href="/agents" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Agentes</Link>
               <Link href="/favorites" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Favoritos</Link>
               <Link href="/social" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Social</Link>
             </>
@@ -88,6 +89,10 @@ export default function Header() {
                 <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm border-2 border-viventa-ocean text-viventa-ocean rounded-lg font-semibold hover:bg-viventa-ocean hover:text-white transition-all">
                   <FiUser className="text-lg" />
                   <span>Perfil</span>
+                </Link>
+                <Link href="/dashboard/settings" className="flex items-center gap-2 px-4 py-2 text-sm border-2 border-viventa-teal text-viventa-teal rounded-lg font-semibold hover:bg-viventa-teal hover:text-white transition-all">
+                  <FiSettings className="text-lg" />
+                  <span>Configuración</span>
                 </Link>
                 <button
                   onClick={logout}
