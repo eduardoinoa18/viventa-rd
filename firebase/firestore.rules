@@ -139,6 +139,20 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
+    match /waitlist_social/{waitlistId} {
+      allow read: if isElevated();
+      allow create: if true;
+      allow update: if isElevated();
+      allow delete: if isAdmin();
+    }
+
+    match /waitlist_platform/{waitlistId} {
+      allow read: if isElevated();
+      allow create: if true;
+      allow update: if isElevated();
+      allow delete: if isAdmin();
+    }
+
     match /{document=**} {
       allow read: if false;
     }

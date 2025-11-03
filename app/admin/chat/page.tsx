@@ -248,15 +248,25 @@ function AdminChatPageContent() {
       const inquiries = inquirySnap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
       setPropertyInquiries(inquiries)
 
-      // Load social waitlist
-      const waitlistQuery = query(
+      // Load both social and platform waitlists
+      const waitlistSocialQuery = query(
         collection(db, 'waitlist_social'),
         orderBy('createdAt', 'desc'),
         limit(50)
       )
-      const waitlistSnap = await getDocs(waitlistQuery)
-      const wl = waitlistSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
-      setWaitlist(wl)
+      const waitlistPlatformQuery = query(
+        collection(db, 'waitlist_platform'),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      )
+      const [waitlistSocialSnap, waitlistPlatformSnap] = await Promise.all([
+        getDocs(waitlistSocialQuery),
+        getDocs(waitlistPlatformQuery)
+      ])
+      const socialWaitlist = waitlistSocialSnap.docs.map((d: any) => ({ id: d.id, ...d.data(), source: 'social' }))
+      const platformWaitlist = waitlistPlatformSnap.docs.map((d: any) => ({ id: d.id, ...d.data(), source: 'platform' }))
+      const combined = [...socialWaitlist, ...platformWaitlist].sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds)
+      setWaitlist(combined)
     } catch (e) {
       console.error('Failed to load notifications', e)
       toast.error('Failed to load notifications')
@@ -279,10 +289,14 @@ function AdminChatPageContent() {
     }
   }
 
-  async function markSubmissionAsRead(submissionId: string, type: 'contact' | 'inquiry' | 'waitlist') {
+  async function markSubmissionAsRead(submissionId: string, type: 'contact' | 'inquiry' | 'waitlist', source?: 'social' | 'platform') {
     if (!currentUser) return
     try {
-      const collectionName = type === 'contact' ? 'contact_submissions' : type === 'inquiry' ? 'property_inquiries' : 'waitlist_social'
+      let collectionName = type === 'contact' ? 'contact_submissions' : type === 'inquiry' ? 'property_inquiries' : 'waitlist_social'
+      // For waitlist, determine collection from source
+      if (type === 'waitlist' && source) {
+        collectionName = source === 'social' ? 'waitlist_social' : 'waitlist_platform'
+      }
       await updateDoc(doc(db, collectionName, submissionId), {
         readBy: arrayUnion(currentUser.uid),
         status: 'read'
@@ -514,7 +528,7 @@ function AdminChatPageContent() {
                 }`}
               >
                 <FiUsers className="inline mr-2" />
-                Social Waitlist
+                Platform Waitlist
                 {unreadWaitlist > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                     {unreadWaitlist}
@@ -1062,23 +1076,26 @@ function AdminChatPageContent() {
               ) : waitlist.length === 0 ? (
                 <div className="bg-white rounded-xl shadow p-12 text-center">
                   <FiUsers className="text-6xl text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600">No social waitlist entries</p>
+                  <p className="text-gray-600">No waitlist entries</p>
                 </div>
               ) : (
                 waitlist.map(wl => {
                   const isRead = (wl.readBy || []).includes(currentUser?.uid || '')
+                  const isSocial = wl.source === 'social'
                   return (
                     <div
                       key={wl.id}
                       className={`bg-white rounded-xl shadow p-6 border-l-4 ${
-                        isRead ? 'border-gray-300' : 'border-purple-500'
+                        isRead ? 'border-gray-300' : isSocial ? 'border-purple-500' : 'border-blue-500'
                       }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
-                              Social Network
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              isSocial ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {isSocial ? 'Social Network' : 'Platform Access'}
                             </span>
                             {!isRead && (
                               <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">
@@ -1088,15 +1105,12 @@ function AdminChatPageContent() {
                           </div>
                           <h3 className="font-bold text-gray-800 text-lg mb-2">{wl.email}</h3>
                           <p className="text-xs text-gray-500">
-                            Source: {wl.source || 'social_coming_soon'}
-                          </p>
-                          <p className="text-xs text-gray-500">
                             {wl.createdAt?.toDate?.().toLocaleString('es-DO') || 'Unknown date'}
                           </p>
                         </div>
                         {!isRead && (
                           <button
-                            onClick={() => markSubmissionAsRead(wl.id, 'waitlist')}
+                            onClick={() => markSubmissionAsRead(wl.id, 'waitlist', wl.source)}
                             className="p-2 text-green-600 hover:bg-green-50 rounded"
                             title="Mark as read"
                           >

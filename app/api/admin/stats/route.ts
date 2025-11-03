@@ -13,6 +13,7 @@ export async function GET() {
       const activePropsSnap = await adminDb.collection('properties').where('status', '==', 'active').get()
       const pendingPropsSnap = await adminDb.collection('properties').where('status', '==', 'pending').get()
       const leadsSnap = await adminDb.collection('leads').get()
+      const applicationsSnap = await adminDb.collection('applications').where('status', '==', 'pending').get()
       return NextResponse.json({
         ok: true,
         data: {
@@ -21,6 +22,7 @@ export async function GET() {
           pendingApprovals: pendingPropsSnap.size || 0,
           leads: leadsSnap.size || 0,
           monthlyRevenueUSD: 0,
+          pendingApplications: applicationsSnap.size || 0,
         },
       })
     }

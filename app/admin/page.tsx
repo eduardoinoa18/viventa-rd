@@ -30,13 +30,7 @@ export default function AdminPage() {
       const users = usersRes?.ok ? usersRes.data : []
       const agents = users.filter((u: any) => u.role === 'agent').length
       const brokers = users.filter((u: any) => u.role === 'broker').length
-      setStats({ ...baseStats, totalAgents: agents, totalBrokers: brokers })
-    }).catch(() => {})
-
-    // Load pending applications count
-    fetch('/api/admin/stats').then(r => r.json()).then((d) => {
-      // This would ideally come from a dedicated endpoint
-      // For now we'll just use the pendingApprovals count
+      setStats({ ...baseStats, totalAgents: agents, totalBrokers: brokers, pendingApplications: baseStats.pendingApplications || 0 })
     }).catch(() => {})
   }, [])
 
@@ -80,7 +74,7 @@ export default function AdminPage() {
                   <span className="text-white/80 text-sm font-medium">Pending Applications</span>
                   <FiClock className="text-2xl opacity-80" />
                 </div>
-                <div className="text-4xl font-bold mb-1">{stats.pendingApprovals}</div>
+                <div className="text-4xl font-bold mb-1">{stats.pendingApplications}</div>
                 <div className="text-white/70 text-xs">Awaiting review</div>
               </div>
             </div>
