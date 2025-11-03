@@ -1,7 +1,4 @@
 'use client'
-// Client page, but ensure no static export attempts block build
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
 import { useState } from 'react'
 import { db } from '../../lib/firebaseClient'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
