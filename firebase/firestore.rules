@@ -39,7 +39,7 @@ service cloud.firestore {
     }
 
     match /applications/{appId} {
-      allow read: if isElevated();
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.userId || isElevated());
       allow create: if true;
       allow update: if isElevated();
       allow delete: if isMasterAdmin();
@@ -53,9 +53,9 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      allow read: if isSignedIn();
-      allow create: if isElevated();
-      allow update: if isSignedIn();
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.role == getUserRole() || isElevated());
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isElevated());
       allow delete: if isAdmin();
     }
 

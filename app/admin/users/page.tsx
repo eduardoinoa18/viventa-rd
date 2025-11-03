@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import ProtectedClient from '../../auth/ProtectedClient'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
-import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiX, FiRefreshCcw, FiEye } from 'react-icons/fi'
+import CreateProfessionalModal from '../../../components/CreateProfessionalModal'
+import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiX, FiRefreshCcw, FiEye, FiAward } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
 type User = {
@@ -35,6 +36,8 @@ export default function AdminUsersPage() {
   const [filterRole, setFilterRole] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [details, setDetails] = useState<User | null>(null)
+  const [showProfessionalModal, setShowProfessionalModal] = useState(false)
+  const [professionalRole, setProfessionalRole] = useState<'agent' | 'broker'>('agent')
 
   useEffect(() => { load() }, [filterRole])
 
@@ -70,6 +73,49 @@ export default function AdminUsersPage() {
       toast.error('Failed to load users')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function createProfessional(data: any) {
+    try {
+      const res = await fetch('/api/admin/professionals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      const json = await res.json()
+      if (json.success) {
+        toast.success(`${data.role === 'broker' ? 'Broker' : 'Agent'} created successfully! Code: ${json.professionalCode}`)
+        setShowProfessionalModal(false)
+        load()
+      } else {
+        toast.error(json.error || 'Failed to create professional')
+      }
+    } catch (e) {
+      console.error('Failed to create professional', e)
+      toast.error('Failed to create professional')
+    }
+  }
+
+  async function approveProfessional(uid: string) {
+    if (!confirm('Send welcome email with login credentials?')) return
+    
+    try {
+      const res = await fetch('/api/admin/professionals', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        toast.success('Professional approved and email sent!')
+        load()
+      } else {
+        toast.error(json.error || 'Failed to approve professional')
+      }
+    } catch (e) {
+      console.error('Failed to approve professional', e)
+      toast.error('Failed to approve professional')
     }
   }
 
@@ -183,12 +229,33 @@ export default function AdminUsersPage() {
         <AdminSidebar />
         <main className="flex-1 p-6 bg-gray-50">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-[#0B2545]">User Management</h1>
-            <div className="flex gap-2">
+            <div>
+              <h1 className="text-3xl font-bold text-[#0B2545]">User Management</h1>
+              <p className="text-gray-600 mt-1">Manage users, agents, and brokers</p>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <button 
+                onClick={() => {
+                  setProfessionalRole('agent')
+                  setShowProfessionalModal(true)
+                }} 
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]"
+              >
+                <FiAward /> Create Agent
+              </button>
+              <button 
+                onClick={() => {
+                  setProfessionalRole('broker')
+                  setShowProfessionalModal(true)
+                }} 
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#0B2545] to-[#134074] text-white rounded-lg font-semibold hover:shadow-lg"
+              >
+                <FiAward /> Create Broker
+              </button>
               <button onClick={syncFromAuth} className="inline-flex items-center gap-2 px-4 py-2 border border-[#00A676] text-[#00A676] rounded-lg font-semibold hover:bg-[#00A676] hover:text-white">
                 <FiRefreshCcw /> Sync from Auth
               </button>
-              <button onClick={openCreateForm} className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]">
+              <button onClick={openCreateForm} className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">
                 <FiUserPlus /> New User
               </button>
             </div>
@@ -210,8 +277,8 @@ export default function AdminUsersPage() {
           {/* Filters */}
           <div className="mb-4 flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <label className="font-semibold text-gray-700">Filter by status:</label>
-              <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="px-3 py-2 border rounded">
+              <label htmlFor="status-filter" className="font-semibold text-gray-700">Filter by status:</label>
+              <select id="status-filter" value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="px-3 py-2 border rounded" aria-label="Filter users by status">
                 <option value="all">All Statuses</option>
                 <option value="active">Active</option>
                 <option value="pending">Pending</option>
@@ -219,13 +286,15 @@ export default function AdminUsersPage() {
               </select>
             </div>
             <div className="flex items-center gap-2 flex-1 max-w-md">
-              <label className="font-semibold text-gray-700">Search:</label>
+              <label htmlFor="search-input" className="font-semibold text-gray-700">Search:</label>
               <input
+                id="search-input"
                 type="text"
                 placeholder="Name, email, or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-3 py-2 border rounded focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                aria-label="Search users by name, email, or phone"
               />
             </div>
           </div>
@@ -301,7 +370,16 @@ export default function AdminUsersPage() {
                           <button onClick={() => setDetails(u)} className="p-2 text-gray-700 hover:text-[#0B2545] hover:bg-gray-50 rounded transition-colors" title="View Details">
                             <FiEye size={18} />
                           </button>
-                          {u.status === 'pending' && (
+                          {u.status === 'pending' && (u.role === 'agent' || u.role === 'broker') && (
+                            <button 
+                              onClick={() => approveProfessional(u.uid || u.id)} 
+                              className="p-2 text-white bg-[#00A676] hover:bg-[#008F64] rounded transition-colors" 
+                              title="Approve & Send Credentials"
+                            >
+                              <FiAward size={18} />
+                            </button>
+                          )}
+                          {u.status === 'pending' && u.role !== 'agent' && u.role !== 'broker' && (
                             <button onClick={() => updateStatus(u.id, 'active')} className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors" title="Approve">
                               <FiUserCheck size={18} />
                             </button>
@@ -385,6 +463,15 @@ export default function AdminUsersPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Professional Creation Modal */}
+          {showProfessionalModal && (
+            <CreateProfessionalModal
+              onClose={() => setShowProfessionalModal(false)}
+              onSubmit={createProfessional}
+              initialRole={professionalRole}
+            />
           )}
         </main>
       </div>
