@@ -2,6 +2,10 @@ import Footer from '../../components/Footer'
 import Header from '../../components/Header'
 import { FiHome, FiBarChart2, FiCpu, FiCompass, FiShield, FiDollarSign, FiUsers, FiTrendingUp, FiStar } from 'react-icons/fi'
 
+// Avoid static generation timeouts by rendering this page dynamically at runtime
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default function ProfesionalesLanding() {
   return (
     <div className="bg-[#FAFAFA] min-h-screen flex flex-col">
