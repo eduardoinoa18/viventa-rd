@@ -51,17 +51,22 @@ export default function WaitlistPopup() {
     // Global trigger accessible from anywhere
     ;(window as any).openWaitlistPopup = handleManualTrigger
 
+    // Also support a custom DOM event to avoid timing issues with hydration
+    const openEventHandler = () => handleManualTrigger()
+    document.addEventListener('open-waitlist', openEventHandler as EventListener)
+
     return () => {
       clearTimeout(timer)
       document.removeEventListener('mouseleave', handleMouseLeave)
       delete (window as any).openWaitlistPopup
+      document.removeEventListener('open-waitlist', openEventHandler as EventListener)
     }
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name || !email) {
-      toast.error('Please fill in required fields')
+      toast.error('Por favor completa los campos requeridos')
       return
     }
 
@@ -88,15 +93,15 @@ export default function WaitlistPopup() {
 
       setSubmitted(true)
       localStorage.setItem('waitlist_submitted', 'true')
-      toast.success('Welcome to the waitlist! Check your email for confirmation.')
+  toast.success('¡Te uniste a la lista de espera! Revisa tu correo para confirmar.')
       
       // Auto-close after 3 seconds
       setTimeout(() => {
         setIsOpen(false)
       }, 3000)
     } catch (error) {
-      console.error('Waitlist submission error:', error)
-      toast.error('Something went wrong. Please try again.')
+  console.error('Waitlist submission error:', error)
+  toast.error('Algo salió mal. Inténtalo de nuevo.')
     } finally {
       setLoading(false)
     }

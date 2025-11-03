@@ -100,17 +100,19 @@ export default function HomePage() {
             
             {/* Waitlist CTA Banner */}
             <div className="bg-gradient-to-r from-purple-600/90 to-blue-600/90 backdrop-blur-sm rounded-xl p-6 mb-8 border border-white/20 max-w-2xl mx-auto">
-              <p className="text-lg font-semibold mb-3">🚀 Platform in Development - Join the Waitlist!</p>
-              <p className="text-sm text-gray-100 mb-4">Be first to access beta features, get exclusive updates, and enjoy special launch perks.</p>
+              <p className="text-lg font-semibold mb-3">🚀 Plataforma en Desarrollo - ¡Únete a la Lista de Espera!</p>
+              <p className="text-sm text-gray-100 mb-4">Sé de los primeros en acceder a funciones beta, recibir actualizaciones exclusivas y disfrutar beneficios de lanzamiento.</p>
               <button 
                 onClick={() => {
                   if ((window as any).openWaitlistPopup) {
                     (window as any).openWaitlistPopup()
+                  } else if (typeof document !== 'undefined') {
+                    document.dispatchEvent(new Event('open-waitlist'))
                   }
                 }}
                 className="px-6 py-3 bg-white text-purple-600 font-bold rounded-lg hover:bg-gray-100 transition-all shadow-lg"
               >
-                Reserve My Spot →
+                Reservar mi Cupo →
               </button>
             </div>
 
@@ -135,7 +137,7 @@ export default function HomePage() {
                 aria-label="Social (Próximamente)"
               >
                 <span className="relative flex-shrink-0">
-                  <span className="absolute -top-2 -right-3 text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">Soon</span>
+                  <span className="absolute -top-2 -right-3 text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">Pronto</span>
                   <FiTrendingUp className="text-lg sm:text-xl" />
                 </span>
                 <span>Social</span>

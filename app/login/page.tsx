@@ -62,8 +62,11 @@ export default function LoginPage() {
         router.push('/onboarding')
         return
       }
-      const dest = role === 'master_admin' ? '/admin' : '/dashboard'
-      router.push(dest + '?welcome=1')
+  let dest = '/dashboard'
+  if (role === 'master_admin') dest = '/admin'
+  else if (role === 'broker') dest = '/broker'
+  else if (role === 'agent') dest = '/agent'
+  router.push(dest + '?welcome=1')
       toast.success('¡Bienvenido de vuelta!')
     } catch (err: any) {
       const msg = err?.message || 'No se pudo iniciar sesión.'
