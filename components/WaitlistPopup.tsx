@@ -106,7 +106,7 @@ export default function WaitlistPopup() {
     // Show confirmation before closing
     if (!submitted) {
       const confirmClose = window.confirm(
-        "Don't miss out on early access! 🚀\n\nAre you sure you want to skip joining the waitlist? You'll miss exclusive beta access and launch perks."
+        "¡No pierdas el acceso anticipado! 🚀\n\n¿Estás seguro de que quieres salir sin unirte a la lista de espera? Te perderás el acceso beta exclusivo y beneficios de lanzamiento."
       )
       if (!confirmClose) return
     }
@@ -167,7 +167,7 @@ export default function WaitlistPopup() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
               </span>
-              <span className="text-sm font-bold">Only 23 Spots Left!</span>
+              <span className="text-sm font-bold">¡Solo quedan 23 cupos!</span>
             </div>
           </div>
         )}
@@ -178,20 +178,20 @@ export default function WaitlistPopup() {
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <FiCheckCircle className="text-5xl text-green-600" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">You're on the List! 🎉</h2>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">¡Estás en la Lista! 🎉</h2>
             <p className="text-lg text-gray-600 mb-4">
-              Thanks for joining, <span className="font-semibold text-[#00A676]">{name}</span>!
+              ¡Gracias por unirte, <span className="font-semibold text-[#00A676]">{name}</span>!
             </p>
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg text-left">
               <div className="flex items-start gap-3">
                 <FiAlertCircle className="text-blue-600 text-xl mt-0.5" />
                 <div className="text-sm text-gray-700">
-                  <p className="font-semibold mb-2">What's Next?</p>
+                  <p className="font-semibold mb-2">¿Qué sigue?</p>
                   <ul className="space-y-1 text-sm">
-                    <li>✅ Check your email for confirmation</li>
-                    <li>✅ You'll receive exclusive updates as we build</li>
-                    <li>✅ Get early beta access when we launch</li>
-                    <li>✅ Enjoy special perks as an early supporter</li>
+                    <li>✅ Revisa tu correo para la confirmación</li>
+                    <li>✅ Recibirás actualizaciones exclusivas durante el desarrollo</li>
+                    <li>✅ Tendrás acceso beta anticipado al lanzamiento</li>
+                    <li>✅ Disfruta de beneficios especiales como miembro fundador</li>
                   </ul>
                 </div>
               </div>
@@ -209,15 +209,15 @@ export default function WaitlistPopup() {
                 <div className="inline-block mb-4">
                   <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30">
                     <span className="animate-pulse">🚀</span>
-                    <span className="text-sm font-semibold">Limited Beta Access</span>
+                    <span className="text-sm font-semibold">Acceso Beta Limitado</span>
                   </div>
                 </div>
                 
                 <h2 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-                  Join the VIVENTA<br/>Exclusive Waitlist
+                  Únete a la Lista de Espera<br/>Exclusiva de VIVENTA
                 </h2>
                 <p className="text-xl opacity-95 max-w-xl">
-                  Be among the first <span className="font-bold underline decoration-2">100 members</span> to experience the future of Dominican real estate
+                  Sé parte de los primeros <span className="font-bold underline decoration-2">100 miembros</span> en experimentar el futuro inmobiliario dominicano
                 </p>
               </div>
             </div>
@@ -225,7 +225,7 @@ export default function WaitlistPopup() {
             {/* Enhanced Benefits Section */}
             <div className="p-8 bg-gradient-to-br from-blue-50 via-purple-50 to-teal-50 border-b-2 border-gray-100">
               <h3 className="text-center text-2xl font-bold text-gray-800 mb-6">
-                Why Join Now? 🎁
+                ¿Por qué unirte ahora? 🎁
               </h3>
               <div className="grid md:grid-cols-2 gap-5">
                 <div className="flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -233,8 +233,8 @@ export default function WaitlistPopup() {
                     <span className="text-white text-xl font-bold">🚀</span>
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800 text-lg mb-1">Priority Beta Access</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">Be the first to test cutting-edge features before public launch</p>
+                    <h3 className="font-bold text-gray-800 text-lg mb-1">Acceso Beta Prioritario</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">Sé el primero en probar funciones de vanguardia antes del lanzamiento público</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -242,8 +242,8 @@ export default function WaitlistPopup() {
                     <span className="text-white text-xl font-bold">💎</span>
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800 text-lg mb-1">Exclusive VIP Perks</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">Free premium features, priority support, and special discounts</p>
+                    <h3 className="font-bold text-gray-800 text-lg mb-1">Beneficios VIP Exclusivos</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">Funciones premium gratis, soporte prioritario y descuentos especiales</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -251,8 +251,8 @@ export default function WaitlistPopup() {
                     <span className="text-white text-xl font-bold">📢</span>
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800 text-lg mb-1">Insider Updates</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">Behind-the-scenes development news and product roadmap insights</p>
+                    <h3 className="font-bold text-gray-800 text-lg mb-1">Actualizaciones Exclusivas</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">Noticias del desarrollo y adelantos de nuevas funcionalidades</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -260,8 +260,8 @@ export default function WaitlistPopup() {
                     <span className="text-white text-xl font-bold">🎯</span>
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800 text-lg mb-1">Shape the Future</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">Direct input on features - your feedback drives our development</p>
+                    <h3 className="font-bold text-gray-800 text-lg mb-1">Da Forma al Futuro</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">Tu opinión impulsa nuestro desarrollo - ayúdanos a crear la plataforma ideal</p>
                   </div>
                 </div>
               </div>
@@ -274,20 +274,20 @@ export default function WaitlistPopup() {
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-400 to-green-600 border-2 border-white"></div>
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-400 to-orange-600 border-2 border-white"></div>
                 </div>
-                <span className="font-semibold text-gray-700">Join <span className="text-[#00A676]">200+</span> early supporters already on the list!</span>
+                <span className="font-semibold text-gray-700">¡Únete a <span className="text-[#00A676]">200+</span> personas que ya están en la lista!</span>
               </div>
             </div>
 
             {/* Enhanced Form */}
             <form onSubmit={handleSubmit} className="p-8 space-y-5">
               <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">Secure Your VIP Spot</h3>
-                <p className="text-gray-600">Join in just 30 seconds - No credit card required</p>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">Asegura tu Cupo VIP</h3>
+                <p className="text-gray-600">Únete en solo 30 segundos - No requiere tarjeta de crédito</p>
               </div>
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Full Name <span className="text-red-500">*</span>
+                  Nombre Completo <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
@@ -295,7 +295,7 @@ export default function WaitlistPopup() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., Juan Pérez"
+                    placeholder="ej., Juan Pérez"
                     className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-[#00A676] transition-all text-gray-800 font-medium"
                     required
                   />
@@ -304,7 +304,7 @@ export default function WaitlistPopup() {
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Email Address <span className="text-red-500">*</span>
+                  Correo Electrónico <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
@@ -312,7 +312,7 @@ export default function WaitlistPopup() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g., juan@ejemplo.com"
+                    placeholder="ej., juan@ejemplo.com"
                     className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-[#00A676] transition-all text-gray-800 font-medium"
                     required
                   />
@@ -321,7 +321,7 @@ export default function WaitlistPopup() {
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Phone Number <span className="text-gray-400 font-normal">(Optional - for exclusive offers)</span>
+                  Número de Teléfono <span className="text-gray-400 font-normal">(Opcional - para ofertas exclusivas)</span>
                 </label>
                 <div className="relative">
                   <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
@@ -329,7 +329,7 @@ export default function WaitlistPopup() {
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="e.g., +1 (809) 123-4567"
+                    placeholder="ej., +1 (809) 123-4567"
                     className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-[#00A676] transition-all text-gray-800 font-medium"
                   />
                 </div>
@@ -337,18 +337,18 @@ export default function WaitlistPopup() {
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  What brings you to VIVENTA?
+                  ¿Qué te trae a VIVENTA?
                 </label>
                 <select
                   value={interest}
                   onChange={(e) => setInterest(e.target.value as any)}
                   className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-[#00A676] transition-all text-gray-800 font-medium bg-white"
                 >
-                  <option value="buyer">🏠 I want to buy a property</option>
-                  <option value="seller">💰 I want to sell a property</option>
-                  <option value="agent">🤝 I'm a real estate professional</option>
-                  <option value="investor">📈 I'm interested in investing</option>
-                  <option value="other">👀 Just exploring options</option>
+                  <option value="buyer">🏠 Quiero comprar una propiedad</option>
+                  <option value="seller">💰 Quiero vender una propiedad</option>
+                  <option value="agent">🤝 Soy profesional inmobiliario</option>
+                  <option value="investor">📈 Me interesa invertir</option>
+                  <option value="other">👀 Solo estoy explorando</option>
                 </select>
               </div>
 
@@ -362,11 +362,11 @@ export default function WaitlistPopup() {
                     {loading ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                        Securing Your Spot...
+                        Asegurando tu Cupo...
                       </>
                     ) : (
                       <>
-                        🎉 Reserve My VIP Spot Now!
+                        🎉 ¡Reserva Mi Cupo VIP Ahora!
                       </>
                     )}
                   </span>
@@ -377,19 +377,19 @@ export default function WaitlistPopup() {
               <div className="flex items-center gap-2 p-4 bg-green-50 border border-green-200 rounded-xl">
                 <FiCheckCircle className="text-green-600 flex-shrink-0 text-xl" />
                 <p className="text-xs text-gray-700 leading-relaxed">
-                  <span className="font-semibold">100% Free.</span> No spam, no credit card required. Unsubscribe anytime. We respect your privacy.
+                  <span className="font-semibold">100% Gratis.</span> Sin spam, sin tarjeta de crédito. Cancela cuando quieras. Respetamos tu privacidad.
                 </p>
               </div>
 
               <div className="flex items-center justify-center gap-4 text-xs text-gray-500 pt-2">
                 <div className="flex items-center gap-1">
                   <FiShield className="text-gray-400" />
-                  <span>Secure & Encrypted</span>
+                  <span>Seguro y Encriptado</span>
                 </div>
                 <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
                 <div className="flex items-center gap-1">
                   <FiLock className="text-gray-400" />
-                  <span>GDPR Compliant</span>
+                  <span>Cumple con GDPR</span>
                 </div>
               </div>
             </form>

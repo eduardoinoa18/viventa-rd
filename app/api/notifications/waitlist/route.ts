@@ -52,17 +52,17 @@ export async function POST(req: NextRequest) {
           to: process.env.ADMIN_EMAIL || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com',
           from: 'noreply@viventa.com',
           replyTo: email,
-          subject: `🎯 New Waitlist Signup - ${name}`,
+          subject: `🎯 Nueva Inscripción en Lista de Espera - ${name}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <div style="background: linear-gradient(to right, #004AAD, #00A676); padding: 30px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px;">New Waitlist Signup! 🎉</h1>
+                <h1 style="margin: 0; font-size: 28px;">¡Nueva Inscripción en Lista de Espera! 🎉</h1>
               </div>
               <div style="padding: 30px; background: #f9f9f9;">
-                <h2 style="color: #0B2545; margin-top: 0;">Contact Details</h2>
+                <h2 style="color: #0B2545; margin-top: 0;">Detalles de Contacto</h2>
                 <table style="width: 100%; background: white; border-radius: 8px; padding: 20px;">
                   <tr>
-                    <td style="padding: 10px; font-weight: bold; color: #666;">Name:</td>
+                    <td style="padding: 10px; font-weight: bold; color: #666;">Nombre:</td>
                     <td style="padding: 10px; color: #333;">${name}</td>
                   </tr>
                   <tr>
@@ -70,27 +70,27 @@ export async function POST(req: NextRequest) {
                     <td style="padding: 10px; color: #333;"><a href="mailto:${email}" style="color: #00A676;">${email}</a></td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px; font-weight: bold; color: #666;">Phone:</td>
-                    <td style="padding: 10px; color: #333;">${phone || 'Not provided'}</td>
+                    <td style="padding: 10px; font-weight: bold; color: #666;">Teléfono:</td>
+                    <td style="padding: 10px; color: #333;">${phone || 'No proporcionado'}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px; font-weight: bold; color: #666;">Interest:</td>
+                    <td style="padding: 10px; font-weight: bold; color: #666;">Interés:</td>
                     <td style="padding: 10px; color: #333;">${interest}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px; font-weight: bold; color: #666;">Submitted:</td>
+                    <td style="padding: 10px; font-weight: bold; color: #666;">Fecha:</td>
                     <td style="padding: 10px; color: #333;">${new Date().toLocaleString('es-DO')}</td>
                   </tr>
                 </table>
                 <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-left: 4px solid #2196F3; border-radius: 4px;">
                   <p style="margin: 0; color: #0B2545;">
-                    <strong>📊 Quick Action:</strong> View all waitlist submissions in your 
-                    <a href="${process.env.NEXT_PUBLIC_BASE_URL}/admin/chat?tab=waitlist" style="color: #00A676;">Admin Portal</a>
+                    <strong>📊 Acción Rápida:</strong> Ver todas las inscripciones en tu 
+                    <a href="${process.env.NEXT_PUBLIC_BASE_URL}/admin/chat?tab=waitlist" style="color: #00A676;">Portal de Administración</a>
                   </p>
                 </div>
               </div>
               <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-                <p>This is an automated notification from VIVENTA Platform</p>
+                <p>Esta es una notificación automática de la Plataforma VIVENTA</p>
               </div>
             </div>
           `
@@ -110,47 +110,47 @@ export async function POST(req: NextRequest) {
           to: email,
           from: 'noreply@viventa.com',
           replyTo: process.env.ADMIN_EMAIL || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com',
-          subject: '🎉 Welcome to the VIVENTA Waitlist!',
+          subject: '🎉 ¡Bienvenido a la Lista de Espera de VIVENTA!',
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <div style="background: linear-gradient(to right, #004AAD, #00A676); padding: 40px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 32px;">You're In! 🚀</h1>
-                <p style="margin: 10px 0 0 0; font-size: 18px; opacity: 0.9;">Welcome to the VIVENTA Community</p>
+                <h1 style="margin: 0; font-size: 32px;">¡Ya Estás Dentro! 🚀</h1>
+                <p style="margin: 10px 0 0 0; font-size: 18px; opacity: 0.9;">Bienvenido a la Comunidad VIVENTA</p>
               </div>
               <div style="padding: 40px; background: white;">
-                <h2 style="color: #0B2545; margin-top: 0;">Hola ${name}! 👋</h2>
+                <h2 style="color: #0B2545; margin-top: 0;">¡Hola ${name}! 👋</h2>
                 <p style="color: #333; line-height: 1.6; font-size: 16px;">
-                  Thank you for joining the VIVENTA waitlist! We're thrilled to have you as part of our early community.
+                  ¡Gracias por unirte a la lista de espera de VIVENTA! Estamos emocionados de tenerte como parte de nuestra comunidad desde el inicio.
                 </p>
                 
                 <div style="background: #f0f9ff; border-left: 4px solid #00A676; padding: 20px; margin: 25px 0; border-radius: 4px;">
-                  <h3 style="margin: 0 0 15px 0; color: #0B2545;">What happens next?</h3>
+                  <h3 style="margin: 0 0 15px 0; color: #0B2545;">¿Qué sigue ahora?</h3>
                   <ul style="margin: 0; padding-left: 20px; color: #333;">
-                    <li style="margin-bottom: 10px;"><strong>Regular Updates:</strong> We'll keep you posted on our development progress</li>
-                    <li style="margin-bottom: 10px;"><strong>Early Beta Access:</strong> You'll be first in line to test new features</li>
-                    <li style="margin-bottom: 10px;"><strong>Launch Perks:</strong> Exclusive benefits when we go live</li>
-                    <li style="margin-bottom: 10px;"><strong>Your Voice Matters:</strong> Help shape the platform with your feedback</li>
+                    <li style="margin-bottom: 10px;"><strong>Actualizaciones Regulares:</strong> Te mantendremos al día sobre nuestro progreso</li>
+                    <li style="margin-bottom: 10px;"><strong>Acceso Beta Anticipado:</strong> Serás el primero en probar nuevas funciones</li>
+                    <li style="margin-bottom: 10px;"><strong>Beneficios de Lanzamiento:</strong> Ventajas exclusivas cuando lancemos oficialmente</li>
+                    <li style="margin-bottom: 10px;"><strong>Tu Opinión Importa:</strong> Ayuda a dar forma a la plataforma con tus comentarios</li>
                   </ul>
                 </div>
 
                 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 10px; text-align: center; margin: 30px 0;">
-                  <p style="color: white; margin: 0 0 15px 0; font-size: 18px; font-weight: bold;">Your Waitlist Position</p>
-                  <p style="color: white; margin: 0; font-size: 14px; opacity: 0.9;">You're among our earliest supporters! 🌟</p>
+                  <p style="color: white; margin: 0 0 15px 0; font-size: 18px; font-weight: bold;">Tu Posición en la Lista</p>
+                  <p style="color: white; margin: 0; font-size: 14px; opacity: 0.9;">¡Eres parte de nuestros primeros apoyadores! 🌟</p>
                 </div>
 
                 <p style="color: #333; line-height: 1.6;">
-                  We're building something special for the Dominican real estate market, and your early support means the world to us.
+                  Estamos construyendo algo especial para el mercado inmobiliario dominicano, y tu apoyo desde el inicio significa mucho para nosotros.
                 </p>
 
                 <div style="text-align: center; margin: 30px 0;">
                   <a href="${process.env.NEXT_PUBLIC_BASE_URL}" 
                      style="display: inline-block; background: linear-gradient(to right, #004AAD, #00A676); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                    Visit VIVENTA
+                    Visitar VIVENTA
                   </a>
                 </div>
 
                 <p style="color: #666; font-size: 14px; margin-top: 30px;">
-                  Questions? Just reply to this email - we'd love to hear from you!
+                  ¿Preguntas? Simplemente responde a este correo - ¡nos encantaría escucharte!
                 </p>
               </div>
               <div style="padding: 20px; text-align: center; background: #f9f9f9; color: #666; font-size: 12px;">
