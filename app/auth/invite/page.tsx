@@ -1,11 +1,11 @@
 "use client"
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { auth } from '../../../lib/firebaseClient'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '../../../lib/firebaseClient'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function InviteAcceptPage(){
+function InviteForm() {
   const [code, setCode] = useState('')
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<string| null>(null)
@@ -51,5 +51,13 @@ export default function InviteAcceptPage(){
         {status && <div className="text-sm text-gray-700">{status}</div>}
       </div>
     </div>
+  )
+}
+
+export default function InviteAcceptPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-600">Cargando...</div>}>
+      <InviteForm />
+    </Suspense>
   )
 }
