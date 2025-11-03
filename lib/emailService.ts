@@ -48,15 +48,40 @@ export async function sendEmail({ to, subject, html, from, replyTo }: EmailOptio
       },
     })
 
-    await transporter.sendMail({
-      from: fromFormatted,
-      to,
-      subject,
-      html,
-      replyTo,
-    })
-    console.log(`Email sent via SMTP to ${to}`)
-    return
+    const trySend = async (overrideFrom?: string) => {
+      await transporter.sendMail({
+        from: overrideFrom ? `VIVENTA <${overrideFrom}>` : fromFormatted,
+        to,
+        subject,
+        html,
+        replyTo,
+      })
+    }
+
+    try {
+      await trySend()
+      console.log(`Email sent via SMTP to ${to} (from ${fromEmail})`)
+      return
+    } catch (smtpErr: any) {
+      // Common issue: Gmail SMTP forbids arbitrary From. Retry with SMTP_USER
+      const smtpUser = process.env.SMTP_USER
+      const host = process.env.SMTP_HOST || ''
+      const isGmail = /gmail\.com$/i.test(host) || /@gmail\.com$/i.test(String(smtpUser))
+      const mismatch = smtpUser && fromEmail && smtpUser.toLowerCase() !== fromEmail.toLowerCase()
+      if (isGmail && mismatch) {
+        try {
+          console.warn('SMTP from mismatch detected. Retrying with SMTP_USER as From...')
+          await trySend(smtpUser!)
+          console.log(`Email sent via SMTP to ${to} (from ${smtpUser}) with replyTo=${replyTo || 'none'}`)
+          return
+        } catch (retryErr) {
+          console.error('SMTP retry with SMTP_USER failed:', retryErr)
+          throw retryErr
+        }
+      }
+      console.error('SMTP send failed:', smtpErr)
+      throw smtpErr
+    }
   }
 
   // No email service configured
