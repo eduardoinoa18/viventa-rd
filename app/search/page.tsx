@@ -8,11 +8,11 @@ import PropertyCard from '../../components/PropertyCard'
 // SearchStatsBar removed per request to simplify the page
 import AdvancedFilters from '../../components/AdvancedFilters'
 import SavedSearchModal from '../../components/SavedSearchModal'
-import { FiSave, FiSearch, FiSliders, FiFilter, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { FiSave, FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs } from 'firebase/firestore'
 import { getUserCurrency, type Currency } from '../../lib/currency'
-import { searchListings, getFacetValues, type SearchFilters, type Listing } from '../../lib/customSearchService'
+import { searchListings, type SearchFilters, type Listing } from '../../lib/customSearchService'
 
 // Map view removed per request
 
@@ -24,7 +24,7 @@ function SearchPageContent() {
   const [showSave, setShowSave] = useState(false)
   const [saved, setSaved] = useState<any[]>([])
   // Map view disabled; keep list-only
-  const [showFilters, setShowFilters] = useState(false)
+  // Simple filters removed; only SearchBar and AdvancedFilters remain
   const [currency, setCurrency] = useState<Currency>('USD')
   
   // Search state
@@ -35,12 +35,7 @@ function SearchPageContent() {
   const [totalPages, setTotalPages] = useState(1)
   const pageSize = 20
   
-  // Facet values for dropdowns
-  const [facets, setFacets] = useState<{
-    cities: string[]
-    neighborhoods: string[]
-    propertyTypes: string[]
-  }>({ cities: [], neighborhoods: [], propertyTypes: [] })
+  // Facets no longer needed here (AdvancedFilters handles its own options)
   
   // Search filters
   const [filters, setFilters] = useState<SearchFilters>({
@@ -55,14 +50,11 @@ function SearchPageContent() {
     bathrooms: searchParams?.get('bathrooms') ? Number(searchParams.get('bathrooms')) : undefined,
   })
 
-  // Cached facets with timestamp
-  const [facetsCache, setFacetsCache] = useState<{ data: typeof facets; timestamp: number } | null>(null)
-  const FACETS_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+  // Facets cache removed
 
   // Load saved searches and facets
   useEffect(() => {
     loadSaved()
-    loadFacetsWithCache()
     setCurrency(getUserCurrency())
   }, [])
 
@@ -83,25 +75,7 @@ function SearchPageContent() {
     setSaved(snap.docs.map((d: any) => ({ id: d.id, ...d.data() })))
   }
 
-  async function loadFacets() {
-    const facetValues = await getFacetValues()
-    setFacets(facetValues)
-  }
-
-  async function loadFacetsWithCache() {
-    // Check if we have valid cached facets
-    if (facetsCache && Date.now() - facetsCache.timestamp < FACETS_CACHE_TTL) {
-      console.log('[CustomSearch] Using cached facets')
-      setFacets(facetsCache.data)
-      return
-    }
-
-    // Fetch fresh facets
-    console.log('[CustomSearch] Fetching fresh facets')
-    const facetValues = await getFacetValues()
-    setFacets(facetValues)
-    setFacetsCache({ data: facetValues, timestamp: Date.now() })
-  }
+  // Facet loading removed
 
   async function performSearch() {
     setLoading(true)
@@ -174,18 +148,9 @@ function SearchPageContent() {
               <div className="text-sm mt-1">Sistema de búsqueda integrado con geo-localización y filtros inteligentes.</div>
             </div>
 
-            {/* Mobile view toggle */}
-            {/* Mobile quick filter toggle only (map removed) */}
-            <div className="lg:hidden mb-4 flex items-center justify-end">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center gap-2 text-gray-700 hover:bg-gray-50"
-              >
-                <FiSliders /> Filtros
-              </button>
-            </div>
+            {/* Simple filters removed; no mobile toggle */}
 
-            <div className="grid lg:grid-cols-[1fr_420px] gap-6">
+            <div className="space-y-6">
               {/* Main content */}
               <div className={`space-y-4 min-w-0`}>
                 {/* Search bar */}
@@ -281,137 +246,7 @@ function SearchPageContent() {
                 </div>
               </div>
 
-              {/* Sidebar filters only (map removed) */}
-              <div className={`${!showFilters ? 'hidden lg:block' : ''} space-y-4`}>
-                <div className="bg-white rounded-lg shadow-sm p-4 sticky top-20 max-h-[calc(100vh-120px)] overflow-y-auto">
-                  <h3 className="font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
-                    <FiFilter /> Filtros
-                  </h3>
-                  <div className="space-y-4">
-                    {/* Listing Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Operación</label>
-                      <select
-                        value={filters.listingType || ''}
-                        onChange={(e) => updateFilters({ listingType: e.target.value as 'sale' | 'rent' | undefined || undefined })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                      >
-                        <option value="">Todas</option>
-                        <option value="sale">Venta</option>
-                        <option value="rent">Alquiler</option>
-                      </select>
-                    </div>
-
-                    {/* Property Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de propiedad</label>
-                      <select
-                        value={filters.propertyType || ''}
-                        onChange={(e) => updateFilters({ propertyType: e.target.value || undefined })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                      >
-                        <option value="">Todos</option>
-                        {facets.propertyTypes.map((type) => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* City */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
-                      <select
-                        value={filters.city || ''}
-                        onChange={(e) => updateFilters({ city: e.target.value || undefined })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                      >
-                        <option value="">Todas</option>
-                        {facets.cities.map((city) => (
-                          <option key={city} value={city}>{city}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Neighborhood */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Sector</label>
-                      <select
-                        value={filters.neighborhood || ''}
-                        onChange={(e) => updateFilters({ neighborhood: e.target.value || undefined })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                      >
-                        <option value="">Todos</option>
-                        {facets.neighborhoods.map((n) => (
-                          <option key={n} value={n}>{n}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Price Range */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Precio mín</label>
-                        <input
-                          type="number"
-                          value={filters.minPrice || ''}
-                          onChange={(e) => updateFilters({ minPrice: e.target.value ? Number(e.target.value) : undefined })}
-                          placeholder="$0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Precio máx</label>
-                        <input
-                          type="number"
-                          value={filters.maxPrice || ''}
-                          onChange={(e) => updateFilters({ maxPrice: e.target.value ? Number(e.target.value) : undefined })}
-                          placeholder="$∞"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Bedrooms / Bathrooms */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Habitaciones</label>
-                        <input
-                          type="number"
-                          value={filters.bedrooms || ''}
-                          onChange={(e) => updateFilters({ bedrooms: e.target.value ? Number(e.target.value) : undefined })}
-                          placeholder="0+"
-                          min="0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Baños</label>
-                        <input
-                          type="number"
-                          value={filters.bathrooms || ''}
-                          onChange={(e) => updateFilters({ bathrooms: e.target.value ? Number(e.target.value) : undefined })}
-                          placeholder="0+"
-                          min="0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Clear Filters */}
-                    <button
-                      onClick={() => {
-                        setFilters({ query: '' })
-                        setCurrentPage(1)
-                      }}
-                      className="w-full px-4 py-2 text-sm text-gray-600 hover:text-[#0B2545] border border-gray-300 rounded-lg hover:bg-gray-50"
-                    >
-                      Limpiar filtros
-                    </button>
-                  </div>
-                </div>
-
-                {/* Map removed */}
-              </div>
+              {/* Sidebar simple filters removed */}
             </div>
 
             {/* Map removed on mobile */}
