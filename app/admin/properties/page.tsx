@@ -242,6 +242,7 @@ export default function AdminPropertiesPage() {
                     value={statusFilter} 
                     onChange={(e) => setStatusFilter(e.target.value)} 
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    aria-label="Filtrar por estado"
                   >
                     <option value="all">Todos los Estados</option>
                     <option value="pending">⏳ Pendientes</option>
@@ -273,7 +274,7 @@ export default function AdminPropertiesPage() {
             {Object.values(selected).filter(Boolean).length > 0 && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg shadow p-4 mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-5 w-5" />
+                  <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-5 w-5" aria-label="Seleccionar todas las propiedades" />
                   <span className="text-sm font-medium text-blue-900">
                     {Object.values(selected).filter(Boolean).length} propiedad(es) seleccionada(s)
                   </span>
@@ -331,6 +332,7 @@ export default function AdminPropertiesPage() {
                               checked={!!selected[l.id]} 
                               onChange={() => toggleOne(l.id)} 
                               className="h-5 w-5 bg-white rounded shadow-lg" 
+                              aria-label={`Seleccionar propiedad ${l.title || l.id}`}
                             />
                           </div>
                           <div className="absolute top-2 right-2">
@@ -397,6 +399,7 @@ export default function AdminPropertiesPage() {
                               checked={!!selected[l.id]} 
                               onChange={() => toggleOne(l.id)} 
                               className="h-5 w-5" 
+                              aria-label={`Seleccionar propiedad ${l.title || l.id}`}
                             />
                             {l.images && l.images[0] ? (
                               <img src={l.images[0]} alt={l.title} className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200" />

@@ -296,12 +296,14 @@ export default function CreatePropertyPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Propiedad *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="propertyType">Tipo de Propiedad *</label>
                     <select
+                      id="propertyType"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       value={form.propertyType || ''}
                       onChange={e=>setForm({...form, propertyType: e.target.value as any})}
                       required
+                      aria-label="Tipo de propiedad"
                     >
                       <option value="apartment">Apartamento</option>
                       <option value="house">Casa</option>
@@ -312,12 +314,14 @@ export default function CreatePropertyPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Operación *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="listingType">Tipo de Operación *</label>
                     <select
+                      id="listingType"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       value={form.listingType || ''}
                       onChange={e=>setForm({...form, listingType: e.target.value as any})}
                       required
+                      aria-label="Tipo de operación"
                     >
                       <option value="sale">Venta</option>
                       <option value="rent">Alquiler</option>
@@ -420,10 +424,12 @@ export default function CreatePropertyPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <input
+                        id="propertyImages"
                         type="file"
                         accept="image/jpeg,image/jpg,image/png,image/webp"
                         multiple
                         onChange={(e) => onFileSelect(e.target.files)}
+                        aria-label="Seleccionar imágenes de la propiedad"
                         className="flex-1 px-4 py-3 border border-gray-300 rounded-lg"
                       />
                       <button
@@ -500,11 +506,13 @@ export default function CreatePropertyPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Estado de la Publicación</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="status">Estado de la Publicación</label>
                     <select
+                      id="status"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       value={form.status || 'pending'}
                       onChange={e=>setForm({...form, status: e.target.value as any})}
+                      aria-label="Estado de la publicación"
                     >
                       <option value="pending">Pendiente de Aprobación</option>
                       <option value="active">Activo (Visible en plataforma)</option>

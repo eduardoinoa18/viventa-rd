@@ -140,6 +140,7 @@ export default function ContactPage() {
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all appearance-none bg-white"
+                    aria-label="Tipo de consulta"
                   >
                     <option value="general">Consulta general</option>
                     <option value="buyer">Quiero comprar una propiedad</option>
@@ -159,6 +160,7 @@ export default function ContactPage() {
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all appearance-none bg-white"
+                    aria-label="Rol profesional"
                   >
                     <option value="">Seleccionar...</option>
                     <option value="agent">Agente</option>

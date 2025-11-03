@@ -184,12 +184,12 @@ export default function ApplyPage(){
               <input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} className="w-full px-4 py-3 border rounded-lg" placeholder="(809) 555-1234"/>
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2">{form.type==='agent'?'Agencia':'Empresa'}</label>
-              <input value={form.company} onChange={e=>setForm({...form,company:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/>
+              <label className="block text-sm font-semibold mb-2" htmlFor="company">{form.type==='agent'?'Agencia':'Empresa'}</label>
+              <input id="company" value={form.company} onChange={e=>setForm({...form,company:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/>
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2">Dirección</label>
-              <input value={form.address} onChange={e=>setForm({...form,address:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/>
+              <label className="block text-sm font-semibold mb-2" htmlFor="address">Dirección</label>
+              <input id="address" value={form.address} onChange={e=>setForm({...form,address:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/>
             </div>
             <div>
               <label className="block text-sm font-semibold mb-2">Zonas</label>
@@ -201,15 +201,15 @@ export default function ApplyPage(){
             <div className="mb-6 border-t pt-6">
               <h3 className="font-bold text-lg mb-4">Información del Agente</h3>
               <div className="grid md:grid-cols-2 gap-4">
-                <div><label className="block text-sm font-semibold mb-2">Licencia</label><input value={form.license} onChange={e=>setForm({...form,license:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
-                <div><label className="block text-sm font-semibold mb-2">Años experiencia</label><input type="number" value={form.years} onChange={e=>setForm({...form,years:+e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
-                <div><label className="block text-sm font-semibold mb-2">Volumen 12m</label><input type="number" value={form.volume12m} onChange={e=>setForm({...form,volume12m:+e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
-                <div><label className="block text-sm font-semibold mb-2">Inmobiliaria actual</label><input value={form.brokerage} onChange={e=>setForm({...form,brokerage:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
-                <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2">Idiomas</label><input value={form.languages} onChange={e=>setForm({...form,languages:e.target.value})} className="w-full px-4 py-3 border rounded-lg" placeholder="Español, Inglés"/></div>
-                <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2">Especialidades</label><input value={form.specialties} onChange={e=>setForm({...form,specialties:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
+                <div><label className="block text-sm font-semibold mb-2" htmlFor="license">Licencia</label><input id="license" value={form.license} onChange={e=>setForm({...form,license:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
+                <div><label className="block text-sm font-semibold mb-2" htmlFor="years">Años experiencia</label><input id="years" type="number" value={form.years} onChange={e=>setForm({...form,years:+e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
+                <div><label className="block text-sm font-semibold mb-2" htmlFor="volume12m">Volumen 12m</label><input id="volume12m" type="number" value={form.volume12m} onChange={e=>setForm({...form,volume12m:+e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
+                <div><label className="block text-sm font-semibold mb-2" htmlFor="brokerage">Inmobiliaria actual</label><input id="brokerage" value={form.brokerage} onChange={e=>setForm({...form,brokerage:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
+                <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2" htmlFor="languages">Idiomas</label><input id="languages" value={form.languages} onChange={e=>setForm({...form,languages:e.target.value})} className="w-full px-4 py-3 border rounded-lg" placeholder="Español, Inglés"/></div>
+                <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2" htmlFor="specialties">Especialidades</label><input id="specialties" value={form.specialties} onChange={e=>setForm({...form,specialties:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold mb-2">Currículum (Opcional - Recomendado)</label>
-                  <input type="file" accept=".pdf,.doc,.docx,image/*" onChange={(e)=> setResumeFile(e.target.files?.[0] || null)} className="w-full px-4 py-3 border rounded-lg" />
+                  <label className="block text-sm font-semibold mb-2" htmlFor="resume">Currículum (Opcional - Recomendado)</label>
+                  <input id="resume" type="file" accept=".pdf,.doc,.docx,image/*" onChange={(e)=> setResumeFile(e.target.files?.[0] || null)} className="w-full px-4 py-3 border rounded-lg" aria-label="Adjuntar currículum" />
                   <p className="text-xs text-gray-500 mt-1">Adjuntar tu currículum ayuda a acelerar el proceso de aprobación</p>
                   {uploadProgress > 0 && submitting && (
                     <div className="text-xs text-blue-600 mt-1">Subiendo: {Math.round(uploadProgress)}%</div>
@@ -247,8 +247,8 @@ export default function ApplyPage(){
                 <input value={form.socialMedia} onChange={e=>setForm({...form,socialMedia:e.target.value})} className="w-full px-4 py-3 border rounded-lg" placeholder="Instagram, Facebook, LinkedIn"/>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold mb-2">¿Cómo nos conociste?</label>
-                <select value={form.referralSource} onChange={e=>setForm({...form,referralSource:e.target.value})} className="w-full px-4 py-3 border rounded-lg">
+                <label className="block text-sm font-semibold mb-2" htmlFor="referralSource">¿Cómo nos conociste?</label>
+                <select id="referralSource" value={form.referralSource} onChange={e=>setForm({...form,referralSource:e.target.value})} className="w-full px-4 py-3 border rounded-lg" aria-label="Fuente de referencia">
                   <option value="">Selecciona una opción</option>
                   <option value="google">Google</option>
                   <option value="facebook">Facebook</option>
@@ -265,14 +265,14 @@ export default function ApplyPage(){
             <div className="mb-6 border-t pt-6">
               <h3 className="font-bold text-lg mb-4">Información del Bróker</h3>
               <div className="grid md:grid-cols-3 gap-4">
-                <div><label className="block text-sm font-semibold mb-2">N° agentes</label><input type="number" value={form.agents} onChange={e=>setForm({...form,agents:+e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
-                <div><label className="block text-sm font-semibold mb-2">Volumen anual</label><input type="number" value={form.annualVolume12m} onChange={e=>setForm({...form,annualVolume12m:+e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
-                <div><label className="block text-sm font-semibold mb-2">N° oficinas</label><input type="number" value={form.offices} onChange={e=>setForm({...form,offices:+e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
-                <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2">CRM</label><input value={form.crm} onChange={e=>setForm({...form,crm:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
-                <div className="md:col-span-3 flex items-center gap-2 p-3 bg-blue-50 rounded-lg"><input type="checkbox" checked={form.insurance} onChange={e=>setForm({...form,insurance:e.target.checked})} className="w-5 h-5"/><label className="text-sm font-medium">Tenemos seguro E&O</label></div>
+                <div><label className="block text-sm font-semibold mb-2" htmlFor="agents">N° agentes</label><input id="agents" type="number" value={form.agents} onChange={e=>setForm({...form,agents:+e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
+                <div><label className="block text-sm font-semibold mb-2" htmlFor="annualVolume">Volumen anual</label><input id="annualVolume" type="number" value={form.annualVolume12m} onChange={e=>setForm({...form,annualVolume12m:+e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
+                <div><label className="block text-sm font-semibold mb-2" htmlFor="offices">N° oficinas</label><input id="offices" type="number" value={form.offices} onChange={e=>setForm({...form,offices:+e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
+                <div className="md:col-span-2"><label className="block text-sm font-semibold mb-2" htmlFor="crm">CRM</label><input id="crm" value={form.crm} onChange={e=>setForm({...form,crm:e.target.value})} className="w-full px-4 py-3 border rounded-lg"/></div>
+                <div className="md:col-span-3 flex items-center gap-2 p-3 bg-blue-50 rounded-lg"><input id="insurance" type="checkbox" checked={form.insurance} onChange={e=>setForm({...form,insurance:e.target.checked})} className="w-5 h-5" aria-label="Seguro E&O"/><label htmlFor="insurance" className="text-sm font-medium">Tenemos seguro E&O</label></div>
                 <div className="md:col-span-3">
-                  <label className="block text-sm font-semibold mb-2">Documento de negocio (Opcional - Recomendado)</label>
-                  <input type="file" accept=".pdf,.doc,.docx,image/*" onChange={(e)=> setBizDocFile(e.target.files?.[0] || null)} className="w-full px-4 py-3 border rounded-lg" />
+                  <label className="block text-sm font-semibold mb-2" htmlFor="bizDoc">Documento de negocio (Opcional - Recomendado)</label>
+                  <input id="bizDoc" type="file" accept=".pdf,.doc,.docx,image/*" onChange={(e)=> setBizDocFile(e.target.files?.[0] || null)} className="w-full px-4 py-3 border rounded-lg" aria-label="Adjuntar documento de negocio" />
                   <p className="text-xs text-gray-500 mt-1">Licencia de negocio, certificaciones o documentos corporativos</p>
                   {uploadProgress > 0 && submitting && (
                     <div className="text-xs text-blue-600 mt-1">Subiendo: {Math.round(uploadProgress)}%</div>
