@@ -6,7 +6,13 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 
 export const runtime = 'nodejs'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY not configured')
+  }
+  return new Stripe(key)
+}
 
 export async function POST(req: Request) {
   const db = getAdminDb()
@@ -15,6 +21,7 @@ export async function POST(req: Request) {
   let event: Stripe.Event
 
   try {
+    const stripe = getStripe()
     const raw = await req.text()
     event = stripe.webhooks.constructEvent(raw, sig, webhookSecret)
   } catch (err: any) {

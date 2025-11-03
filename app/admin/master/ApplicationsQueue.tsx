@@ -20,6 +20,10 @@ export default function ApplicationsQueue() {
   }, [])
 
   async function setStatus(id: string, status: 'approved' | 'rejected' | 'more_info') {
+    if (!functions) {
+      alert('Firebase Functions not available')
+      return
+    }
     try {
       const fn = httpsCallable(functions, 'processApplication')
       await fn({ appId: id, action: status === 'approved' ? 'approve' : status })

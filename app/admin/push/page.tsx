@@ -40,6 +40,11 @@ export default function AdminPushPage() {
       return
     }
 
+    if (!functions) {
+      toast.error('Firebase Functions not initialized')
+      return
+    }
+
     setSending(true)
     setLastResult(null)
 

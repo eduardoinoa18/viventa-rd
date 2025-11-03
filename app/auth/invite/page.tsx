@@ -22,6 +22,7 @@ export default function InviteAcceptPage(){
     if (!code) return
     const u = auth.currentUser
     if (!u) { setStatus('Inicia sesión antes de canjear'); return }
+    if (!functions) { setStatus('Firebase Functions no disponible'); return }
     try {
       const acceptInvite = httpsCallable(functions, 'acceptInvite')
       const res: any = await acceptInvite({ token: code, uid: u.uid, email: u.email })
