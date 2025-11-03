@@ -22,7 +22,6 @@ export default function AdminSidebar() {
   
   const links = [
     { href: '/admin', label: 'Dashboard', icon: <FiGrid /> },
-    { href: '/admin/diagnostics', label: 'System Status', icon: <FiSettings />, highlight: true },
     { href: '/admin/activity', label: 'Activity Feed', icon: <FiActivity /> },
     { href: '/admin/analytics', label: 'Analytics & AI', icon: <FiBarChart2 /> },
     { href: '/admin/leads', label: 'Leads', icon: <FiTarget /> },
@@ -54,8 +53,6 @@ export default function AdminSidebar() {
             className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
               pathname === link.href
                 ? 'bg-[#00A676] text-white font-semibold'
-                : (link as any).highlight
-                ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200'
                 : 'hover:bg-gray-100 text-gray-700'
             }`}
           >

@@ -1,115 +1,405 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { FiMessageSquare, FiSearch, FiSend, FiRefreshCw, FiCheckCircle, FiXCircle } from 'react-icons/fi'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
+import { FiMessageSquare, FiSearch, FiSend, FiRefreshCw, FiCheckCircle, FiXCircle, FiClock, FiUser } from 'react-icons/fi'
+import ProtectedClient from '@/app/auth/ProtectedClient'
+import AdminSidebar from '@/components/AdminSidebar'
+import AdminTopbar from '@/components/AdminTopbar'
+import toast from 'react-hot-toast'
+
+type Conversation = {
+  id: string
+  title: string
+  userId: string
+  userName?: string
+  userEmail?: string
+  lastMessage?: string
+  lastMessageAt?: any
+  status: 'open' | 'closed'
+  unreadCount?: number
+  createdAt: any
+}
+
+type Message = {
+  id: string
+  senderId: string
+  senderName: string
+  content: string
+  createdAt: any
+  readAt?: any
+}
 
 export default function AdminChatPage() {
-  const [conversations, setConversations] = useState<any[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [messages, setMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
   const [text, setText] = useState('')
   const [loadingConvos, setLoadingConvos] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'closed'>('all')
 
-  useEffect(() => { loadConversations(); const t = setInterval(loadConversations, 8000); return () => clearInterval(t) }, [])
-  useEffect(() => { if (activeId) { loadMessages(activeId); const t = setInterval(()=>loadMessages(activeId), 5000); return () => clearInterval(t) } }, [activeId])
+  useEffect(() => { 
+    loadConversations()
+    const interval = setInterval(loadConversations, 10000)
+    return () => clearInterval(interval)
+  }, [])
+  
+  useEffect(() => { 
+    if (activeId) { 
+      loadMessages(activeId)
+      const interval = setInterval(() => loadMessages(activeId), 5000)
+      return () => clearInterval(interval)
+    } 
+  }, [activeId])
 
   async function loadConversations() {
     setLoadingConvos(true)
     try {
       const res = await fetch('/api/admin/chat/conversations?limit=200', { cache: 'no-store' })
       const data = await res.json()
-      setConversations(data.conversations || [])
-      if (!activeId && data.conversations?.[0]?.id) setActiveId(data.conversations[0].id)
-    } finally { setLoadingConvos(false) }
+      if (data.conversations) {
+        setConversations(data.conversations)
+        if (!activeId && data.conversations[0]?.id) {
+          setActiveId(data.conversations[0].id)
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load conversations', e)
+      toast.error('Failed to load conversations')
+    } finally { 
+      setLoadingConvos(false) 
+    }
   }
+
   async function loadMessages(id: string) {
     setLoadingMessages(true)
     try {
       const res = await fetch(`/api/admin/chat/conversations/${encodeURIComponent(id)}/messages`, { cache: 'no-store' })
       const data = await res.json()
       setMessages(data.messages || [])
-    } finally { setLoadingMessages(false) }
+    } catch (e) {
+      console.error('Failed to load messages', e)
+    } finally { 
+      setLoadingMessages(false) 
+    }
   }
+
   async function send() {
     if (!text.trim() || !activeId) return
-    const body = { text }
+    const messageText = text
     setText('')
-    await fetch(`/api/admin/chat/conversations/${encodeURIComponent(activeId)}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-    loadMessages(activeId)
-    loadConversations()
+    try {
+      await fetch(`/api/admin/chat/conversations/${encodeURIComponent(activeId)}/messages`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ text: messageText }) 
+      })
+      loadMessages(activeId)
+      loadConversations()
+    } catch (e) {
+      console.error('Failed to send message', e)
+      toast.error('Failed to send message')
+      setText(messageText) // Restore text on error
+    }
   }
+
   async function closeConversation() {
     if (!activeId) return
-    await fetch(`/api/admin/chat/conversations/${encodeURIComponent(activeId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'closed' }) })
-    loadConversations()
+    try {
+      await fetch(`/api/admin/chat/conversations/${encodeURIComponent(activeId)}`, { 
+        method: 'PATCH', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ status: 'closed' }) 
+      })
+      toast.success('Conversation closed')
+      loadConversations()
+    } catch (e) {
+      console.error('Failed to close conversation', e)
+      toast.error('Failed to close conversation')
+    }
   }
+
   async function reopenConversation() {
     if (!activeId) return
-    await fetch(`/api/admin/chat/conversations/${encodeURIComponent(activeId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'open' }) })
-    loadConversations()
+    try {
+      await fetch(`/api/admin/chat/conversations/${encodeURIComponent(activeId)}`, { 
+        method: 'PATCH', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ status: 'open' }) 
+      })
+      toast.success('Conversation reopened')
+      loadConversations()
+    } catch (e) {
+      console.error('Failed to reopen conversation', e)
+      toast.error('Failed to reopen conversation')
+    }
   }
 
   const filtered = useMemo(() => {
+    let result = conversations
+    
+    // Filter by status
+    if (statusFilter !== 'all') {
+      result = result.filter(c => c.status === statusFilter)
+    }
+    
+    // Filter by search
     const q = search.toLowerCase().trim()
-    if (!q) return conversations
-    return conversations.filter((c:any)=> (c.title||'').toLowerCase().includes(q) || (c.lastMessage||'').toLowerCase().includes(q))
-  }, [conversations, search])
+    if (q) {
+      result = result.filter(c => 
+        (c.title || '').toLowerCase().includes(q) || 
+        (c.lastMessage || '').toLowerCase().includes(q) ||
+        (c.userName || '').toLowerCase().includes(q) ||
+        (c.userEmail || '').toLowerCase().includes(q)
+      )
+    }
+    
+    return result
+  }, [conversations, search, statusFilter])
+
+  const activeConversation = conversations.find(c => c.id === activeId)
+
+  const stats = useMemo(() => ({
+    total: conversations.length,
+    open: conversations.filter(c => c.status === 'open').length,
+    closed: conversations.filter(c => c.status === 'closed').length,
+    unread: conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
+  }), [conversations])
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 grid md:grid-cols-3 gap-4">
-        <div className="md:col-span-1 bg-white rounded-xl shadow border overflow-hidden">
-          <div className="p-4 border-b flex items-center justify-between">
-            <div className="flex items-center gap-2"><FiMessageSquare /><h2 className="font-bold text-gray-800">Soporte y Chats</h2></div>
-            <button onClick={loadConversations} title="Refrescar" className="p-2 rounded hover:bg-gray-100"><FiRefreshCw /></button>
-          </div>
-          <div className="p-3 border-b flex items-center gap-2">
-            <FiSearch className="text-gray-400" />
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar" className="w-full py-2 outline-none" />
-          </div>
-          <div className="max-h-[65vh] overflow-auto">
-            {loadingConvos ? <div className="p-4 text-gray-500">Cargando...</div> : filtered.map((c:any)=> (
-              <button key={c.id} onClick={()=>setActiveId(c.id)} className={`w-full text-left p-4 border-b hover:bg-gray-50 ${activeId===c.id?'bg-blue-50':''}`}>
-                <div className="font-semibold text-gray-800">{c.title||'Conversación'}</div>
-                <div className="text-sm text-gray-600 truncate">{c.lastMessage||''}</div>
+    <ProtectedClient allowed={['master_admin', 'admin']}>
+      <AdminTopbar />
+      <div className="flex">
+        <AdminSidebar />
+        <main className="flex-1 p-6 bg-gray-50 min-h-screen">
+          <div className="mb-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold text-[#0B2545] flex items-center gap-2">
+                  <FiMessageSquare /> Chat & Support
+                </h1>
+                <p className="text-gray-600 mt-1">Gestiona conversaciones y soporte con usuarios</p>
+              </div>
+              <button 
+                onClick={loadConversations} 
+                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                <FiRefreshCw className={loadingConvos ? 'animate-spin' : ''} /> Actualizar
               </button>
-            ))}
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+              <div className="bg-white rounded-lg shadow p-4 border-l-4 border-[#00A676]">
+                <div className="text-sm text-gray-600">Total Conversaciones</div>
+                <div className="text-2xl font-bold text-[#0B2545]">{stats.total}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+                <div className="text-sm text-gray-600">Abiertas</div>
+                <div className="text-2xl font-bold text-green-600">{stats.open}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 border-l-4 border-gray-400">
+                <div className="text-sm text-gray-600">Cerradas</div>
+                <div className="text-2xl font-bold text-gray-600">{stats.closed}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
+                <div className="text-sm text-gray-600">Mensajes sin leer</div>
+                <div className="text-2xl font-bold text-orange-600">{stats.unread}</div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="md:col-span-2 bg-white rounded-xl shadow border flex flex-col">
-          {!activeId ? (
-            <div className="flex-1 flex items-center justify-center text-gray-500">Selecciona una conversación</div>
-          ) : (
-            <>
-              <div className="p-4 border-b flex items-center justify-between">
-                <div className="font-semibold text-gray-800">{activeId}</div>
-                <div className="flex items-center gap-2">
-                  <button onClick={reopenConversation} className="px-3 py-1.5 rounded border text-green-700 border-green-300 hover:bg-green-50 flex items-center gap-1"><FiCheckCircle />Reabrir</button>
-                  <button onClick={closeConversation} className="px-3 py-1.5 rounded border text-red-700 border-red-300 hover:bg-red-50 flex items-center gap-1"><FiXCircle />Cerrar</button>
+
+          {/* Chat Interface */}
+          <div className="grid md:grid-cols-3 gap-4 h-[calc(100vh-280px)]">
+            {/* Conversations List */}
+            <div className="bg-white rounded-xl shadow border overflow-hidden flex flex-col">
+              <div className="p-4 border-b">
+                <div className="flex items-center gap-2 mb-3">
+                  <FiSearch className="text-gray-400" />
+                  <input 
+                    value={search} 
+                    onChange={e => setSearch(e.target.value)} 
+                    placeholder="Buscar conversaciones..." 
+                    className="w-full outline-none text-sm" 
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setStatusFilter('all')}
+                    className={`flex-1 px-3 py-1.5 text-sm rounded ${statusFilter === 'all' ? 'bg-[#00A676] text-white' : 'bg-gray-100 text-gray-700'}`}
+                  >
+                    Todas
+                  </button>
+                  <button 
+                    onClick={() => setStatusFilter('open')}
+                    className={`flex-1 px-3 py-1.5 text-sm rounded ${statusFilter === 'open' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                  >
+                    Abiertas
+                  </button>
+                  <button 
+                    onClick={() => setStatusFilter('closed')}
+                    className={`flex-1 px-3 py-1.5 text-sm rounded ${statusFilter === 'closed' ? 'bg-gray-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                  >
+                    Cerradas
+                  </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-auto p-4 space-y-2">
-                {loadingMessages ? <div className="text-gray-500">Cargando mensajes...</div> : messages.map((m:any)=> (
-                  <div key={m.id} className={`max-w-[80%] rounded-lg px-3 py-2 ${m.senderId==='admin_support'?'ml-auto bg-[#00A676] text-white':'bg-gray-100 text-gray-800'}`}>
-                    <div className="text-xs opacity-70 mb-1">{m.senderName||m.senderId}</div>
-                    <div className="whitespace-pre-wrap text-sm">{m.content}</div>
-                    <div className={`text-[10px] mt-1 ${m.senderId==='admin_support'?'text-white/80':'text-gray-500'}`}>{new Date(m.createdAt?.toDate?.() || m.createdAt).toLocaleString()}</div>
+              <div className="flex-1 overflow-auto">
+                {loadingConvos ? (
+                  <div className="p-4 text-center text-gray-500">Cargando...</div>
+                ) : filtered.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">No hay conversaciones</div>
+                ) : (
+                  filtered.map(c => (
+                    <button 
+                      key={c.id} 
+                      onClick={() => setActiveId(c.id)} 
+                      className={`w-full text-left p-4 border-b hover:bg-gray-50 transition-colors ${
+                        activeId === c.id ? 'bg-blue-50 border-l-4 border-[#00A676]' : ''
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-1">
+                        <div className="font-semibold text-gray-800 flex items-center gap-2">
+                          <FiUser className="text-gray-400" />
+                          {c.userName || c.userEmail || c.title || 'Usuario'}
+                        </div>
+                        {c.unreadCount && c.unreadCount > 0 && (
+                          <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                            {c.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-600 truncate">{c.lastMessage || 'Sin mensajes'}</div>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className={`text-xs px-2 py-0.5 rounded ${
+                          c.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {c.status === 'open' ? 'Abierta' : 'Cerrada'}
+                        </span>
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <FiClock />
+                          {c.lastMessageAt ? new Date(c.lastMessageAt.toDate?.() || c.lastMessageAt).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Messages Panel */}
+            <div className="md:col-span-2 bg-white rounded-xl shadow border flex flex-col">
+              {!activeId ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                  <FiMessageSquare className="text-6xl mb-4" />
+                  <p>Selecciona una conversación para comenzar</p>
+                </div>
+              ) : (
+                <>
+                  {/* Header */}
+                  <div className="p-4 border-b flex items-center justify-between bg-gray-50">
+                    <div>
+                      <div className="font-semibold text-gray-800 flex items-center gap-2">
+                        <FiUser />
+                        {activeConversation?.userName || activeConversation?.userEmail || 'Usuario'}
+                      </div>
+                      {activeConversation?.userEmail && (
+                        <div className="text-sm text-gray-600">{activeConversation.userEmail}</div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {activeConversation?.status === 'closed' ? (
+                        <button 
+                          onClick={reopenConversation} 
+                          className="px-3 py-1.5 rounded border text-green-700 border-green-300 hover:bg-green-50 flex items-center gap-1 text-sm font-medium"
+                        >
+                          <FiCheckCircle /> Reabrir
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={closeConversation} 
+                          className="px-3 py-1.5 rounded border text-red-700 border-red-300 hover:bg-red-50 flex items-center gap-1 text-sm font-medium"
+                        >
+                          <FiXCircle /> Cerrar
+                        </button>
+                      )}
+                    </div>
                   </div>
-                ))}
-              </div>
-              <div className="p-3 border-t flex items-center gap-2">
-                <input value={text} onChange={e=>setText(e.target.value)} onKeyDown={(e:any)=>{if(e.key==='Enter') send()}} placeholder="Responder..." className="flex-1 border rounded px-3 py-2 outline-none" />
-                <button onClick={send} className="px-4 py-2 bg-[#0B2545] text-white rounded-lg font-semibold hover:opacity-90">Enviar</button>
-              </div>
-            </>
-          )}
-        </div>
-      </main>
-      <Footer />
-    </div>
+
+                  {/* Messages */}
+                  <div className="flex-1 overflow-auto p-4 space-y-3 bg-gray-50">
+                    {loadingMessages ? (
+                      <div className="text-center text-gray-500">Cargando mensajes...</div>
+                    ) : messages.length === 0 ? (
+                      <div className="text-center text-gray-500">No hay mensajes</div>
+                    ) : (
+                      messages.map(m => (
+                        <div 
+                          key={m.id} 
+                          className={`flex ${m.senderId === 'admin_support' || m.senderId.includes('admin') ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className={`max-w-[75%] rounded-lg px-4 py-2 ${
+                            m.senderId === 'admin_support' || m.senderId.includes('admin')
+                              ? 'bg-[#00A676] text-white' 
+                              : 'bg-white text-gray-800 shadow'
+                          }`}>
+                            <div className={`text-xs font-medium mb-1 ${
+                              m.senderId === 'admin_support' || m.senderId.includes('admin') 
+                                ? 'text-white/80' 
+                                : 'text-gray-600'
+                            }`}>
+                              {m.senderName || m.senderId}
+                            </div>
+                            <div className="whitespace-pre-wrap text-sm">{m.content}</div>
+                            <div className={`text-[10px] mt-1 ${
+                              m.senderId === 'admin_support' || m.senderId.includes('admin')
+                                ? 'text-white/70' 
+                                : 'text-gray-500'
+                            }`}>
+                              {new Date(m.createdAt?.toDate?.() || m.createdAt).toLocaleString('es-DO', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Input */}
+                  <div className="p-4 border-t bg-white">
+                    <div className="flex items-center gap-2">
+                      <input 
+                        value={text} 
+                        onChange={e => setText(e.target.value)} 
+                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} 
+                        placeholder="Escribe tu respuesta..." 
+                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-[#00A676] focus:border-transparent" 
+                        disabled={activeConversation?.status === 'closed'}
+                      />
+                      <button 
+                        onClick={send} 
+                        disabled={!text.trim() || activeConversation?.status === 'closed'}
+                        className="px-6 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <FiSend /> Enviar
+                      </button>
+                    </div>
+                    {activeConversation?.status === 'closed' && (
+                      <div className="mt-2 text-sm text-gray-500 text-center">
+                        Esta conversación está cerrada. Reábrela para enviar mensajes.
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
+    </ProtectedClient>
   )
 }
