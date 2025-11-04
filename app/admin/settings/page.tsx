@@ -6,6 +6,11 @@ import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
 import { FiSettings, FiServer, FiRefreshCw, FiMail, FiShield, FiLink, FiBell, FiZap, FiGlobe, FiDollarSign, FiImage } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import Button from '../../../components/ui/Button'
+import Card from '../../../components/ui/Card'
+import FormField from '../../../components/ui/FormField'
+import TextInput from '../../../components/ui/TextInput'
+import Select from '../../../components/ui/Select'
 
 type SettingsData = {
   // General
@@ -213,13 +218,9 @@ export default function AdminSettingsPage() {
               <p className="text-gray-600 mt-1">Configure your platform settings and integrations</p>
             </div>
             {activeTab !== 'status' && (
-              <button
-                onClick={saveSettings}
-                disabled={loading}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] disabled:opacity-50 shadow-lg"
-              >
-                {loading ? 'Saving...' : 'Save Changes'}
-              </button>
+              <Button onClick={saveSettings} isLoading={loading} disabled={loading} size="lg">
+                Save Changes
+              </Button>
             )}
           </div>
 
@@ -249,42 +250,35 @@ export default function AdminSettingsPage() {
             {/* General Settings */}
             {activeTab === 'general' && (
               <div className="space-y-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Site Information</h2>
+                <Card title="Site Information" className="">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="site-title" className="block text-sm font-medium text-gray-700 mb-2">Site Title</label>
-                      <input
+                    <FormField id="site-title" label="Site Title">
+                      <TextInput
                         id="site-title"
                         type="text"
                         value={settings.siteTitle}
                         onChange={(e) => updateSetting('siteTitle', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="site-description" className="block text-sm font-medium text-gray-700 mb-2">Site Description</label>
-                      <input
+                    </FormField>
+                    <FormField id="site-description" label="Site Description">
+                      <TextInput
                         id="site-description"
                         type="text"
                         value={settings.siteDescription}
                         onChange={(e) => updateSetting('siteDescription', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label htmlFor="site-logo" className="block text-sm font-medium text-gray-700 mb-2">Logo URL</label>
-                      <input
+                    </FormField>
+                    <FormField id="site-logo" label="Logo URL" className="md:col-span-2">
+                      <TextInput
                         id="site-logo"
                         type="text"
                         value={settings.siteLogo}
                         onChange={(e) => updateSetting('siteLogo', e.target.value)}
                         placeholder="https://example.com/logo.png"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
+                    </FormField>
                   </div>
-                </div>
+                </Card>
 
                 <div className="bg-white rounded-lg shadow p-6">
                   <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Contact Information</h2>
