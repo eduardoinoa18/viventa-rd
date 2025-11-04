@@ -51,6 +51,14 @@ export default function OptimizedImage({
     setIsLoading(false)
   }
 
+  const objectFitClass = {
+    cover: 'object-cover',
+    contain: 'object-contain',
+    fill: 'object-fill',
+    none: 'object-none',
+    'scale-down': 'object-scale-down',
+  }[objectFit]
+
   // Use standard img for external URLs (Algolia, Firebase Storage, etc.) with lazy loading
   if (src?.startsWith('http') || src?.startsWith('https')) {
     return (
@@ -60,8 +68,7 @@ export default function OptimizedImage({
           alt={alt}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
-          className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
-          style={{ objectFit }}
+          className={`${className} ${objectFitClass} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
           onLoad={handleLoad}
           onError={handleError}
         />
@@ -82,8 +89,7 @@ export default function OptimizedImage({
         alt={alt}
         width={width}
         height={height}
-        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
-        style={{ objectFit }}
+        className={`${className} ${objectFitClass} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
         onLoad={handleLoad}
         onError={handleError}
         priority={priority}

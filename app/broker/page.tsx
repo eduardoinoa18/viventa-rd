@@ -545,7 +545,6 @@ export default function BrokerDashboard() {
                         }}
                         className="px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] disabled:opacity-60"
                         disabled={inviteLoading}
-                        aria-busy={inviteLoading ? 'true' : 'false'}
                       >
                         {inviteLoading ? 'Enviando…' : 'Enviar invitación'}
                       </button>

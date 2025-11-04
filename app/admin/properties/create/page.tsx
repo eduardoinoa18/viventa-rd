@@ -224,10 +224,9 @@ export default function CreatePropertyPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Título de la Propiedad *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="title-input">Título de la Propiedad *</label>
                     <input
+                      id="title-input"
                       data-testid="create-title"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       placeholder="Ej: Hermoso Apartamento en Piantini"
@@ -238,11 +237,12 @@ export default function CreatePropertyPage() {
                   </div>
 
                   <div>
-                    <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1">
+                    <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1" htmlFor="price-input">
                       <FiDollarSign className="text-gray-400" />
                       Precio (USD) *
                     </label>
                     <input
+                      id="price-input"
                       data-testid="create-price"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       type="number"
@@ -254,10 +254,9 @@ export default function CreatePropertyPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Área (m²) *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="area-input">Área (m²) *</label>
                     <input
+                      id="area-input"
                       data-testid="create-area"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       type="number"
@@ -269,8 +268,9 @@ export default function CreatePropertyPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Habitaciones *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="bedrooms-input">Habitaciones *</label>
                     <input
+                      id="bedrooms-input"
                       data-testid="create-bedrooms"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       type="number"
@@ -282,8 +282,9 @@ export default function CreatePropertyPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Baños *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="bathrooms-input">Baños *</label>
                     <input
+                      id="bathrooms-input"
                       data-testid="create-bathrooms"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       type="number"
@@ -448,7 +449,12 @@ export default function CreatePropertyPage() {
                           <div key={i} className="border rounded-lg p-2">
                             <div className="text-xs font-medium truncate" title={f.name}>{f.name}</div>
                             <div className="h-2 bg-gray-200 rounded mt-2 overflow-hidden">
-                              <div className="h-2 bg-[#00A676]" style={{ width: `${Math.round(progressByIndex[i] || 0)}%` }} />
+                              <progress
+                                value={Math.round(progressByIndex[i] || 0)}
+                                max={100}
+                                aria-label={`Progreso de carga ${i + 1}`}
+                                className="h-2 w-full"
+                              />
                             </div>
                           </div>
                         ))}

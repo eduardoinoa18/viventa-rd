@@ -166,8 +166,7 @@ export default function CustomMapSearch({
     <div className="relative h-full min-h-[400px] lg:min-h-[600px]">
       <div
         ref={mapContainerRef}
-        className="w-full h-full rounded-lg overflow-hidden shadow-sm"
-        style={{ minHeight: '400px' }}
+        className="w-full h-full min-h-[400px] rounded-lg overflow-hidden shadow-sm"
       />
       
       {listings.length === 0 && (

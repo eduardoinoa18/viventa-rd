@@ -193,6 +193,7 @@ function ApplicationsPageContent() {
                     checked={selectedIds.size === filtered.length && filtered.length > 0}
                     onChange={toggleSelectAll}
                     className="mr-2 accent-[#00A6A6]"
+                    aria-label="Seleccionar todas las aplicaciones visibles"
                   />
                   <span className="text-sm text-gray-600">Seleccionar todas</span>
                 </div>
@@ -275,6 +276,7 @@ function ApplicationCard({ app, selected, onToggleSelect, onApprove, onReject, o
             checked={selected}
             onChange={onToggleSelect}
             className="accent-[#00A6A6] w-5 h-5"
+            aria-label={`Seleccionar aplicación de ${app.contact || 'sin nombre'}`}
           />
           <div className={`p-3 rounded-full ${isPending ? 'bg-yellow-100' : isApproved ? 'bg-green-100' : 'bg-red-100'}`}>
             {typeIcon}

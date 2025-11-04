@@ -304,7 +304,7 @@ export default function AdminUsersPage() {
             <div className="bg-white rounded-lg shadow p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">{editingId ? 'Edit User' : 'Create New User'}</h2>
-                <button onClick={() => { setShowForm(false); setEditingId(null) }} className="text-gray-500 hover:text-gray-700">
+                <button onClick={() => { setShowForm(false); setEditingId(null) }} className="text-gray-500 hover:text-gray-700" aria-label="Close form">
                   <FiX size={24} />
                 </button>
               </div>
@@ -414,7 +414,7 @@ export default function AdminUsersPage() {
               <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold">User Details</h2>
-                  <button onClick={() => setDetails(null)} className="text-gray-500 hover:text-gray-700"><FiX size={24} /></button>
+                  <button onClick={() => setDetails(null)} className="text-gray-500 hover:text-gray-700" aria-label="Close details"><FiX size={24} /></button>
                 </div>
                 <div className="flex gap-4 items-start">
                   <img src={details.photoURL || '/icons/user.svg'} alt="avatar" className="w-16 h-16 rounded-full object-cover border" />

@@ -253,8 +253,9 @@ export default function AdminSettingsPage() {
                   <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Site Information</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Site Title</label>
+                      <label htmlFor="site-title" className="block text-sm font-medium text-gray-700 mb-2">Site Title</label>
                       <input
+                        id="site-title"
                         type="text"
                         value={settings.siteTitle}
                         onChange={(e) => updateSetting('siteTitle', e.target.value)}
@@ -262,8 +263,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Site Description</label>
+                      <label htmlFor="site-description" className="block text-sm font-medium text-gray-700 mb-2">Site Description</label>
                       <input
+                        id="site-description"
                         type="text"
                         value={settings.siteDescription}
                         onChange={(e) => updateSetting('siteDescription', e.target.value)}
@@ -271,8 +273,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Logo URL</label>
+                      <label htmlFor="site-logo" className="block text-sm font-medium text-gray-700 mb-2">Logo URL</label>
                       <input
+                        id="site-logo"
                         type="text"
                         value={settings.siteLogo}
                         onChange={(e) => updateSetting('siteLogo', e.target.value)}
@@ -287,8 +290,9 @@ export default function AdminSettingsPage() {
                   <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Contact Information</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
+                      <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
                       <input
+                        id="contact-email"
                         type="email"
                         value={settings.contactEmail}
                         onChange={(e) => updateSetting('contactEmail', e.target.value)}
@@ -296,8 +300,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
+                      <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
                       <input
+                        id="contact-phone"
                         type="tel"
                         value={settings.contactPhone}
                         onChange={(e) => updateSetting('contactPhone', e.target.value)}
@@ -305,8 +310,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                      <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">Address</label>
                       <input
+                        id="address"
                         type="text"
                         value={settings.address}
                         onChange={(e) => updateSetting('address', e.target.value)}
@@ -320,8 +326,9 @@ export default function AdminSettingsPage() {
                   <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Localization</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                      <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
                       <select
+                        id="timezone"
                         value={settings.timezone}
                         onChange={(e) => updateSetting('timezone', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
@@ -333,8 +340,9 @@ export default function AdminSettingsPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+                      <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">Language</label>
                       <select
+                        id="language"
                         value={settings.language}
                         onChange={(e) => updateSetting('language', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
@@ -344,8 +352,9 @@ export default function AdminSettingsPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                      <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
                       <select
+                        id="currency"
                         value={settings.currency}
                         onChange={(e) => updateSetting('currency', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
@@ -362,8 +371,9 @@ export default function AdminSettingsPage() {
                   <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Social Media</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Facebook URL</label>
+                      <label htmlFor="facebook-url" className="block text-sm font-medium text-gray-700 mb-2">Facebook URL</label>
                       <input
+                        id="facebook-url"
                         type="url"
                         value={settings.facebookUrl}
                         onChange={(e) => updateSetting('facebookUrl', e.target.value)}
@@ -372,8 +382,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Instagram URL</label>
+                      <label htmlFor="instagram-url" className="block text-sm font-medium text-gray-700 mb-2">Instagram URL</label>
                       <input
+                        id="instagram-url"
                         type="url"
                         value={settings.instagramUrl}
                         onChange={(e) => updateSetting('instagramUrl', e.target.value)}
@@ -382,8 +393,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Twitter/X URL</label>
+                      <label htmlFor="twitter-url" className="block text-sm font-medium text-gray-700 mb-2">Twitter/X URL</label>
                       <input
+                        id="twitter-url"
                         type="url"
                         value={settings.twitterUrl}
                         onChange={(e) => updateSetting('twitterUrl', e.target.value)}
@@ -392,8 +404,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">LinkedIn URL</label>
+                      <label htmlFor="linkedin-url" className="block text-sm font-medium text-gray-700 mb-2">LinkedIn URL</label>
                       <input
+                        id="linkedin-url"
                         type="url"
                         value={settings.linkedinUrl}
                         onChange={(e) => updateSetting('linkedinUrl', e.target.value)}
@@ -412,8 +425,9 @@ export default function AdminSettingsPage() {
                 <div className="bg-white rounded-lg shadow p-6">
                   <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Email Provider</h2>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Service</label>
+                    <label htmlFor="email-provider" className="block text-sm font-medium text-gray-700 mb-2">Email Service</label>
                     <select
+                      id="email-provider"
                       value={settings.emailProvider}
                       onChange={(e) => updateSetting('emailProvider', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
@@ -426,8 +440,9 @@ export default function AdminSettingsPage() {
 
                   {settings.emailProvider === 'sendgrid' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">SendGrid API Key</label>
+                      <label htmlFor="sendgrid-api-key" className="block text-sm font-medium text-gray-700 mb-2">SendGrid API Key</label>
                       <input
+                        id="sendgrid-api-key"
                         type="password"
                         value={settings.sendgridApiKey}
                         onChange={(e) => updateSetting('sendgridApiKey', e.target.value)}
@@ -441,8 +456,9 @@ export default function AdminSettingsPage() {
                   {settings.emailProvider === 'smtp' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">SMTP Host</label>
+                        <label htmlFor="smtp-host" className="block text-sm font-medium text-gray-700 mb-2">SMTP Host</label>
                         <input
+                          id="smtp-host"
                           type="text"
                           value={settings.smtpHost}
                           onChange={(e) => updateSetting('smtpHost', e.target.value)}
@@ -451,8 +467,9 @@ export default function AdminSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">SMTP Port</label>
+                        <label htmlFor="smtp-port" className="block text-sm font-medium text-gray-700 mb-2">SMTP Port</label>
                         <input
+                          id="smtp-port"
                           type="number"
                           value={settings.smtpPort}
                           onChange={(e) => updateSetting('smtpPort', parseInt(e.target.value))}
@@ -460,8 +477,9 @@ export default function AdminSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">SMTP Username</label>
+                        <label htmlFor="smtp-user" className="block text-sm font-medium text-gray-700 mb-2">SMTP Username</label>
                         <input
+                          id="smtp-user"
                           type="text"
                           value={settings.smtpUser}
                           onChange={(e) => updateSetting('smtpUser', e.target.value)}
@@ -469,8 +487,9 @@ export default function AdminSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">SMTP Password</label>
+                        <label htmlFor="smtp-pass" className="block text-sm font-medium text-gray-700 mb-2">SMTP Password</label>
                         <input
+                          id="smtp-pass"
                           type="password"
                           value={settings.smtpPass}
                           onChange={(e) => updateSetting('smtpPass', e.target.value)}
@@ -485,8 +504,9 @@ export default function AdminSettingsPage() {
                   <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Email Configuration</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">From Email</label>
+                      <label htmlFor="email-from" className="block text-sm font-medium text-gray-700 mb-2">From Email</label>
                       <input
+                        id="email-from"
                         type="email"
                         value={settings.emailFrom}
                         onChange={(e) => updateSetting('emailFrom', e.target.value)}
@@ -495,8 +515,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Reply-To Email</label>
+                      <label htmlFor="email-reply-to" className="block text-sm font-medium text-gray-700 mb-2">Reply-To Email</label>
                       <input
+                        id="email-reply-to"
                         type="email"
                         value={settings.emailReplyTo}
                         onChange={(e) => updateSetting('emailReplyTo', e.target.value)}
@@ -526,6 +547,7 @@ export default function AdminSettingsPage() {
                           settings.enableTwoFactor ? 'bg-[#00A676]' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Enable Two-Factor Authentication</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.enableTwoFactor ? 'translate-x-6' : 'translate-x-1'
@@ -536,8 +558,9 @@ export default function AdminSettingsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Session Timeout (minutes)</label>
+                        <label htmlFor="session-timeout" className="block text-sm font-medium text-gray-700 mb-2">Session Timeout (minutes)</label>
                         <input
+                          id="session-timeout"
                           type="number"
                           value={settings.sessionTimeout}
                           onChange={(e) => updateSetting('sessionTimeout', parseInt(e.target.value))}
@@ -545,8 +568,9 @@ export default function AdminSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Min Password Length</label>
+                        <label htmlFor="password-min-length" className="block text-sm font-medium text-gray-700 mb-2">Min Password Length</label>
                         <input
+                          id="password-min-length"
                           type="number"
                           value={settings.passwordMinLength}
                           onChange={(e) => updateSetting('passwordMinLength', parseInt(e.target.value))}
@@ -566,6 +590,7 @@ export default function AdminSettingsPage() {
                           settings.requireStrongPassword ? 'bg-[#00A676]' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Require Strong Passwords</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.requireStrongPassword ? 'translate-x-6' : 'translate-x-1'
@@ -575,8 +600,9 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Allowed Email Domains (comma-separated)</label>
+                      <label htmlFor="allowed-domains" className="block text-sm font-medium text-gray-700 mb-2">Allowed Email Domains (comma-separated)</label>
                       <input
+                        id="allowed-domains"
                         type="text"
                         value={settings.allowedDomains}
                         onChange={(e) => updateSetting('allowedDomains', e.target.value)}
@@ -599,8 +625,9 @@ export default function AdminSettingsPage() {
                   </h2>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Publishable Key</label>
+                      <label htmlFor="stripe-publishable-key" className="block text-sm font-medium text-gray-700 mb-2">Publishable Key</label>
                       <input
+                        id="stripe-publishable-key"
                         type="text"
                         value={settings.stripePublishableKey}
                         onChange={(e) => updateSetting('stripePublishableKey', e.target.value)}
@@ -609,8 +636,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Secret Key</label>
+                      <label htmlFor="stripe-secret-key" className="block text-sm font-medium text-gray-700 mb-2">Secret Key</label>
                       <input
+                        id="stripe-secret-key"
                         type="password"
                         value={settings.stripeSecretKey}
                         onChange={(e) => updateSetting('stripeSecretKey', e.target.value)}
@@ -625,8 +653,9 @@ export default function AdminSettingsPage() {
                   <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Algolia Search</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">App ID</label>
+                      <label htmlFor="algolia-app-id" className="block text-sm font-medium text-gray-700 mb-2">App ID</label>
                       <input
+                        id="algolia-app-id"
                         type="text"
                         value={settings.algoliaAppId}
                         onChange={(e) => updateSetting('algoliaAppId', e.target.value)}
@@ -634,8 +663,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                      <label htmlFor="algolia-api-key" className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
                       <input
+                        id="algolia-api-key"
                         type="password"
                         value={settings.algoliaApiKey}
                         onChange={(e) => updateSetting('algoliaApiKey', e.target.value)}
@@ -643,8 +673,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Index Name</label>
+                      <label htmlFor="algolia-index" className="block text-sm font-medium text-gray-700 mb-2">Index Name</label>
                       <input
+                        id="algolia-index"
                         type="text"
                         value={settings.algoliaIndex}
                         onChange={(e) => updateSetting('algoliaIndex', e.target.value)}
@@ -658,8 +689,9 @@ export default function AdminSettingsPage() {
                   <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Analytics</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Google Analytics ID</label>
+                      <label htmlFor="google-analytics-id" className="block text-sm font-medium text-gray-700 mb-2">Google Analytics ID</label>
                       <input
+                        id="google-analytics-id"
                         type="text"
                         value={settings.googleAnalyticsId}
                         onChange={(e) => updateSetting('googleAnalyticsId', e.target.value)}
@@ -668,8 +700,9 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Facebook Pixel ID</label>
+                      <label htmlFor="facebook-pixel-id" className="block text-sm font-medium text-gray-700 mb-2">Facebook Pixel ID</label>
                       <input
+                        id="facebook-pixel-id"
                         type="text"
                         value={settings.facebookPixelId}
                         onChange={(e) => updateSetting('facebookPixelId', e.target.value)}
@@ -699,6 +732,7 @@ export default function AdminSettingsPage() {
                           settings.adminEmailNotifications ? 'bg-[#00A676]' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Toggle admin email notifications</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.adminEmailNotifications ? 'translate-x-6' : 'translate-x-1'
@@ -718,6 +752,7 @@ export default function AdminSettingsPage() {
                           settings.userEmailNotifications ? 'bg-[#00A676]' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Toggle user email notifications</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.userEmailNotifications ? 'translate-x-6' : 'translate-x-1'
@@ -737,6 +772,7 @@ export default function AdminSettingsPage() {
                           settings.pushNotifications ? 'bg-[#00A676]' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Toggle push notifications</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.pushNotifications ? 'translate-x-6' : 'translate-x-1'
@@ -756,6 +792,7 @@ export default function AdminSettingsPage() {
                           settings.smsNotifications ? 'bg-[#00A676]' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Toggle SMS notifications</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.smsNotifications ? 'translate-x-6' : 'translate-x-1'
@@ -780,6 +817,7 @@ export default function AdminSettingsPage() {
                           settings.notifyOnNewLead ? 'bg-[#00A676]' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Toggle new lead notifications</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.notifyOnNewLead ? 'translate-x-6' : 'translate-x-1'
@@ -799,6 +837,7 @@ export default function AdminSettingsPage() {
                           settings.notifyOnNewApplication ? 'bg-[#00A676]' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Toggle new application notifications</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.notifyOnNewApplication ? 'translate-x-6' : 'translate-x-1'
@@ -818,6 +857,7 @@ export default function AdminSettingsPage() {
                           settings.notifyOnNewProperty ? 'bg-[#00A676]' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Toggle new property notifications</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.notifyOnNewProperty ? 'translate-x-6' : 'translate-x-1'
@@ -984,6 +1024,7 @@ export default function AdminSettingsPage() {
                           settings.maintenanceMode ? 'bg-red-600' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Toggle maintenance mode</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.maintenanceMode ? 'translate-x-6' : 'translate-x-1'
@@ -1003,6 +1044,7 @@ export default function AdminSettingsPage() {
                           settings.cacheEnabled ? 'bg-[#00A676]' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Toggle caching</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.cacheEnabled ? 'translate-x-6' : 'translate-x-1'
@@ -1012,8 +1054,9 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Rate Limit (requests/minute)</label>
+                      <label htmlFor="rate-limit" className="block text-sm font-medium text-gray-700 mb-2">Rate Limit (requests/minute)</label>
                       <input
+                        id="rate-limit"
                         type="number"
                         value={settings.rateLimitPerMinute}
                         onChange={(e) => updateSetting('rateLimitPerMinute', parseInt(e.target.value))}
@@ -1022,8 +1065,9 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Log Level</label>
+                      <label htmlFor="log-level" className="block text-sm font-medium text-gray-700 mb-2">Log Level</label>
                       <select
+                        id="log-level"
                         value={settings.logLevel}
                         onChange={(e) => updateSetting('logLevel', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
@@ -1051,6 +1095,7 @@ export default function AdminSettingsPage() {
                           settings.enableApiAccess ? 'bg-[#00A676]' : 'bg-gray-300'
                         }`}
                       >
+                        <span className="sr-only">Toggle API access</span>
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             settings.enableApiAccess ? 'translate-x-6' : 'translate-x-1'
@@ -1061,9 +1106,10 @@ export default function AdminSettingsPage() {
 
                     {settings.enableApiAccess && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                        <label htmlFor="api-key" className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
                         <div className="flex gap-2">
                           <input
+                            id="api-key"
                             type="text"
                             value={settings.apiKey || 'Generate a new API key'}
                             readOnly
