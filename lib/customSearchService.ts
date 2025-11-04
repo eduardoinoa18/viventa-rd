@@ -30,6 +30,7 @@ export interface Listing {
   images?: string[];
   agentName?: string;
   agentPhone?: string;
+  // Location can be stored either as a string fields (city/neighborhood) or nested object
   location?: {
     address?: string;
     city?: string;
@@ -39,6 +40,10 @@ export interface Listing {
       longitude: number;
     };
   };
+  city?: string;
+  neighborhood?: string;
+  lat?: number;
+  lng?: number;
   amenities?: string[];
   featured?: boolean;
   views?: number;
@@ -111,12 +116,15 @@ function calculateRelevance(searchQuery: string, listing: Listing): number {
   const query = searchQuery.toLowerCase().trim();
   const tokens = query.split(/\s+/);
 
+  // Include both nested and top-level location fields in search
   const searchableText = [
     listing.title,
     listing.description,
-    listing.location?.address,
+    typeof listing.location === 'string' ? listing.location : listing.location?.address,
     listing.location?.city,
     listing.location?.neighborhood,
+    listing.city,
+    listing.neighborhood,
     listing.agentName,
   ]
     .filter(Boolean)
@@ -161,11 +169,13 @@ function buildFirestoreQuery(filters: SearchFilters) {
 
   // Apply exact match filters
   if (filters.city) {
-    constraints.push(where('location.city', '==', filters.city));
+    // Our properties store city at the top level
+    constraints.push(where('city', '==', filters.city));
   }
 
   if (filters.neighborhood) {
-    constraints.push(where('location.neighborhood', '==', filters.neighborhood));
+    // Our properties store neighborhood at the top level
+    constraints.push(where('neighborhood', '==', filters.neighborhood));
   }
 
   if (filters.propertyType) {
@@ -193,7 +203,8 @@ function buildFirestoreQuery(filters: SearchFilters) {
   // Limit initial fetch (we'll filter client-side)
   constraints.push(firestoreLimit(500));
 
-  return query(collection(db, 'listings'), ...constraints);
+  // Use 'properties' collection as the canonical source for active listings
+  return query(collection(db, 'properties'), ...constraints);
 }
 
 /**
@@ -256,18 +267,17 @@ export async function searchListings(
       }
 
       // Calculate geo-distance
-      if (
-        filters.lat &&
-        filters.lng &&
-        listing.location?.coordinates?.latitude &&
-        listing.location?.coordinates?.longitude
-      ) {
-        result.distance = calculateDistance(
-          filters.lat,
-          filters.lng,
-          listing.location.coordinates.latitude,
-          listing.location.coordinates.longitude
-        );
+      if (filters.lat && filters.lng) {
+        const targetLat = listing.lat ?? listing.location?.coordinates?.latitude;
+        const targetLng = listing.lng ?? listing.location?.coordinates?.longitude;
+        if (typeof targetLat === 'number' && typeof targetLng === 'number') {
+          result.distance = calculateDistance(
+            filters.lat,
+            filters.lng,
+            targetLat,
+            targetLng
+          );
+        }
       }
 
       return result;
@@ -330,7 +340,7 @@ export async function getFacetValues(): Promise<{
 }> {
   try {
     const q = query(
-      collection(db, 'listings'),
+      collection(db, 'properties'),
       where('status', '==', 'active'),
       firestoreLimit(500)
     );
@@ -343,9 +353,14 @@ export async function getFacetValues(): Promise<{
     const propertyTypes = new Set<string>();
 
     listings.forEach((listing) => {
-      if (listing.location?.city) cities.add(listing.location.city);
-      if (listing.location?.neighborhood)
+      // Prefer top-level fields; fall back to nested structure if present
+      if (listing.city) cities.add(listing.city);
+      else if (listing.location?.city) cities.add(listing.location.city);
+
+      if (listing.neighborhood) neighborhoods.add(listing.neighborhood);
+      else if (listing.location?.neighborhood)
         neighborhoods.add(listing.location.neighborhood);
+
       if (listing.propertyType) propertyTypes.add(listing.propertyType);
     });
 

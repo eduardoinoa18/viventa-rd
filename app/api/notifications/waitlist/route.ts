@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { Timestamp } from 'firebase-admin/firestore'
+import { sendEmail } from '@/lib/emailService'
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,17 +44,12 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    // Send email notification to admin (optional - requires email service setup)
+    // Send email notification to admin (uses email service)
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/email/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: process.env.ADMIN_EMAIL || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com',
-          from: 'noreply@viventa.com',
-          replyTo: email,
-          subject: `🎯 Nueva Inscripción en Lista de Espera - ${name}`,
-          html: `
+      const to = process.env.ADMIN_EMAIL || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com'
+      const from = process.env.NEXT_PUBLIC_EMAIL_FROM || 'noreply@viventa.com'
+      const subject = `🎯 Nueva Inscripción en Lista de Espera - ${name}`
+      const html = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <div style="background: linear-gradient(to right, #004AAD, #00A676); padding: 30px; text-align: center; color: white;">
                 <h1 style="margin: 0; font-size: 28px;">¡Nueva Inscripción en Lista de Espera! 🎉</h1>
@@ -94,8 +90,7 @@ export async function POST(req: NextRequest) {
               </div>
             </div>
           `
-        })
-      })
+      await sendEmail({ to, from, subject, html, replyTo: email })
     } catch (emailError) {
       console.error('Email notification failed:', emailError)
       // Don't fail the request if email fails
@@ -103,15 +98,11 @@ export async function POST(req: NextRequest) {
 
     // Send confirmation email to user
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/email/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: email,
-          from: 'noreply@viventa.com',
-          replyTo: process.env.ADMIN_EMAIL || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com',
-          subject: '🎉 ¡Bienvenido a la Lista de Espera de VIVENTA!',
-          html: `
+      const to = email
+      const from = process.env.NEXT_PUBLIC_EMAIL_FROM || 'noreply@viventa.com'
+      const replyTo = process.env.ADMIN_EMAIL || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com'
+      const subject = '🎉 ¡Bienvenido a la Lista de Espera de VIVENTA!'
+      const html = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <div style="background: linear-gradient(to right, #004AAD, #00A676); padding: 40px; text-align: center; color: white;">
                 <h1 style="margin: 0; font-size: 32px;">¡Ya Estás Dentro! 🚀</h1>
@@ -159,8 +150,7 @@ export async function POST(req: NextRequest) {
               </div>
             </div>
           `
-        })
-      })
+      await sendEmail({ to, from, subject, html, replyTo })
     } catch (confirmEmailError) {
       console.error('Confirmation email failed:', confirmEmailError)
       // Don't fail the request if email fails
