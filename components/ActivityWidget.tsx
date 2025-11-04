@@ -34,6 +34,17 @@ export default function ActivityWidget() {
       if (res.ok) {
         const data = await res.json()
         
+        // Defensive check: ensure logs array exists
+        if (!data || !Array.isArray(data.logs)) {
+          console.warn('Activity stats data is invalid or missing logs array', data)
+          setStats({
+            total: 0,
+            byType: {},
+            recentLogs: []
+          })
+          return
+        }
+        
         // Calculate stats
         const byType: Record<string, number> = {}
         data.logs.forEach((log: any) => {

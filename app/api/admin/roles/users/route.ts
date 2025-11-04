@@ -25,8 +25,12 @@ export async function GET() {
     })
 
     return NextResponse.json({ ok: true, users })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching admin users:', error)
+    // Return empty array if no users match or permission denied
+    if (error?.code === 'permission-denied' || error?.message?.includes('index')) {
+      return NextResponse.json({ ok: true, users: [] })
+    }
     return NextResponse.json({ ok: false, error: 'Error al obtener usuarios' }, { status: 500 })
   }
 }

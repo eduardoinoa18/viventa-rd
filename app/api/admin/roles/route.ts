@@ -11,8 +11,12 @@ export async function GET() {
     const roles = snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }))
 
     return NextResponse.json({ ok: true, roles })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching roles:', error)
+    // Return empty array if collection doesn't exist or permission denied
+    if (error?.code === 'permission-denied' || error?.message?.includes('index')) {
+      return NextResponse.json({ ok: true, roles: [] })
+    }
     return NextResponse.json({ ok: false, error: 'Error al obtener roles' }, { status: 500 })
   }
 }

@@ -16,6 +16,16 @@ export async function GET() {
     }
     return NextResponse.json({ ok: true, data: defaults })
   } catch (e: any) {
+    console.error('Error fetching billing settings:', e)
+    // Return defaults if permission denied or not found
+    if (e?.code === 'permission-denied' || e?.message?.includes('not found')) {
+      const defaults = {
+        publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
+        priceIds: { agent: '', broker: '' },
+        wallets: { applePay: false, googlePay: false },
+      }
+      return NextResponse.json({ ok: true, data: defaults })
+    }
     return NextResponse.json({ ok: false, error: e?.message }, { status: 500 })
   }
 }

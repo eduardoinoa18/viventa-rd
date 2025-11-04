@@ -33,6 +33,19 @@ export async function GET() {
       },
     })
   } catch (e: any) {
+    console.error('Error fetching billing stats:', e)
+    // Return zero stats if collections don't exist or permission denied
+    if (e?.code === 'permission-denied' || e?.message?.includes('index') || e?.message?.includes('not found')) {
+      return NextResponse.json({
+        ok: true,
+        data: {
+          mrrUSD: 0,
+          activeSubs: 0,
+          churnRatePct: 0,
+          invoicesDue: 0,
+        },
+      })
+    }
     return NextResponse.json({ ok: false, error: e?.message }, { status: 500 })
   }
 }

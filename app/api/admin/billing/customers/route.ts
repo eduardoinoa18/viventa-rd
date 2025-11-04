@@ -9,6 +9,11 @@ export async function GET() {
     const customers = snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }))
     return NextResponse.json({ ok: true, data: customers })
   } catch (e: any) {
+    console.error('Error fetching billing customers:', e)
+    // Return empty array if collection doesn't exist or permission denied
+    if (e?.code === 'permission-denied' || e?.message?.includes('index') || e?.message?.includes('not found')) {
+      return NextResponse.json({ ok: true, data: [] })
+    }
     return NextResponse.json({ ok: false, error: e?.message }, { status: 500 })
   }
 }
