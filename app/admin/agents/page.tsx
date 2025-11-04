@@ -4,16 +4,15 @@ import { useEffect, useState } from 'react'
 import ProtectedClient from '../../auth/ProtectedClient'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
+import CreateProfessionalModal from '../../../components/CreateProfessionalModal'
 import { db } from '../../../lib/firebaseClient'
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore'
 import { FiUserPlus, FiCheck, FiX, FiEdit, FiTrash2 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
 export default function AdminAgentsPage() {
   const [agents, setAgents] = useState<any[]>([])
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', brokerage: '' })
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     load()
@@ -21,46 +20,35 @@ export default function AdminAgentsPage() {
 
   async function load() {
     try {
-      const snap = await getDocs(collection(db as any, 'users'))
-      const rows = snap.docs
-        .map((d: any) => ({ id: d.id, ...(d.data() as any) }))
-        .filter((u: any) => u.role === 'agent')
+      const q = query(collection(db as any, 'users'), where('role', '==', 'agent'))
+      const snap = await getDocs(q)
+      const rows = snap.docs.map((d: any) => ({ id: d.id, ...(d.data() as any) }))
       setAgents(rows)
     } catch (e) {
       setAgents([])
     }
   }
 
-  async function createAgent(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleCreateAgent(data: any) {
     try {
-      if (editingId) {
-        await updateDoc(doc(db as any, 'users', editingId), {
-          name: form.name,
-          email: form.email,
-          phone: form.phone,
-          brokerage: form.brokerage,
-          updatedAt: new Date(),
-        })
-        toast.success('Agent updated successfully')
-        setEditingId(null)
-      } else {
-        await addDoc(collection(db as any, 'users'), {
-          name: form.name,
-          email: form.email,
-          phone: form.phone,
-          brokerage: form.brokerage,
-          role: 'agent',
-          status: 'pending',
-          createdAt: new Date(),
-        })
-        toast.success('Agent created successfully')
+      const response = await fetch('/api/admin/professionals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      
+      const result = await response.json()
+      
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || 'Failed to create agent')
       }
-      setShowForm(false)
-      setForm({ name: '', email: '', phone: '', brokerage: '' })
+      
+      toast.success(`Agent created! Code: ${result.professionalCode}`)
+      setShowModal(false)
       load()
-    } catch (e) {
-      toast.error('Failed to save agent')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create agent')
+      throw error
     }
   }
 
@@ -102,17 +90,6 @@ export default function AdminAgentsPage() {
     }
   }
 
-  function editAgent(agent: any) {
-    setForm({
-      name: agent.name,
-      email: agent.email,
-      phone: agent.phone || '',
-      brokerage: agent.brokerage || ''
-    })
-    setEditingId(agent.id)
-    setShowForm(true)
-  }
-
   return (
     <ProtectedClient allowed={['master_admin','admin']}>
       <AdminTopbar />
@@ -122,43 +99,19 @@ export default function AdminAgentsPage() {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-[#0B2545]">Agents</h1>
             <button
-              onClick={() => {
-                setEditingId(null)
-                setForm({ name: '', email: '', phone: '', brokerage: '' })
-                setShowForm(true)
-              }}
+              onClick={() => setShowModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]"
             >
-              <FiUserPlus /> New Agent
+              <FiUserPlus /> Create Agent
             </button>
           </div>
 
-          {showForm && (
-            <div className="bg-white rounded-lg shadow p-5 mb-6">
-              <h2 className="text-xl font-bold mb-4">{editingId ? 'Edit Agent' : 'Create New Agent'}</h2>
-              <form onSubmit={createAgent} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input className="px-3 py-2 border rounded" placeholder="Full name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
-                <input className="px-3 py-2 border rounded" placeholder="Email" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
-                <input className="px-3 py-2 border rounded" placeholder="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-                <input className="px-3 py-2 border rounded" placeholder="Brokerage" value={form.brokerage} onChange={e => setForm({ ...form, brokerage: e.target.value })} />
-                <div className="md:col-span-2 flex gap-2">
-                  <button type="submit" className="px-4 py-2 bg-[#0B2545] text-white rounded hover:bg-[#0a1f3a]">
-                    {editingId ? 'Update' : 'Create'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForm(false)
-                      setEditingId(null)
-                      setForm({ name: '', email: '', phone: '', brokerage: '' })
-                    }}
-                    className="px-4 py-2 border rounded hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
+          {showModal && (
+            <CreateProfessionalModal 
+              onClose={() => setShowModal(false)}
+              onSubmit={handleCreateAgent}
+              initialRole="agent"
+            />
           )}
 
           <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -200,6 +153,7 @@ export default function AdminAgentsPage() {
                                 onClick={() => approveAgent(a.id)}
                                 className="p-2 text-green-600 hover:bg-green-50 rounded"
                                 title="Approve"
+                                aria-label="Approve agent"
                               >
                                 <FiCheck size={18} />
                               </button>
@@ -207,22 +161,17 @@ export default function AdminAgentsPage() {
                                 onClick={() => declineAgent(a.id)}
                                 className="p-2 text-red-600 hover:bg-red-50 rounded"
                                 title="Decline"
+                                aria-label="Decline agent"
                               >
                                 <FiX size={18} />
                               </button>
                             </>
                           )}
                           <button
-                            onClick={() => editAgent(a)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                            title="Edit"
-                          >
-                            <FiEdit size={18} />
-                          </button>
-                          <button
                             onClick={() => deleteAgent(a.id)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded"
                             title="Delete"
+                            aria-label="Delete agent"
                           >
                             <FiTrash2 size={18} />
                           </button>
