@@ -103,7 +103,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
       return formData.name && formData.email && formData.phone && formData.role
     }
     if (step === 2) {
-      return formData.licenseNumber && formData.yearsExperience && formData.specialties.length > 0
+      return formData.yearsExperience && formData.specialties.length > 0
     }
     return true
   }
@@ -266,7 +266,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                 <div>
                   <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700 mb-2">
                     <FiAward className="inline mr-2" />
-                    License Number <span className="text-red-500">*</span>
+                    License Number <span className="text-gray-400 text-xs">(Optional)</span>
                   </label>
                   <input
                     id="licenseNumber"
@@ -274,8 +274,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                     value={formData.licenseNumber}
                     onChange={(e) => updateField('licenseNumber', e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
-                    placeholder="RE-12345"
-                    required
+                    placeholder="RE-12345 (if applicable)"
                   />
                 </div>
 

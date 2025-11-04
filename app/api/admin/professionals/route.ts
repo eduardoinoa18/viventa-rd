@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
       certifications,
     } = data
 
-    // Validate required fields
-    if (!name || !email || !phone || !role || !licenseNumber || !yearsExperience) {
+    // Validate required fields (license is optional for DR)
+    if (!name || !email || !phone || !role || !yearsExperience) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -54,6 +54,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if email already exists
+    try {
+      const existingUser = await adminAuth.getUserByEmail(email)
+      if (existingUser) {
+        return NextResponse.json(
+          { ok: false, error: 'This email is already registered. Please use a different email address.' },
+          { status: 400 }
+        )
+      }
+    } catch (e: any) {
+      // If user not found, that's good - we can proceed
+      if (e.code !== 'auth/user-not-found') {
+        console.error('Error checking existing user:', e)
+      }
+    }
+
     // Create Firebase Auth account with a temporary password
     const tempPassword = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     
@@ -67,8 +83,17 @@ export async function POST(request: NextRequest) {
       })
     } catch (authError: any) {
       console.error('Firebase Auth error:', authError)
+      
+      // Better error messages
+      if (authError.code === 'auth/email-already-exists') {
+        return NextResponse.json(
+          { ok: false, error: 'This email is already registered. Please use a different email address.' },
+          { status: 400 }
+        )
+      }
+      
       return NextResponse.json(
-        { error: `Failed to create auth account: ${authError.message}` },
+        { ok: false, error: `Failed to create account: ${authError.message}` },
         { status: 500 }
       )
     }
