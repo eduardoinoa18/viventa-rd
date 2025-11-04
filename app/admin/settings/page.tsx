@@ -136,6 +136,10 @@ export default function AdminSettingsPage() {
     setLoading(true)
     try {
       const res = await fetch('/api/admin/settings')
+      if (!res.ok) {
+        console.error('Failed to load settings: HTTP', res.status)
+        return
+      }
       const json = await res.json()
       if (json.ok) {
         setSettings({ ...settings, ...json.data })

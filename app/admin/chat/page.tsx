@@ -153,10 +153,16 @@ function AdminChatPageContent() {
     setLoadingMessages(true)
     try {
       const res = await fetch(`/api/admin/chat/conversations/${encodeURIComponent(id)}/messages`, { cache: 'no-store' })
+      if (!res.ok) {
+        console.error('Failed to load messages: HTTP', res.status)
+        setMessages([])
+        return
+      }
       const data = await res.json()
       setMessages(data.messages || [])
     } catch (e) {
       console.error('Failed to load messages', e)
+      setMessages([])
     } finally { 
       setLoadingMessages(false) 
     }
