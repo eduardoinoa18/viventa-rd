@@ -24,6 +24,7 @@ export default function AdminSidebar() {
     { href: '/admin', label: 'Dashboard', icon: <FiGrid /> },
     { href: '/admin/activity', label: 'Activity Feed', icon: <FiActivity /> },
     { href: '/admin/analytics', label: 'Analytics & AI', icon: <FiBarChart2 /> },
+    { href: '/admin/email/events', label: 'Email Delivery', icon: <FiClipboard /> },
     { href: '/admin/leads', label: 'Leads', icon: <FiTarget /> },
     { href: '/admin/users', label: 'Users', icon: <FiUsers /> },
     { href: '/admin/brokers', label: 'Brokers', icon: <FiBriefcase /> },

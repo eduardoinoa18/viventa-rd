@@ -43,6 +43,7 @@ export default function AnalyticsEventsPage() {
   const [trends, setTrends] = useState<AnalyticsTrends | null>(null)
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d')
+  const [daily, setDaily] = useState<Array<{ date: string; dau: number }> | null>(null)
 
   useEffect(() => {
     fetchAnalytics()
@@ -51,11 +52,22 @@ export default function AnalyticsEventsPage() {
   async function fetchAnalytics() {
     setLoading(true)
     try {
-      const res = await fetch(`/api/admin/analytics/events?range=${timeRange}`)
-      const result = await res.json()
-      if (result.ok) {
-        setSummary(result.data.summary)
-        setTrends(result.data.trends)
+      const [eventsRes, dailyRes] = await Promise.all([
+        fetch(`/api/admin/analytics/events?range=${timeRange}`),
+        fetch(`/api/admin/analytics/daily?range=${timeRange}`),
+      ])
+      const eventsJson = await eventsRes.json()
+      const dailyJson = await dailyRes.json()
+      if (eventsJson.ok) {
+        setSummary(eventsJson.data.summary)
+        setTrends(eventsJson.data.trends)
+      }
+      if (dailyJson.ok) {
+        // Normalize to expected shape for chart
+        const mapped = (dailyJson.data as any[]).map((d) => ({ date: d.date, dau: d.dau }))
+        setDaily(mapped)
+      } else {
+        setDaily(null)
       }
     } catch (error) {
       console.error('Error fetching analytics:', error)
@@ -192,9 +204,9 @@ export default function AnalyticsEventsPage() {
                   </div>
 
                   {/* DAU Trend Chart */}
-                  <Card title="Daily Active Users Trend" description="User activity over the last 7 days">
+                  <Card title="Daily Active Users Trend" description={daily?.length ? 'User activity (daily aggregated)' : 'User activity over the last 7 days (real-time)'}>
                     <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={trends.dauTrend}>
+                      <LineChart data={(daily?.map(d => ({ date: d.date.slice(5), users: d.dau })) || trends.dauTrend)}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
                         <YAxis />

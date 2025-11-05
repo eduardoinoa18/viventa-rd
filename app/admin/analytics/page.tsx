@@ -36,6 +36,31 @@ interface AnalyticsData {
   }>
 }
 
+// Discrete width classes (0-100 in 5% steps) to avoid inline styles
+const WIDTH_CLASSES: Record<number, string> = {
+  0: 'w-[0%]',
+  5: 'w-[5%]',
+  10: 'w-[10%]',
+  15: 'w-[15%]',
+  20: 'w-[20%]',
+  25: 'w-[25%]',
+  30: 'w-[30%]',
+  35: 'w-[35%]',
+  40: 'w-[40%]',
+  45: 'w-[45%]',
+  50: 'w-[50%]',
+  55: 'w-[55%]',
+  60: 'w-[60%]',
+  65: 'w-[65%]',
+  70: 'w-[70%]',
+  75: 'w-[75%]',
+  80: 'w-[80%]',
+  85: 'w-[85%]',
+  90: 'w-[90%]',
+  95: 'w-[95%]',
+  100: 'w-[100%]',
+}
+
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'ai' | 'users' | 'properties' | 'agents'>('overview')
   const [data, setData] = useState<AnalyticsData | null>(null)
@@ -303,6 +328,7 @@ export default function AnalyticsPage() {
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                             <XAxis dataKey="day" stroke="#999" />
                             <YAxis stroke="#999" />
+                            {/* eslint-disable-next-line */}
                             <Tooltip contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }} />
                             <Legend />
                             <Line type="monotone" dataKey="searches" stroke="#3B82F6" strokeWidth={2} name="Búsquedas" />
@@ -321,25 +347,28 @@ export default function AnalyticsPage() {
                             Ubicaciones Populares
                           </h3>
                           <div className="space-y-3">
-                            {data.popularLocations.map((loc, idx) => (
-                              <div key={idx} className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600">
-                                    {idx + 1}
+                            {data.popularLocations.map((loc, idx) => {
+                              const pctRaw = (loc.count / data.popularLocations[0].count) * 100
+                              const pct = Math.round(pctRaw / 5) * 5
+                              const clamped = Math.max(0, Math.min(100, pct)) as 0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95|100
+                              const widthClass = WIDTH_CLASSES[clamped] || 'w-[0%]'
+                              return (
+                                <div key={idx} className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600">
+                                      {idx + 1}
+                                    </div>
+                                    <span className="font-medium">{loc.name}</span>
                                   </div>
-                                  <span className="font-medium">{loc.name}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-24 bg-gray-200 rounded-full h-2">
-                                    <div 
-                                      className="bg-blue-600 h-2 rounded-full"
-                                      style={{ width: `${(loc.count / data.popularLocations[0].count) * 100}%` }}
-                                    />
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                                      <div className={`h-2 rounded-full bg-blue-600 ${widthClass}`} />
+                                    </div>
+                                    <span className="text-sm font-semibold text-gray-600">{loc.count}</span>
                                   </div>
-                                  <span className="text-sm font-semibold text-gray-600">{loc.count}</span>
                                 </div>
-                              </div>
-                            ))}
+                              )
+                            })}
                           </div>
                         </div>
 
