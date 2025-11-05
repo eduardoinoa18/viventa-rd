@@ -280,247 +280,209 @@ export default function AdminSettingsPage() {
                   </div>
                 </Card>
 
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Contact Information</h2>
+                <Card title="Contact Information" description="Public contact details for your platform">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
-                      <input
+                    <FormField id="contact-email" label="Contact Email">
+                      <TextInput
                         id="contact-email"
                         type="email"
                         value={settings.contactEmail}
                         onChange={(e) => updateSetting('contactEmail', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
-                      <input
+                    </FormField>
+                    <FormField id="contact-phone" label="Contact Phone">
+                      <TextInput
                         id="contact-phone"
                         type="tel"
                         value={settings.contactPhone}
                         onChange={(e) => updateSetting('contactPhone', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                      <input
+                    </FormField>
+                    <FormField id="address" label="Address" className="md:col-span-2">
+                      <TextInput
                         id="address"
                         type="text"
                         value={settings.address}
                         onChange={(e) => updateSetting('address', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
+                    </FormField>
                   </div>
-                </div>
+                </Card>
 
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Localization</h2>
+                <Card title="Localization" description="Regional settings for your platform">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-                      <select
+                    <FormField id="timezone" label="Timezone">
+                      <Select
                         id="timezone"
                         value={settings.timezone}
                         onChange={(e) => updateSetting('timezone', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       >
                         <option value="America/Santo_Domingo">America/Santo_Domingo</option>
                         <option value="America/New_York">America/New_York</option>
                         <option value="America/Los_Angeles">America/Los_Angeles</option>
                         <option value="Europe/Madrid">Europe/Madrid</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">Language</label>
-                      <select
+                      </Select>
+                    </FormField>
+                    <FormField id="language" label="Language">
+                      <Select
                         id="language"
                         value={settings.language}
                         onChange={(e) => updateSetting('language', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       >
                         <option value="es">Español</option>
                         <option value="en">English</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-                      <select
+                      </Select>
+                    </FormField>
+                    <FormField id="currency" label="Currency">
+                      <Select
                         id="currency"
                         value={settings.currency}
                         onChange={(e) => updateSetting('currency', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       >
                         <option value="USD">USD ($)</option>
                         <option value="DOP">DOP (RD$)</option>
                         <option value="EUR">EUR (€)</option>
-                      </select>
-                    </div>
+                      </Select>
+                    </FormField>
                   </div>
-                </div>
+                </Card>
 
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Social Media</h2>
+                <Card title="Social Media" description="Your social media profile links">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="facebook-url" className="block text-sm font-medium text-gray-700 mb-2">Facebook URL</label>
-                      <input
+                    <FormField id="facebook-url" label="Facebook URL">
+                      <TextInput
                         id="facebook-url"
                         type="url"
                         value={settings.facebookUrl}
                         onChange={(e) => updateSetting('facebookUrl', e.target.value)}
                         placeholder="https://facebook.com/viventa"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="instagram-url" className="block text-sm font-medium text-gray-700 mb-2">Instagram URL</label>
-                      <input
+                    </FormField>
+                    <FormField id="instagram-url" label="Instagram URL">
+                      <TextInput
                         id="instagram-url"
                         type="url"
                         value={settings.instagramUrl}
                         onChange={(e) => updateSetting('instagramUrl', e.target.value)}
                         placeholder="https://instagram.com/viventa"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="twitter-url" className="block text-sm font-medium text-gray-700 mb-2">Twitter/X URL</label>
-                      <input
+                    </FormField>
+                    <FormField id="twitter-url" label="Twitter/X URL">
+                      <TextInput
                         id="twitter-url"
                         type="url"
                         value={settings.twitterUrl}
                         onChange={(e) => updateSetting('twitterUrl', e.target.value)}
                         placeholder="https://twitter.com/viventa"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="linkedin-url" className="block text-sm font-medium text-gray-700 mb-2">LinkedIn URL</label>
-                      <input
+                    </FormField>
+                    <FormField id="linkedin-url" label="LinkedIn URL">
+                      <TextInput
                         id="linkedin-url"
                         type="url"
                         value={settings.linkedinUrl}
                         onChange={(e) => updateSetting('linkedinUrl', e.target.value)}
                         placeholder="https://linkedin.com/company/viventa"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
+                    </FormField>
                   </div>
-                </div>
+                </Card>
               </div>
             )}
 
             {/* Email Settings */}
             {activeTab === 'email' && (
               <div className="space-y-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Email Provider</h2>
-                  <div className="mb-4">
-                    <label htmlFor="email-provider" className="block text-sm font-medium text-gray-700 mb-2">Email Service</label>
-                    <select
+                <Card title="Email Provider" description="Configure your email service provider">
+                  <FormField id="email-provider" label="Email Service">
+                    <Select
                       id="email-provider"
                       value={settings.emailProvider}
                       onChange={(e) => updateSetting('emailProvider', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                     >
                       <option value="none">None (Disabled)</option>
                       <option value="sendgrid">SendGrid</option>
                       <option value="smtp">SMTP</option>
-                    </select>
-                  </div>
+                    </Select>
+                  </FormField>
 
                   {settings.emailProvider === 'sendgrid' && (
-                    <div>
-                      <label htmlFor="sendgrid-api-key" className="block text-sm font-medium text-gray-700 mb-2">SendGrid API Key</label>
-                      <input
+                    <FormField 
+                      id="sendgrid-api-key" 
+                      label="SendGrid API Key"
+                      hint="Get your API key from SendGrid dashboard"
+                    >
+                      <TextInput
                         id="sendgrid-api-key"
                         type="password"
                         value={settings.sendgridApiKey}
                         onChange={(e) => updateSetting('sendgridApiKey', e.target.value)}
                         placeholder="SG.xxxxxxxxxxxx"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Get your API key from SendGrid dashboard</p>
-                    </div>
+                    </FormField>
                   )}
 
                   {settings.emailProvider === 'smtp' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="smtp-host" className="block text-sm font-medium text-gray-700 mb-2">SMTP Host</label>
-                        <input
+                      <FormField id="smtp-host" label="SMTP Host">
+                        <TextInput
                           id="smtp-host"
                           type="text"
                           value={settings.smtpHost}
                           onChange={(e) => updateSetting('smtpHost', e.target.value)}
                           placeholder="smtp.gmail.com"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                         />
-                      </div>
-                      <div>
-                        <label htmlFor="smtp-port" className="block text-sm font-medium text-gray-700 mb-2">SMTP Port</label>
-                        <input
+                      </FormField>
+                      <FormField id="smtp-port" label="SMTP Port">
+                        <TextInput
                           id="smtp-port"
                           type="number"
-                          value={settings.smtpPort}
+                          value={settings.smtpPort.toString()}
                           onChange={(e) => updateSetting('smtpPort', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                         />
-                      </div>
-                      <div>
-                        <label htmlFor="smtp-user" className="block text-sm font-medium text-gray-700 mb-2">SMTP Username</label>
-                        <input
+                      </FormField>
+                      <FormField id="smtp-user" label="SMTP Username">
+                        <TextInput
                           id="smtp-user"
                           type="text"
                           value={settings.smtpUser}
                           onChange={(e) => updateSetting('smtpUser', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                         />
-                      </div>
-                      <div>
-                        <label htmlFor="smtp-pass" className="block text-sm font-medium text-gray-700 mb-2">SMTP Password</label>
-                        <input
+                      </FormField>
+                      <FormField id="smtp-pass" label="SMTP Password">
+                        <TextInput
                           id="smtp-pass"
                           type="password"
                           value={settings.smtpPass}
                           onChange={(e) => updateSetting('smtpPass', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                         />
-                      </div>
+                      </FormField>
                     </div>
                   )}
-                </div>
+                </Card>
 
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Email Configuration</h2>
+                <Card title="Email Configuration" description="Set default email addresses for outgoing mail">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="email-from" className="block text-sm font-medium text-gray-700 mb-2">From Email</label>
-                      <input
+                    <FormField id="email-from" label="From Email">
+                      <TextInput
                         id="email-from"
                         type="email"
                         value={settings.emailFrom}
                         onChange={(e) => updateSetting('emailFrom', e.target.value)}
                         placeholder="noreply@viventa.com"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="email-reply-to" className="block text-sm font-medium text-gray-700 mb-2">Reply-To Email</label>
-                      <input
+                    </FormField>
+                    <FormField id="email-reply-to" label="Reply-To Email">
+                      <TextInput
                         id="email-reply-to"
                         type="email"
                         value={settings.emailReplyTo}
                         onChange={(e) => updateSetting('emailReplyTo', e.target.value)}
                         placeholder="support@viventa.com"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
+                    </FormField>
                   </div>
-                </div>
+                </Card>
               </div>
             )}
 
