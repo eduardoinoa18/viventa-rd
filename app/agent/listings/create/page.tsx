@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { collection, addDoc, serverTimestamp, doc, runTransaction, type Transaction } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp, doc, runTransaction, query, where, getDocs, deleteDoc, updateDoc } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '@/lib/firebaseClient'
 import { getSession, type UserSession } from '@/lib/authSession'
@@ -13,7 +13,10 @@ import {
   FiHome,
   FiDollarSign,
   FiSave,
-  FiArrowLeft
+  FiArrowLeft,
+  FiFolder,
+  FiTrash2,
+  FiEdit
 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
@@ -23,6 +26,10 @@ export default function CreateListingPage() {
   const [images, setImages] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [agent, setAgent] = useState<UserSession | null>(null)
+  const [savingDraft, setSavingDraft] = useState(false)
+  const [showDrafts, setShowDrafts] = useState(false)
+  const [drafts, setDrafts] = useState<Array<{ id: string; title?: string; updatedAt: number; createdAt: number; completion: number }>>([])
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     title: '',
@@ -195,6 +202,115 @@ export default function CreateListingPage() {
     } catch (err) {
       console.warn('Falling back to timestamp-based listingId due to counter error:', err)
       return `VIV-${year}-${Date.now().toString().slice(-6)}`
+    }
+  }
+
+  // --- Drafts helpers ---
+  const requiredForPublish = ['title','description','propertyType','listingType','price','city','neighborhood','area'] as const
+
+  function calculateCompletion(): number {
+    let filled = 0
+    requiredForPublish.forEach((key) => {
+      // @ts-ignore
+      if (String(formData[key] || '').trim().length > 0) filled++
+    })
+    // images are important but not required for draft; count them softly
+    if (images.length > 0) filled++
+    const total = requiredForPublish.length + 1
+    return Math.round((filled / total) * 100)
+  }
+
+  async function saveDraft() {
+    const session = getSession()
+    if (!session || session.role !== 'agent') {
+      toast.error('Debes estar autenticado como agente')
+      router.push('/agent/login')
+      return
+    }
+    setSavingDraft(true)
+    try {
+      const now = Date.now()
+      const payload = {
+        agentId: session.uid,
+        createdAt: now,
+        updatedAt: now,
+        completion: calculateCompletion(),
+        title: formData.title,
+        data: {
+          ...formData,
+          // Images are not persisted in drafts for now
+        }
+      }
+      if (currentDraftId) {
+        await updateDoc(doc(db, 'drafts', currentDraftId), payload)
+        toast.success('Borrador actualizado')
+      } else {
+        const ref = await addDoc(collection(db, 'drafts'), payload)
+        setCurrentDraftId(ref.id)
+        toast.success('Borrador guardado')
+      }
+    } catch (e: any) {
+      console.error('saveDraft error', e)
+      toast.error('No se pudo guardar el borrador')
+    } finally {
+      setSavingDraft(false)
+    }
+  }
+
+  async function openDrafts() {
+    const session = getSession()
+    if (!session || session.role !== 'agent') {
+      toast.error('Debes estar autenticado como agente')
+      router.push('/agent/login')
+      return
+    }
+    try {
+      const q = query(collection(db, 'drafts'), where('agentId', '==', session.uid))
+      const snaps = await getDocs(q)
+      const list: Array<{ id: string; title?: string; updatedAt: number; createdAt: number; completion: number }> = []
+      snaps.forEach((d: any) => {
+        const data = d.data() as any
+        list.push({ id: d.id, title: data.title, updatedAt: data.updatedAt, createdAt: data.createdAt, completion: data.completion })
+      })
+      // sort by updated desc
+      list.sort((a,b) => b.updatedAt - a.updatedAt)
+      setDrafts(list)
+      setShowDrafts(true)
+    } catch (e) {
+      console.error('openDrafts error', e)
+      toast.error('No se pudieron cargar los borradores')
+    }
+  }
+
+  async function loadDraft(draftId: string) {
+    try {
+      const docRef = doc(db, 'drafts', draftId)
+      const snap = await getDocs(query(collection(db, 'drafts'), where('__name__','==', draftId)))
+      let data: any | null = null
+  snap.forEach((d: any) => { data = d.data() })
+      if (!data) {
+        toast.error('Borrador no encontrado')
+        return
+      }
+      setFormData((prev) => ({ ...prev, ...(data.data || {}) }))
+      setCurrentDraftId(draftId)
+      setShowDrafts(false)
+      toast.success('Borrador cargado')
+    } catch (e) {
+      console.error('loadDraft error', e)
+      toast.error('No se pudo cargar el borrador')
+    }
+  }
+
+  async function removeDraft(draftId: string) {
+    try {
+      await deleteDoc(doc(db, 'drafts', draftId))
+      setDrafts((prev) => prev.filter(d => d.id !== draftId))
+      if (currentDraftId === draftId) setCurrentDraftId(null)
+      toast.success('Borrador eliminado')
+    } catch (e) {
+      console.error('removeDraft error', e)
+      toast.error('No se pudo eliminar el borrador')
     }
   }
 
@@ -1065,8 +1181,17 @@ export default function CreateListingPage() {
             </div>
           </div>
 
-          {/* Submit Buttons */}
+          {/* Submit & Draft Buttons */}
           <div className="flex gap-4 sticky bottom-4 bg-white rounded-xl shadow-lg p-4 border-2 border-gray-200">
+            <button
+              type="button"
+              onClick={openDrafts}
+              className="px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
+              aria-label="Ver borradores"
+              title="Ver borradores"
+            >
+              <FiFolder /> Mis borradores
+            </button>
             <button
               type="button"
               onClick={() => router.back()}
@@ -1074,6 +1199,25 @@ export default function CreateListingPage() {
               className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={saveDraft}
+              disabled={savingDraft}
+              className="px-6 py-3 bg-white border-2 border-[#00A676] text-[#00A676] rounded-xl font-semibold hover:bg-green-50 transition-all disabled:opacity-50 flex items-center gap-2"
+              aria-label="Guardar borrador"
+              title="Guardar borrador"
+            >
+              {savingDraft ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-[#00A676] border-t-transparent rounded-full animate-spin"></div>
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <FiSave /> Guardar borrador
+                </>
+              )}
             </button>
             <button
               type="submit"
@@ -1093,6 +1237,41 @@ export default function CreateListingPage() {
               )}
             </button>
           </div>
+          {/* Drafts modal */}
+          {showDrafts && (
+            <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+              <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-[#0B2545] flex items-center gap-2"><FiFolder /> Mis borradores</h3>
+                  <button onClick={() => setShowDrafts(false)} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center" aria-label="Cerrar">
+                    <FiX />
+                  </button>
+                </div>
+                {drafts.length === 0 ? (
+                  <p className="text-gray-600">No tienes borradores aún. Guarda uno para continuar más tarde.</p>
+                ) : (
+                  <div className="space-y-3 max-h-[60vh] overflow-auto">
+                    {drafts.map((d) => (
+                      <div key={d.id} className="border-2 border-gray-200 rounded-xl p-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-900">{d.title || 'Sin título'}</p>
+                          <p className="text-sm text-gray-600">Actualizado: {new Date(d.updatedAt).toLocaleString()} • Compleción: {d.completion}%</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => loadDraft(d.id)} className="px-3 py-2 rounded-lg bg-[#00A676] text-white hover:brightness-95 flex items-center gap-2" aria-label="Continuar">
+                            <FiEdit /> Continuar
+                          </button>
+                          <button onClick={() => removeDraft(d.id)} className="px-3 py-2 rounded-lg border-2 border-red-500 text-red-600 hover:bg-red-50 flex items-center gap-2" aria-label="Eliminar">
+                            <FiTrash2 /> Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </div>
