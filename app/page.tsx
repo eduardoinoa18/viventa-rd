@@ -7,8 +7,10 @@ import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import StructuredData from '../components/StructuredData';
 import FeaturedProperties from '../components/FeaturedProperties';
+import WaitlistModal from '../components/WaitlistModal';
 import { useState, useEffect } from 'react';
 import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock, FiTrendingUp, FiStar } from 'react-icons/fi'
+import { useWaitlistPrompt } from '@/hooks/useWaitlistPrompt'
 
 const properties = [
   { id: 1, title: "Luxury Villa in Santo Domingo", price: 350000, type: "Villa", lat: 18.4861, lng: -69.9312, img: "/demo1.jpg", city: "Santo Domingo", neighborhood: "Piantini", beds: 3, baths: 2, sqft: 180 },
@@ -27,6 +29,7 @@ export default function HomePage() {
   const user = undefined as any;
   const [filters, setFilters] = useState({ location: "", type: "", minPrice: "", maxPrice: "" });
   const [stats, setStats] = useState<any>(null)
+  const { isOpen, trigger, onClose } = useWaitlistPrompt()
 
   useEffect(() => {
     fetch('/api/stats/homepage')
@@ -403,6 +406,7 @@ export default function HomePage() {
       </main>
       <Footer />
       <BottomNav />
+      <WaitlistModal isOpen={isOpen} onClose={onClose} trigger={trigger} />
     </div>
   );
 }

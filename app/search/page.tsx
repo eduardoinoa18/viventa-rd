@@ -5,6 +5,7 @@ import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import BottomNav from '../../components/BottomNav'
 import PropertyCard from '../../components/PropertyCard'
+import WaitlistModal from '../../components/WaitlistModal'
 // SearchStatsBar removed per request to simplify the page
 import AdvancedFilters from '../../components/AdvancedFilters'
 import SavedSearchModal from '../../components/SavedSearchModal'
@@ -15,6 +16,7 @@ import { getUserCurrency, type Currency } from '../../lib/currency'
 import { searchListings, type SearchFilters, type Listing } from '../../lib/customSearchService'
 import { usePageViewTracking } from '../../hooks/useAnalytics'
 import { trackSearch } from '../../lib/analyticsService'
+import { useWaitlistPrompt } from '@/hooks/useWaitlistPrompt'
 
 // Map view removed per request
 
@@ -24,6 +26,9 @@ function SearchPageContent() {
   
   // Track page view
   usePageViewTracking()
+  
+  // Waitlist modal
+  const { isOpen, trigger, onClose } = useWaitlistPrompt()
   
   // UI state
   const [showSave, setShowSave] = useState(false)
@@ -287,6 +292,8 @@ function SearchPageContent() {
           onClose={() => setShowSave(false)}
         />
       )}
+
+      <WaitlistModal isOpen={isOpen} onClose={onClose} trigger={trigger} />
     </>
   )
 }

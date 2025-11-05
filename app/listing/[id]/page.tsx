@@ -11,14 +11,17 @@ import WhatsAppButton from '../../../components/WhatsAppButton'
 import FavoriteButton from '../../../components/FavoriteButton'
 import PropertyInquiryForm from '../../../components/PropertyInquiryForm'
 import StructuredData from '../../../components/StructuredData'
+import WaitlistModal from '../../../components/WaitlistModal'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaParking, FaBuilding, FaCalendar } from 'react-icons/fa'
 import { usePageViewTracking } from '@/hooks/useAnalytics'
 import { trackListingView } from '@/lib/analyticsService'
+import { useWaitlistPrompt } from '@/hooks/useWaitlistPrompt'
 
 export default function ListingDetail(){
   usePageViewTracking()
+  const { isOpen, trigger, onClose } = useWaitlistPrompt()
   const router = useRouter()
   const params = useParams()
   const id = params?.id
@@ -494,6 +497,7 @@ export default function ListingDetail(){
           onClose={() => setShowInquiryForm(false)}
         />
       )}
+      <WaitlistModal isOpen={isOpen} onClose={onClose} trigger={trigger} />
       <Footer />
     </>
   )
