@@ -13,12 +13,17 @@ import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs } from 'firebase/firestore'
 import { getUserCurrency, type Currency } from '../../lib/currency'
 import { searchListings, type SearchFilters, type Listing } from '../../lib/customSearchService'
+import { usePageViewTracking } from '../../hooks/useAnalytics'
+import { trackSearch } from '../../lib/analyticsService'
 
 // Map view removed per request
 
 function SearchPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  
+  // Track page view
+  usePageViewTracking()
   
   // UI state
   const [showSave, setShowSave] = useState(false)
@@ -87,6 +92,24 @@ function SearchPageContent() {
       setResults(response.results.map((r) => r.listing))
       setTotalHits(response.totalHits)
       setTotalPages(response.totalPages)
+      
+      // Track search event
+      const user = auth?.currentUser
+      trackSearch(
+        filters.query || '*',
+        {
+          city: filters.city,
+          neighborhood: filters.neighborhood,
+          propertyType: filters.propertyType,
+          listingType: filters.listingType,
+          priceRange: filters.minPrice || filters.maxPrice ? `${filters.minPrice || 0}-${filters.maxPrice || 'any'}` : undefined,
+          bedrooms: filters.bedrooms,
+          bathrooms: filters.bathrooms,
+          resultsCount: response.totalHits
+        },
+        user?.uid,
+        undefined // userRole not easily accessible here
+      )
     } catch (error) {
       console.error('[CustomSearch] Error:', error)
       setResults([])
