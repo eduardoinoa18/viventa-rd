@@ -63,20 +63,99 @@ export default function CreateListingPage() {
     { value: 'commercial', label: 'Comercial' }
   ]
 
-  const availableFeatures = [
-    { id: 'pool', label: 'Piscina' },
-    { id: 'gym', label: 'Gimnasio' },
-    { id: 'parking', label: 'Parqueo' },
-    { id: 'security', label: 'Seguridad 24/7' },
-    { id: 'garden', label: 'Jardín' },
-    { id: 'balcony', label: 'Balcón' },
-    { id: 'terrace', label: 'Terraza' },
-    { id: 'elevator', label: 'Ascensor' },
-    { id: 'ac', label: 'Aire Acondicionado' },
-    { id: 'furnished', label: 'Amueblado' },
-    { id: 'pets', label: 'Acepta Mascotas' },
-    { id: 'oceanview', label: 'Vista al Mar' }
-  ]
+  // Exchange rate (you should fetch this from an API in production)
+  const exchangeRate = 58.5 // USD to DOP
+
+  const amenitiesCategories = {
+    interior: {
+      label: 'Interior',
+      icon: '🏠',
+      items: [
+        { id: 'ac', label: 'Aire Acondicionado' },
+        { id: 'furnished', label: 'Amueblado' },
+        { id: 'kitchen-equipped', label: 'Cocina Equipada' },
+        { id: 'walk-in-closet', label: 'Walk-in Closet' },
+        { id: 'laundry-room', label: 'Cuarto de Lavado' },
+        { id: 'maid-quarters', label: 'Cuarto de Servicio' },
+        { id: 'office', label: 'Oficina/Estudio' },
+        { id: 'fireplace', label: 'Chimenea' },
+        { id: 'high-ceilings', label: 'Techos Altos' },
+        { id: 'hardwood-floors', label: 'Pisos de Madera' }
+      ]
+    },
+    exterior: {
+      label: 'Exterior',
+      icon: '🌳',
+      items: [
+        { id: 'pool', label: 'Piscina' },
+        { id: 'garden', label: 'Jardín' },
+        { id: 'terrace', label: 'Terraza' },
+        { id: 'balcony', label: 'Balcón' },
+        { id: 'bbq-area', label: 'Área BBQ' },
+        { id: 'outdoor-kitchen', label: 'Cocina Exterior' },
+        { id: 'gazebo', label: 'Gazebo' },
+        { id: 'jacuzzi', label: 'Jacuzzi' },
+        { id: 'deck', label: 'Deck' },
+        { id: 'patio', label: 'Patio' }
+      ]
+    },
+    building: {
+      label: 'Edificio/Comunidad',
+      icon: '🏢',
+      items: [
+        { id: 'elevator', label: 'Ascensor' },
+        { id: 'gym', label: 'Gimnasio' },
+        { id: 'security-24-7', label: 'Seguridad 24/7' },
+        { id: 'concierge', label: 'Conserje' },
+        { id: 'playground', label: 'Parque Infantil' },
+        { id: 'social-area', label: 'Área Social' },
+        { id: 'party-room', label: 'Salón de Fiestas' },
+        { id: 'coworking', label: 'Coworking' },
+        { id: 'pet-friendly', label: 'Pet-Friendly' },
+        { id: 'spa', label: 'Spa' },
+        { id: 'tennis-court', label: 'Cancha de Tenis' },
+        { id: 'basketball-court', label: 'Cancha de Baloncesto' }
+      ]
+    },
+    parking: {
+      label: 'Parqueo',
+      icon: '🚗',
+      items: [
+        { id: 'covered-parking', label: 'Parqueo Techado' },
+        { id: 'garage', label: 'Garaje' },
+        { id: 'visitor-parking', label: 'Parqueo Visitantes' },
+        { id: 'electric-charger', label: 'Cargador Eléctrico' }
+      ]
+    },
+    views: {
+      label: 'Vistas',
+      icon: '🌅',
+      items: [
+        { id: 'ocean-view', label: 'Vista al Mar' },
+        { id: 'mountain-view', label: 'Vista a Montañas' },
+        { id: 'city-view', label: 'Vista a Ciudad' },
+        { id: 'golf-view', label: 'Vista a Campo Golf' },
+        { id: 'garden-view', label: 'Vista a Jardín' },
+        { id: 'pool-view', label: 'Vista a Piscina' }
+      ]
+    },
+    technology: {
+      label: 'Tecnología',
+      icon: '💡',
+      items: [
+        { id: 'smart-home', label: 'Smart Home' },
+        { id: 'fiber-optic', label: 'Fibra Óptica' },
+        { id: 'solar-panels', label: 'Paneles Solares' },
+        { id: 'backup-generator', label: 'Planta Eléctrica' },
+        { id: 'water-cistern', label: 'Cisterna' },
+        { id: 'security-cameras', label: 'Cámaras de Seguridad' },
+        { id: 'alarm-system', label: 'Sistema de Alarma' }
+      ]
+    }
+  }
+
+  // Legacy support - flatten for backward compatibility
+  const availableFeatures = Object.values(amenitiesCategories).flatMap(cat => cat.items)
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
@@ -390,33 +469,58 @@ export default function CreateListingPage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Precio *
                   </label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.price}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
-                    placeholder="150000"
-                  />
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+                      {formData.currency === 'USD' ? '$' : 'RD$'}
+                    </span>
+                    <input
+                      type="number"
+                      required
+                      value={formData.price}
+                      onChange={(e) =>
+                        setFormData({ ...formData, price: e.target.value })
+                      }
+                      className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                      placeholder="150000"
+                    />
+                  </div>
+                  {formData.price && (
+                    <p className="text-sm text-gray-600 mt-2 flex items-center gap-2">
+                      {formData.currency === 'USD' ? (
+                        <>
+                          ≈ RD$ {(parseFloat(formData.price) * exchangeRate).toLocaleString('es-DO')}
+                          <span className="text-xs text-gray-500">(Tasa: {exchangeRate})</span>
+                        </>
+                      ) : (
+                        <>
+                          ≈ $ {(parseFloat(formData.price) / exchangeRate).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                          <span className="text-xs text-gray-500">(Tasa: {exchangeRate})</span>
+                        </>
+                      )}
+                    </p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="currency" className="block text-sm font-semibold text-gray-700 mb-2">
                     Moneda *
                   </label>
                   <select
+                    id="currency"
                     required
                     value={formData.currency}
                     onChange={(e) =>
                       setFormData({ ...formData, currency: e.target.value })
                     }
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    aria-label="Moneda"
                   >
-                    <option value="USD">USD - Dólares</option>
-                    <option value="DOP">DOP - Pesos</option>
+                    <option value="USD">🇺🇸 USD - Dólares Americanos</option>
+                    <option value="DOP">🇩🇴 DOP - Pesos Dominicanos</option>
                   </select>
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 Tip: La mayoría de propiedades premium se publican en USD
+                  </p>
                 </div>
               </div>
 
@@ -636,28 +740,50 @@ export default function CreateListingPage() {
             </div>
           </div>
 
-          {/* Features */}
+          {/* Amenities - Comprehensive Categorized System */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-bold text-[#0B2545] mb-4">
-              Características
+            <h2 className="text-xl font-bold text-[#0B2545] mb-2">
+              Amenidades y Características
             </h2>
+            <p className="text-gray-600 text-sm mb-6">
+              Selecciona todas las características que apliquen a tu propiedad
+            </p>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {availableFeatures.map((feature) => (
-                <button
-                  key={feature.id}
-                  type="button"
-                  onClick={() => toggleFeature(feature.id)}
-                  className={`px-4 py-3 rounded-xl border-2 font-medium text-sm transition-colors ${
-                    formData.features.includes(feature.id)
-                      ? 'bg-[#00A676] border-[#00A676] text-white'
-                      : 'bg-white border-gray-300 text-gray-700 hover:border-[#00A676]'
-                  }`}
-                >
-                  {feature.label}
-                </button>
+            <div className="space-y-6">
+              {Object.entries(amenitiesCategories).map(([categoryKey, category]) => (
+                <div key={categoryKey} className="border-2 border-gray-200 rounded-xl p-4">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span className="text-2xl">{category.icon}</span>
+                    {category.label}
+                  </h3>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {category.items.map((feature) => (
+                      <button
+                        key={feature.id}
+                        type="button"
+                        onClick={() => toggleFeature(feature.id)}
+                        className={`px-4 py-3 rounded-lg border-2 font-medium text-sm transition-all ${
+                          formData.features.includes(feature.id)
+                            ? 'bg-gradient-to-r from-[#00A676] to-[#00A6A6] border-[#00A676] text-white shadow-md scale-105'
+                            : 'bg-white border-gray-300 text-gray-700 hover:border-[#00A676] hover:shadow-sm'
+                        }`}
+                      >
+                        {feature.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
+
+            {formData.features.length > 0 && (
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+                <p className="text-sm text-green-800">
+                  <strong>{formData.features.length} amenidades seleccionadas</strong>
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Información profesional (pro-to-pro) */}
