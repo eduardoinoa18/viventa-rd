@@ -67,11 +67,11 @@ export function trackSignup(userId: string, userRole: string, metadata?: Record<
 /**
  * Track listing view
  */
-export function trackListingView(listingId: string, userId?: string, userRole?: string) {
+export function trackListingView(listingId: string, metadata?: Record<string, any>, userId?: string, userRole?: string | null) {
   return trackEvent('listing_view', {
     userId,
-    userRole,
-    metadata: { listingId }
+    userRole: userRole || undefined,
+    metadata: { listingId, ...metadata }
   })
 }
 

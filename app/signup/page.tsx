@@ -8,8 +8,11 @@ import { auth, db } from '@/lib/firebaseClient'
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import toast from 'react-hot-toast'
+import { usePageViewTracking } from '@/hooks/useAnalytics'
+import { trackSignup } from '@/lib/analyticsService'
 
 export default function SignupPage() {
+  usePageViewTracking()
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' })
   const [error, setError] = useState('')
   const router = useRouter()
@@ -53,6 +56,8 @@ export default function SignupPage() {
 
         // Save session locally for client routing and middleware cookies
         saveSession({ uid: cred.user.uid, role: 'user', profileComplete: true, name: form.name })
+        // Track signup event
+        trackSignup(cred.user.uid, 'user')
         setError('')
         router.push('/dashboard')
         toast.success('¡Cuenta creada exitosamente! Revisa tu email.')

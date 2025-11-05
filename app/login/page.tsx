@@ -8,8 +8,11 @@ import { auth, db } from '@/lib/firebaseClient'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import toast from 'react-hot-toast'
+import { usePageViewTracking } from '@/hooks/useAnalytics'
+import { trackLogin } from '@/lib/analyticsService'
 
 export default function LoginPage() {
+  usePageViewTracking()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -57,6 +60,8 @@ export default function LoginPage() {
       } catch {}
       // Save session for client and middleware
       saveSession({ uid, role, profileComplete, name })
+      // Track login event
+      trackLogin(uid, role)
       setError('')
       if (!profileComplete && (role === 'agent' || role === 'broker')) {
         router.push('/onboarding')

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { db } from '../../../lib/firebaseClient'
+import { db, auth } from '../../../lib/firebaseClient'
 import { doc, getDoc, updateDoc, increment } from 'firebase/firestore'
 import { useParams } from 'next/navigation'
 import Head from 'next/head'
@@ -14,8 +14,11 @@ import StructuredData from '../../../components/StructuredData'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaParking, FaBuilding, FaCalendar } from 'react-icons/fa'
+import { usePageViewTracking } from '@/hooks/useAnalytics'
+import { trackListingView } from '@/lib/analyticsService'
 
 export default function ListingDetail(){
+  usePageViewTracking()
   const router = useRouter()
   const params = useParams()
   const id = params?.id
@@ -35,6 +38,13 @@ export default function ListingDetail(){
           updateDoc(doc(db,'properties',id as string), {
             views: increment(1)
           }).catch((err: any) => console.error('Error updating views:', err))
+          // Track listing view
+          const user = auth.currentUser
+          trackListingView(id as string, {
+            title: snap.data().title,
+            price: snap.data().price,
+            city: snap.data().city,
+          }, user?.uid, user?.uid ? 'user' : null)
         }
       })
       .finally(() => setLoading(false))

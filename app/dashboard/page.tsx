@@ -10,8 +10,10 @@ import { FiHeart, FiSearch, FiUser, FiMail, FiPhone, FiBookmark, FiMessageSquare
 import MessagesPreview from '../../components/MessagesPreview';
 import { auth } from '../../lib/firebaseClient';
 import { signOut } from 'firebase/auth';
+import { usePageViewTracking } from '@/hooks/useAnalytics';
 
 export default function UserDashboard() {
+  usePageViewTracking()
   const [activeTab, setActiveTab] = useState('overview');
   const [user, setUser] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
