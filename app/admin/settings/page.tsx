@@ -11,6 +11,7 @@ import Card from '../../../components/ui/Card'
 import FormField from '../../../components/ui/FormField'
 import TextInput from '../../../components/ui/TextInput'
 import Select from '../../../components/ui/Select'
+import { Toggle } from '../../../components/ui/Toggle'
 
 type SettingsData = {
   // General
@@ -489,340 +490,204 @@ export default function AdminSettingsPage() {
             {/* Security Settings */}
             {activeTab === 'security' && (
               <div className="space-y-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Authentication</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div>
-                        <div className="font-medium">Enable Two-Factor Authentication</div>
-                        <div className="text-sm text-gray-500">Require 2FA for admin accounts</div>
-                      </div>
-                      <button
-                        onClick={() => updateSetting('enableTwoFactor', !settings.enableTwoFactor)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          settings.enableTwoFactor ? 'bg-[#00A676]' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className="sr-only">Enable Two-Factor Authentication</span>
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            settings.enableTwoFactor ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
+                <Card title="Authentication" description="Configure authentication and access controls">
+                  <Toggle
+                    id="enable-two-factor"
+                    label="Enable Two-Factor Authentication"
+                    description="Require 2FA for admin accounts"
+                    checked={settings.enableTwoFactor}
+                    onChange={(checked) => updateSetting('enableTwoFactor', checked)}
+                  />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="session-timeout" className="block text-sm font-medium text-gray-700 mb-2">Session Timeout (minutes)</label>
-                        <input
-                          id="session-timeout"
-                          type="number"
-                          value={settings.sessionTimeout}
-                          onChange={(e) => updateSetting('sessionTimeout', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="password-min-length" className="block text-sm font-medium text-gray-700 mb-2">Min Password Length</label>
-                        <input
-                          id="password-min-length"
-                          type="number"
-                          value={settings.passwordMinLength}
-                          onChange={(e) => updateSetting('passwordMinLength', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between py-3 border-t">
-                      <div>
-                        <div className="font-medium">Require Strong Passwords</div>
-                        <div className="text-sm text-gray-500">Uppercase, lowercase, numbers, and symbols</div>
-                      </div>
-                      <button
-                        onClick={() => updateSetting('requireStrongPassword', !settings.requireStrongPassword)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          settings.requireStrongPassword ? 'bg-[#00A676]' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className="sr-only">Require Strong Passwords</span>
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            settings.requireStrongPassword ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    <div>
-                      <label htmlFor="allowed-domains" className="block text-sm font-medium text-gray-700 mb-2">Allowed Email Domains (comma-separated)</label>
-                      <input
-                        id="allowed-domains"
-                        type="text"
-                        value={settings.allowedDomains}
-                        onChange={(e) => updateSetting('allowedDomains', e.target.value)}
-                        placeholder="viventa.com, example.com"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField id="session-timeout" label="Session Timeout (minutes)">
+                      <TextInput
+                        id="session-timeout"
+                        type="number"
+                        value={settings.sessionTimeout.toString()}
+                        onChange={(e) => updateSetting('sessionTimeout', parseInt(e.target.value))}
                       />
-                      <p className="text-xs text-gray-500 mt-1">Leave empty to allow all domains</p>
-                    </div>
+                    </FormField>
+                    <FormField id="password-min-length" label="Min Password Length">
+                      <TextInput
+                        id="password-min-length"
+                        type="number"
+                        value={settings.passwordMinLength.toString()}
+                        onChange={(e) => updateSetting('passwordMinLength', parseInt(e.target.value))}
+                      />
+                    </FormField>
                   </div>
-                </div>
+
+                  <Toggle
+                    id="require-strong-password"
+                    label="Require Strong Passwords"
+                    description="Uppercase, lowercase, numbers, and symbols"
+                    checked={settings.requireStrongPassword}
+                    onChange={(checked) => updateSetting('requireStrongPassword', checked)}
+                  />
+
+                  <FormField 
+                    id="allowed-domains" 
+                    label="Allowed Email Domains (comma-separated)"
+                    hint="Leave empty to allow all domains"
+                    className="mt-4"
+                  >
+                    <TextInput
+                      id="allowed-domains"
+                      type="text"
+                      value={settings.allowedDomains}
+                      onChange={(e) => updateSetting('allowedDomains', e.target.value)}
+                      placeholder="viventa.com, example.com"
+                    />
+                  </FormField>
+                </Card>
               </div>
             )}
 
             {/* Integrations */}
             {activeTab === 'integrations' && (
               <div className="space-y-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545] flex items-center gap-2">
-                    <FiDollarSign /> Stripe Payment Integration
-                  </h2>
+                <Card 
+                  title={
+                    <span className="flex items-center gap-2">
+                      <FiDollarSign /> Stripe Payment Integration
+                    </span>
+                  }
+                  description="Configure Stripe for payment processing"
+                >
                   <div className="space-y-4">
-                    <div>
-                      <label htmlFor="stripe-publishable-key" className="block text-sm font-medium text-gray-700 mb-2">Publishable Key</label>
-                      <input
+                    <FormField id="stripe-publishable-key" label="Publishable Key">
+                      <TextInput
                         id="stripe-publishable-key"
                         type="text"
                         value={settings.stripePublishableKey}
                         onChange={(e) => updateSetting('stripePublishableKey', e.target.value)}
                         placeholder="pk_test_..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="stripe-secret-key" className="block text-sm font-medium text-gray-700 mb-2">Secret Key</label>
-                      <input
+                    </FormField>
+                    <FormField id="stripe-secret-key" label="Secret Key">
+                      <TextInput
                         id="stripe-secret-key"
                         type="password"
                         value={settings.stripeSecretKey}
                         onChange={(e) => updateSetting('stripeSecretKey', e.target.value)}
                         placeholder="sk_test_..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
+                    </FormField>
                   </div>
-                </div>
+                </Card>
 
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Algolia Search</h2>
+                <Card title="Algolia Search" description="Configure Algolia search integration (optional)">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label htmlFor="algolia-app-id" className="block text-sm font-medium text-gray-700 mb-2">App ID</label>
-                      <input
+                    <FormField id="algolia-app-id" label="App ID">
+                      <TextInput
                         id="algolia-app-id"
                         type="text"
                         value={settings.algoliaAppId}
                         onChange={(e) => updateSetting('algoliaAppId', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="algolia-api-key" className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
-                      <input
+                    </FormField>
+                    <FormField id="algolia-api-key" label="API Key">
+                      <TextInput
                         id="algolia-api-key"
                         type="password"
                         value={settings.algoliaApiKey}
                         onChange={(e) => updateSetting('algoliaApiKey', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="algolia-index" className="block text-sm font-medium text-gray-700 mb-2">Index Name</label>
-                      <input
+                    </FormField>
+                    <FormField id="algolia-index" label="Index Name">
+                      <TextInput
                         id="algolia-index"
                         type="text"
                         value={settings.algoliaIndex}
                         onChange={(e) => updateSetting('algoliaIndex', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
+                    </FormField>
                   </div>
-                </div>
+                </Card>
 
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Analytics</h2>
+                <Card title="Analytics" description="Third-party analytics integrations">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="google-analytics-id" className="block text-sm font-medium text-gray-700 mb-2">Google Analytics ID</label>
-                      <input
+                    <FormField id="google-analytics-id" label="Google Analytics ID">
+                      <TextInput
                         id="google-analytics-id"
                         type="text"
                         value={settings.googleAnalyticsId}
                         onChange={(e) => updateSetting('googleAnalyticsId', e.target.value)}
                         placeholder="G-XXXXXXXXXX"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="facebook-pixel-id" className="block text-sm font-medium text-gray-700 mb-2">Facebook Pixel ID</label>
-                      <input
+                    </FormField>
+                    <FormField id="facebook-pixel-id" label="Facebook Pixel ID">
+                      <TextInput
                         id="facebook-pixel-id"
                         type="text"
                         value={settings.facebookPixelId}
                         onChange={(e) => updateSetting('facebookPixelId', e.target.value)}
                         placeholder="1234567890"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       />
-                    </div>
+                    </FormField>
                   </div>
-                </div>
+                </Card>
               </div>
             )}
 
             {/* Notifications */}
             {activeTab === 'notifications' && (
               <div className="space-y-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Notification Channels</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div>
-                        <div className="font-medium">Admin Email Notifications</div>
-                        <div className="text-sm text-gray-500">Receive email alerts for important events</div>
-                      </div>
-                      <button
-                        onClick={() => updateSetting('adminEmailNotifications', !settings.adminEmailNotifications)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          settings.adminEmailNotifications ? 'bg-[#00A676]' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className="sr-only">Toggle admin email notifications</span>
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            settings.adminEmailNotifications ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
+                <Card title="Notification Channels" description="Configure how notifications are delivered">
+                  <Toggle
+                    id="admin-email-notifications"
+                    label="Admin Email Notifications"
+                    description="Receive email alerts for important events"
+                    checked={settings.adminEmailNotifications}
+                    onChange={(checked) => updateSetting('adminEmailNotifications', checked)}
+                  />
+                  <Toggle
+                    id="user-email-notifications"
+                    label="User Email Notifications"
+                    description="Allow users to receive email notifications"
+                    checked={settings.userEmailNotifications}
+                    onChange={(checked) => updateSetting('userEmailNotifications', checked)}
+                  />
+                  <Toggle
+                    id="push-notifications"
+                    label="Push Notifications"
+                    description="Enable browser push notifications"
+                    checked={settings.pushNotifications}
+                    onChange={(checked) => updateSetting('pushNotifications', checked)}
+                  />
+                  <Toggle
+                    id="sms-notifications"
+                    label="SMS Notifications"
+                    description="Send SMS alerts (requires Twilio)"
+                    checked={settings.smsNotifications}
+                    onChange={(checked) => updateSetting('smsNotifications', checked)}
+                  />
+                </Card>
 
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div>
-                        <div className="font-medium">User Email Notifications</div>
-                        <div className="text-sm text-gray-500">Allow users to receive email notifications</div>
-                      </div>
-                      <button
-                        onClick={() => updateSetting('userEmailNotifications', !settings.userEmailNotifications)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          settings.userEmailNotifications ? 'bg-[#00A676]' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className="sr-only">Toggle user email notifications</span>
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            settings.userEmailNotifications ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div>
-                        <div className="font-medium">Push Notifications</div>
-                        <div className="text-sm text-gray-500">Enable browser push notifications</div>
-                      </div>
-                      <button
-                        onClick={() => updateSetting('pushNotifications', !settings.pushNotifications)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          settings.pushNotifications ? 'bg-[#00A676]' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className="sr-only">Toggle push notifications</span>
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            settings.pushNotifications ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div>
-                        <div className="font-medium">SMS Notifications</div>
-                        <div className="text-sm text-gray-500">Send SMS alerts (requires Twilio)</div>
-                      </div>
-                      <button
-                        onClick={() => updateSetting('smsNotifications', !settings.smsNotifications)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          settings.smsNotifications ? 'bg-[#00A676]' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className="sr-only">Toggle SMS notifications</span>
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            settings.smsNotifications ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-[#0B2545]">Event Notifications</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div>
-                        <div className="font-medium">New Lead Notifications</div>
-                        <div className="text-sm text-gray-500">Alert when new lead is created</div>
-                      </div>
-                      <button
-                        onClick={() => updateSetting('notifyOnNewLead', !settings.notifyOnNewLead)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          settings.notifyOnNewLead ? 'bg-[#00A676]' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className="sr-only">Toggle new lead notifications</span>
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            settings.notifyOnNewLead ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div>
-                        <div className="font-medium">New Application Notifications</div>
-                        <div className="text-sm text-gray-500">Alert when agent/broker applies</div>
-                      </div>
-                      <button
-                        onClick={() => updateSetting('notifyOnNewApplication', !settings.notifyOnNewApplication)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          settings.notifyOnNewApplication ? 'bg-[#00A676]' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className="sr-only">Toggle new application notifications</span>
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            settings.notifyOnNewApplication ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div>
-                        <div className="font-medium">New Property Notifications</div>
-                        <div className="text-sm text-gray-500">Alert when new property is submitted</div>
-                      </div>
-                      <button
-                        onClick={() => updateSetting('notifyOnNewProperty', !settings.notifyOnNewProperty)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          settings.notifyOnNewProperty ? 'bg-[#00A676]' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className="sr-only">Toggle new property notifications</span>
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            settings.notifyOnNewProperty ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <Card title="Event Notifications" description="Configure alerts for specific events">
+                  <Toggle
+                    id="notify-new-lead"
+                    label="New Lead Notifications"
+                    description="Alert when new lead is created"
+                    checked={settings.notifyOnNewLead}
+                    onChange={(checked) => updateSetting('notifyOnNewLead', checked)}
+                  />
+                  <Toggle
+                    id="notify-new-application"
+                    label="New Application Notifications"
+                    description="Alert when agent/broker applies"
+                    checked={settings.notifyOnNewApplication}
+                    onChange={(checked) => updateSetting('notifyOnNewApplication', checked)}
+                  />
+                  <Toggle
+                    id="notify-new-property"
+                    label="New Property Notifications"
+                    description="Alert when new property is submitted"
+                    checked={settings.notifyOnNewProperty}
+                    onChange={(checked) => updateSetting('notifyOnNewProperty', checked)}
+                  />
+                </Card>
               </div>
             )}
 
