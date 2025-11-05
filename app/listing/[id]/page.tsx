@@ -15,9 +15,12 @@ import WaitlistModal from '../../../components/WaitlistModal'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaParking, FaBuilding, FaCalendar } from 'react-icons/fa'
+import { FiMessageSquare, FiUser } from 'react-icons/fi'
 import { usePageViewTracking } from '@/hooks/useAnalytics'
 import { trackListingView } from '@/lib/analyticsService'
 import { useWaitlistPrompt } from '@/hooks/useWaitlistPrompt'
+import { getSession } from '@/lib/authSession'
+import toast from 'react-hot-toast'
 
 export default function ListingDetail(){
   usePageViewTracking()
@@ -29,6 +32,14 @@ export default function ListingDetail(){
   const [loading, setLoading] = useState(true)
   const [currency, setCurrency] = useState<Currency>('USD')
   const [showInquiryForm, setShowInquiryForm] = useState(false)
+  const [currentSession, setCurrentSession] = useState<any>(null)
+  const [startingChat, setStartingChat] = useState(false)
+
+  // Check session for agent-to-agent features
+  useEffect(() => {
+    const sess = getSession()
+    setCurrentSession(sess)
+  }, [])
   
   useEffect(()=> {
     if(!id) return
@@ -126,6 +137,47 @@ export default function ListingDetail(){
     images: listing.images || [],
     agentName: listing.agentName,
     agentPhone: listing.agentPhone
+  }
+
+  // Agent-to-agent chat
+  async function startAgentChat() {
+    if (!currentSession || currentSession.role !== 'agent') {
+      toast.error('Debes estar autenticado como agente')
+      router.push('/agent/login')
+      return
+    }
+
+    if (listing.agentId === currentSession.uid) {
+      toast.error('No puedes enviarte mensajes a ti mismo')
+      return
+    }
+
+    setStartingChat(true)
+    try {
+      const res = await fetch('/api/messages/agent-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId: listing.id,
+          listingTitle: listing.title,
+          listingAgentId: listing.agentId,
+          listingAgentName: listing.agentName
+        })
+      })
+
+      const data = await res.json()
+      if (data.ok && data.conversationId) {
+        toast.success('Redirigiendo a mensajes...')
+        router.push(`/messages?cid=${data.conversationId}`)
+      } else {
+        toast.error(data.message || 'Error al iniciar conversación')
+      }
+    } catch (err) {
+      console.error('startAgentChat error:', err)
+      toast.error('Error al iniciar conversación')
+    } finally {
+      setStartingChat(false)
+    }
   }
 
   // Generate structured data for SEO
@@ -406,6 +458,55 @@ export default function ListingDetail(){
                   </div>
                 )}
               </div>
+
+              {/* Agent-to-Agent Contact (Only for other agents) */}
+              {currentSession?.role === 'agent' && listing.agentId && listing.agentId !== currentSession.uid && (
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <FiMessageSquare className="text-white text-xl" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg text-blue-900 mb-2">Contacto entre Agentes</h3>
+                      <p className="text-sm text-blue-800 mb-4">
+                        <strong>Agente Listador:</strong> {listing.agentName || 'Agente VIVENTA'}
+                        {listing.representation && listing.representation !== 'independent' && (
+                          <>
+                            <br />
+                            <strong>
+                              {listing.representation === 'broker' ? 'Inmobiliaria:' : 'Constructor:'}
+                            </strong> {listing.brokerName || listing.builderName || 'Independiente'}
+                          </>
+                        )}
+                        <br />
+                        <strong>Listado:</strong> <span className="font-mono">{listing.listingId || listing.id}</span>
+                      </p>
+                      
+                      <button
+                        onClick={startAgentChat}
+                        disabled={startingChat}
+                        className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {startingChat ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Iniciando...
+                          </>
+                        ) : (
+                          <>
+                            <FiMessageSquare />
+                            Contactar Agente
+                          </>
+                        )}
+                      </button>
+                      
+                      <p className="text-xs text-blue-700 mt-3">
+                        💡 Comunícate directamente a través de la plataforma para coordinar visitas, solicitar más información o discutir detalles de cooperación.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
