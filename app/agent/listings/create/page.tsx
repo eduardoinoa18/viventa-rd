@@ -16,9 +16,20 @@ import {
   FiArrowLeft,
   FiFolder,
   FiTrash2,
-  FiEdit
+  FiEdit,
+  FiFile,
+  FiShield
 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+
+type ListingFile = {
+  id: string
+  name: string
+  type: 'floor-plan' | 'disclosure' | 'hoa-docs' | 'inspection' | 'other'
+  visibility: 'public' | 'agents-only' | 'private'
+  file: File
+  url?: string
+}
 
 export default function CreateListingPage() {
   const router = useRouter()
@@ -30,6 +41,8 @@ export default function CreateListingPage() {
   const [showDrafts, setShowDrafts] = useState(false)
   const [drafts, setDrafts] = useState<Array<{ id: string; title?: string; updatedAt: number; createdAt: number; completion: number }>>([])
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null)
+  const [documents, setDocuments] = useState<ListingFile[]>([])
+  const [uploadingDocs, setUploadingDocs] = useState(false)
   
   const [formData, setFormData] = useState({
     title: '',
@@ -347,6 +360,59 @@ export default function CreateListingPage() {
     }))
   }
 
+  function handleDocumentUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: ListingFile['type'],
+    defaultVisibility: ListingFile['visibility']
+  ) {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    // Validate file types
+    const validTypes = type === 'floor-plan' ? ['.pdf', '.jpg', '.jpeg', '.png'] : ['.pdf']
+    const invalidFiles = files.filter(file => {
+      const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+      return !validTypes.includes(ext)
+    })
+
+    if (invalidFiles.length > 0) {
+      toast.error(`Archivos no válidos. Solo se permiten: ${validTypes.join(', ')}`)
+      return
+    }
+
+    // Check file size (5MB max per file)
+    const oversizedFiles = files.filter(f => f.size > 5 * 1024 * 1024)
+    if (oversizedFiles.length > 0) {
+      toast.error('Algunos archivos exceden el límite de 5MB')
+      return
+    }
+
+    // Add to documents array
+    const newDocs: ListingFile[] = files.map(file => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      name: file.name,
+      type,
+      visibility: defaultVisibility,
+      file
+    }))
+
+    setDocuments(prev => [...prev, ...newDocs])
+    toast.success(`${files.length} documento(s) agregado(s)`)
+    
+    // Reset input
+    e.target.value = ''
+  }
+
+  function removeDocument(id: string) {
+    setDocuments(prev => prev.filter(doc => doc.id !== id))
+  }
+
+  function updateDocumentVisibility(id: string, visibility: ListingFile['visibility']) {
+    setDocuments(prev => prev.map(doc => 
+      doc.id === id ? { ...doc, visibility } : doc
+    ))
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     
@@ -390,6 +456,33 @@ export default function CreateListingPage() {
       }
       
       toast.success('Imágenes subidas', { id: 'upload' })
+
+      // Upload documents with progress
+      const uploadedDocuments: Array<{ name: string; url: string; type: string; visibility: string; uploadedAt: number }> = []
+      
+      if (documents.length > 0) {
+        setUploadingDocs(true)
+        toast.loading('Subiendo documentos...', { id: 'docs-upload' })
+        
+        for (const doc of documents) {
+          const fileName = `${Date.now()}-${doc.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
+          const storageRef = ref(storage, `properties/${session.uid}/documents/${fileName}`)
+          
+          await uploadBytes(storageRef, doc.file)
+          const url = await getDownloadURL(storageRef)
+          
+          uploadedDocuments.push({
+            name: doc.name,
+            url,
+            type: doc.type,
+            visibility: doc.visibility,
+            uploadedAt: Date.now()
+          })
+        }
+        
+        toast.success('Documentos subidos', { id: 'docs-upload' })
+        setUploadingDocs(false)
+      }
 
       // Create property document with complete structure
   const propertyData = {
@@ -450,6 +543,9 @@ export default function CreateListingPage() {
           compensationDetails: formData.compensationDetails,
           proNotes: formData.proNotes
         },
+        
+        // Documents
+        documents: uploadedDocuments,
         
         // Metrics (initialized)
         views: 0,
@@ -1068,6 +1164,132 @@ export default function CreateListingPage() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Documents Upload */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-bold text-[#0B2545] mb-4 flex items-center gap-2">
+              <FiFile className="text-[#00A676]" />
+              Documentos Adicionales
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Sube planos, documentos de divulgación, HOA, etc. Controla la visibilidad de cada documento.
+            </p>
+
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              {/* Floor Plans */}
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-[#00A676] transition-colors">
+                <FiFile className="text-3xl text-blue-600 mb-2" />
+                <h4 className="font-semibold mb-2">Planos</h4>
+                <p className="text-xs text-gray-500 mb-3">PDF, JPG, PNG hasta 5MB</p>
+                <label htmlFor="floor-plans-upload" className="sr-only">Subir planos</label>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleDocumentUpload(e, 'floor-plan', 'public')}
+                  multiple
+                  className="text-sm"
+                  id="floor-plans-upload"
+                  aria-label="Subir planos"
+                />
+              </div>
+
+              {/* Disclosure Documents */}
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-[#00A676] transition-colors">
+                <FiShield className="text-3xl text-green-600 mb-2" />
+                <h4 className="font-semibold mb-2">Divulgaciones</h4>
+                <p className="text-xs text-gray-500 mb-3">Solo PDF hasta 5MB</p>
+                <label htmlFor="disclosure-upload" className="sr-only">Subir divulgaciones</label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => handleDocumentUpload(e, 'disclosure', 'agents-only')}
+                  multiple
+                  className="text-sm"
+                  id="disclosure-upload"
+                  aria-label="Subir divulgaciones"
+                />
+              </div>
+
+              {/* HOA Documents */}
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-[#00A676] transition-colors">
+                <FiFile className="text-3xl text-purple-600 mb-2" />
+                <h4 className="font-semibold mb-2">Documentos HOA</h4>
+                <p className="text-xs text-gray-500 mb-3">Solo PDF hasta 5MB</p>
+                <label htmlFor="hoa-upload" className="sr-only">Subir documentos HOA</label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => handleDocumentUpload(e, 'hoa-docs', 'agents-only')}
+                  multiple
+                  className="text-sm"
+                  id="hoa-upload"
+                  aria-label="Subir documentos HOA"
+                />
+              </div>
+
+              {/* Other Documents */}
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-[#00A676] transition-colors">
+                <FiFile className="text-3xl text-gray-600 mb-2" />
+                <h4 className="font-semibold mb-2">Otros</h4>
+                <p className="text-xs text-gray-500 mb-3">Solo PDF hasta 5MB</p>
+                <label htmlFor="other-upload" className="sr-only">Subir otros documentos</label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => handleDocumentUpload(e, 'other', 'private')}
+                  multiple
+                  className="text-sm"
+                  id="other-upload"
+                  aria-label="Subir otros documentos"
+                />
+              </div>
+            </div>
+
+            {/* Uploaded Documents List */}
+            {documents.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm text-gray-700 mb-3">Documentos agregados ({documents.length})</h4>
+                {documents.map(doc => (
+                  <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-3 flex-1">
+                      <FiFile className="text-xl text-gray-600 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{doc.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {doc.type === 'floor-plan' ? 'Plano' : 
+                           doc.type === 'disclosure' ? 'Divulgación' :
+                           doc.type === 'hoa-docs' ? 'HOA' :
+                           doc.type === 'inspection' ? 'Inspección' : 'Otro'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={doc.visibility}
+                        onChange={(e) => updateDocumentVisibility(doc.id, e.target.value as ListingFile['visibility'])}
+                        className="text-xs px-2 py-1 border border-gray-300 rounded"
+                        aria-label={`Visibilidad de ${doc.name}`}
+                      >
+                        <option value="public">Público</option>
+                        <option value="agents-only">Solo agentes</option>
+                        <option value="private">Privado</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => removeDocument(doc.id)}
+                        className="text-red-600 hover:text-red-700 p-1"
+                        aria-label="Eliminar documento"
+                        title="Eliminar documento"
+                      >
+                        <FiX className="text-lg" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Images */}
