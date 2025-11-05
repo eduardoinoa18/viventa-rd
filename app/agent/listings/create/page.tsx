@@ -1,10 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp, doc, runTransaction, type Transaction } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '@/lib/firebaseClient'
-import { getSession } from '@/lib/authSession'
+import { getSession, type UserSession } from '@/lib/authSession'
 import {
   FiUpload,
   FiX,
@@ -22,6 +22,7 @@ export default function CreateListingPage() {
   const [loading, setLoading] = useState(false)
   const [images, setImages] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [agent, setAgent] = useState<UserSession | null>(null)
   
   const [formData, setFormData] = useState({
     title: '',
@@ -44,6 +45,10 @@ export default function CreateListingPage() {
     latitude: '',
     longitude: '',
     features: [] as string[],
+    // Representation
+    representation: 'independent' as 'independent' | 'broker' | 'builder',
+    brokerName: '',
+    builderName: '',
     // Default to pending so listings go through admin approval
     status: 'pending',
     featured: false,
@@ -157,6 +162,42 @@ export default function CreateListingPage() {
   // Legacy support - flatten for backward compatibility
   const availableFeatures = Object.values(amenitiesCategories).flatMap(cat => cat.items)
 
+  // Load agent session early to show identification details and guard access
+  useEffect(() => {
+    const s = getSession()
+    if (!s || s.role !== 'agent') {
+      // Soft-guard: redirect to login if not an agent
+      router.push('/agent/login')
+      return
+    }
+    setAgent(s)
+  }, [router])
+
+  // Generate a listing ID (VIV-YYYY-NNNNNN)
+  const generateListingId = async (): Promise<string> => {
+    const year = new Date().getFullYear()
+    const countersRef = doc(db, 'counters', 'listings')
+    try {
+  const seq = await runTransaction(db, async (tx: any) => {
+        const snap = await tx.get(countersRef)
+        const data = (snap.exists() ? snap.data() : {}) as Record<string, number>
+        const current = data[String(year)] || 0
+        const next = current + 1
+        if (!snap.exists()) {
+          tx.set(countersRef, { [String(year)]: next })
+        } else {
+          tx.update(countersRef, { [String(year)]: next })
+        }
+        return next
+      })
+      const id = `VIV-${year}-${String(seq).padStart(6, '0')}`
+      return id
+    } catch (err) {
+      console.warn('Falling back to timestamp-based listingId due to counter error:', err)
+      return `VIV-${year}-${Date.now().toString().slice(-6)}`
+    }
+  }
+
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
     if (images.length + files.length > 10) {
@@ -216,6 +257,8 @@ export default function CreateListingPage() {
         return
       }
 
+      const listingId = await generateListingId()
+
       // Upload images with progress
       const imageUrls: string[] = []
       toast.loading('Subiendo imágenes...', { id: 'upload' })
@@ -272,10 +315,14 @@ export default function CreateListingPage() {
         // Features
         features: formData.features,
         
-        // Agent information
-        agentId: session.uid,
-        agentName: session.name || session.displayName || session.email,
-        agentEmail: session.email,
+  // Agent and representation information
+  listingId,
+  agentId: session.uid,
+  agentName: session.name || session.displayName || session.email,
+  agentEmail: session.email,
+  representation: formData.representation,
+  brokerName: formData.representation === 'broker' ? formData.brokerName : '',
+  builderName: formData.representation === 'builder' ? formData.builderName : '',
         
         // Status and visibility (pending by default until admin approval)
         status: formData.status,
@@ -417,16 +464,18 @@ export default function CreateListingPage() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="propertyType" className="block text-sm font-semibold text-gray-700 mb-2">
                     Tipo de propiedad *
                   </label>
                   <select
+                    id="propertyType"
                     required
                     value={formData.propertyType}
                     onChange={(e) =>
                       setFormData({ ...formData, propertyType: e.target.value })
                     }
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    aria-label="Tipo de propiedad"
                   >
                     {propertyTypes.map((type) => (
                       <option key={type.value} value={type.value}>
@@ -437,21 +486,92 @@ export default function CreateListingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="listingType" className="block text-sm font-semibold text-gray-700 mb-2">
                     Tipo de transacción *
                   </label>
                   <select
+                    id="listingType"
                     required
                     value={formData.listingType}
                     onChange={(e) =>
                       setFormData({ ...formData, listingType: e.target.value })
                     }
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    aria-label="Tipo de transacción"
                   >
                     <option value="sale">Venta</option>
                     <option value="rent">Alquiler</option>
                   </select>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Agent & Representation */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-bold text-[#0B2545] mb-4">Tu información y representación</h2>
+            <div className="space-y-4">
+              {agent && (
+                <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
+                  <p className="text-sm text-gray-700">
+                    Publicando como: <span className="font-semibold">{agent.name || agent.displayName || agent.email}</span>
+                  </p>
+                  {agent.email && (
+                    <p className="text-sm text-gray-500">{agent.email}</p>
+                  )}
+                </div>
+              )}
+
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="md:col-span-1">
+                  <label htmlFor="representation" className="block text-sm font-semibold text-gray-700 mb-2">
+                    ¿Cómo representas este listado? *
+                  </label>
+                  <select
+                    id="representation"
+                    required
+                    value={formData.representation}
+                    onChange={(e) => setFormData({ ...formData, representation: e.target.value as any })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                    aria-label="Representación del listado"
+                  >
+                    <option value="independent">Agente Independiente</option>
+                    <option value="broker">A través de Inmobiliaria</option>
+                    <option value="builder">Constructor/Proyecto</option>
+                  </select>
+                </div>
+
+                {formData.representation === 'broker' && (
+                  <div className="md:col-span-2">
+                    <label htmlFor="brokerName" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Nombre de la inmobiliaria
+                    </label>
+                    <input
+                      id="brokerName"
+                      type="text"
+                      value={formData.brokerName}
+                      onChange={(e) => setFormData({ ...formData, brokerName: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                      placeholder="Ej. Viventa Realty"
+                    />
+                  </div>
+                )}
+
+                {formData.representation === 'builder' && (
+                  <div className="md:col-span-2">
+                    <label htmlFor="builderName" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Nombre del proyecto/constructor
+                    </label>
+                    <input
+                      id="builderName"
+                      type="text"
+                      value={formData.builderName}
+                      onChange={(e) => setFormData({ ...formData, builderName: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                      placeholder="Ej. Torre Piantini by ACME"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -880,6 +1000,8 @@ export default function CreateListingPage() {
                         type="button"
                         onClick={() => removeImage(index)}
                         className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Eliminar imagen"
+                        title="Eliminar imagen"
                       >
                         <FiX />
                       </button>
@@ -914,6 +1036,8 @@ export default function CreateListingPage() {
                   className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
                     formData.featured ? 'bg-[#00A676]' : 'bg-gray-300'
                   }`}
+                  aria-label="Alternar propiedad destacada"
+                  title="Alternar propiedad destacada"
                 >
                   <span
                     className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
