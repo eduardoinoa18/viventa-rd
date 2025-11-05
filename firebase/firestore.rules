@@ -54,8 +54,12 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.role == getUserRole() || isElevated());
-      allow list: if isSignedIn();
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || 
+        (resource.data.audience && getUserRole() in resource.data.audience) ||
+        resource.data.audience && 'all' in resource.data.audience ||
+        isElevated()
+      );
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isElevated());
       allow delete: if isAdmin();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { Timestamp } from 'firebase-admin/firestore'
 import { sendEmail } from '@/lib/emailService'
+import { rateLimit, keyFromRequest } from '@/lib/rateLimiter'
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,6 +10,13 @@ export async function POST(req: NextRequest) {
 
     if (!name || !email) {
       return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Rate limit: 10 waitlist submissions per hour per email/IP
+    const rlKey = keyFromRequest(req, email)
+    const rl = rateLimit(rlKey, 10, 60 * 60 * 1000)
+    if (!rl.allowed) {
+      return NextResponse.json({ ok: false, error: 'Rate limit exceeded. Please try again later.' }, { status: 429 })
     }
 
     const adminDb = getAdminDb()

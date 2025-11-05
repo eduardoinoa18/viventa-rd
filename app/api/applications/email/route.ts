@@ -6,10 +6,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendApplicationConfirmation } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
+import { rateLimit, keyFromRequest } from '@/lib/rateLimiter'
 
 export async function POST(req: NextRequest) {
   try {
     const { email, name, type } = await req.json()
+    
+    // Rate limit: 3 applications per hour per email/IP
+    const rlKey = email ? keyFromRequest(req, email) : keyFromRequest(req)
+    const rl = rateLimit(rlKey, 3, 60 * 60 * 1000)
+    if (!rl.allowed) {
+      return NextResponse.json({ ok: false, error: 'Rate limit exceeded. Please try again later.' }, { status: 429 })
+    }
 
     if (!email || !name || !type) {
       return NextResponse.json(
