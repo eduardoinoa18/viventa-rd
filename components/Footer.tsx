@@ -37,18 +37,14 @@ export default function Footer() {
         {!loggedIn && (
           <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6 mb-8 text-center">
             <h3 className="text-xl font-bold text-gray-800 mb-2">🚀 Únete a la Lista de Espera Beta</h3>
-            <p className="text-gray-600 mb-4">Obtén acceso anticipado, actualizaciones exclusivas y beneficios especiales al lanzar.</p>
+            <p className="text-gray-600 mb-4">Obtén acceso anticipado a nuevas funciones, actualizaciones exclusivas y beneficios especiales del programa beta.</p>
             <button
               onClick={() => {
-                if ((window as any).openWaitlistPopup) {
-                  (window as any).openWaitlistPopup()
-                } else if (typeof document !== 'undefined') {
-                  document.dispatchEvent(new Event('open-waitlist'))
-                }
+                document.dispatchEvent(new Event('viventa-open-waitlist'))
               }}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:shadow-lg transition-all transform hover:scale-105"
             >
-              Reservar mi Cupo →
+              Reservar mi Cupo Beta →
             </button>
           </div>
         )}

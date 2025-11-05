@@ -117,9 +117,26 @@ export function useWaitlistPrompt() {
     localStorage.setItem('viventa_waitlist_dismissed', Date.now().toString())
   }, [])
 
+  const manualTrigger = useCallback(() => {
+    // Allow manual trigger from buttons/CTAs even if user dismissed
+    // But still respect if they already submitted
+    const submitted = localStorage.getItem('viventa_waitlist_submitted')
+    if (!submitted && !auth.currentUser) {
+      setConfig({ enabled: true, trigger: 'initial' })
+    }
+  }, [])
+
+  // Listen for global trigger event (for banners in Footer, etc.)
+  useEffect(() => {
+    const handleGlobalTrigger = () => manualTrigger()
+    document.addEventListener('viventa-open-waitlist', handleGlobalTrigger)
+    return () => document.removeEventListener('viventa-open-waitlist', handleGlobalTrigger)
+  }, [manualTrigger])
+
   return {
     isOpen: config.enabled,
     trigger: config.trigger,
     onClose: dismissPrompt,
+    open: manualTrigger, // New: manual trigger for banner buttons
   }
 }

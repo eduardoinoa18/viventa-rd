@@ -29,7 +29,7 @@ export default function HomePage() {
   const user = undefined as any;
   const [filters, setFilters] = useState({ location: "", type: "", minPrice: "", maxPrice: "" });
   const [stats, setStats] = useState<any>(null)
-  const { isOpen, trigger, onClose } = useWaitlistPrompt()
+  const { isOpen, trigger, onClose, open } = useWaitlistPrompt()
 
   useEffect(() => {
     fetch('/api/stats/homepage')
@@ -103,19 +103,13 @@ export default function HomePage() {
             
             {/* Waitlist CTA Banner */}
             <div className="bg-gradient-to-r from-purple-600/90 to-blue-600/90 backdrop-blur-sm rounded-xl p-6 mb-8 border border-white/20 max-w-2xl mx-auto">
-              <p className="text-lg font-semibold mb-3">🚀 Plataforma en Desarrollo - ¡Únete a la Lista de Espera!</p>
-              <p className="text-sm text-gray-100 mb-4">Sé de los primeros en acceder a funciones beta, recibir actualizaciones exclusivas y disfrutar beneficios de lanzamiento.</p>
+              <p className="text-lg font-semibold mb-3">🚀 Únete a la Lista de Espera Beta</p>
+              <p className="text-sm text-gray-100 mb-4">Sé de los primeros en acceder a funciones exclusivas, recibir actualizaciones especiales y obtener beneficios únicos del programa beta.</p>
               <button 
-                onClick={() => {
-                  if ((window as any).openWaitlistPopup) {
-                    (window as any).openWaitlistPopup()
-                  } else if (typeof document !== 'undefined') {
-                    document.dispatchEvent(new Event('open-waitlist'))
-                  }
-                }}
-                className="px-6 py-3 bg-white text-purple-600 font-bold rounded-lg hover:bg-gray-100 transition-all shadow-lg"
+                onClick={open}
+                className="px-6 py-3 bg-white text-purple-600 font-bold rounded-lg hover:bg-gray-100 transition-all shadow-lg transform hover:scale-105"
               >
-                Reservar mi Cupo →
+                Reservar mi Cupo Beta →
               </button>
             </div>
 
