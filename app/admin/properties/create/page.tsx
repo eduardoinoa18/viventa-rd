@@ -12,6 +12,8 @@ import { getSession } from '@/lib/authSession'
 import { auth } from '@/lib/firebaseClient'
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'
 import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock } from 'react-icons/fi'
+import { doc, runTransaction } from 'firebase/firestore'
+import { db } from '@/lib/firebaseClient'
 
 export default function CreatePropertyPage() {
   const router = useRouter()
@@ -41,6 +43,117 @@ export default function CreatePropertyPage() {
   const [uploading, setUploading] = useState(false)
   const [progressByIndex, setProgressByIndex] = useState<number[]>([])
   const [adminUid, setAdminUid] = useState<string>('')
+  const [currency, setCurrency] = useState<'USD' | 'DOP'>('USD')
+  const exchangeRate = 58.5
+  const [features, setFeatures] = useState<string[]>([])
+
+  const amenitiesCategories = {
+    interior: {
+      label: 'Interior',
+      items: [
+        { id: 'ac', label: 'Aire Acondicionado' },
+        { id: 'furnished', label: 'Amueblado' },
+        { id: 'kitchen-equipped', label: 'Cocina Equipada' },
+        { id: 'walk-in-closet', label: 'Walk-in Closet' },
+        { id: 'laundry-room', label: 'Cuarto de Lavado' },
+        { id: 'maid-quarters', label: 'Cuarto de Servicio' },
+        { id: 'office', label: 'Oficina/Estudio' },
+        { id: 'fireplace', label: 'Chimenea' },
+        { id: 'high-ceilings', label: 'Techos Altos' },
+        { id: 'hardwood-floors', label: 'Pisos de Madera' }
+      ]
+    },
+    exterior: {
+      label: 'Exterior',
+      items: [
+        { id: 'pool', label: 'Piscina' },
+        { id: 'garden', label: 'Jardín' },
+        { id: 'terrace', label: 'Terraza' },
+        { id: 'balcony', label: 'Balcón' },
+        { id: 'bbq-area', label: 'Área BBQ' },
+        { id: 'outdoor-kitchen', label: 'Cocina Exterior' },
+        { id: 'gazebo', label: 'Gazebo' },
+        { id: 'jacuzzi', label: 'Jacuzzi' },
+        { id: 'deck', label: 'Deck' },
+        { id: 'patio', label: 'Patio' }
+      ]
+    },
+    building: {
+      label: 'Edificio/Comunidad',
+      items: [
+        { id: 'elevator', label: 'Ascensor' },
+        { id: 'gym', label: 'Gimnasio' },
+        { id: 'security-24-7', label: 'Seguridad 24/7' },
+        { id: 'concierge', label: 'Conserje' },
+        { id: 'playground', label: 'Parque Infantil' },
+        { id: 'social-area', label: 'Área Social' },
+        { id: 'party-room', label: 'Salón de Fiestas' },
+        { id: 'coworking', label: 'Coworking' },
+        { id: 'pet-friendly', label: 'Pet-Friendly' },
+        { id: 'spa', label: 'Spa' },
+        { id: 'tennis-court', label: 'Cancha de Tenis' },
+        { id: 'basketball-court', label: 'Cancha de Baloncesto' }
+      ]
+    },
+    parking: {
+      label: 'Parqueo',
+      items: [
+        { id: 'covered-parking', label: 'Parqueo Techado' },
+        { id: 'garage', label: 'Garaje' },
+        { id: 'visitor-parking', label: 'Parqueo Visitantes' },
+        { id: 'electric-charger', label: 'Cargador Eléctrico' }
+      ]
+    },
+    views: {
+      label: 'Vistas',
+      items: [
+        { id: 'ocean-view', label: 'Vista al Mar' },
+        { id: 'mountain-view', label: 'Vista a Montañas' },
+        { id: 'city-view', label: 'Vista a Ciudad' },
+        { id: 'golf-view', label: 'Vista a Campo Golf' },
+        { id: 'garden-view', label: 'Vista a Jardín' },
+        { id: 'pool-view', label: 'Vista a Piscina' }
+      ]
+    },
+    technology: {
+      label: 'Tecnología',
+      items: [
+        { id: 'smart-home', label: 'Smart Home' },
+        { id: 'fiber-optic', label: 'Fibra Óptica' },
+        { id: 'solar-panels', label: 'Paneles Solares' },
+        { id: 'backup-generator', label: 'Planta Eléctrica' },
+        { id: 'water-cistern', label: 'Cisterna' },
+        { id: 'security-cameras', label: 'Cámaras de Seguridad' },
+        { id: 'alarm-system', label: 'Sistema de Alarma' }
+      ]
+    }
+  } as const
+
+  function toggleFeature(id: string) {
+    setFeatures((prev) => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id])
+  }
+
+  async function generateListingId(): Promise<string> {
+    const year = new Date().getFullYear()
+    const countersRef = doc(db, 'counters', 'listings')
+    try {
+      const seq = await runTransaction(db as any, async (tx: any) => {
+        const snap = await tx.get(countersRef)
+        const data = (snap.exists() ? snap.data() : {}) as Record<string, number>
+        const current = data[String(year)] || 0
+        const next = current + 1
+        if (!snap.exists()) {
+          tx.set(countersRef, { [String(year)]: next })
+        } else {
+          tx.update(countersRef, { [String(year)]: next })
+        }
+        return next
+      })
+      return `VIV-${year}-${String(seq).padStart(6, '0')}`
+    } catch (e) {
+      return `VIV-${year}-${Date.now().toString().slice(-6)}`
+    }
+  }
 
   // Ensure Firebase Auth is present (anonymous is fine) for Storage writes
   useEffect(() => {
@@ -160,12 +273,14 @@ export default function CreatePropertyPage() {
 
     setSaving(true)
     try {
+      const listingId = await generateListingId()
       const payload: any = {
         title: form.title.trim(),
         description: form.description?.trim() || form.publicRemarks?.trim() || '', // Fallback for compatibility
         publicRemarks: form.publicRemarks?.trim() || '',
         professionalRemarks: form.professionalRemarks?.trim() || '',
         price: Number(form.price),
+        currency,
         location: form.location.trim(),
         city: form.city?.trim() || '',
         neighborhood: form.neighborhood?.trim() || '',
@@ -179,6 +294,8 @@ export default function CreatePropertyPage() {
         agentName: form.agentName?.trim() || '',
         status: form.status,
         featured: Boolean(form.featured),
+        features,
+        listingId,
       }
       
       await createProperty(payload)
@@ -239,18 +356,38 @@ export default function CreatePropertyPage() {
                   <div>
                     <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1" htmlFor="price-input">
                       <FiDollarSign className="text-gray-400" />
-                      Precio (USD) *
+                      Precio ({currency === 'USD' ? 'USD $' : 'DOP RD$'}) *
                     </label>
-                    <input
-                      id="price-input"
-                      data-testid="create-price"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
-                      type="number"
-                      placeholder="250000"
-                      value={form.price || ''}
-                      onChange={e=>setForm({...form, price: Number(e.target.value)})}
-                      required
-                    />
+                    <div className="grid grid-cols-3 gap-3">
+                      <input
+                        id="price-input"
+                        data-testid="create-price"
+                        className="col-span-2 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                        type="number"
+                        placeholder={currency === 'USD' ? '250000' : '14500000'}
+                        value={form.price || ''}
+                        onChange={e=>setForm({...form, price: Number(e.target.value)})}
+                        required
+                      />
+                      <select
+                        aria-label="Moneda"
+                        className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value as 'USD' | 'DOP')}
+                      >
+                        <option value="USD">🇺🇸 USD</option>
+                        <option value="DOP">🇩🇴 DOP</option>
+                      </select>
+                    </div>
+                    {form.price ? (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {currency === 'USD' ? (
+                          <>≈ RD$ {(Number(form.price) * exchangeRate).toLocaleString('es-DO')} <span className="text-gray-400">(Tasa: {exchangeRate})</span></>
+                        ) : (
+                          <>≈ $ {(Number(form.price) / exchangeRate).toLocaleString('en-US', { maximumFractionDigits: 0 })} <span className="text-gray-400">(Tasa: {exchangeRate})</span></>
+                        )}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div>
@@ -415,6 +552,40 @@ export default function CreatePropertyPage() {
                 </div>
               </div>
 
+              {/* Amenidades */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-xl font-semibold text-[#0B2545] mb-4">Amenidades</h2>
+                <p className="text-sm text-gray-600 mb-4">Selecciona todas las que apliquen. Se mostrarán en el listado.</p>
+                <div className="space-y-6">
+                  {Object.entries(amenitiesCategories).map(([key, cat]) => (
+                    <div key={key} className="border-2 border-gray-200 rounded-xl p-4">
+                      <h3 className="font-semibold text-gray-900 mb-3">{cat.label}</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {cat.items.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => toggleFeature(item.id)}
+                            className={`px-3 py-2 rounded-lg border-2 text-sm transition-all ${
+                              features.includes(item.id)
+                                ? 'bg-gradient-to-r from-[#00A676] to-[#00A6A6] border-[#00A676] text-white shadow-md'
+                                : 'bg-white border-gray-300 text-gray-700 hover:border-[#00A676]'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {features.length > 0 && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+                    {features.length} amenidades seleccionadas
+                  </div>
+                )}
+              </div>
+
               {/* Images */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
@@ -428,7 +599,6 @@ export default function CreatePropertyPage() {
                         id="propertyImages"
                         type="file"
                         accept="image/jpeg,image/jpg,image/png,image/webp"
-                        multiple
                         onChange={(e) => onFileSelect(e.target.files)}
                         aria-label="Seleccionar imágenes de la propiedad"
                         className="flex-1 px-4 py-3 border border-gray-300 rounded-lg"

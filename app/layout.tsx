@@ -62,11 +62,14 @@ export const metadata = {
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
   },
-  themeColor: '#0B2545',
   icons: {
     icon: '/favicon.ico',
     apple: '/icons/icon-192.png',
   },
+}
+
+export const viewport = {
+  themeColor: '#0B2545',
 }
 
 export default function RootLayout({children}:{children:React.ReactNode}) {

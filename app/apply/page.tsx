@@ -298,10 +298,12 @@ export default function ApplyPageNew() {
               {Math.round(progress)}%
             </span>
           </div>
-          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className={`h-full bg-gradient-to-r from-[#00A676] to-[#00A6A6] transition-all duration-500 ease-out`}
-              style={{ width: `${progress}%` } as React.CSSProperties}
+          <div className="h-3">
+            <progress
+              value={Math.round(progress)}
+              max={100}
+              className="w-full h-3 overflow-hidden rounded-full bg-gray-200 [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-[#00A676] [&::-webkit-progress-value]:to-[#00A6A6] [&::-moz-progress-bar]:bg-gradient-to-r"
+              aria-label="Progreso de la solicitud"
             />
           </div>
         </div>

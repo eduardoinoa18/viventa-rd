@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
 import { db } from '@/lib/firebaseClient'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 

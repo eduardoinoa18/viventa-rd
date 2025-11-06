@@ -1,5 +1,6 @@
 // app/api/admin/analytics/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
 import { initializeApp, getApps } from 'firebase/app'
 import {
   getFirestore,

@@ -453,6 +453,19 @@ export default function ListingDetail(){
                       <div>
                         <div className="font-medium text-[#0B2545]">{listing.agentName || 'Agente VIVENTA'}</div>
                         <div className="text-sm text-gray-600">{listing.agentPhone || listing.agentEmail || 'Contacto disponible'}</div>
+                        {listing.representation && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {listing.representation === 'broker' && (
+                              <>Inmobiliaria: <span className="text-gray-700">{listing.brokerName || 'N/D'}</span></>
+                            )}
+                            {listing.representation === 'builder' && (
+                              <>Constructor: <span className="text-gray-700">{listing.builderName || 'N/D'}</span></>
+                            )}
+                            {listing.representation === 'independent' && (
+                              <span>Agente Independiente</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -546,7 +559,7 @@ export default function ListingDetail(){
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-3">Sobre esta propiedad</h4>
                   <div className="space-y-2 text-sm text-gray-600">
-                    <p>• Listado ID: <span className="font-mono text-gray-900">{listing.id}</span></p>
+                    <p>• Listado ID: <span className="font-mono text-gray-900">{listing.listingId || listing.id}</span></p>
                     <p>• Tipo: <span className="text-gray-900 capitalize">{listing.propertyType}</span></p>
                     <p>• Transacción: <span className="text-gray-900 capitalize">{listing.listingType === 'sale' ? 'Venta' : 'Alquiler'}</span></p>
                     {listing.views > 0 && <p>• Vistas: <span className="text-gray-900">{listing.views.toLocaleString()}</span></p>}
@@ -579,6 +592,36 @@ export default function ListingDetail(){
 
             {/* Legal Disclaimer */}
             <div className="mt-6 pt-6 border-t border-gray-200">
+              {/* Documents (visible based on permissions) */}
+              {Array.isArray(listing.documents) && listing.documents.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Documentos</h4>
+                  <div className="space-y-2">
+                    {listing.documents
+                      .filter((doc: any) => {
+                        if (doc.visibility === 'public') return true
+                        if (currentSession?.role === 'agent' && (doc.visibility === 'agents-only' || doc.visibility === 'public')) return true
+                        if (currentSession?.uid && currentSession.uid === listing.agentId) return true
+                        return false
+                      })
+                      .map((doc: any, idx: number) => (
+                        <a
+                          key={idx}
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100"
+                        >
+                          <div>
+                            <p className="font-medium text-sm text-gray-800">{doc.name}</p>
+                            <p className="text-xs text-gray-500">{doc.type} • {doc.visibility}</p>
+                          </div>
+                          <span className="text-[#00A676] text-sm font-semibold">Descargar →</span>
+                        </a>
+                      ))}
+                  </div>
+                </div>
+              )}
               <p className="text-xs text-gray-500 leading-relaxed">
                 <strong>Nota:</strong> La información de este listado es proporcionada por el agente y debe ser verificada. 
                 VIVENTA actúa como plataforma intermediaria entre compradores y vendedores. Las transacciones inmobiliarias 

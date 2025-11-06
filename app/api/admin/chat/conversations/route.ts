@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 
 export const runtime = 'nodejs'

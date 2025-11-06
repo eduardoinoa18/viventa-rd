@@ -70,8 +70,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }
       })
     }
-  } catch (error) {
-    console.error('Error fetching properties for sitemap:', error)
+  } catch (error: any) {
+    // Swallow permission or config errors silently during build
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Sitemap: properties fetch skipped:', error?.code || error?.message || error)
+    }
   }
 
   // Dynamic agent pages
@@ -97,8 +100,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }
       })
     }
-  } catch (error) {
-    console.error('Error fetching agents for sitemap:', error)
+  } catch (error: any) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Sitemap: agents fetch skipped:', error?.code || error?.message || error)
+    }
   }
 
   // Dynamic broker pages
@@ -124,8 +129,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }
       })
     }
-  } catch (error) {
-    console.error('Error fetching brokers for sitemap:', error)
+  } catch (error: any) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Sitemap: brokers fetch skipped:', error?.code || error?.message || error)
+    }
   }
 
   return [...staticPages, ...propertyPages, ...agentPages, ...brokerPages]

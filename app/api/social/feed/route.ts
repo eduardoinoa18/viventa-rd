@@ -1,5 +1,6 @@
 // app/api/social/feed/route.ts
 import { NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
 import { db } from '@/lib/firebaseClient'
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
 
