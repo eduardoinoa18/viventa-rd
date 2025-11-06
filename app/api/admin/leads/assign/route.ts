@@ -21,11 +21,25 @@ export async function POST(req: NextRequest) {
     }
     const assignee = assigneeDoc.data() as any
 
-    // Update the lead (property_inquiry) with assignment
-    const leadRef = adminDb.collection('property_inquiries').doc(leadId)
-    const leadSnap = await leadRef.get()
-    if (!leadSnap.exists) {
-      return NextResponse.json({ ok: false, error: 'Lead not found' }, { status: 404 })
+    // Try all lead sources
+    const sources = ['property_inquiries', 'contact_submissions', 'waitlist_social']
+    let leadRef: any = null
+    let leadSnap: any = null
+    let foundSource = ''
+
+    for (const src of sources) {
+      const ref = adminDb.collection(src).doc(leadId)
+      const snap = await ref.get()
+      if (snap.exists) {
+        leadRef = ref
+        leadSnap = snap
+        foundSource = src
+        break
+      }
+    }
+
+    if (!leadRef || !leadSnap?.exists) {
+      return NextResponse.json({ ok: false, error: 'Lead not found in any source' }, { status: 404 })
     }
 
     const update: any = {
@@ -50,6 +64,7 @@ export async function POST(req: NextRequest) {
         action: 'Lead Assigned',
         metadata: {
           leadId,
+          source: foundSource,
           propertyId: leadData?.propertyId,
           propertyTitle: leadData?.propertyTitle,
           assigneeId,

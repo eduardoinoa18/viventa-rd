@@ -257,7 +257,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
     }
     await (adminDb as any).collection('applications').doc(id).delete()
-    ActivityLogger.log('application_deleted', { id })
+    ActivityLogger.log({ type: 'application', action: 'deleted', metadata: { id } })
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     console.error('applications DELETE error', e)

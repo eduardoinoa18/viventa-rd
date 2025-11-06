@@ -321,7 +321,7 @@ function CreateSubscriptionForm({ onCreate }:{ onCreate: (email:string, plan:'ag
       </div>
       <div>
         <label className="text-sm font-semibold text-gray-700">Plan</label>
-        <select className="w-full mt-1 px-3 py-2 border rounded-lg" value={plan} onChange={e=>setPlan(e.target.value as any)}>
+        <select className="w-full mt-1 px-3 py-2 border rounded-lg" value={plan} onChange={e=>setPlan(e.target.value as any)} aria-label="Seleccionar plan">
           <option value="agent">Agent</option>
           <option value="broker">Broker</option>
         </select>

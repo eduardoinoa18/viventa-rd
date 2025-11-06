@@ -311,13 +311,6 @@ export default function AdminLeadsPage() {
                 </div>
               )}
 
-              <div className="mt-8 border-t pt-6">
-                <div className="text-center text-gray-500">
-                  <div className="inline-block px-4 py-2 bg-yellow-50 text-yellow-800 rounded-lg border border-yellow-200">
-                    Módulo en desarrollo. Pronto podrás gestionar y asignar leads desde aquí.
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </main>

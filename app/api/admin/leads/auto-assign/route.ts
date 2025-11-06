@@ -21,9 +21,27 @@ export async function POST(req: NextRequest) {
     const adminDb = getAdminDb()
     if (!adminDb) return NextResponse.json({ ok: false, error: 'Admin not configured' }, { status: 500 })
 
-    const leadRef = adminDb.collection('property_inquiries').doc(leadId)
-    const leadSnap = await leadRef.get()
-    if (!leadSnap.exists) return NextResponse.json({ ok: false, error: 'Lead not found' }, { status: 404 })
+    // Try all lead sources
+    const sources = ['property_inquiries', 'contact_submissions', 'waitlist_social']
+    let leadRef: any = null
+    let leadSnap: any = null
+    let foundSource = ''
+
+    for (const src of sources) {
+      const ref = adminDb.collection(src).doc(leadId)
+      const snap = await ref.get()
+      if (snap.exists) {
+        leadRef = ref
+        leadSnap = snap
+        foundSource = src
+        break
+      }
+    }
+
+    if (!leadRef || !leadSnap?.exists) {
+      return NextResponse.json({ ok: false, error: 'Lead not found in any source' }, { status: 404 })
+    }
+
     const lead = leadSnap.data() as any
     if (lead.status === 'assigned' && lead.assignedTo) {
       return NextResponse.json({ ok: false, error: 'Lead already assigned' }, { status: 400 })
@@ -85,6 +103,7 @@ export async function POST(req: NextRequest) {
         action: 'Lead Auto-Assigned',
         metadata: {
           leadId,
+          source: foundSource,
           propertyId: lead?.propertyId,
           propertyTitle: lead?.propertyTitle,
           assigneeId: assignee.id,
