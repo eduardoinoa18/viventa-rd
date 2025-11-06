@@ -72,18 +72,77 @@ export default function SignupPage() {
   return (
     <div className="bg-[#FAFAFA] min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 max-w-md mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold mb-8 text-[#0B2545]">Crear cuenta en Viventa RD</h1>
-        <form className="bg-white rounded-lg shadow p-6 flex flex-col gap-4" onSubmit={handleSignup}>
-          <input placeholder="Nombre completo" className="px-3 py-2 border rounded" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} />
-          <input placeholder="Email" className="px-3 py-2 border rounded" value={form.email} onChange={e=>setForm({...form, email: e.target.value})} />
-          <input placeholder="Teléfono" className="px-3 py-2 border rounded" value={form.phone} onChange={e=>setForm({...form, phone: e.target.value})} />
-          <input placeholder="Contraseña" type="password" className="px-3 py-2 border rounded" value={form.password} onChange={e=>setForm({...form, password: e.target.value})} />
-          <button type="submit" className="px-6 py-2 bg-[#00A676] text-white rounded font-semibold">Registrarse</button>
-          {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+      <main className="flex-1 max-w-md mx-auto px-4 py-8 sm:py-12 w-full">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-[#0B2545]">Crear cuenta en Viventa RD</h1>
+        <form className="bg-white rounded-lg shadow p-4 sm:p-6 flex flex-col gap-4" onSubmit={handleSignup}>
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre Completo
+            </label>
+            <input 
+              id="name"
+              type="text"
+              placeholder="Juan Pérez" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all text-base"
+              value={form.name} 
+              onChange={e=>setForm({...form, name: e.target.value})}
+              autoComplete="name"
+            />
+          </div>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Correo Electrónico
+            </label>
+            <input 
+              id="email"
+              type="email"
+              placeholder="tu@email.com" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all text-base"
+              value={form.email} 
+              onChange={e=>setForm({...form, email: e.target.value})}
+              autoComplete="email"
+              autoCapitalize="off"
+              autoCorrect="off"
+            />
+          </div>
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+              Teléfono <span className="text-gray-400">(opcional)</span>
+            </label>
+            <input 
+              id="phone"
+              type="tel"
+              placeholder="809-555-0123" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all text-base"
+              value={form.phone} 
+              onChange={e=>setForm({...form, phone: e.target.value})}
+              autoComplete="tel"
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Contraseña
+            </label>
+            <input 
+              id="password"
+              type="password" 
+              placeholder="••••••••"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all text-base"
+              value={form.password} 
+              onChange={e=>setForm({...form, password: e.target.value})}
+              autoComplete="new-password"
+            />
+          </div>
+          <button 
+            type="submit" 
+            className="w-full px-6 py-3 min-h-[48px] bg-[#00A676] text-white rounded-lg font-semibold text-base hover:bg-[#008c5f] active:scale-[0.98] transition-all shadow-sm touch-manipulation"
+          >
+            Registrarse
+          </button>
+          {error && <div className="text-red-500 text-sm p-3 bg-red-50 rounded-lg border border-red-200">{error}</div>}
         </form>
-        <div className="mt-4 text-center text-sm text-gray-600">
-          ¿Ya tienes cuenta? <a href="/login" className="text-[#3BAFDA] font-semibold">Inicia sesión</a>
+        <div className="mt-6 text-center text-sm sm:text-base text-gray-600">
+          ¿Ya tienes cuenta? <a href="/login" className="text-[#3BAFDA] font-semibold hover:underline">Inicia sesión</a>
         </div>
       </main>
       <Footer />

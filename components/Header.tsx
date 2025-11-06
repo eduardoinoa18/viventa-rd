@@ -113,12 +113,81 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Link href="/login" className="px-4 py-2 min-h-[44px] hidden sm:flex items-center justify-center text-sm border-2 border-viventa-ocean text-viventa-ocean rounded-lg font-bold hover:bg-viventa-ocean hover:text-white transition-all active:scale-95">Login</Link>
-              <Link href="/signup" className="px-4 py-2 min-h-[44px] text-sm bg-gradient-to-r from-viventa-turquoise to-viventa-teal text-white rounded-lg font-bold hover:shadow-lg hover:scale-105 transition-all active:scale-95">Sign Up</Link>
+              {/* Mobile: Show hamburger menu for non-logged users */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-lg hover:bg-viventa-sand transition-colors md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
+                aria-label="Menu"
+              >
+                {mobileMenuOpen ? <FiX className="text-2xl text-viventa-navy" /> : <FiMenu className="text-2xl text-viventa-navy" />}
+              </button>
+              {/* Desktop: Show login/signup buttons */}
+              <Link href="/login" className="px-4 py-2 min-h-[44px] hidden md:flex items-center justify-center text-sm border-2 border-viventa-ocean text-viventa-ocean rounded-lg font-bold hover:bg-viventa-ocean hover:text-white transition-all active:scale-95 touch-manipulation">Login</Link>
+              <Link href="/signup" className="px-4 py-2 min-h-[44px] hidden md:flex items-center justify-center text-sm bg-gradient-to-r from-viventa-turquoise to-viventa-teal text-white rounded-lg font-bold hover:shadow-lg hover:scale-105 transition-all active:scale-95 touch-manipulation">Sign Up</Link>
             </>
           )}
         </div>
       </div>
+      
+      {/* Mobile menu for non-logged users */}
+      {!session && mobileMenuOpen && (
+        <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
+          <div className="max-w-7xl mx-auto px-4 py-3 space-y-2">
+            <Link
+              href="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-4 py-3 rounded-lg hover:bg-viventa-sand transition-colors font-medium text-viventa-navy"
+            >
+              Inicio
+            </Link>
+            <Link
+              href="/search"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-4 py-3 rounded-lg hover:bg-viventa-sand transition-colors font-medium text-viventa-navy"
+            >
+              Buscar Propiedades
+            </Link>
+            <Link
+              href="/agents"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-4 py-3 rounded-lg hover:bg-viventa-sand transition-colors font-medium text-viventa-navy"
+            >
+              Agentes
+            </Link>
+            <Link
+              href="/brokers"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-4 py-3 rounded-lg hover:bg-viventa-sand transition-colors font-medium text-viventa-navy"
+            >
+              Brokerages
+            </Link>
+            <Link
+              href="/contact"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-4 py-3 rounded-lg hover:bg-viventa-sand transition-colors font-medium text-viventa-navy"
+            >
+              Contacto
+            </Link>
+            <div className="border-t border-gray-200 pt-2 mt-2 space-y-2">
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 text-center rounded-lg border-2 border-viventa-ocean text-viventa-ocean font-bold hover:bg-viventa-ocean hover:text-white transition-all"
+              >
+                Iniciar Sesión
+              </Link>
+              <Link
+                href="/signup"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 text-center rounded-lg bg-gradient-to-r from-viventa-turquoise to-viventa-teal text-white font-bold hover:shadow-lg transition-all"
+              >
+                Crear Cuenta
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       
       {/* Mobile dropdown menu for logged-in users */}
       {session && mobileMenuOpen && (

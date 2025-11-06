@@ -80,6 +80,32 @@ button {
 	cursor: pointer;
 	background: transparent;
 	border: none;
+
+/* Mobile touch optimization */
+@media (hover: none) and (pointer: coarse) {
+	/* Ensure all interactive elements have adequate touch targets (min 44x44px) */
+	button, a, input, select, textarea {
+		min-height: 44px;
+	}
+	
+	/* Improve button press feedback on mobile */
+	button:active, a:active {
+		opacity: 0.8;
+		transform: scale(0.98);
+	}
+	
+	/* Prevent double-tap zoom on buttons and links */
+	button, a {
+		touch-action: manipulation;
+	}
+}
+
+/* Touch manipulation utility for all clickable elements */
+.touch-manipulation {
+	touch-action: manipulation;
+	-webkit-user-select: none;
+	user-select: none;
+}
 }
 
 /* Gamification & PWA Animations */
