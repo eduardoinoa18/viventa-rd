@@ -36,7 +36,31 @@ export function saveSession(session: UserSession) {
 export function getSession(): UserSession | null {
   if (typeof window === 'undefined') return null;
   const raw = sessionStorage.getItem(KEY);
-  return raw ? JSON.parse(raw) : null;
+  if (raw) return JSON.parse(raw);
+
+  // Fallback: hydrate from cookies when sessionStorage is empty (e.g., mobile refresh/PWA)
+  try {
+    const cookies = document.cookie || '';
+    const map = new Map<string, string>();
+    cookies.split(';').forEach((pair) => {
+      const [k, ...rest] = pair.trim().split('=');
+      if (!k) return;
+      map.set(k, decodeURIComponent(rest.join('=')));
+    });
+
+    const uid = map.get('viventa_uid');
+    const role = map.get('viventa_role') as UserSession['role'] | undefined;
+    if (uid && role) {
+      const name = map.get('viventa_name');
+      const profileComplete = map.get('viventa_profile') === '1';
+      const session: UserSession = { uid, role, name, profileComplete };
+      // Persist back to sessionStorage for faster subsequent reads
+      sessionStorage.setItem(KEY, JSON.stringify(session));
+      return session;
+    }
+  } catch {}
+
+  return null;
 }
 
 export function clearSession() {
