@@ -32,11 +32,14 @@ export default function ActivityWidget() {
       setLoading(true)
       const res = await fetch('/api/admin/activity?limit=5')
       if (res.ok) {
-        const data = await res.json()
+        const response = await res.json()
+        
+        // API returns { ok: true, data: [...] }
+        const logs = response.data || response.logs || []
         
         // Defensive check: ensure logs array exists
-        if (!data || !Array.isArray(data.logs)) {
-          console.warn('Activity stats data is invalid or missing logs array', data)
+        if (!Array.isArray(logs)) {
+          console.warn('Activity stats data is invalid or missing logs array', response)
           setStats({
             total: 0,
             byType: {},
@@ -47,14 +50,14 @@ export default function ActivityWidget() {
         
         // Calculate stats
         const byType: Record<string, number> = {}
-        data.logs.forEach((log: any) => {
+        logs.forEach((log: any) => {
           byType[log.type] = (byType[log.type] || 0) + 1
         })
 
         setStats({
-          total: data.logs.length,
+          total: logs.length,
           byType,
-          recentLogs: data.logs.map((log: any) => ({
+          recentLogs: logs.map((log: any) => ({
             id: log.id,
             type: log.type,
             action: log.action,

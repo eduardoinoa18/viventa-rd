@@ -7,10 +7,12 @@ export default function PwaInstallPrompt() {
 
   useEffect(() => {
     function handler(e: any) {
+      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault()
+      // Stash the event so it can be triggered later
       setDeferredPrompt(e)
       
-      // Show prompt after user has visited 2+ times or after 30 seconds
+      // Show prompt after user has visited 2+ times
       const visitCount = parseInt(localStorage.getItem('visitCount') || '0')
       localStorage.setItem('visitCount', String(visitCount + 1))
 
@@ -18,6 +20,11 @@ export default function PwaInstallPrompt() {
       const dismissedAt = parseInt(localStorage.getItem('installPromptDismissed') || '0')
       const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
       const recentlyDismissed = dismissedAt && (Date.now() - dismissedAt) < sevenDaysMs
+
+      // Don't show if already installed
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        return
+      }
 
       if (!recentlyDismissed && visitCount >= 2) {
         // Delay a bit so it doesn't fight with initial UI

@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 import { sendEmail } from '@/lib/emailService'
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
@@ -17,18 +15,23 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Update application in Firestore
-    const appRef = doc(db, 'applications', id)
+    const adminDb = getAdminDb()
+    if (!adminDb) {
+      return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
+    }
+
+    // Update application in Firestore using Admin SDK
     const updateData: any = {
       status,
-      reviewedAt: serverTimestamp(),
+      reviewedAt: new Date(),
       reviewedBy: adminEmail || 'admin',
     }
     if (notes) updateData.reviewNotes = notes
 
     // Read application data for logging
-    const appSnap = await getDoc(appRef)
-    const appData = appSnap.exists() ? (appSnap.data() as any) : null
+    const appRef = (adminDb as any).collection('applications').doc(id)
+    const appSnap = await appRef.get()
+    const appData = appSnap.exists ? appSnap.data() : null
 
     // If approved, try to generate credentials and upsert user profile via Admin SDK
     let code: string | undefined
@@ -115,13 +118,13 @@ export async function PATCH(req: NextRequest) {
         }
 
         // Annotate application doc
-        updateData.approvedAt = serverTimestamp()
+        updateData.approvedAt = new Date()
         updateData.assignedCode = code
         updateData.linkedUid = uid
       }
     }
 
-    await updateDoc(appRef, updateData)
+    await appRef.set(updateData, { merge: true })
 
     // Log activity
     if (status === 'approved' && appData) {

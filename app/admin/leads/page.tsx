@@ -5,8 +5,6 @@ import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
 import { FiTarget, FiInfo } from 'react-icons/fi'
 import { useEffect, useMemo, useState } from 'react'
-import { db } from '../../../lib/firebaseClient'
-import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore'
 
 export default function AdminLeadsPage() {
   const [loading, setLoading] = useState(true)
@@ -21,52 +19,23 @@ export default function AdminLeadsPage() {
     try {
       setLoading(true)
       
-      // Load from all lead sources
-      const [inquiriesSnap, contactsSnap, waitlistSnap] = await Promise.all([
-        getDocs(query(collection(db as any, 'property_inquiries'), orderBy('createdAt', 'desc'), limit(50))),
-        getDocs(query(collection(db as any, 'contact_submissions'), orderBy('createdAt', 'desc'), limit(50))),
-        getDocs(query(collection(db as any, 'waitlist_social'), orderBy('createdAt', 'desc'), limit(50)))
-      ])
+      // Fetch leads from API (server-side with Admin SDK)
+      const res = await fetch('/api/admin/leads?limit=100')
+      if (!res.ok) {
+        throw new Error('Failed to fetch leads')
+      }
       
-      // Map each source with a source tag
-      const inquiries = inquiriesSnap.docs.map((d: any) => ({
-        id: d.id,
-        ...d.data(),
-        source: 'property_inquiry',
-        name: d.data().name,
-        email: d.data().email,
-        phone: d.data().phone,
-        message: d.data().message
-      }))
-      
-      const contacts = contactsSnap.docs.map((d: any) => ({
-        id: d.id,
-        ...d.data(),
-        source: 'contact_form',
-        name: d.data().name,
-        email: d.data().email,
-        phone: d.data().phone,
-        message: d.data().message
-      }))
-      
-      const waitlist = waitlistSnap.docs.map((d: any) => ({
-        id: d.id,
-        ...d.data(),
-        source: 'social_waitlist',
-        name: 'Waitlist Signup',
-        email: d.data().email,
-        phone: '-',
-        message: 'User interested in social network features'
-      }))
-      
-      // Combine and sort by createdAt
-      const allLeads = [...inquiries, ...contacts, ...waitlist].sort((a, b) => {
-        const aTime = a.createdAt?.toDate?.()?.getTime?.() || 0
-        const bTime = b.createdAt?.toDate?.()?.getTime?.() || 0
-        return bTime - aTime
-      })
-      
-      setLeads(allLeads)
+      const data = await res.json()
+      if (data.ok && data.leads) {
+        // Parse date strings back to Date objects for display
+        const parsedLeads = data.leads.map((lead: any) => ({
+          ...lead,
+          createdAt: lead.createdAt ? new Date(lead.createdAt) : new Date()
+        }))
+        setLeads(parsedLeads)
+      } else {
+        setLeads([])
+      }
     } catch (e) {
       console.error('Failed to load leads:', e)
       setLeads([])
@@ -100,20 +69,27 @@ export default function AdminLeadsPage() {
   async function assign() {
     if (!assigning || !selectedAssignee) return
     try {
-      const res = await fetch('/api/admin/leads/assign', {
-        method: 'POST',
+      // Find the lead and its source
+      const lead = leads.find(l => l.id === assigning)
+      if (!lead) return
+      
+      const res = await fetch('/api/admin/leads', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId: assigning, assigneeId: selectedAssignee })
+        body: JSON.stringify({ leadId: assigning, source: lead.source, assignedTo: selectedAssignee })
       })
       if (!res.ok) throw new Error('Failed to assign lead')
+      
       // reflect locally
       const profile = candidates.find(c => c.id === selectedAssignee)
       setLeads(prev => prev.map(l => l.id === assigning ? {
         ...l,
         status: 'assigned',
-        assignedTo: { uid: profile?.id, name: profile?.name || profile?.company || '—', role: profile?.role, email: profile?.email }
+        assignedTo: { uid: profile?.id, name: profile?.name || profile?.company || '—', role: profile?.role, email: profile?.email },
+        assignedAt: new Date()
       } : l))
       setAssigning(null)
+      setSelectedAssignee('')
     } catch (e) {
       alert('No se pudo asignar el lead')
     }
