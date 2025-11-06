@@ -148,18 +148,20 @@ export async function PATCH(req: NextRequest) {
   try {
     const adminDb = getAdminDb()
     // Parse once; reuse across both admin and client paths
-    const body = await req.json()
-    const { id, status, role, name, phone, brokerage, company } = body
+  const body = await req.json()
+  const { id, status, role, name, phone, brokerage, company, emailVerified, verified } = body
     if (!id) return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
 
     if (adminDb) {
-      const updates: any = { updatedAt: new Date() }
+  const updates: any = { updatedAt: new Date() }
       if (status) updates.status = status
       if (role) updates.role = role
       if (name) updates.name = name
       if (phone !== undefined) updates.phone = phone
       if (brokerage !== undefined) updates.brokerage = brokerage
-      if (company !== undefined) updates.company = company
+  if (company !== undefined) updates.company = company
+  if (typeof emailVerified === 'boolean') updates.emailVerified = emailVerified
+  if (typeof verified === 'boolean') updates.verified = verified
       await adminDb.collection('users').doc(id).update(updates)
       
       // Log user update
@@ -188,13 +190,15 @@ export async function PATCH(req: NextRequest) {
 
     // Use same parsed body vars above; no re-declare
 
-    const updates: any = { updatedAt: serverTimestamp() }
+  const updates: any = { updatedAt: serverTimestamp() }
     if (status) updates.status = status // active, suspended, pending
     if (role) updates.role = role // user, agent, broker, admin
     if (name) updates.name = name
     if (phone !== undefined) updates.phone = phone
     if (brokerage !== undefined) updates.brokerage = brokerage
-    if (company !== undefined) updates.company = company
+  if (company !== undefined) updates.company = company
+  if (typeof emailVerified === 'boolean') updates.emailVerified = emailVerified
+  if (typeof verified === 'boolean') updates.verified = verified
 
     await updateDoc(doc(db, 'users', id), updates)
 

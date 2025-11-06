@@ -7,6 +7,7 @@ import AdminTopbar from '../../../components/AdminTopbar'
 import CreateProfessionalModal from '../../../components/CreateProfessionalModal'
 import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiX, FiRefreshCcw, FiEye, FiAward } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import AdminUserDetailsModal from '../../../components/AdminUserDetailsModal'
 
 type User = {
   id: string
@@ -408,61 +409,28 @@ export default function AdminUsersPage() {
               </tbody>
             </table>
           </div>
-          {/* Details Modal */}
+          {/* Details Modal - with admin editing */}
           {details && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold">User Details</h2>
-                  <button onClick={() => setDetails(null)} className="text-gray-500 hover:text-gray-700" aria-label="Close details"><FiX size={24} /></button>
-                </div>
-                <div className="flex gap-4 items-start">
-                  <img src={details.photoURL || '/icons/user.svg'} alt="avatar" className="w-16 h-16 rounded-full object-cover border" />
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 flex-1">
-                    <div>
-                      <div className="text-gray-500 text-sm">Name</div>
-                      <div className="font-semibold">{details.name}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 text-sm">Email</div>
-                      <div className="font-semibold">{details.email}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 text-sm">Phone</div>
-                      <div className="font-semibold">{details.phone || '-'}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 text-sm">Role</div>
-                      <div className="font-semibold">{details.role}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 text-sm">Status</div>
-                      <div className="font-semibold">{details.status}</div>
-                    </div>
-                    {(details.agentCode || details.brokerCode) && (
-                      <div>
-                        <div className="text-gray-500 text-sm">Professional Code</div>
-                        <div className="font-mono font-bold text-lg text-[#00A676]">
-                          {details.agentCode || details.brokerCode}
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <div className="text-gray-500 text-sm">Email Verified</div>
-                      <div className="font-semibold">{details.emailVerified ? 'Yes' : 'No'}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 text-sm">Providers</div>
-                      <div className="font-semibold">{(details.providerIds || []).join(', ') || '-'}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 text-sm">Last Login</div>
-                      <div className="font-semibold">{details.lastLoginAt ? new Date(details.lastLoginAt.seconds ? details.lastLoginAt.seconds * 1000 : details.lastLoginAt).toLocaleString() : '-'}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <AdminUserDetailsModal 
+              user={{
+                id: details.id,
+                uid: details.uid || details.id,
+                name: details.name,
+                email: details.email,
+                phone: details.phone,
+                role: details.role,
+                status: details.status,
+                company: (details as any).company,
+                brokerage: (details as any).brokerage,
+                emailVerified: details.emailVerified,
+                verified: (details as any).verified,
+                professionalCode: (details as any).professionalCode,
+                agentCode: (details as any).agentCode,
+                brokerCode: (details as any).brokerCode,
+              }}
+              onClose={() => setDetails(null)}
+              onSaved={() => load()}
+            />
           )}
 
           {/* Professional Creation Modal */}
