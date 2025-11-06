@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
-import { doc, updateDoc, serverTimestamp, getDoc, addDoc, collection } from 'firebase/firestore'
+import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 import { sendEmail } from '@/lib/emailService'
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
-import { generateProfessionalId, createPasswordSetupToken } from '@/lib/credentialGenerator'
+import { createPasswordSetupToken } from '@/lib/credentialGenerator'
 import { sendProfessionalCredentials } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
 export const dynamic = 'force-dynamic'
@@ -241,5 +241,26 @@ export async function GET(req: NextRequest) {
   } catch (e: any) {
     console.error('applications GET error', e)
     return NextResponse.json({ ok: false, error: e.message || 'Failed to list applications' }, { status: 500 })
+  }
+}
+
+// DELETE /api/admin/applications - delete an application by id (Admin SDK)
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const id = body?.id
+    if (!id) {
+      return NextResponse.json({ ok: false, error: 'Missing id' }, { status: 400 })
+    }
+    const adminDb = getAdminDb()
+    if (!adminDb) {
+      return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
+    }
+    await (adminDb as any).collection('applications').doc(id).delete()
+    ActivityLogger.log('application_deleted', { id })
+    return NextResponse.json({ ok: true })
+  } catch (e: any) {
+    console.error('applications DELETE error', e)
+    return NextResponse.json({ ok: false, error: e.message || 'Failed to delete application' }, { status: 500 })
   }
 }

@@ -3,8 +3,7 @@ import { useEffect, useState } from 'react'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
 import ProtectedClient from '@/app/auth/ProtectedClient'
-import { db } from '../../../lib/firebaseClient'
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore'
+// Client Firestore not required for listing/deleting anymore; server API handles admin reads/writes
 import { FiCheck, FiX, FiUser, FiUsers, FiBriefcase, FiMail, FiPhone, FiCalendar, FiMessageSquare } from 'react-icons/fi'
 
 export default function ApplicationsPage() {
@@ -23,13 +22,14 @@ function ApplicationsPageContent() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    loadApplications()
-  }, [])
+    loadApplications(filter)
+  }, [filter])
 
-  async function loadApplications() {
+  async function loadApplications(nextFilter: 'all' | 'pending' | 'approved' | 'rejected' = 'pending') {
     try {
       setLoading(true)
-      const res = await fetch('/api/admin/applications', { cache: 'no-store' })
+      const qs = nextFilter === 'all' ? '' : `?status=${encodeURIComponent(nextFilter)}`
+      const res = await fetch(`/api/admin/applications${qs}`, { cache: 'no-store' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
       const apps = json?.data || []
@@ -96,10 +96,16 @@ function ApplicationsPageContent() {
   async function deleteApplication(id: string) {
     if (!confirm('¿Eliminar esta aplicación permanentemente?')) return
     try {
-      await deleteDoc(doc(db, 'applications', id))
+      const res = await fetch('/api/admin/applications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
       setApplications((prev) => prev.filter((a) => a.id !== id))
     } catch (err) {
       console.error('Error deleting application:', err)
+      alert('No se pudo eliminar la aplicación')
     }
   }
 
@@ -173,7 +179,7 @@ function ApplicationsPageContent() {
                   </button>
                 )}
                 <button
-                  onClick={loadApplications}
+                  onClick={() => loadApplications(filter)}
                   className="px-4 py-2 bg-[#00A6A6] text-white rounded hover:bg-[#008c8c]"
                 >
                   Actualizar
@@ -363,6 +369,34 @@ function ApplicationCard({ app, selected, onToggleSelect, onApprove, onReject, o
               {isApproved ? 'Aprobada' : 'Rechazada'}
             </span>
           )}
+          {isApproved && (
+            <button
+              onClick={async () => {
+                try {
+                  await fetch('/api/admin/applications', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      applicationId: app.id,
+                      email: app.email,
+                      name: app.contact,
+                      status: 'approved',
+                      notes: app.reviewNotes || '',
+                      type: app.type,
+                      code: app.assignedCode || undefined
+                    })
+                  })
+                  alert('Correo de bienvenida reenviado')
+                } catch (e) {
+                  alert('No se pudo reenviar el correo')
+                }
+              }}
+              className="px-3 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
+              title="Reenviar correo de bienvenida"
+            >
+              Reenviar email
+            </button>
+          )}
           <button
             onClick={() => setExpanded(!expanded)}
             className="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
@@ -376,121 +410,118 @@ function ApplicationCard({ app, selected, onToggleSelect, onApprove, onReject, o
       </div>
 
       {expanded && (
-        <div className="border-t border-gray-200 p-4 bg-gray-50">
-          <div className="grid md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <strong>Compañía:</strong> {app.company || 'N/A'}
+        <div className="border-t border-gray-200 p-0">
+          <div className="bg-gradient-to-r from-[#0B2545] to-[#134074] text-white p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2 py-1 rounded bg-white/10 text-xs font-semibold uppercase">{app.type}</span>
+              {app.pathway && (
+                <span className="px-2 py-1 rounded bg-white/10 text-xs font-semibold uppercase">{app.pathway}</span>
+              )}
+              <span className={`px-2 py-1 rounded text-xs font-semibold ${isApproved?'bg-green-500/80':'bg-yellow-500/80'}`}>{app.status}</span>
+              {app.assignedCode && (
+                <span className="px-2 py-1 rounded bg-white/10 text-xs font-mono">Código: {app.assignedCode}</span>
+              )}
             </div>
-            <div>
-              <strong>Sitio web:</strong> {app.website || 'N/A'}
-            </div>
-            <div>
-              <strong>WhatsApp:</strong> {app.whatsapp || 'N/A'}
-            </div>
-            <div>
-              <strong>Mercados:</strong> {app.markets || 'N/A'}
-            </div>
-            <div>
-              <strong>Dirección:</strong> {app.address || 'N/A'}
-            </div>
-            <div>
-              <strong>Moneda:</strong> {app.currency || 'USD'}
-            </div>
-
-            {/* Agent-specific */}
-            {app.type === 'agent' && app.agent && (
-              <>
-                <div className="md:col-span-2 font-semibold text-[#0B2545] mt-2">Detalles del Agente</div>
-                <div>
-                  <strong>Licencia:</strong> {app.agent.license || 'N/A'}
-                </div>
-                <div>
-                  <strong>Años de experiencia:</strong> {app.agent.years || 0}
-                </div>
-                <div>
-                  <strong>Volumen (12m):</strong> ${app.agent.volume12m?.toLocaleString() || 0}
-                </div>
-                <div>
-                  <strong>Transacciones (12m):</strong> {app.agent.transactions12m || 0}
-                </div>
-                <div>
-                  <strong>Brokerage:</strong> {app.agent.brokerage || 'N/A'}
-                </div>
-                <div>
-                  <strong>Idiomas:</strong> {app.agent.languages || 'N/A'}
-                </div>
-                <div className="md:col-span-2">
-                  <strong>Especialidades:</strong> {app.agent.specialties || 'N/A'}
-                </div>
-              </>
-            )}
-
-            {/* Broker-specific */}
-            {app.type === 'broker' && app.broker && (
-              <>
-                <div className="md:col-span-2 font-semibold text-[#0B2545] mt-2">Detalles del Brokerage</div>
-                <div>
-                  <strong>Agentes:</strong> {app.broker.agents || 0}
-                </div>
-                <div>
-                  <strong>Años en negocio:</strong> {app.broker.years || 0}
-                </div>
-                <div>
-                  <strong>Volumen anual (12m):</strong> ${app.broker.annualVolume12m?.toLocaleString() || 0}
-                </div>
-                <div>
-                  <strong>Volumen anual (24m):</strong> ${app.broker.annualVolume24m?.toLocaleString() || 0}
-                </div>
-                <div>
-                  <strong>Precio promedio:</strong> ${app.broker.avgPrice?.toLocaleString() || 0}
-                </div>
-                <div>
-                  <strong>Listados activos:</strong> {app.broker.activeListings || 0}
-                </div>
-                <div>
-                  <strong>Oficinas:</strong> {app.broker.offices || 1}
-                </div>
-                <div>
-                  <strong>CRM:</strong> {app.broker.crm || 'N/A'}
-                </div>
-                <div>
-                  <strong>Seguro E&O:</strong> {app.broker.insurance ? 'Sí' : 'No'}
-                </div>
-              </>
-            )}
-
-            {/* Developer-specific */}
-            {app.type === 'developer' && app.developer && (
-              <>
-                <div className="md:col-span-2 font-semibold text-[#0B2545] mt-2">Detalles del Desarrollador</div>
-                <div>
-                  <strong>Proyectos activos:</strong> {app.developer.projects || 0}
-                </div>
-                <div className="md:col-span-2">
-                  <strong>Pipeline:</strong> {app.developer.pipeline || 'N/A'}
-                </div>
-              </>
-            )}
-
-            {app.notes && (
-              <div className="md:col-span-2 mt-2">
-                <strong>Notas:</strong>
-                <p className="mt-1 text-gray-700">{app.notes}</p>
+          </div>
+          <div className="p-4 bg-gray-50 grid md:grid-cols-2 gap-6">
+            <section className="bg-white rounded-lg border shadow-sm p-4">
+              <h4 className="font-semibold text-[#0B2545] mb-3">Contacto</h4>
+              <div className="space-y-2 text-sm">
+                <div><strong>Nombre:</strong> {app.contact || '—'}</div>
+                <div><strong>Email:</strong> {app.email || '—'}</div>
+                <div><strong>Teléfono:</strong> {app.phone || '—'}</div>
+                <div><strong>Fecha:</strong> {app.createdAt?.toDate?.()?.toLocaleString?.('es-DO') || '—'}</div>
               </div>
+            </section>
+            <section className="bg-white rounded-lg border shadow-sm p-4">
+              <h4 className="font-semibold text-[#0B2545] mb-3">Negocio</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="col-span-2"><strong>Compañía/Brokerage:</strong> {app.company || '—'}</div>
+                <div className="col-span-2"><strong>Website:</strong> {app.website ? <a className="text-[#004AAD] underline" href={app.website} target="_blank">{app.website}</a> : '—'}</div>
+                <div className="col-span-2"><strong>Dirección:</strong> {app.address || '—'}</div>
+                <div><strong>Moneda:</strong> {app.currency || 'USD'}</div>
+                <div><strong>Mercados:</strong> {app.markets || '—'}</div>
+              </div>
+            </section>
+            {(app.type === 'agent' || app.type === 'new-agent') && (
+              <section className="bg-white rounded-lg border shadow-sm p-4">
+                <h4 className="font-semibold text-[#0B2545] mb-3">Experiencia / Perfil</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><strong>Licencia:</strong> {app.license || '—'}</div>
+                  <div><strong>Años:</strong> {app.years ?? '—'}</div>
+                  <div className="col-span-2"><strong>Brokerage:</strong> {app.brokerage || '—'}</div>
+                  <div className="col-span-2"><strong>Volumen 12m:</strong> {app.volume12m ? `$ ${Number(app.volume12m).toLocaleString()}` : '—'}</div>
+                </div>
+                {app.type === 'new-agent' && (
+                  <div className="mt-3 space-y-2 text-sm">
+                    <div><strong>Educación:</strong> {app.education || '—'}</div>
+                    <div><strong>Disponibilidad:</strong> {app.availability || '—'}</div>
+                    <div>
+                      <strong>¿Por qué bienes raíces?</strong>
+                      <div className="mt-1 p-2 bg-gray-50 rounded border text-gray-700 whitespace-pre-wrap">{app.whyRealEstate || '—'}</div>
+                    </div>
+                  </div>
+                )}
+              </section>
             )}
+            {app.type === 'broker' && (
+              <section className="bg-white rounded-lg border shadow-sm p-4">
+                <h4 className="font-semibold text-[#0B2545] mb-3">Brokerage</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><strong>Agentes:</strong> {app.agents ?? '—'}</div>
+                  <div><strong>Oficinas:</strong> {app.offices ?? '—'}</div>
+                  <div><strong>CRM:</strong> {app.crm || '—'}</div>
+                  <div><strong>Seguro E&O:</strong> {app.insurance ? 'Sí' : 'No'}</div>
+                  <div className="col-span-2"><strong>Volumen anual (12m):</strong> {app.annualVolume12m ? `$ ${Number(app.annualVolume12m).toLocaleString()}` : '—'}</div>
+                </div>
+              </section>
+            )}
+            <section className="bg-white rounded-lg border shadow-sm p-4">
+              <h4 className="font-semibold text-[#0B2545] mb-3">Idiomas y Especialidades</h4>
+              <div className="flex flex-wrap gap-2 text-xs">
+                {(String(app.languages || '').split(',').map((s:string)=>s.trim()).filter(Boolean)).map((lang:string, i:number)=>(
+                  <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full border">{lang}</span>
+                ))}
+                {!(app.languages) && <span className="text-gray-500">—</span>}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                {(String(app.specialties || '').split(',').map((s:string)=>s.trim()).filter(Boolean)).map((sp:string, i:number)=>(
+                  <span key={i} className="px-2 py-1 bg-purple-50 text-purple-700 rounded-full border">{sp}</span>
+                ))}
+                {!(app.specialties) && <span className="text-gray-500">—</span>}
+              </div>
+            </section>
+            <section className="bg-white rounded-lg border shadow-sm p-4 md:col-span-2">
+              <h4 className="font-semibold text-[#0B2545] mb-3">Motivación / Detalles</h4>
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Descripción de negocio</div>
+                  <div className="p-3 bg-gray-50 rounded border text-gray-700 whitespace-pre-wrap">{app.businessDetails || '—'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Redes sociales</div>
+                  <div className="p-3 bg-gray-50 rounded border text-gray-700 whitespace-pre-wrap">{app.socialMedia || '—'}</div>
+                </div>
+              </div>
+              <div className="mt-3 text-sm"><strong>Fuente de referencia:</strong> {app.referralSource || '—'}</div>
+            </section>
             {(app.resumeUrl || app.documentUrl) && (
-              <div className="md:col-span-2 mt-2">
-                <strong>Adjuntos:</strong>
-                <div className="mt-1 flex gap-3">
-                  {app.resumeUrl && (
-                    <a href={app.resumeUrl} target="_blank" className="text-[#004AAD] underline">Ver Currículum</a>
-                  )}
-                  {app.documentUrl && (
-                    <a href={app.documentUrl} target="_blank" className="text-[#004AAD] underline">Ver Documento</a>
-                  )}
+              <section className="bg-white rounded-lg border shadow-sm p-4 md:col-span-2">
+                <h4 className="font-semibold text-[#0B2545] mb-3">Adjuntos</h4>
+                <div className="flex flex-wrap gap-3">
+                  {app.resumeUrl && (<a href={app.resumeUrl} target="_blank" className="px-3 py-2 bg-gray-100 rounded border hover:bg-gray-200">Ver Currículum</a>)}
+                  {app.documentUrl && (<a href={app.documentUrl} target="_blank" className="px-3 py-2 bg-gray-100 rounded border hover:bg-gray-200">Ver Documento</a>)}
                 </div>
-              </div>
+              </section>
             )}
+            <section className="bg-white rounded-lg border shadow-sm p-4 md:col-span-2">
+              <h4 className="font-semibold text-[#0B2545] mb-3">Sistema</h4>
+              <div className="grid md:grid-cols-3 gap-2 text-sm">
+                <div><strong>UID vinculado:</strong> {app.linkedUid || '—'}</div>
+                <div><strong>Código asignado:</strong> {app.assignedCode || '—'}</div>
+                <div><strong>Notas de revisión:</strong> {app.reviewNotes || '—'}</div>
+              </div>
+            </section>
           </div>
         </div>
       )}
