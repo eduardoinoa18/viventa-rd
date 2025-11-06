@@ -64,9 +64,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create Firestore user profile
+    // Create Firestore user profile in users collection
     try {
-      await adminDb.collection('users').doc(authUser.uid).set({
+      const userData = {
         uid: authUser.uid,
         email,
         name,
@@ -75,12 +75,24 @@ export async function POST(req: NextRequest) {
         role,
         status: 'active',
         agentCode,
+        professionalCode: agentCode, // Also save as professionalCode
         profileComplete: true,
         emailVerified: false,
         createdAt: FieldValue.serverTimestamp(),
         approvedAt: FieldValue.serverTimestamp(),
-        applicationId
-      })
+        applicationId,
+        // Additional professional fields
+        activeListings: 0,
+        totalSales: 0,
+        rating: 0,
+        verified: true
+      }
+      
+      await adminDb.collection('users').doc(authUser.uid).set(userData)
+      
+      // ALSO create duplicate in agents or brokers collection for easier querying
+      const targetCollection = role === 'agent' ? 'agents' : 'brokers'
+      await adminDb.collection(targetCollection).doc(authUser.uid).set(userData)
     } catch (dbError: any) {
       // Rollback: delete auth user if Firestore fails
       await adminAuth.deleteUser(authUser.uid)

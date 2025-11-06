@@ -20,11 +20,31 @@ export default function AdminAgentsPage() {
 
   async function load() {
     try {
-      const q = query(collection(db as any, 'users'), where('role', '==', 'agent'))
-      const snap = await getDocs(q)
-      const rows = snap.docs.map((d: any) => ({ id: d.id, ...(d.data() as any) }))
+      // Query both agents collection and users collection for backwards compatibility
+      const [agentsSnap, usersSnap] = await Promise.all([
+        getDocs(collection(db as any, 'agents')),
+        getDocs(query(collection(db as any, 'users'), where('role', '==', 'agent')))
+      ])
+      
+      // Combine results, using Map to deduplicate by uid
+      const agentsMap = new Map()
+      
+      agentsSnap.docs.forEach((d: any) => {
+        const data = d.data() as any
+        agentsMap.set(d.id, { id: d.id, ...data })
+      })
+      
+      usersSnap.docs.forEach((d: any) => {
+        const data = d.data() as any
+        if (!agentsMap.has(d.id)) {
+          agentsMap.set(d.id, { id: d.id, ...data })
+        }
+      })
+      
+      const rows = Array.from(agentsMap.values())
       setAgents(rows)
     } catch (e) {
+      console.error('Failed to load agents:', e)
       setAgents([])
     }
   }

@@ -18,11 +18,33 @@ export default function AdminBrokersPage() {
 
   async function load() {
     try {
-      const q = query(collection(db as any, 'users'), where('role', '==', 'broker'))
-      const snap = await getDocs(q)
-      const rows = snap.docs.map((d: any) => ({ id: d.id, ...(d.data() as any) }))
+      // Query both brokers collection and users collection for backwards compatibility
+      const [brokersSnap, usersSnap] = await Promise.all([
+        getDocs(collection(db as any, 'brokers')),
+        getDocs(query(collection(db as any, 'users'), where('role', '==', 'broker')))
+      ])
+      
+      // Combine results, using Map to deduplicate by uid
+      const brokersMap = new Map()
+      
+      brokersSnap.docs.forEach((d: any) => {
+        const data = d.data() as any
+        brokersMap.set(d.id, { id: d.id, ...data })
+      })
+      
+      usersSnap.docs.forEach((d: any) => {
+        const data = d.data() as any
+        if (!brokersMap.has(d.id)) {
+          brokersMap.set(d.id, { id: d.id, ...data })
+        }
+      })
+      
+      const rows = Array.from(brokersMap.values())
       setBrokers(rows)
-    } catch (e) { setBrokers([]) }
+    } catch (e) {
+      console.error('Failed to load brokers:', e)
+      setBrokers([])
+    }
   }
 
   async function handleCreateBroker(data: any) {
