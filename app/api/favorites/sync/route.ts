@@ -1,42 +1,64 @@
-// API route to sync offline favorites with Firestore
+// API route to sync offline favorites with Firestore (Admin SDK)
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { getAdminDb } from '@/lib/firebaseAdmin'
+
+type PendingAction = { action: 'save' | 'remove'; propertyId: string; timestamp?: number }
+
+// Uses cookies and writes; mark dynamic
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
   try {
     const { actions } = await request.json()
-    
     if (!actions || !Array.isArray(actions)) {
       return NextResponse.json({ ok: false, error: 'Invalid actions' }, { status: 400 })
     }
-    
-    // TODO: Get user from session/auth
-    // const userId = await getUserIdFromSession(request)
-    
-    // For now, just log (replace with Firestore operations)
-    console.log('Syncing favorites:', actions.length, 'actions')
-    
-    // Process each action
-    for (const action of actions) {
+
+    const uid = cookies().get('viventa_uid')?.value
+    if (!uid) {
+      return NextResponse.json({ ok: false, error: 'No autenticado' }, { status: 401 })
+    }
+
+    const db = getAdminDb()
+    if (!db) {
+      console.error('Admin DB not available')
+      return NextResponse.json({ ok: false, error: 'Server config error' }, { status: 500 })
+    }
+
+    // Use a batch for efficiency
+    const batch = db.batch()
+    let applied = 0
+    const now = Date.now()
+
+    for (const action of actions as PendingAction[]) {
+      const propertyId = action?.propertyId
+      if (!propertyId) continue
+      const favId = `${uid}_${propertyId}`
+      const ref = db.collection('favorites').doc(favId)
+
       if (action.action === 'save') {
-        // TODO: Add to Firestore user favorites collection
-        console.log('Save to Firestore:', action.propertyId)
+        batch.set(ref, {
+          id: favId,
+          userId: uid,
+          propertyId,
+          savedAt: action.timestamp || now,
+          // Extra fields are allowed if client provides (e.g., title, price) but keep minimal server write
+        }, { merge: true })
+        applied++
       } else if (action.action === 'remove') {
-        // TODO: Remove from Firestore user favorites collection
-        console.log('Remove from Firestore:', action.propertyId)
+        batch.delete(ref)
+        applied++
       }
     }
-    
-    return NextResponse.json({ 
-      ok: true, 
-      synced: actions.length,
-      message: 'Favorites synced successfully' 
-    })
-    
+
+    if (applied > 0) {
+      await batch.commit()
+    }
+
+    return NextResponse.json({ ok: true, synced: applied })
   } catch (error) {
     console.error('Favorites sync error:', error)
-    return NextResponse.json({ 
-      ok: false, 
-      error: 'Sync failed' 
-    }, { status: 500 })
+    return NextResponse.json({ ok: false, error: 'Sync failed' }, { status: 500 })
   }
 }

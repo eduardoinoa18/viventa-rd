@@ -6,14 +6,13 @@ import toast from 'react-hot-toast'
 import ProtectedClient from '../../../auth/ProtectedClient'
 import AdminSidebar from '../../../../components/AdminSidebar'
 import AdminTopbar from '../../../../components/AdminTopbar'
-import { createProperty, type Property } from '../../../../lib/firestoreService'
+import { type Property } from '../../../../lib/firestoreService'
 import { uploadMultipleImages, validateImageFiles, generatePropertyImagePath } from '@/lib/storageService'
 import { getSession } from '@/lib/authSession'
 import { auth } from '@/lib/firebaseClient'
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'
 import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock } from 'react-icons/fi'
-import { doc, runTransaction } from 'firebase/firestore'
-import { db } from '@/lib/firebaseClient'
+// Removed direct Firestore counters usage; server API now generates listingId
 
 export default function CreatePropertyPage() {
   const router = useRouter()
@@ -135,27 +134,7 @@ export default function CreatePropertyPage() {
     setFeatures((prev) => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id])
   }
 
-  async function generateListingId(): Promise<string> {
-    const year = new Date().getFullYear()
-    const countersRef = doc(db, 'counters', 'listings')
-    try {
-      const seq = await runTransaction(db as any, async (tx: any) => {
-        const snap = await tx.get(countersRef)
-        const data = (snap.exists() ? snap.data() : {}) as Record<string, number>
-        const current = data[String(year)] || 0
-        const next = current + 1
-        if (!snap.exists()) {
-          tx.set(countersRef, { [String(year)]: next })
-        } else {
-          tx.update(countersRef, { [String(year)]: next })
-        }
-        return next
-      })
-      return `VIV-${year}-${String(seq).padStart(6, '0')}`
-    } catch (e) {
-      return `VIV-${year}-${Date.now().toString().slice(-6)}`
-    }
-  }
+  // listingId generation handled by server API
 
   // Ensure Firebase Auth is present (anonymous is fine) for Storage writes
   useEffect(() => {
@@ -260,7 +239,6 @@ export default function CreatePropertyPage() {
 
     setSaving(true)
     try {
-      const listingId = await generateListingId()
       const payload: any = {
         title: form.title.trim(),
         description: form.description?.trim() || form.publicRemarks?.trim() || '', // Fallback for compatibility
@@ -282,10 +260,20 @@ export default function CreatePropertyPage() {
         status: form.status,
         featured: Boolean(form.featured),
         features,
-        listingId,
       }
       
-      await createProperty(payload)
+      // Create via server API (Admin SDK) to avoid client perms issues
+      const res = await fetch('/api/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', ...payload }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error || 'No se pudo crear la propiedad')
+      }
+      // Optional: read listingId from response
+      // const json = await res.json(); console.log('Created listingId:', json.listingId)
       toast.success('¡Propiedad creada exitosamente!')
       
       // Reset form

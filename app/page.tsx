@@ -7,10 +7,8 @@ import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import StructuredData from '../components/StructuredData';
 import FeaturedProperties from '../components/FeaturedProperties';
-import WaitlistModal from '../components/WaitlistModal';
 import { useState, useEffect } from 'react';
 import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock, FiTrendingUp, FiStar } from 'react-icons/fi'
-import { useWaitlistPrompt } from '@/hooks/useWaitlistPrompt'
 
 const properties = [
   { id: 1, title: "Luxury Villa in Santo Domingo", price: 350000, type: "Villa", lat: 18.4861, lng: -69.9312, img: "/demo1.jpg", city: "Santo Domingo", neighborhood: "Piantini", beds: 3, baths: 2, sqft: 180 },
@@ -29,7 +27,6 @@ export default function HomePage() {
   const user = undefined as any;
   const [filters, setFilters] = useState({ location: "", type: "", minPrice: "", maxPrice: "" });
   const [stats, setStats] = useState<any>(null)
-  const { isOpen, trigger, onClose, open } = useWaitlistPrompt()
 
   useEffect(() => {
     fetch('/api/stats/homepage')
@@ -99,21 +96,9 @@ export default function HomePage() {
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
               Encuentra tu próximo hogar <br/>con <span className="text-[#00A6A6]">VIVENTA</span>
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-gray-200">Tu espacio, tu futuro en República Dominicana</p>
+            <p className="text-xl md:text-2xl mb-10 text-gray-200">Tu espacio, tu futuro en República Dominicana</p>
             
-            {/* Waitlist CTA Banner */}
-            <div className="bg-gradient-to-r from-purple-600/90 to-blue-600/90 backdrop-blur-sm rounded-xl p-6 mb-8 border border-white/20 max-w-2xl mx-auto">
-              <p className="text-lg font-semibold mb-3">🚀 Únete a la Lista de Espera Beta</p>
-              <p className="text-sm text-gray-100 mb-4">Sé de los primeros en acceder a funciones exclusivas, recibir actualizaciones especiales y obtener beneficios únicos del programa beta.</p>
-              <button 
-                onClick={open}
-                className="px-6 py-3 bg-white text-purple-600 font-bold rounded-lg hover:bg-gray-100 transition-all shadow-lg transform hover:scale-105"
-              >
-                Reservar mi Cupo Beta →
-              </button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 justify-center max-w-4xl mx-auto">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-4 sm:gap-5 justify-center max-w-4xl mx-auto">
               <a 
                 href="/search" 
                 className="px-6 sm:px-8 py-3 sm:py-4 bg-[#00A6A6] hover:bg-[#008c8c] text-white font-bold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center gap-2 text-sm sm:text-base min-h-[48px]"
@@ -400,7 +385,6 @@ export default function HomePage() {
       </main>
       <Footer />
       <BottomNav />
-      <WaitlistModal isOpen={isOpen} onClose={onClose} trigger={trigger} />
     </div>
   );
 }
