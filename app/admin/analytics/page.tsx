@@ -188,18 +188,35 @@ export default function AnalyticsPage() {
                 </div>
               ) : (
                 <>
-                  {/* Demo banner when mock data is present (heuristic: all zeroes or presence of premiumPros only) */}
-                  {data && (data.userActivity?.searches === 0 && data.userActivity?.views === 0) && (
-                    <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <div className="font-semibold text-yellow-900 mb-1">Mostrando datos de ejemplo</div>
-                      <p className="text-sm text-yellow-800">
-                        Conecta fuentes reales para ver métricas en vivo (búsquedas, vistas, favoritos, leads). Asegúrate de:
-                      </p>
-                      <ul className="list-disc pl-5 text-sm text-yellow-800 mt-1">
-                        <li>Tener usuarios y propiedades en Firestore</li>
-                        <li>Habilitar eventos de búsqueda y vistas (Algolia / Firestore)</li>
-                        <li>Generar consultas de propiedades y contactos desde el sitio</li>
-                      </ul>
+                  {/* Info banner about data sources */}
+                  {data && (
+                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded bg-blue-100 text-blue-600">
+                          <FiActivity className="text-xl" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-blue-900 mb-1">Estado de Fuentes de Datos</div>
+                          <div className="text-sm text-blue-800 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                              <span><strong>Datos en vivo:</strong> Usuarios, Propiedades, Agentes, Leads, Profesionales Premium</span>
+                            </div>
+                            {data.userActivity?.searches === 0 && data.userActivity?.views === 0 && (
+                              <div className="flex items-center gap-2">
+                                <span className="inline-block w-2 h-2 rounded-full bg-yellow-500"></span>
+                                <span><strong>Pendiente:</strong> Eventos de búsqueda, vistas, favoritos y contactos (requiere instrumentación en el frontend)</span>
+                              </div>
+                            )}
+                            {data.totalRevenue === 0 && (
+                              <div className="flex items-center gap-2">
+                                <span className="inline-block w-2 h-2 rounded-full bg-yellow-500"></span>
+                                <span><strong>Pendiente:</strong> Ingresos (integrar Stripe webhooks)</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                   {/* Overview Tab */}
