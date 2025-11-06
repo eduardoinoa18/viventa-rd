@@ -7,6 +7,7 @@ import { ActivityLogger } from '@/lib/activityLogger'
 import { generateProfessionalId, createPasswordSetupToken } from '@/lib/credentialGenerator'
 import { sendProfessionalCredentials } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
+export const dynamic = 'force-dynamic'
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -212,5 +213,33 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Error sending notification email:', error)
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+  }
+}
+
+// GET /api/admin/applications - list applications via Admin SDK
+export async function GET(req: NextRequest) {
+  try {
+    const adminDb = getAdminDb()
+    if (!adminDb) {
+      return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
+    }
+    const { searchParams } = new URL(req.url)
+    const status = searchParams.get('status')
+    const limitParam = Number(searchParams.get('limit') || '200')
+    const safeLimit = Math.min(Math.max(limitParam, 1), 500)
+
+    let ref: any = adminDb.collection('applications')
+    if (status) ref = ref.where('status', '==', status)
+    let snap
+    try {
+      snap = await ref.orderBy('createdAt', 'desc').limit(safeLimit).get()
+    } catch {
+      snap = await ref.limit(safeLimit).get()
+    }
+    const data = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+    return NextResponse.json({ ok: true, data })
+  } catch (e: any) {
+    console.error('applications GET error', e)
+    return NextResponse.json({ ok: false, error: e.message || 'Failed to list applications' }, { status: 500 })
   }
 }

@@ -18,6 +18,8 @@ import { db } from '@/lib/firebaseClient'
 export default function CreatePropertyPage() {
   const router = useRouter()
   const isE2E = typeof window !== 'undefined' && (process.env.NEXT_PUBLIC_E2E === '1') && new URLSearchParams(window.location.search).get('e2e') === '1'
+  // Wizard state
+  const [step, setStep] = useState<1|2|3|4|5|6>(1)
   const [form, setForm] = useState<Partial<Property>>({
     title: '',
     description: '',
@@ -241,26 +243,11 @@ export default function CreatePropertyPage() {
     e.preventDefault()
     
     // Validation
-    if (!form.title?.trim()) {
-      toast.error('El título es requerido')
-      return
-    }
-    if (!form.location?.trim()) {
-      toast.error('La ubicación es requerida')
-      return
-    }
-    if (!form.price || form.price <= 0) {
-      toast.error('El precio debe ser mayor a 0')
-      return
-    }
-    if (!form.publicRemarks?.trim() || form.publicRemarks.length < 50) {
-      toast.error('Las notas públicas deben tener al menos 50 caracteres')
-      return
-    }
-    if (!form.images || form.images.length === 0) {
-      toast.error('Debes agregar al menos una imagen')
-      return
-    }
+    if (!form.title?.trim()) { toast.error('El título es requerido'); setStep(1 as any); return }
+    if (!form.price || form.price <= 0) { toast.error('El precio debe ser mayor a 0'); setStep(1 as any); return }
+    if (!form.location?.trim()) { toast.error('La ubicación es requerida'); setStep(2 as any); return }
+    if (!form.publicRemarks?.trim() || form.publicRemarks.length < 50) { toast.error('Las notas públicas deben tener al menos 50 caracteres'); setStep(3 as any); return }
+    if (!form.images || form.images.length === 0) { toast.error('Debes agregar al menos una imagen'); setStep(5 as any); return }
 
     if (isE2E) {
       setSaving(true)
@@ -329,12 +316,39 @@ export default function CreatePropertyPage() {
           <div className="max-w-6xl mx-auto">
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-[#0B2545]" data-testid="create-heading">Crear Propiedad</h1>
-              <p className="text-gray-600 mt-1">Complete todos los campos para publicar una nueva propiedad</p>
+              <p className="text-gray-600 mt-1">Completa el asistente en 6 pasos</p>
+            </div>
+
+            {/* Progress */}
+            <div className="mb-6 bg-white rounded-xl shadow p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">Paso {step} de 6</span>
+                <span className="text-sm font-medium text-gray-600">
+                  {Math.round((step/6)*100)}%
+                </span>
+              </div>
+              <div className="h-3">
+                <progress
+                  value={Math.round((step/6)*100)}
+                  max={100}
+                  className="w-full h-3 overflow-hidden rounded-full bg-gray-200 [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-[#00A676] [&::-webkit-progress-value]:to-[#00A6A6] [&::-moz-progress-bar]:bg-gradient-to-r"
+                  aria-label="Progreso de creación de propiedad"
+                />
+              </div>
+              <div className="mt-2 grid grid-cols-3 md:grid-cols-6 text-[11px] text-gray-600 gap-2">
+                <div className={`${step>=1?'text-[#0B2545] font-semibold':''}`}>Básico</div>
+                <div className={`${step>=2?'text-[#0B2545] font-semibold':''}`}>Ubicación</div>
+                <div className={`${step>=3?'text-[#0B2545] font-semibold':''}`}>Descripciones</div>
+                <div className={`${step>=4?'text-[#0B2545] font-semibold':''}`}>Amenidades</div>
+                <div className={`${step>=5?'text-[#0B2545] font-semibold':''}`}>Imágenes</div>
+                <div className={`${step>=6?'text-[#0B2545] font-semibold':''}`}>Publicar</div>
+              </div>
             </div>
 
             <form onSubmit={submit} className="space-y-6">
               {/* Basic Information */}
-              <div className="bg-white rounded-lg shadow p-6">
+              {step === 1 && (
+              <div className="bg-white rounded-lg shadow p-6 animate-fade-in">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
                   <FiHome className="text-[#00A676]" />
                   Información Básica
@@ -467,9 +481,11 @@ export default function CreatePropertyPage() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Location */}
-              <div className="bg-white rounded-lg shadow p-6">
+              {step === 2 && (
+              <div className="bg-white rounded-lg shadow p-6 animate-fade-in">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
                   <FiMapPin className="text-[#00A676]" />
                   Ubicación
@@ -506,9 +522,11 @@ export default function CreatePropertyPage() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Descriptions */}
-              <div className="bg-white rounded-lg shadow p-6">
+              {step === 3 && (
+              <div className="bg-white rounded-lg shadow p-6 animate-fade-in">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
                   <FiFileText className="text-[#00A676]" />
                   Descripciones
@@ -551,9 +569,11 @@ export default function CreatePropertyPage() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Amenidades */}
-              <div className="bg-white rounded-lg shadow p-6">
+              {step === 4 && (
+              <div className="bg-white rounded-lg shadow p-6 animate-fade-in">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4">Amenidades</h2>
                 <p className="text-sm text-gray-600 mb-4">Selecciona todas las que apliquen. Se mostrarán en el listado.</p>
                 <div className="space-y-6">
@@ -585,9 +605,11 @@ export default function CreatePropertyPage() {
                   </div>
                 )}
               </div>
+              )}
 
               {/* Images */}
-              <div className="bg-white rounded-lg shadow p-6">
+              {step === 5 && (
+              <div className="bg-white rounded-lg shadow p-6 animate-fade-in">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
                   <FiImage className="text-[#00A676]" />
                   Imágenes * (Mínimo 1, Máximo 20)
@@ -658,9 +680,11 @@ export default function CreatePropertyPage() {
                   )}
                 </div>
               </div>
+              )}
 
               {/* Agent Info & Status */}
-              <div className="bg-white rounded-lg shadow p-6">
+              {step === 6 && (
+              <div className="bg-white rounded-lg shadow p-6 animate-fade-in">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4">Configuración</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -710,24 +734,65 @@ export default function CreatePropertyPage() {
                   </div>
                 </div>
               </div>
+              )}
 
-              {/* Submit */}
-              <div className="flex gap-4 justify-end">
-                <button
-                  type="button"
-                  onClick={() => router.push('/admin/properties')}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-8 py-3 bg-[#00A676] text-white rounded-lg hover:bg-[#008F64] disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg shadow-[#00A676]/30 transition-all"
-                  data-testid="create-submit"
-                >
-                  {saving ? 'Guardando...' : '✓ Crear Propiedad'}
-                </button>
+              {/* Navigation / Submit */}
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  {step > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setStep(((step-1) as 1|2|3|4|5|6))}
+                      className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                    >
+                      Anterior
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-3 ml-auto">
+                  <button
+                    type="button"
+                    onClick={() => router.push('/admin/properties')}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                  >
+                    Cancelar
+                  </button>
+                  {step < 6 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Lightweight per-step validation
+                        if (step === 1) {
+                          if (!form.title?.trim()) return toast.error('El título es requerido')
+                          if (!form.price || form.price <= 0) return toast.error('El precio debe ser mayor a 0')
+                        }
+                        if (step === 2) {
+                          if (!form.location?.trim()) return toast.error('La ubicación es requerida')
+                        }
+                        if (step === 3) {
+                          if (!form.publicRemarks?.trim() || (form.publicRemarks||'').length < 50) return toast.error('Añade al menos 50 caracteres en Notas Públicas')
+                        }
+                        if (step === 5) {
+                          if (!form.images || form.images.length === 0) return toast.error('Agrega al menos 1 imagen')
+                        }
+                        setStep(((step+1) as 1|2|3|4|5|6))
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }}
+                      className="px-8 py-3 bg-[#00A676] text-white rounded-lg hover:bg-[#008F64] disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg shadow-[#00A676]/30 transition-all"
+                    >
+                      Siguiente
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="px-8 py-3 bg-[#00A676] text-white rounded-lg hover:bg-[#008F64] disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg shadow-[#00A676]/30 transition-all"
+                      data-testid="create-submit"
+                    >
+                      {saving ? 'Guardando...' : '✓ Crear Propiedad'}
+                    </button>
+                  )}
+                </div>
               </div>
             </form>
           </div>

@@ -9,7 +9,7 @@ import { FiCheck, FiX, FiUser, FiUsers, FiBriefcase, FiMail, FiPhone, FiCalendar
 
 export default function ApplicationsPage() {
   return (
-    <ProtectedClient allowed={['master_admin']}>
+    <ProtectedClient allowed={['master_admin','admin']}>
       <ApplicationsPageContent />
     </ProtectedClient>
   )
@@ -29,17 +29,14 @@ function ApplicationsPageContent() {
   async function loadApplications() {
     try {
       setLoading(true)
-      const q = query(collection(db, 'applications'), orderBy('createdAt', 'desc'))
-      const snap = await getDocs(q)
-      const apps = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      const res = await fetch('/api/admin/applications', { cache: 'no-store' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json()
+      const apps = json?.data || []
       setApplications(apps)
     } catch (err: any) {
       console.error('Error loading applications:', err)
-      if (err?.message?.includes('Missing or insufficient permissions')) {
-        alert('⚠️ Firestore permissions not configured. Please deploy firestore.rules via Firebase Console.')
-      } else if (err?.message?.includes('index')) {
-        alert('⚠️ Missing Firestore index. Click the link in console to create it.')
-      }
+      alert('No se pudieron cargar las aplicaciones. Ver consola para detalles.')
     } finally {
       setLoading(false)
     }
@@ -224,7 +221,25 @@ function ApplicationsPageContent() {
               <div className="text-center py-12 text-gray-500">Cargando aplicaciones...</div>
             ) : filtered.length === 0 ? (
               <div className="text-center py-12 bg-white rounded shadow">
-                <p className="text-gray-500">No hay aplicaciones en esta categoría</p>
+                <p className="text-gray-600 mb-2">No hay aplicaciones en esta categoría</p>
+                <div className="max-w-xl mx-auto mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-left">
+                  <div className="font-semibold text-blue-800 mb-1">¿Cómo ver aplicaciones aquí?</div>
+                  <ul className="list-disc pl-5 text-sm text-blue-800 space-y-1">
+                    <li>Abre el formulario público desde el botón de abajo</li>
+                    <li>Envía una solicitud de prueba (puede usar tu email)</li>
+                    <li>Vuelve a esta pestaña y presiona “Actualizar”</li>
+                  </ul>
+                  <div className="mt-3">
+                    <a
+                      href="/apply"
+                      target="_blank"
+                      className="inline-block px-4 py-2 bg-[#00A676] text-white rounded-lg hover:bg-[#008F64] font-semibold"
+                      rel="noopener noreferrer"
+                    >
+                      Abrir formulario de aplicación
+                    </a>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">

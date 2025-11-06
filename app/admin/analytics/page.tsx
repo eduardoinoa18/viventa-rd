@@ -78,6 +78,16 @@ export default function AnalyticsPage() {
       const result = await res.json()
       if (result.ok) {
         setData(result.data)
+        // Surface any mock/demo notice in the UI through toast and banner state
+        if (result.note) {
+          toast((t) => (
+            <div className="text-left">
+              <div className="font-semibold">Datos de demostración</div>
+              <div className="text-sm">{String(result.note)}</div>
+              <button onClick={() => toast.dismiss(t.id)} className="mt-2 text-[#00A676] font-semibold">Entendido</button>
+            </div>
+          ), { duration: 5000 })
+        }
       }
     } catch (error) {
       console.error('Error fetching analytics:', error)
@@ -178,6 +188,20 @@ export default function AnalyticsPage() {
                 </div>
               ) : (
                 <>
+                  {/* Demo banner when mock data is present (heuristic: all zeroes or presence of premiumPros only) */}
+                  {data && (data.userActivity?.searches === 0 && data.userActivity?.views === 0) && (
+                    <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="font-semibold text-yellow-900 mb-1">Mostrando datos de ejemplo</div>
+                      <p className="text-sm text-yellow-800">
+                        Conecta fuentes reales para ver métricas en vivo (búsquedas, vistas, favoritos, leads). Asegúrate de:
+                      </p>
+                      <ul className="list-disc pl-5 text-sm text-yellow-800 mt-1">
+                        <li>Tener usuarios y propiedades en Firestore</li>
+                        <li>Habilitar eventos de búsqueda y vistas (Algolia / Firestore)</li>
+                        <li>Generar consultas de propiedades y contactos desde el sitio</li>
+                      </ul>
+                    </div>
+                  )}
                   {/* Overview Tab */}
                   {activeTab === 'overview' && data && (
                     <div className="space-y-6">
