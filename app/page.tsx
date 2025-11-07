@@ -24,6 +24,8 @@ type Property = {
   area?: number;
   images?: string[];
   location?: string;
+  agentId?: string;
+  agentName?: string;
 };
 
 type Agent = {
@@ -72,6 +74,8 @@ export default function HomePage() {
           area: p.area,
           images: p.images || [],
           location: p.location,
+          agentId: p.agentId,
+          agentName: p.agentName,
         }))
         setProperties(list)
       })
@@ -79,24 +83,36 @@ export default function HomePage() {
       .finally(() => setLoadingProps(false))
   }, [])
 
-  // Load approved agents
+  // Load agents (prefer verified, but fallback to active; prefer agents with active listings)
   useEffect(() => {
     setLoadingAgents(true)
     fetch('/api/admin/users?role=agent')
       .then(r => r.json())
       .then(data => {
-        const agents: Agent[] = (data.data || [])
-          .filter((u: any) => u.status === 'active' && (u.verified || u.emailVerified))
-          .map((u: any) => ({
-            id: u.id,
-            name: u.name || u.displayName || 'Agente',
-            photo: u.photoURL || u.photo || u.profileImage,
-            area: u.city || u.area,
-            email: u.email,
-            phone: u.phone,
-            agentCode: u.professionalCode || u.agentCode,
-            rating: 4.8,
-          }))
+        const all: any[] = data?.data || []
+        const verifiedActive = all.filter((u: any) => u.status === 'active' && (u.verified || u.emailVerified))
+        const activeOnly = all.filter((u: any) => u.status === 'active')
+        const preferred = verifiedActive.length ? verifiedActive : activeOnly
+
+        // Prefer agents who currently have active listings on the site (derived from loaded properties)
+        const activeAgentIds = new Set((properties || []).map((p) => p.agentId).filter(Boolean) as string[])
+        let filtered = preferred
+        if (activeAgentIds.size > 0) {
+          const byActiveListings = preferred.filter((u: any) => activeAgentIds.has(u.id))
+          // If filtering removes everyone (e.g., agents not linked yet), keep the preferred list
+          if (byActiveListings.length) filtered = byActiveListings
+        }
+
+        const agents: Agent[] = filtered.map((u: any) => ({
+          id: u.id,
+          name: u.name || u.displayName || 'Agente',
+          photo: u.photoURL || u.photo || u.profileImage,
+          area: u.city || u.area,
+          email: u.email,
+          phone: u.phone,
+          agentCode: u.professionalCode || u.agentCode,
+          rating: 4.8,
+        }))
         setTopAgents(agents)
       })
       .catch(() => {})

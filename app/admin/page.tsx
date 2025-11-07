@@ -19,19 +19,62 @@ export default function AdminPage() {
     totalAgents: 0,
     totalBrokers: 0,
     pendingApplications: 0,
+    window: 'all' as 'all'|'day'|'week'|'month',
+    newUsers: 0,
+    listingsCreated: 0,
+    newLeads: 0,
+    conversionMetrics: {
+      totalViews: 0,
+      totalContacts: 0,
+      totalLeads: 0,
+      viewToContactRate: '0.00%',
+      contactToLeadRate: '0.00%',
+      window: {
+        views: 0,
+        contacts: 0,
+        leads: 0,
+        viewToContactRate: '0.00%',
+        contactToLeadRate: '0.00%',
+      },
+    },
   })
+  const [timeWindow, setTimeWindow] = useState<'all'|'day'|'week'|'month'>('all')
 
   useEffect(() => {
-    fetch('/api/admin/stats')
+    const url = `/api/admin/stats${timeWindow && timeWindow !== 'all' ? `?window=${timeWindow}` : ''}`
+    fetch(url)
       .then(r => r.json())
       .then((statsRes) => {
         const baseStats = statsRes?.ok ? statsRes.data : {}
         const agents = baseStats.roleCounts?.agents ?? 0
         const brokers = baseStats.roleCounts?.brokers ?? 0
-        setStats({ ...baseStats, totalAgents: agents, totalBrokers: brokers, pendingApplications: baseStats.pendingApplications || 0 })
+        setStats({
+          ...baseStats,
+          totalAgents: agents,
+          totalBrokers: brokers,
+          pendingApplications: baseStats.pendingApplications || 0,
+          window: (baseStats.window || 'all'),
+          newUsers: baseStats.newUsers || 0,
+          listingsCreated: baseStats.listingsCreated || 0,
+          newLeads: baseStats.newLeads || 0,
+          conversionMetrics: baseStats.conversionMetrics || {
+            totalViews: 0,
+            totalContacts: 0,
+            totalLeads: 0,
+            viewToContactRate: '0.00%',
+            contactToLeadRate: '0.00%',
+            window: {
+              views: 0,
+              contacts: 0,
+              leads: 0,
+              viewToContactRate: '0.00%',
+              contactToLeadRate: '0.00%',
+            },
+          },
+        })
       })
       .catch(() => {})
-  }, [])
+  }, [timeWindow])
 
   const [showActivity, setShowActivity] = useState(false)
 
@@ -48,23 +91,42 @@ export default function AdminPage() {
             <p className="text-gray-600">Monitor your platform metrics and activity</p>
           </div>
           
+          {/* Time window selector */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-sm text-gray-600 mr-2">Time window:</span>
+            {([
+              { key: 'all', label: 'All' },
+              { key: 'day', label: 'Today' },
+              { key: 'week', label: 'This Week' },
+              { key: 'month', label: 'This Month' },
+            ] as const).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setTimeWindow(key as any)}
+                className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${timeWindow===key ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-gradient-to-br from-[#00A676] to-[#008F64] text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-white/80 text-sm font-medium">Total Users</span>
+                <span className="text-white/80 text-sm font-medium">{timeWindow==='all' ? 'Total Users' : 'New Users'}</span>
                 <FiUsers className="text-3xl opacity-80" />
               </div>
-              <div className="text-4xl font-bold mb-1">{stats.totalUsers}</div>
-              <div className="text-white/70 text-xs">All roles</div>
+              <div className="text-4xl font-bold mb-1">{timeWindow==='all' ? stats.totalUsers : stats.newUsers}</div>
+              <div className="text-white/70 text-xs">{timeWindow==='all' ? 'All roles' : 'Within selected window'}</div>
             </div>
             
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-white/80 text-sm font-medium">Active Listings</span>
+                <span className="text-white/80 text-sm font-medium">{timeWindow==='all' ? 'Active Listings' : 'New Listings'}</span>
                 <FiHome className="text-3xl opacity-80" />
               </div>
-              <div className="text-4xl font-bold mb-1">{stats.activeListings}</div>
-              <div className="text-white/70 text-xs">Published</div>
+              <div className="text-4xl font-bold mb-1">{timeWindow==='all' ? stats.activeListings : stats.listingsCreated}</div>
+              <div className="text-white/70 text-xs">{timeWindow==='all' ? 'Published' : 'Within selected window'}</div>
             </div>
             
             <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
@@ -85,6 +147,51 @@ export default function AdminPage() {
               <div className="text-white/70 text-xs">Awaiting review</div>
             </div>
           </div>
+
+          {/* Leads & Conversion Metrics */}
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <FiActivity className="text-[#00A676]" />
+              Leads & Conversion
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <div className="bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/80 text-sm font-medium">{timeWindow==='all' ? 'Total Leads' : 'New Leads'}</span>
+                  <FiUsers className="text-3xl opacity-80" />
+                </div>
+                <div className="text-4xl font-bold mb-1">{timeWindow==='all' ? stats.leads : stats.newLeads}</div>
+                <div className="text-white/70 text-xs">{timeWindow==='all' ? 'All sources' : 'Within selected window'}</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/80 text-sm font-medium">Property Views</span>
+                  <FiHome className="text-3xl opacity-80" />
+                </div>
+                <div className="text-4xl font-bold mb-1">{stats.conversionMetrics.window.views.toLocaleString()}</div>
+                <div className="text-white/70 text-xs">{timeWindow==='all' ? 'All time' : 'Within selected window'}</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-sky-500 to-sky-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/80 text-sm font-medium">Contact Rate</span>
+                  <FiActivity className="text-3xl opacity-80" />
+                </div>
+                <div className="text-4xl font-bold mb-1">{stats.conversionMetrics.window.viewToContactRate}</div>
+                <div className="text-white/70 text-xs">Views → Contacts</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-violet-500 to-violet-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/80 text-sm font-medium">Lead Rate</span>
+                  <FiClock className="text-3xl opacity-80" />
+                </div>
+                <div className="text-4xl font-bold mb-1">{stats.conversionMetrics.window.contactToLeadRate}</div>
+                <div className="text-white/70 text-xs">Contacts → Leads</div>
+              </div>
+            </div>
+          </section>
 
           {/* Professional Network */}
           <section className="mb-8">
@@ -178,6 +285,12 @@ export default function AdminPage() {
                 className="px-6 py-3 bg-gradient-to-r from-[#0B2545] to-[#0a1f3a] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
                 <FiHome /> Review Listings
+              </Link>
+              <Link 
+                href="/admin/leads" 
+                className="px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
+              >
+                <FiActivity /> Manage Leads
               </Link>
               <Link 
                 href="/social" 

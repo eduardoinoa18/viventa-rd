@@ -5,16 +5,23 @@ import { getFirestore, collection, getCountFromServer, query, where } from 'fire
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { Timestamp as AdminTimestamp } from 'firebase-admin/firestore'
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url)
+    const windowParam = (searchParams.get('window') || 'all').toLowerCase()
+    const now = new Date()
+    const thresholdMap: Record<string, number> = {
+      day: 24 * 60 * 60 * 1000,
+      week: 7 * 24 * 60 * 60 * 1000,
+      month: 30 * 24 * 60 * 60 * 1000,
+      all: Infinity,
+    }
+    const rangeMs = thresholdMap[windowParam] ?? Infinity
+    const hasWindow = Number.isFinite(rangeMs)
+    const sinceDate = hasWindow ? new Date(Date.now() - rangeMs) : null
     // Prefer Admin SDK for accurate counts without client auth
     const adminDb = getAdminDb()
     if (adminDb) {
-      const now = new Date()
-      const today = now.toISOString().split('T')[0]
-      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
       const [
         usersSnap,
@@ -67,6 +74,31 @@ export async function GET() {
         adminDb.collection('inquiries').get(),
       ])
 
+      // Window-based counts
+      let newUsersCount = 0
+      let newListingsCount = 0
+      let newLeadsCount = 0
+      let windowViews = 0
+      let windowContacts = 0
+      let windowInquiries = 0
+      let windowLeads = 0
+      if (hasWindow && sinceDate) {
+        const [usersCreatedSnap, listingsCreatedSnap] = await Promise.all([
+          adminDb.collection('users').where('createdAt', '>=', AdminTimestamp.fromDate(sinceDate)).get(),
+          adminDb.collection('properties').where('createdAt', '>=', AdminTimestamp.fromDate(sinceDate)).get(),
+        ])
+        newUsersCount = usersCreatedSnap.size || 0
+        newListingsCount = listingsCreatedSnap.size || 0
+
+        // Windowed leads (in-memory filter on aggregated leads collection)
+        windowLeads = leadsSnap.docs.filter((d: any) => {
+          const created = d.data()?.createdAt?.toDate?.() || null
+          return created && created >= sinceDate
+        }).length
+        newLeadsCount = windowLeads
+      }
+      // (Keep processing within adminDb branch)
+
       // Calculate unique active users
       const dauUsers = new Set()
       dailyActiveSnap.docs.forEach((doc: any) => {
@@ -90,6 +122,15 @@ export async function GET() {
       // Filter to listing_view events in-memory to avoid composite index requirement
       const listingViewDocs = propertyViewsSnap.docs.filter((doc: any) => doc.data()?.eventType === 'listing_view')
       const propertyViews = listingViewDocs.length
+      if (hasWindow && sinceDate) {
+        const windowListingViewDocs = listingViewDocs.filter((doc: any) => {
+          const ts = doc.data()?.timestamp?.toDate?.() || null
+          return ts && ts >= sinceDate
+        })
+        windowViews = windowListingViewDocs.length
+      } else {
+        windowViews = propertyViews
+      }
       const uniqueViewers = new Set()
       const propertyViewCounts: { [key: string]: number } = {}
       
@@ -115,6 +156,26 @@ export async function GET() {
       const conversionRate = totalViews > 0 ? ((totalContacts / totalViews) * 100).toFixed(2) : '0.00'
       const leadConversionRate = totalContacts > 0 ? ((totalLeads / totalContacts) * 100).toFixed(2) : '0.00'
 
+      // Windowed contact + inquiry counts (in-memory filtering)
+      if (hasWindow && sinceDate) {
+        windowContacts = contactsSnap.docs.filter((d: any) => {
+          const c = d.data()?.createdAt?.toDate?.() || null
+          return c && c >= sinceDate
+        }).length
+        windowInquiries = inquiriesSnap.docs.filter((d: any) => {
+          const c = d.data()?.createdAt?.toDate?.() || null
+          return c && c >= sinceDate
+        }).length
+        // windowLeads computed earlier as newLeadsCount
+      } else {
+        windowContacts = contactsSnap.size
+        windowInquiries = inquiriesSnap.size
+        windowLeads = totalLeads
+      }
+      const windowTotalContacts = windowContacts + windowInquiries
+      const windowViewToContactRate = windowViews > 0 ? ((windowTotalContacts / windowViews) * 100).toFixed(2) : '0.00'
+      const windowContactToLeadRate = windowTotalContacts > 0 ? ((windowLeads / windowTotalContacts) * 100).toFixed(2) : '0.00'
+
       return NextResponse.json({
         ok: true,
         data: {
@@ -122,8 +183,12 @@ export async function GET() {
           activeListings: activePropsSnap.size || 0,
           pendingApprovals: pendingPropsSnap.size || 0,
           leads: leadsSnap.size || 0,
+          newLeads: newLeadsCount,
           monthlyRevenueUSD: 0,
           pendingApplications: applicationsSnap.size || 0,
+          window: hasWindow ? windowParam : 'all',
+          newUsers: newUsersCount,
+          listingsCreated: newListingsCount,
           roleCounts: {
             agents: agentsSnap.size || 0,
             brokers: brokersSnap.size || 0,
@@ -150,6 +215,13 @@ export async function GET() {
             totalLeads,
             viewToContactRate: conversionRate + '%',
             contactToLeadRate: leadConversionRate + '%',
+            window: {
+              views: windowViews,
+              contacts: windowTotalContacts,
+              leads: windowLeads,
+              viewToContactRate: windowViewToContactRate + '%',
+              contactToLeadRate: windowContactToLeadRate + '%',
+            },
           },
         },
       })
@@ -190,10 +262,10 @@ export async function GET() {
     if (!getApps().length) {
       initializeApp(firebaseConfig as any)
     }
-    const db = getFirestore()
-    // Count users
-  const usersColl = collection(db, 'users')
-  const usersSnap = await getCountFromServer(usersColl)
+  const db = getFirestore()
+    // Count users (all-time)
+    const usersColl = collection(db, 'users')
+    const usersSnap = await getCountFromServer(usersColl)
 
     // Count active listings
   const propsActiveQ = query(collection(db, 'properties'), where('status', '==', 'active'))
@@ -204,8 +276,11 @@ export async function GET() {
   const propsPendingSnap = await getCountFromServer(propsPendingQ)
 
     // Leads count
-  const leadsColl = collection(db, 'leads')
-  const leadsSnap = await getCountFromServer(leadsColl)
+    const leadsColl = collection(db, 'leads')
+    const leadsSnap = await getCountFromServer(leadsColl)
+
+    // Window-based counts (client SDK fallback: we won't implement due to index/SDK overhead)
+    const window = hasWindow ? windowParam : 'all'
 
     // Monthly revenue placeholder (integrate Stripe later)
     const monthlyRevenueUSD = 0
@@ -219,6 +294,10 @@ export async function GET() {
         pendingApprovals: propsPendingSnap.data().count || 0,
         leads: leadsSnap.data().count || 0,
         monthlyRevenueUSD,
+        window,
+        newUsers: 0,
+        listingsCreated: 0,
+        newLeads: 0,
       },
     })
   } catch (e) {

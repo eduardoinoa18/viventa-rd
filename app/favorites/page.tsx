@@ -173,7 +173,7 @@ export default function FavoritesPage() {
             {favorites.map((property) => (
               <Link
                 key={property.id}
-                href={`/properties/${property.id}`}
+                href={`/listing/${property.id}`}
                 className="bg-white rounded-lg shadow hover:shadow-xl transition-shadow overflow-hidden"
               >
                 <div className="aspect-w-4 aspect-h-3 bg-gray-200">

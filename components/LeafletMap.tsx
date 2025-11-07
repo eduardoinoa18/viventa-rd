@@ -72,7 +72,7 @@ export default function LeafletMap({ properties, user }: { properties: Property[
             <br />${p.price.toLocaleString()}
             <br />
             {user ? (
-              <a href={`/properties/${p.id}`} className="text-blue-700 underline text-sm">
+              <a href={`/listing/${p.id}`} className="text-blue-700 underline text-sm">
                 Ver
               </a>
             ) : (
