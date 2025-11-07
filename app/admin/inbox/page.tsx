@@ -9,7 +9,7 @@ import AdminSidebar from '@/components/AdminSidebar'
 import AdminTopbar from '@/components/AdminTopbar'
 import toast from 'react-hot-toast'
 import { db } from '@/lib/firebaseClient'
-import { collection, query, where, orderBy, limit, getDocs, updateDoc, doc, arrayUnion, addDoc, Timestamp, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { getSession } from '@/lib/authSession'
 
 type Conversation = {
@@ -131,9 +131,14 @@ function AdminInboxPageContent() {
   async function loadConversations() {
     setLoadingConvos(true)
     try {
-      const convQuery = query(collection(db, 'conversations'), orderBy('lastMessageAt', 'desc'), limit(100))
-      const convSnap = await getDocs(convQuery)
-      const convs = convSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as Conversation))
+      const res = await fetch('/api/admin/inbox?tab=chat')
+      if (!res.ok) throw new Error('Failed to load conversations')
+      const data = await res.json()
+      const convs = data.conversations.map((c: any) => ({
+        ...c,
+        createdAt: c.createdAt ? { seconds: new Date(c.createdAt).getTime() / 1000 } : null,
+        lastMessageAt: c.lastMessageAt ? { seconds: new Date(c.lastMessageAt).getTime() / 1000 } : null
+      }))
       setConversations(convs)
     } catch (e) {
       console.error('Failed to load conversations', e)
@@ -147,12 +152,14 @@ function AdminInboxPageContent() {
     if (!activeId) return
     setLoadingMessages(true)
     try {
-      const msgQuery = query(collection(db, 'conversations', activeId, 'messages'), orderBy('createdAt', 'asc'), limit(200))
-      const msgSnap = await getDocs(msgQuery)
-      const msgs = msgSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as Message))
+      const res = await fetch(`/api/admin/inbox/conversations/${encodeURIComponent(activeId)}`)
+      if (!res.ok) throw new Error('Failed to load messages')
+      const data = await res.json()
+      const msgs = data.messages.map((m: any) => ({
+        ...m,
+        createdAt: m.createdAt ? { seconds: new Date(m.createdAt).getTime() / 1000 } : null
+      }))
       setMessages(msgs)
-      const convRef = doc(db, 'conversations', activeId)
-      await updateDoc(convRef, { unreadCount: 0 })
       setConversations(prev => prev.map(c => c.id === activeId ? { ...c, unreadCount: 0 } : c))
     } catch (e) {
       console.error('Failed to load messages', e)
@@ -165,17 +172,15 @@ function AdminInboxPageContent() {
   async function send() {
     if (!text.trim() || !activeId || !currentUser) return
     try {
-      const messageRef = collection(db, 'conversations', activeId, 'messages')
-      await addDoc(messageRef, {
-        senderId: currentUser.uid,
-        senderName: currentUser.name || 'Admin Support',
-        content: text,
-        createdAt: Timestamp.now()
+      const res = await fetch(`/api/admin/inbox/conversations/${encodeURIComponent(activeId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: text,
+          senderName: currentUser.name || 'Admin Support'
+        })
       })
-      await updateDoc(doc(db, 'conversations', activeId), {
-        lastMessage: text,
-        lastMessageAt: Timestamp.now()
-      })
+      if (!res.ok) throw new Error('Failed to send message')
       setText('')
       loadMessages()
     } catch (e) {
@@ -220,35 +225,40 @@ function AdminInboxPageContent() {
     if (!currentUser) return
     setLoadingNotifications(true)
     try {
-      const notifQuery = query(
-        collection(db, 'notifications'),
-        where('audience', 'array-contains-any', [currentUser.role || 'admin', 'all']),
-        orderBy('createdAt', 'desc'),
-        limit(50)
-      )
-      const notifSnap = await getDocs(notifQuery)
-      const notifs = notifSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as Notification))
+      const res = await fetch('/api/admin/inbox?tab=notifications')
+      if (!res.ok) throw new Error('Failed to load notifications')
+      const data = await res.json()
+      const notifs = data.notifications.map((n: any) => ({
+        ...n,
+        createdAt: n.createdAt ? { seconds: new Date(n.createdAt).getTime() / 1000 } : null
+      }))
       setNotifications(notifs)
 
-      const contactQuery = query(collection(db, 'contact_submissions'), orderBy('createdAt', 'desc'), limit(50))
-      const contactSnap = await getDocs(contactQuery)
-      const contacts = contactSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      const contactRes = await fetch('/api/admin/inbox?tab=contacts')
+      if (!contactRes.ok) throw new Error('Failed to load contacts')
+      const contactData = await contactRes.json()
+      const contacts = contactData.contacts.map((c: any) => ({
+        ...c,
+        createdAt: c.createdAt ? { seconds: new Date(c.createdAt).getTime() / 1000 } : null
+      }))
       setContactSubmissions(contacts)
 
-      const inquiryQuery = query(collection(db, 'property_inquiries'), orderBy('createdAt', 'desc'), limit(50))
-      const inquirySnap = await getDocs(inquiryQuery)
-      const inquiries = inquirySnap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      const inquiryRes = await fetch('/api/admin/inbox?tab=inquiries')
+      if (!inquiryRes.ok) throw new Error('Failed to load inquiries')
+      const inquiryData = await inquiryRes.json()
+      const inquiries = inquiryData.inquiries.map((i: any) => ({
+        ...i,
+        createdAt: i.createdAt ? { seconds: new Date(i.createdAt).getTime() / 1000 } : null
+      }))
       setPropertyInquiries(inquiries)
 
-      const waitlistSocialQuery = query(collection(db, 'waitlist_social'), orderBy('createdAt', 'desc'), limit(50))
-      const waitlistPlatformQuery = query(collection(db, 'waitlist_platform'), orderBy('createdAt', 'desc'), limit(50))
-      const [waitlistSocialSnap, waitlistPlatformSnap] = await Promise.all([
-        getDocs(waitlistSocialQuery),
-        getDocs(waitlistPlatformQuery)
-      ])
-      const socialWaitlist = waitlistSocialSnap.docs.map((d: any) => ({ id: d.id, ...d.data(), source: 'social' }))
-      const platformWaitlist = waitlistPlatformSnap.docs.map((d: any) => ({ id: d.id, ...d.data(), source: 'platform' }))
-      const combined = [...socialWaitlist, ...platformWaitlist].sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds)
+      const waitlistRes = await fetch('/api/admin/inbox?tab=waitlist')
+      if (!waitlistRes.ok) throw new Error('Failed to load waitlist')
+      const waitlistData = await waitlistRes.json()
+      const combined = waitlistData.waitlist.map((w: any) => ({
+        ...w,
+        createdAt: w.createdAt ? { seconds: new Date(w.createdAt).getTime() / 1000 } : null
+      }))
       setWaitlist(combined)
     } catch (e) {
       console.error('Failed to load notifications', e)
@@ -261,11 +271,16 @@ function AdminInboxPageContent() {
   async function markNotificationAsRead(notificationId: string) {
     if (!currentUser) return
     try {
-      await updateDoc(doc(db, 'notifications', notificationId), {
-        readBy: arrayUnion(currentUser.uid)
+      await fetch('/api/admin/inbox/mark-read', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          collection: 'notifications',
+          documentId: notificationId
+        })
       })
       setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, readBy: [...n.readBy, currentUser.uid] } : n)
+        prev.map(n => n.id === notificationId ? { ...n, readBy: [...(n.readBy || []), currentUser.uid] } : n)
       )
     } catch (e) {
       console.error('Failed to mark as read', e)
@@ -279,9 +294,14 @@ function AdminInboxPageContent() {
       if (type === 'waitlist' && source) {
         collectionName = source === 'social' ? 'waitlist_social' : 'waitlist_platform'
       }
-      await updateDoc(doc(db, collectionName, submissionId), {
-        readBy: arrayUnion(currentUser.uid),
-        status: 'read'
+      
+      await fetch('/api/admin/inbox/mark-read', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          collection: collectionName,
+          documentId: submissionId
+        })
       })
       
       if (type === 'contact') {
@@ -330,23 +350,25 @@ function AdminInboxPageContent() {
 
   async function startConversationWithUser(user: SearchUser) {
     try {
-      const conversationRef = await addDoc(collection(db, 'conversations'), {
-        title: `Chat with ${user.name}`,
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
-        status: 'open',
-        createdAt: Timestamp.now(),
-        lastMessageAt: Timestamp.now(),
-        unreadCount: 0
+      const res = await fetch('/api/admin/inbox/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+          title: `Chat with ${user.name}`
+        })
       })
+      if (!res.ok) throw new Error('Failed to start conversation')
+      const data = await res.json()
       
       toast.success(`Conversation started with ${user.name}`)
       setShowUserSearch(false)
       setUserSearchQuery('')
       setSearchResults([])
       await loadConversations()
-      setActiveId(conversationRef.id)
+      setActiveId(data.conversationId)
       setMainTab('chat')
     } catch (e) {
       console.error('Failed to start conversation', e)
