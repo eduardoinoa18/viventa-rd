@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// PATCH /api/admin/leads - update lead assignment
+// PATCH /api/admin/leads - update lead assignment or status
 export async function PATCH(req: NextRequest) {
   try {
     const adminDb = getAdminDb()
@@ -76,7 +76,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
     }
 
-    const { leadId, source, assignedTo } = await req.json()
+    const { leadId, source, assignedTo, status } = await req.json()
 
     if (!leadId || !source) {
       return NextResponse.json({ ok: false, error: 'Missing leadId or source' }, { status: 400 })
@@ -94,12 +94,27 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Invalid source' }, { status: 400 })
     }
 
-    // Update the lead
-    await (adminDb as any).collection(collectionName).doc(leadId).set({
-      assignedTo: assignedTo || null,
-      assignedAt: assignedTo ? new Date() : null,
+    // Build update object
+    const updateData: any = {
       updatedAt: new Date()
-    }, { merge: true })
+    }
+
+    // Update assignment if provided
+    if (assignedTo !== undefined) {
+      updateData.assignedTo = assignedTo || null
+      updateData.assignedAt = assignedTo ? new Date() : null
+    }
+
+    // Update status if provided
+    if (status !== undefined) {
+      updateData.status = status
+      if (status === 'converted') {
+        updateData.convertedAt = new Date()
+      }
+    }
+
+    // Update the lead
+    await (adminDb as any).collection(collectionName).doc(leadId).set(updateData, { merge: true })
 
     return NextResponse.json({ ok: true })
   } catch (e: any) {
