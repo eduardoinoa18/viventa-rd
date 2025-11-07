@@ -44,7 +44,7 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <AdminWidget title="Total Users" value={stats.totalUsers} icon={<FiUsers />} subtitle="All roles" />
             <AdminWidget title="Active Listings" value={stats.activeListings} icon={<FiHome />} subtitle="Published" />
-            <AdminWidget title="Monthly Revenue" value={`$${stats.monthlyRevenueUSD.toLocaleString()}`} icon={<FiDollarSign />} subtitle="USD" />
+            <AdminWidget title="Monthly Revenue" value={`$${Number(stats.monthlyRevenueUSD || 0).toLocaleString()}`} icon={<FiDollarSign />} subtitle="USD" />
             <AdminWidget title="Pending Listings" value={stats.pendingApprovals} icon={<FiClock />} subtitle="Awaiting review" />
           </div>
 

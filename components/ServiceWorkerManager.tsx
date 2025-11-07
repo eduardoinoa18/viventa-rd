@@ -21,11 +21,9 @@ export default function ServiceWorkerManager() {
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                   // New service worker available
-                  console.log('🔄 New content available, refresh to update')
-                  // You can show a toast/banner here to prompt user to refresh
-                  if (confirm('Nueva versión disponible. ¿Actualizar ahora?')) {
-                    window.location.reload()
-                  }
+                  console.log('🔄 Nueva versión disponible (actualización silenciosa habilitada)')
+                  // Non-intrusive: defer update prompt to a future UX, no blocking confirm dialogs
+                  // Optionally, auto-refresh on next navigation or implement a small toast later
                 }
               })
             }

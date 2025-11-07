@@ -33,21 +33,7 @@ export default function Footer() {
   return (
     <footer className="bg-[#FAFAFA] border-t mt-12 pt-8 pb-4 text-sm text-gray-600">
       <div className="max-w-7xl mx-auto px-4 relative">
-        {/* Waitlist CTA */}
-        {!loggedIn && (
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6 mb-8 text-center">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">🚀 Únete a la Lista de Espera Beta</h3>
-            <p className="text-gray-600 mb-4">Obtén acceso anticipado a nuevas funciones, actualizaciones exclusivas y beneficios especiales del programa beta.</p>
-            <button
-              onClick={() => {
-                document.dispatchEvent(new Event('viventa-open-waitlist'))
-              }}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:shadow-lg transition-all transform hover:scale-105"
-            >
-              Reservar mi Cupo Beta →
-            </button>
-          </div>
-        )}
+        {/* Removed waitlist CTA banner to avoid showing waitlist prompts sitewide */}
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center">

@@ -57,8 +57,8 @@ export async function GET() {
           .where('timestamp', '>=', thirtyDaysAgo)
           .get(),
         // Property views (last 30 days)
+        // NOTE: Avoid composite index by querying by timestamp only and filtering in-memory
         adminDb.collection('analytics_events')
-          .where('eventType', '==', 'listing_view')
           .where('timestamp', '>=', thirtyDaysAgo)
           .get(),
         // Contact submissions
@@ -86,11 +86,13 @@ export async function GET() {
       })
 
       // Calculate property view stats
-      const propertyViews = propertyViewsSnap.size
+      // Filter to listing_view events in-memory to avoid composite index requirement
+      const listingViewDocs = propertyViewsSnap.docs.filter((doc: any) => doc.data()?.eventType === 'listing_view')
+      const propertyViews = listingViewDocs.length
       const uniqueViewers = new Set()
       const propertyViewCounts: { [key: string]: number } = {}
       
-      propertyViewsSnap.docs.forEach((doc: any) => {
+      listingViewDocs.forEach((doc: any) => {
         const data = doc.data()
         if (data.userId) uniqueViewers.add(data.userId)
         if (data.metadata?.listingId) {
