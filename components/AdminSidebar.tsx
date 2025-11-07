@@ -25,32 +25,34 @@ export default function AdminSidebar() {
     { href: '/admin/inbox', label: 'Inbox', icon: <FiClipboard /> },
     { href: '/admin/people', label: 'People', icon: <FiUsers /> },
     { href: '/admin/properties', label: 'Listings', icon: <FiHome /> },
-    { href: '/admin/properties/create', label: 'Create Listing', icon: <FiPlusSquare /> },
     { href: '/admin/analytics', label: 'Analytics & AI', icon: <FiBarChart2 /> },
     { href: '/admin/activity', label: 'Activity Feed', icon: <FiActivity /> },
     { href: '/admin/billing', label: 'Billing', icon: <FiCreditCard /> },
     { href: '/admin/roles', label: 'Roles & Access', icon: <FiShield /> },
-    { href: '/admin/chat', label: 'Chat', icon: <FiMessageSquare /> },
     { href: '/admin/settings', label: 'Settings', icon: <FiSettings /> },
   ]
 
   return (
-    <aside className={`${collapsed ? 'w-16' : 'w-64'} bg-white border-r min-h-screen p-2 transition-all duration-200`}>
-      <div className="flex items-center justify-between mb-2 px-2">
-        {!collapsed && <div className="text-sm font-semibold text-gray-700">Admin</div>}
-        <button onClick={toggleCollapsed} className="p-2 rounded hover:bg-gray-100 text-gray-600" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-          <FiChevronLeft className={`${collapsed ? 'rotate-180' : ''} transition-transform`} />
+    <aside className={`${collapsed ? 'w-16' : 'w-64'} bg-gradient-to-b from-white to-gray-50 border-r border-gray-200 min-h-screen p-3 transition-all duration-300 shadow-lg`}>
+      <div className="flex items-center justify-between mb-4 px-2">
+        {!collapsed && <div className="text-sm font-bold text-[#0B2545] tracking-wide">ADMIN PORTAL</div>}
+        <button 
+          onClick={toggleCollapsed} 
+          className="p-2 rounded-lg hover:bg-gradient-to-r hover:from-[#00A676] hover:to-[#008F64] hover:text-white text-gray-600 transition-all duration-200 hover:shadow-md" 
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <FiChevronLeft className={`${collapsed ? 'rotate-180' : ''} transition-transform duration-300`} />
         </button>
       </div>
-      <nav className="space-y-1">
+      <nav className="space-y-2">
         {links.map(link => (
           <Link
             key={link.href}
             href={link.href}
-            className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+            className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
               pathname === link.href
-                ? 'bg-[#00A676] text-white font-semibold'
-                : 'hover:bg-gray-100 text-gray-700'
+                ? 'bg-gradient-to-r from-[#00A676] to-[#008F64] text-white font-semibold shadow-md transform scale-105'
+                : 'hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 text-gray-700 hover:shadow-sm hover:translate-x-1'
             }`}
           >
             <span className="text-xl shrink-0">{link.icon}</span>
@@ -59,10 +61,14 @@ export default function AdminSidebar() {
         ))}
       </nav>
       {!collapsed && (
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <div className="text-xs font-semibold text-blue-900 mb-1">Quick Actions</div>
-          <Link href="/" className="text-sm text-blue-600 hover:underline block">View Public Site</Link>
-          <Link href="/dashboard" className="text-sm text-blue-600 hover:underline block mt-1">User Dashboard</Link>
+        <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-inner border border-blue-100">
+          <div className="text-xs font-bold text-blue-900 mb-2 tracking-wide">QUICK ACTIONS</div>
+          <Link href="/" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+            <span>🌐</span> View Public Site
+          </Link>
+          <Link href="/dashboard" className="text-sm text-blue-700 hover:text-blue-900 hover:underline mt-2 transition-colors duration-150 flex items-center gap-2">
+            <span>📊</span> User Dashboard
+          </Link>
         </div>
       )}
     </aside>
