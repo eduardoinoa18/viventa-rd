@@ -22,16 +22,15 @@ export default function AdminPage() {
   })
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/admin/stats').then(r => r.json()),
-      fetch('/api/admin/users').then(r => r.json()),
-    ]).then(([statsRes, usersRes]) => {
-      const baseStats = statsRes?.ok ? statsRes.data : {}
-      const users = usersRes?.ok ? usersRes.data : []
-      const agents = users.filter((u: any) => u.role === 'agent').length
-      const brokers = users.filter((u: any) => u.role === 'broker').length
-      setStats({ ...baseStats, totalAgents: agents, totalBrokers: brokers, pendingApplications: baseStats.pendingApplications || 0 })
-    }).catch(() => {})
+    fetch('/api/admin/stats')
+      .then(r => r.json())
+      .then((statsRes) => {
+        const baseStats = statsRes?.ok ? statsRes.data : {}
+        const agents = baseStats.roleCounts?.agents ?? 0
+        const brokers = baseStats.roleCounts?.brokers ?? 0
+        setStats({ ...baseStats, totalAgents: agents, totalBrokers: brokers, pendingApplications: baseStats.pendingApplications || 0 })
+      })
+      .catch(() => {})
   }, [])
 
   return (
@@ -43,10 +42,10 @@ export default function AdminPage() {
           <h1 className="text-3xl font-bold text-[#0B2545] mb-6">Master Admin Dashboard</h1>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <AdminWidget title="Total Users" value={stats.totalUsers} icon={<FiUsers />} subtitle="Active in system" />
+            <AdminWidget title="Total Users" value={stats.totalUsers} icon={<FiUsers />} subtitle="All roles" />
             <AdminWidget title="Active Listings" value={stats.activeListings} icon={<FiHome />} subtitle="Published" />
             <AdminWidget title="Monthly Revenue" value={`$${stats.monthlyRevenueUSD.toLocaleString()}`} icon={<FiDollarSign />} subtitle="USD" />
-            <AdminWidget title="Pending Approvals" value={stats.pendingApprovals} icon={<FiClock />} subtitle="Awaiting review" />
+            <AdminWidget title="Pending Listings" value={stats.pendingApprovals} icon={<FiClock />} subtitle="Awaiting review" />
           </div>
 
           {/* Professional Onboarding Stats */}

@@ -9,11 +9,28 @@ export async function GET() {
     // Prefer Admin SDK for accurate counts without client auth
     const adminDb = getAdminDb()
     if (adminDb) {
-      const usersSnap = await adminDb.collection('users').get()
-      const activePropsSnap = await adminDb.collection('properties').where('status', '==', 'active').get()
-      const pendingPropsSnap = await adminDb.collection('properties').where('status', '==', 'pending').get()
-      const leadsSnap = await adminDb.collection('leads').get()
-      const applicationsSnap = await adminDb.collection('applications').where('status', '==', 'pending').get()
+      const [
+        usersSnap,
+        activePropsSnap,
+        pendingPropsSnap,
+        leadsSnap,
+        applicationsSnap,
+        agentsSnap,
+        brokersSnap,
+        regularUsersSnap,
+        adminsSnap,
+      ] = await Promise.all([
+        adminDb.collection('users').get(),
+        adminDb.collection('properties').where('status', '==', 'active').get(),
+        adminDb.collection('properties').where('status', '==', 'pending').get(),
+        adminDb.collection('leads').get(),
+        adminDb.collection('applications').where('status', '==', 'pending').get(),
+        adminDb.collection('users').where('role', '==', 'agent').get(),
+        adminDb.collection('users').where('role', '==', 'broker').get(),
+        adminDb.collection('users').where('role', '==', 'user').get(),
+        adminDb.collection('users').where('role', 'in', ['admin','master_admin']).get(),
+      ])
+
       return NextResponse.json({
         ok: true,
         data: {
@@ -23,6 +40,12 @@ export async function GET() {
           leads: leadsSnap.size || 0,
           monthlyRevenueUSD: 0,
           pendingApplications: applicationsSnap.size || 0,
+          roleCounts: {
+            agents: agentsSnap.size || 0,
+            brokers: brokersSnap.size || 0,
+            users: regularUsersSnap.size || 0,
+            admins: adminsSnap.size || 0,
+          }
         },
       })
     }
@@ -82,6 +105,7 @@ export async function GET() {
     // Monthly revenue placeholder (integrate Stripe later)
     const monthlyRevenueUSD = 0
 
+    // Role counts with client SDK are heavier; skip in fallback to avoid complex indexes
     return NextResponse.json({
       ok: true,
       data: {

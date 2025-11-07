@@ -8,11 +8,13 @@ import CreateProfessionalModal from '../../../components/CreateProfessionalModal
 import { db } from '../../../lib/firebaseClient'
 import { collection, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore'
 import { FiUserPlus, FiCheck, FiX, FiEdit, FiTrash2 } from 'react-icons/fi'
+import AdminUserDetailsModal from '../../../components/AdminUserDetailsModal'
 import toast from 'react-hot-toast'
 
 export default function AdminAgentsPage() {
   const [agents, setAgents] = useState<any[]>([])
   const [showModal, setShowModal] = useState(false)
+  const [selected, setSelected] = useState<any | null>(null)
 
   useEffect(() => {
     load()
@@ -167,6 +169,14 @@ export default function AdminAgentsPage() {
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setSelected(a)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                            title="View/Edit"
+                            aria-label="View or edit agent"
+                          >
+                            <FiEdit size={18} />
+                          </button>
                           {a.status === 'pending' && (
                             <>
                               <button
@@ -203,6 +213,28 @@ export default function AdminAgentsPage() {
               </tbody>
             </table>
           </div>
+
+          {selected && (
+            <AdminUserDetailsModal
+              user={{
+                id: selected.id,
+                uid: selected.uid || selected.id,
+                name: selected.name,
+                email: selected.email,
+                phone: selected.phone,
+                role: 'agent',
+                status: selected.status || 'pending',
+                company: selected.company,
+                brokerage: selected.brokerage,
+                emailVerified: selected.emailVerified,
+                verified: selected.verified,
+                professionalCode: selected.professionalCode || selected.agentCode,
+                agentCode: selected.agentCode,
+              }}
+              onClose={() => setSelected(null)}
+              onSaved={() => { setSelected(null); load(); }}
+            />
+          )}
         </main>
       </div>
     </ProtectedClient>
