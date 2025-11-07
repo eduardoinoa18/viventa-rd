@@ -6,27 +6,43 @@ import BottomNav from '../components/BottomNav';
 import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import StructuredData from '../components/StructuredData';
-import FeaturedProperties from '../components/FeaturedProperties';
 import { useState, useEffect } from 'react';
 import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock, FiTrendingUp, FiStar } from 'react-icons/fi'
 
-const properties = [
-  { id: 1, title: "Luxury Villa in Santo Domingo", price: 350000, type: "Villa", lat: 18.4861, lng: -69.9312, img: "/demo1.jpg", city: "Santo Domingo", neighborhood: "Piantini", beds: 3, baths: 2, sqft: 180 },
-  { id: 2, title: "Modern Apartment in Punta Cana", price: 220000, type: "Apartment", lat: 18.5818, lng: -68.4043, img: "/demo2.jpg", city: "Punta Cana", neighborhood: "Bávaro", beds: 2, baths: 2, sqft: 120 },
-  { id: 3, title: "Cozy Beach House", price: 450000, type: "House", lat: 19.757, lng: -70.517, img: "/demo3.jpg", city: "Santiago", neighborhood: "Los Jardines", beds: 4, baths: 3, sqft: 220 },
-];
+type Property = {
+  id: string;
+  listingId?: string;
+  title: string;
+  price: number;
+  currency?: string;
+  propertyType?: string;
+  city?: string;
+  neighborhood?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  area?: number;
+  images?: string[];
+  location?: string;
+};
 
-const topAgents = [
-  { id: 'a1', photo: '/agent1.jpg', name: 'María López', area: 'Santo Domingo', rating: 4.9 },
-  { id: 'a2', photo: '/agent2.jpg', name: 'Carlos Pérez', area: 'Punta Cana', rating: 5.0 },
-  { id: 'a3', photo: '/agent3.jpg', name: 'Ana García', area: 'Santiago', rating: 4.8 },
-  { id: 'a4', photo: '/agent4.jpg', name: 'Luis Rodríguez', area: 'La Romana', rating: 4.7 },
-];
+type Agent = {
+  id: string;
+  name: string;
+  photo?: string;
+  area?: string;
+  email?: string;
+  phone?: string;
+  agentCode?: string;
+  rating?: number;
+};
 
 export default function HomePage() {
-  const user = undefined as any;
   const [filters, setFilters] = useState({ location: "", type: "", minPrice: "", maxPrice: "" });
-  const [stats, setStats] = useState<any>(null)
+  const [stats, setStats] = useState<any>(null);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [topAgents, setTopAgents] = useState<Agent[]>([]);
+  const [loadingProps, setLoadingProps] = useState(true);
+  const [loadingAgents, setLoadingAgents] = useState(true);
 
   useEffect(() => {
     fetch('/api/stats/homepage')
@@ -35,11 +51,69 @@ export default function HomePage() {
       .catch(() => {})
   }, [])
 
+  // Load active properties
+  useEffect(() => {
+    setLoadingProps(true)
+    fetch('/api/properties')
+      .then(r => r.json())
+      .then(data => {
+        const list: Property[] = (data.properties || []).map((p: any) => ({
+          id: p.id,
+          listingId: p.listingId,
+          title: p.title || p.name || 'Propiedad',
+          price: p.price || 0,
+          currency: p.currency || 'USD',
+          propertyType: p.propertyType || p.type,
+          city: p.city,
+          neighborhood: p.neighborhood,
+          bedrooms: p.bedrooms,
+          bathrooms: p.bathrooms,
+          area: p.area,
+          images: p.images || [],
+          location: p.location,
+        }))
+        setProperties(list)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingProps(false))
+  }, [])
+
+  // Load approved agents
+  useEffect(() => {
+    setLoadingAgents(true)
+    fetch('/api/admin/users?role=agent')
+      .then(r => r.json())
+      .then(data => {
+        const agents: Agent[] = (data.data || [])
+          .filter((u: any) => u.status === 'active' && (u.verified || u.emailVerified))
+          .map((u: any) => ({
+            id: u.id,
+            name: u.name || u.displayName || 'Agente',
+            photo: u.photoURL || u.photo || u.profileImage,
+            area: u.city || u.area,
+            email: u.email,
+            phone: u.phone,
+            agentCode: u.professionalCode || u.agentCode,
+            rating: 4.8,
+          }))
+        setTopAgents(agents)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingAgents(false))
+  }, [])
+
   const filtered = properties.filter((p) => {
-    const matchesType = filters.type ? p.type === filters.type : true;
+    const matchesType = filters.type ? (p.propertyType === filters.type) : true;
     const matchesMin = filters.minPrice ? p.price >= parseInt(filters.minPrice) : true;
     const matchesMax = filters.maxPrice ? p.price <= parseInt(filters.maxPrice) : true;
-    return matchesType && matchesMin && matchesMax;
+    const matchesLocation = filters.location
+      ? (
+          (p.city || '').toLowerCase().includes(filters.location.toLowerCase()) ||
+          (p.neighborhood || '').toLowerCase().includes(filters.location.toLowerCase()) ||
+          (p.location || '').toLowerCase().includes(filters.location.toLowerCase())
+        )
+      : true;
+    return matchesType && matchesMin && matchesMax && matchesLocation;
   });
 
   // Structured data for organization
@@ -209,26 +283,15 @@ export default function HomePage() {
 
             {/* RIGHT — Properties */}
             <div className="lg:w-2/3">
-              {/* Quick Stats — removed per request to simplify the homepage */}
-              {!user && (
-                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2 text-yellow-800">
-                  <FiLock className="text-lg" />
-                  <p className="text-sm">
-                    <strong>Inicia sesión</strong> para guardar favoritos y ver más detalles
-                  </p>
-                </div>
-              )}
-
               {/* Properties Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                {filtered.map((p) => (
+                {loadingProps && (
+                  <div className="col-span-2 text-center text-gray-500">Cargando propiedades...</div>
+                )}
+                {!loadingProps && filtered.map((p) => (
                   <PropertyCard 
                     key={p.id} 
-                    property={{
-                      ...p,
-                      price_usd: p.price,
-                      image: p.img
-                    }} 
+                    property={p}
                   />
                 ))}
               </div>
@@ -248,8 +311,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Featured Properties Section */}
-        <FeaturedProperties />
+  {/* Featured Properties Section removed; showing dynamic grid above */}
 
         {/* Top Agents */}
         <section className="bg-gradient-to-br from-viventa-sand/30 to-white py-12 md:py-16">

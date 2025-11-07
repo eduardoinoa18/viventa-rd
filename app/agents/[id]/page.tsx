@@ -2,20 +2,47 @@
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
 import { notFound, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { FiArrowLeft, FiMail, FiPhone, FiStar, FiMapPin } from 'react-icons/fi'
-
-const agents = [
-  { id: 'a1', photo: '/agent1.jpg', name: 'María López', area: 'Santo Domingo', rating: 4.9, bio: 'Especialista en propiedades de lujo en Santo Domingo. Más de 10 años de experiencia.', phone: '+1 809 555 0101', email: 'maria@viventa.com' },
-  { id: 'a2', photo: '/agent2.jpg', name: 'Carlos Pérez', area: 'Punta Cana', rating: 5.0, bio: 'Experto en inversiones turísticas en Punta Cana y Bávaro.', phone: '+1 809 555 0102', email: 'carlos@viventa.com' },
-  { id: 'a3', photo: '/agent3.jpg', name: 'Ana García', area: 'Santiago', rating: 4.8, bio: 'Agente con amplia red en la región del Cibao.', phone: '+1 809 555 0103', email: 'ana@viventa.com' },
-  { id: 'a4', photo: '/agent4.jpg', name: 'Luis Rodríguez', area: 'La Romana', rating: 4.7, bio: 'Conocedor profundo del mercado en La Romana y Casa de Campo.', phone: '+1 809 555 0104', email: 'luis@viventa.com' },
-]
+import { db } from '@/lib/firebaseClient'
+import { doc, getDoc } from 'firebase/firestore'
 
 export default function AgentDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const agent = agents.find(a => a.id === params.id)
-  
-  if (!agent) notFound()
+  const [agent, setAgent] = useState<any | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchAgent() {
+      try {
+        const ref = doc(db, 'users', params.id)
+        const snap = await getDoc(ref)
+        if (!snap.exists()) {
+          setAgent(null)
+        } else {
+          const data = snap.data()
+          if (data.role !== 'agent' || data.status !== 'active') {
+            setAgent(null)
+          } else {
+            setAgent({
+              id: snap.id,
+              ...data,
+              photo: data.profileImage || data.avatar || '/agent-placeholder.jpg',
+              area: data.areas || data.markets || data.city || 'República Dominicana',
+              rating: data.rating || 4.5,
+            })
+          }
+        }
+      } catch (e) {
+        setAgent(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAgent()
+  }, [params.id])
+
+  if (!loading && !agent) notFound()
 
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">

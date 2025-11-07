@@ -312,8 +312,9 @@ export default function EditPropertyPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-title">Título *</label>
                     <input
+                      id="edit-title"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
                       placeholder="Ej: Hermoso Apartamento en Piantini"
                       value={form.title || ''}
@@ -323,14 +324,16 @@ export default function EditPropertyPage() {
                   </div>
 
                   <div>
-                    <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1">
+                    <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1" htmlFor="edit-price">
                       <FiDollarSign className="text-gray-400" />
                       Precio ({currency === 'USD' ? 'USD $' : 'DOP RD$'}) *
                     </label>
                     <div className="grid grid-cols-3 gap-3">
                       <input
+                        id="edit-price"
                         className="col-span-2 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
                         type="number"
+                        placeholder="250000"
                         value={form.price || ''}
                         onChange={e=>setForm({...form, price: Number(e.target.value)})}
                         required
@@ -348,10 +351,12 @@ export default function EditPropertyPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Área (m²) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-area">Área (m²) *</label>
                     <input
+                      id="edit-area"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
                       type="number"
+                      placeholder="120"
                       value={form.area || ''}
                       onChange={e=>setForm({...form, area: Number(e.target.value)})}
                       required
@@ -359,11 +364,13 @@ export default function EditPropertyPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Habitaciones *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-bedrooms">Habitaciones *</label>
                     <input
+                      id="edit-bedrooms"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
                       type="number"
                       min="0"
+                      placeholder="3"
                       value={form.bedrooms || ''}
                       onChange={e=>setForm({...form, bedrooms: Number(e.target.value)})}
                       required
@@ -371,12 +378,14 @@ export default function EditPropertyPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Baños *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-bathrooms">Baños *</label>
                     <input
+                      id="edit-bathrooms"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
                       type="number"
                       min="0"
                       step="0.5"
+                      placeholder="2"
                       value={form.bathrooms || ''}
                       onChange={e=>setForm({...form, bathrooms: Number(e.target.value)})}
                       required
@@ -424,26 +433,32 @@ export default function EditPropertyPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación Completa *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-location">Ubicación Completa *</label>
                     <input
+                      id="edit-location"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      placeholder="Calle Principal #123, Piantini"
                       value={form.location || ''}
                       onChange={e=>setForm({...form, location: e.target.value})}
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-city">Ciudad</label>
                     <input
+                      id="edit-city"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      placeholder="Santo Domingo"
                       value={form.city || ''}
                       onChange={e=>setForm({...form, city: e.target.value})}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Sector/Barrio</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-neighborhood">Sector/Barrio</label>
                     <input
+                      id="edit-neighborhood"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      placeholder="Piantini"
                       value={form.neighborhood || ''}
                       onChange={e=>setForm({...form, neighborhood: e.target.value})}
                     />
@@ -459,13 +474,15 @@ export default function EditPropertyPage() {
                 </h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1" htmlFor="edit-publicRemarks">
                       <FiEye className="text-[#00A676]" />
                       Notas Públicas * (mínimo 50 caracteres)
                     </label>
                     <textarea
+                      id="edit-publicRemarks"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
                       rows={6}
+                      placeholder="Describe la propiedad, ubicación, características destacadas..."
                       value={form.publicRemarks || ''}
                       onChange={e=>setForm({...form, publicRemarks: e.target.value})}
                       required
@@ -476,13 +493,15 @@ export default function EditPropertyPage() {
                   </div>
 
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1" htmlFor="edit-professionalRemarks">
                       <FiLock className="text-orange-500" />
                       Notas Profesionales (Privado)
                     </label>
                     <textarea
+                      id="edit-professionalRemarks"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 bg-orange-50"
                       rows={4}
+                      placeholder="Notas internas solo visibles para profesionales..."
                       value={form.professionalRemarks || ''}
                       onChange={e=>setForm({...form, professionalRemarks: e.target.value})}
                     />
@@ -604,17 +623,21 @@ export default function EditPropertyPage() {
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4">Configuración</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ID del Agente</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-agentId">ID del Agente</label>
                     <input
+                      id="edit-agentId"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      placeholder="abc123"
                       value={form.agentId || ''}
                       onChange={e=>setForm({...form, agentId: e.target.value})}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Agente</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-agentName">Nombre del Agente</label>
                     <input
+                      id="edit-agentName"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      placeholder="Juan Pérez"
                       value={form.agentName || ''}
                       onChange={e=>setForm({...form, agentName: e.target.value})}
                     />
