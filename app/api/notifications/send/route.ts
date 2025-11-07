@@ -119,11 +119,21 @@ export async function GET(req: NextRequest) {
       personalQuery = personalQuery.where('read', '==', false)
     }
 
+    // Build broadcast audience filters
+    const broadcastAudiences = new Set<string>(['all'])
+    if (role) {
+      broadcastAudiences.add(role)
+      if (role === 'admin' || role === 'master_admin') {
+        broadcastAudiences.add('admin')
+        broadcastAudiences.add('master_admin')
+      }
+    }
+
     const [personalSnap, broadcastSnap] = await Promise.all([
       personalQuery.get(),
       adminDb
         .collection('notifications')
-        .where('audience', 'array-contains-any', [role, 'all', role === 'admin' ? 'admin' : null].filter(Boolean))
+        .where('audience', 'array-contains-any', Array.from(broadcastAudiences))
         .orderBy('createdAt', 'desc')
         .limit(50)
         .get()

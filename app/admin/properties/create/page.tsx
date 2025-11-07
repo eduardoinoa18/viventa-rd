@@ -609,6 +609,7 @@ export default function CreatePropertyPage() {
                         id="propertyImages"
                         type="file"
                         accept="image/jpeg,image/jpg,image/png,image/webp"
+                        multiple
                         onChange={(e) => onFileSelect(e.target.files)}
                         aria-label="Seleccionar imágenes de la propiedad"
                         className="flex-1 px-4 py-3 border border-gray-300 rounded-lg"
@@ -616,7 +617,12 @@ export default function CreatePropertyPage() {
                       <button
                         type="button"
                         onClick={uploadSelected}
-                        disabled={uploading || selectedFiles.length === 0}
+                        disabled={
+                          uploading ||
+                          selectedFiles.length === 0 ||
+                          (form.images?.length || 0) >= 10 ||
+                          ((form.images?.length || 0) + selectedFiles.length) > 10
+                        }
                         className="px-6 py-3 bg-[#00A676] text-white rounded-lg font-medium hover:bg-[#008F64] disabled:opacity-50"
                         data-testid="create-upload"
                       >
@@ -640,7 +646,11 @@ export default function CreatePropertyPage() {
                         ))}
                       </div>
                     )}
-                    <div className="text-xs text-gray-500">Formatos: JPG/PNG/WebP • Máx 5MB c/u • Hasta 10 imágenes</div>
+                    <div className="text-xs text-gray-500">Formatos: JPG/PNG/WebP • Máx 5MB c/u • Hasta 10 imágenes
+                      {Boolean(form.images?.length) && (
+                        <span> • Actualmente: {form.images?.length || 0}/10</span>
+                      )}
+                    </div>
                   </div>
                   
                   {form.images && form.images.length > 0 && (
