@@ -377,6 +377,12 @@ export default function AdminPropertiesPage() {
                                 </button>
                               </>
                             )}
+                            <Link
+                              href={`/admin/properties/${l.id}/edit`}
+                              className="inline-flex items-center justify-center gap-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                            >
+                              <FiEdit /> Editar
+                            </Link>
                             <a
                               href={`/listing/${l.id}`}
                               target="_blank"
@@ -464,6 +470,12 @@ export default function AdminPropertiesPage() {
                               </>
                             )}
                             <div className="flex gap-2">
+                              <Link
+                                href={`/admin/properties/${l.id}/edit`}
+                                className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm whitespace-nowrap"
+                              >
+                                <FiEdit /> Editar
+                              </Link>
                               <a
                                 href={`/listing/${l.id}`}
                                 target="_blank"

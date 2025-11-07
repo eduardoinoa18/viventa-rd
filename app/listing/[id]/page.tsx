@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { db, auth } from '../../../lib/firebaseClient'
-import { doc, getDoc, updateDoc, increment } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, increment, query, where, collection, getDocs } from 'firebase/firestore'
 import { useParams } from 'next/navigation'
 import Head from 'next/head'
 import Header from '../../../components/Header'
@@ -45,20 +45,27 @@ export default function ListingDetail(){
     if(!id) return
     setLoading(true)
     getDoc(doc(db,'properties',id as string))
-      .then((snap: any)=> { 
+      .then(async (snap: any)=> { 
         if(snap.exists()) {
-          setListing({...snap.data(), id: snap.id})
+          const data = snap.data()
+          setListing({...data, id: snap.id})
           // Increment view count
-          updateDoc(doc(db,'properties',id as string), {
-            views: increment(1)
-          }).catch((err: any) => console.error('Error updating views:', err))
+          updateDoc(doc(db,'properties',id as string), { views: increment(1) }).catch((err: any) => console.error('Error updating views:', err))
           // Track listing view
           const user = auth.currentUser
-          trackListingView(id as string, {
-            title: snap.data().title,
-            price: snap.data().price,
-            city: snap.data().city,
-          }, user?.uid, user?.uid ? 'user' : null)
+          trackListingView(id as string, { title: data.title, price: data.price, city: data.city }, user?.uid, user?.uid ? 'user' : null)
+        } else {
+          // Fallback: lookup by listingId field
+          const q = query(collection(db, 'properties'), where('listingId', '==', id))
+          const qs = await getDocs(q)
+          if (!qs.empty) {
+            const d = qs.docs[0]
+            const data = d.data()
+            setListing({ ...data, id: d.id })
+            updateDoc(doc(db,'properties',d.id), { views: increment(1) }).catch((err: any) => console.error('Error updating views:', err))
+            const user = auth.currentUser
+            trackListingView(d.id, { title: data.title, price: data.price, city: data.city }, user?.uid, user?.uid ? 'user' : null)
+          }
         }
       })
       .finally(() => setLoading(false))
