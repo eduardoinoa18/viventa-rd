@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getCountFromServer, query, where } from 'firebase/firestore'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { Timestamp as AdminTimestamp } from 'firebase-admin/firestore'
 
 export async function GET() {
   try {
@@ -46,20 +47,20 @@ export async function GET() {
         adminDb.collection('users').where('role', 'in', ['admin','master_admin']).get(),
         // DAU
         adminDb.collection('analytics_events')
-          .where('timestamp', '>=', yesterday)
+          .where('timestamp', '>=', AdminTimestamp.fromDate(new Date(Date.now() - 24 * 60 * 60 * 1000)))
           .get(),
         // WAU
         adminDb.collection('analytics_events')
-          .where('timestamp', '>=', sevenDaysAgo)
+          .where('timestamp', '>=', AdminTimestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)))
           .get(),
         // MAU
         adminDb.collection('analytics_events')
-          .where('timestamp', '>=', thirtyDaysAgo)
+          .where('timestamp', '>=', AdminTimestamp.fromDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)))
           .get(),
         // Property views (last 30 days)
         // NOTE: Avoid composite index by querying by timestamp only and filtering in-memory
         adminDb.collection('analytics_events')
-          .where('timestamp', '>=', thirtyDaysAgo)
+          .where('timestamp', '>=', AdminTimestamp.fromDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)))
           .get(),
         // Contact submissions
         adminDb.collection('contacts').get(),

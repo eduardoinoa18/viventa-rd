@@ -4,7 +4,7 @@ export const revalidate = 0
 export const fetchCache = 'default-no-store'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
-import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore'
+import { collection, getDocs, query, where, limit, orderBy, Timestamp } from 'firebase/firestore'
 
 type Property = {
   id: string
@@ -39,7 +39,7 @@ async function getUserPreferences(userId: string) {
     const q = query(
       eventsRef,
       where('userId', '==', userId),
-      where('timestamp', '>=', ninetyDaysAgo.toISOString()),
+      where('timestamp', '>=', Timestamp.fromDate(ninetyDaysAgo)),
       orderBy('timestamp', 'desc'),
       limit(200)
     )
@@ -111,7 +111,7 @@ async function getUserBehavior(userId: string) {
     const q = query(
       eventsRef,
       where('userId', '==', userId),
-      where('timestamp', '>=', thirtyDaysAgo.toISOString()),
+      where('timestamp', '>=', Timestamp.fromDate(thirtyDaysAgo)),
       orderBy('timestamp', 'desc'),
       limit(100)
     )
@@ -212,8 +212,37 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Not authenticated' }, { status: 401 })
     }
 
-    const prefs = await getUserPreferences(uid)
-    const behavior = await getUserBehavior(uid)
+    // Simple per-user cache (5 minutes TTL) and rate limit (30 req / 5 min)
+    const now = Date.now()
+    const ttlMs = 5 * 60 * 1000
+    const maxReq = 30
+    const windowMs = 5 * 60 * 1000
+
+    // @ts-ignore - module scoped caches
+    ;(globalThis as any).__recCache = (globalThis as any).__recCache || new Map<string, { data: any; expires: number }>()
+    // @ts-ignore
+    ;(globalThis as any).__recRL = (globalThis as any).__recRL || new Map<string, number[]>()
+
+    const cache: Map<string, { data: any; expires: number }> = (globalThis as any).__recCache
+    const rl: Map<string, number[]> = (globalThis as any).__recRL
+
+    // Rate limit sliding window
+    const times = rl.get(uid) || []
+    const recent = times.filter(t => now - t < windowMs)
+    if (recent.length >= maxReq) {
+      return NextResponse.json({ ok: false, error: 'Rate limit exceeded' }, { status: 429 })
+    }
+    recent.push(now)
+    rl.set(uid, recent)
+
+    // Cache hit
+    const hit = cache.get(uid)
+    if (hit && hit.expires > now) {
+      return NextResponse.json(hit.data)
+    }
+
+  const prefs = await getUserPreferences(uid)
+  const behavior = await getUserBehavior(uid)
 
     // Fetch active properties
     let properties: Property[] = []
@@ -284,7 +313,7 @@ export async function GET(req: NextRequest) {
 
     const recommendations = scored.slice(0, 12)
 
-    return NextResponse.json({
+    const payload = {
       ok: true,
       recommendations,
       preferences: prefs,
@@ -292,7 +321,12 @@ export async function GET(req: NextRequest) {
         `Encontramos ${recommendations.length} propiedades que coinciden con tus preferencias`,
         `Basado en tu actividad, te recomendamos propiedades en ${prefs.preferredCities.join(', ')}`,
       ]
-    })
+    }
+
+    // Save to cache
+    cache.set(uid, { data: payload, expires: now + ttlMs })
+
+    return NextResponse.json(payload)
   } catch (e: any) {
     console.error('recommendations GET error', e)
     return NextResponse.json({ ok: false, error: 'Failed to get recommendations' }, { status: 500 })
