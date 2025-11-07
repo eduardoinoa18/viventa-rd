@@ -136,15 +136,15 @@ function SearchPageContent() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 pb-20 md:pb-0">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-[#0B2545] mb-2">Buscar propiedades</h1>
             <p className="text-gray-600">Encuentra tu propiedad ideal en República Dominicana</p>
           </div>
 
-          {/* Advanced Filters Button */}
-          <div className="mb-6 flex items-center gap-4">
+          {/* Advanced Filters Button - Positioned higher on mobile */}
+          <div className="mb-8 flex items-center gap-4">
             <AdvancedFilters 
               onApply={handleAdvancedFilters}
               initialFilters={{
@@ -156,7 +156,7 @@ function SearchPageContent() {
                 city: filters.city,
               }}
             />
-            <div className="text-sm text-gray-600">
+            <div className="hidden md:block text-sm text-gray-600">
               Usa filtros avanzados para una búsqueda más específica
             </div>
           </div>
