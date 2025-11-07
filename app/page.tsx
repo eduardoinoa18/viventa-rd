@@ -83,16 +83,17 @@ export default function HomePage() {
       .finally(() => setLoadingProps(false))
   }, [])
 
-  // Load agents (prefer verified, but fallback to active; prefer agents with active listings)
+  // Load agents (prefer verified, but fallback to active; prefer agents with active listings; must be approved)
   useEffect(() => {
     setLoadingAgents(true)
     fetch('/api/admin/users?role=agent')
       .then(r => r.json())
       .then(data => {
         const all: any[] = data?.data || []
-        const verifiedActive = all.filter((u: any) => u.status === 'active' && (u.verified || u.emailVerified))
-        const activeOnly = all.filter((u: any) => u.status === 'active')
-        const preferred = verifiedActive.length ? verifiedActive : activeOnly
+        // Filter for active, approved agents (with email verification preference)
+        const verifiedActive = all.filter((u: any) => u.status === 'active' && u.approved === true && (u.verified || u.emailVerified))
+        const activeApproved = all.filter((u: any) => u.status === 'active' && u.approved === true)
+        const preferred = verifiedActive.length ? verifiedActive : activeApproved
 
         // Prefer agents who currently have active listings on the site (derived from loaded properties)
         const activeAgentIds = new Set((properties || []).map((p) => p.agentId).filter(Boolean) as string[])

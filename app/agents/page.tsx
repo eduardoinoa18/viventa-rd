@@ -20,13 +20,14 @@ export default function AgentsPage() {
   async function loadAgents() {
     try {
       setLoading(true)
-      // Fetch all active agents from Firestore
-      const q = query(
+      // Fetch all active AND approved agents from Firestore
+      const agentsQuery = query(
         collection(db, 'users'),
         where('role', '==', 'agent'),
-        where('status', '==', 'active')
+        where('status', '==', 'active'),
+        where('approved', '==', true)
       )
-      const snapshot = await getDocs(q)
+      const snapshot = await getDocs(agentsQuery)
       const agentsList = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data(),
@@ -36,8 +37,34 @@ export default function AgentsPage() {
         rating: doc.data().rating || 4.5,
       }))
       setAgents(agentsList)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading agents:', error)
+      // If compound index doesn't exist, fall back to filtering client-side
+      if (error.message?.includes('index')) {
+        console.warn('Missing composite index, filtering client-side')
+        try {
+          const basicQuery = query(
+            collection(db, 'users'),
+            where('role', '==', 'agent')
+          )
+          const snapshot = await getDocs(basicQuery)
+          const agentsList = snapshot.docs
+            .filter((doc: any) => {
+              const data = doc.data()
+              return data.status === 'active' && data.approved === true
+            })
+            .map((doc: any) => ({
+              id: doc.id,
+              ...doc.data(),
+              photo: doc.data().profileImage || doc.data().avatar || '/agent-placeholder.jpg',
+              area: doc.data().areas || doc.data().markets || doc.data().city || 'República Dominicana',
+              rating: doc.data().rating || 4.5,
+            }))
+          setAgents(agentsList)
+        } catch (fallbackError) {
+          console.error('Fallback query also failed:', fallbackError)
+        }
+      }
     } finally {
       setLoading(false)
     }

@@ -132,7 +132,13 @@ function AdminInboxPageContent() {
     setLoadingConvos(true)
     try {
       const res = await fetch('/api/admin/inbox?tab=chat')
-      if (!res.ok) throw new Error('Failed to load conversations')
+      if (!res.ok) {
+        if (res.status === 401) {
+          console.warn('Unauthorized - session may have expired')
+          return
+        }
+        throw new Error('Failed to load conversations')
+      }
       const data = await res.json()
       const convs = data.conversations.map((c: any) => ({
         ...c,
@@ -142,7 +148,7 @@ function AdminInboxPageContent() {
       setConversations(convs)
     } catch (e) {
       console.error('Failed to load conversations', e)
-      toast.error('Failed to load conversations')
+      // Don't show toast on polling failures to avoid spam
     } finally {
       setLoadingConvos(false)
     }
@@ -226,7 +232,13 @@ function AdminInboxPageContent() {
     setLoadingNotifications(true)
     try {
       const res = await fetch('/api/admin/inbox?tab=notifications')
-      if (!res.ok) throw new Error('Failed to load notifications')
+      if (!res.ok) {
+        if (res.status === 401) {
+          console.warn('Unauthorized - session may have expired')
+          return
+        }
+        throw new Error('Failed to load notifications')
+      }
       const data = await res.json()
       const notifs = data.notifications.map((n: any) => ({
         ...n,
@@ -262,7 +274,7 @@ function AdminInboxPageContent() {
       setWaitlist(combined)
     } catch (e) {
       console.error('Failed to load notifications', e)
-      toast.error('Failed to load notifications')
+      // Don't show toast to avoid spam on errors
     } finally {
       setLoadingNotifications(false)
     }
