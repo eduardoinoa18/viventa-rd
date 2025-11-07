@@ -21,13 +21,14 @@ export default function BrokersPage() {
   async function loadBrokers() {
     try {
       setLoading(true)
-      // Fetch all active brokers from Firestore
-      const q = query(
+      // Fetch all active AND approved brokers from Firestore
+      const brokersQuery = query(
         collection(db, 'users'),
         where('role', '==', 'broker'),
-        where('status', '==', 'active')
+        where('status', '==', 'active'),
+        where('approved', '==', true)
       )
-      const snapshot = await getDocs(q)
+      const snapshot = await getDocs(brokersQuery)
       const brokersList = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data(),
@@ -38,8 +39,35 @@ export default function BrokersPage() {
         teamSize: doc.data().teamSize || doc.data().agents || 0,
       }))
       setBrokers(brokersList)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading brokers:', error)
+      // If compound index doesn't exist, fall back to filtering client-side
+      if (error.message?.includes('index')) {
+        console.warn('Missing composite index, filtering client-side')
+        try {
+          const basicQuery = query(
+            collection(db, 'users'),
+            where('role', '==', 'broker')
+          )
+          const snapshot = await getDocs(basicQuery)
+          const brokersList = snapshot.docs
+            .filter((doc: any) => {
+              const data = doc.data()
+              return data.status === 'active' && data.approved === true
+            })
+            .map((doc: any) => ({
+              id: doc.id,
+              ...doc.data(),
+              photo: doc.data().companyLogo || doc.data().profileImage || '/brokerage-placeholder.jpg',
+              area: doc.data().areas || doc.data().markets || doc.data().city || 'República Dominicana',
+              rating: doc.data().rating || 4.7,
+              teamSize: doc.data().teamSize || doc.data().agents || 0,
+            }))
+          setBrokers(brokersList)
+        } catch (fallbackError) {
+          console.error('Fallback query also failed:', fallbackError)
+        }
+      }
     } finally {
       setLoading(false)
     }
