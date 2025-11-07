@@ -334,6 +334,7 @@ export default function AgentListingsPage() {
                     <button
                       onClick={() => handleDelete(listing.id)}
                       className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors"
+                      aria-label={`Eliminar ${listing.title}`}
                     >
                       <FiTrash2 />
                     </button>
@@ -344,6 +345,7 @@ export default function AgentListingsPage() {
                     <select
                       value={listing.status}
                       onChange={(e) => handleStatusChange(listing.id, e.target.value)}
+                      aria-label={`Cambiar estado de ${listing.title}`}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                     >
                       <option value="pending">Pendiente</option>

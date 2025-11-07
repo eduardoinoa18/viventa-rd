@@ -92,6 +92,7 @@ export default function PropertyInquiryForm({
           <button
             onClick={onClose}
             className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+            aria-label="Cerrar formulario"
           >
             <FiX className="text-2xl" />
           </button>
@@ -151,10 +152,11 @@ export default function PropertyInquiryForm({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="visit-date" className="block text-sm font-semibold text-gray-700 mb-2">
               Fecha preferida para visita (opcional)
             </label>
             <input
+              id="visit-date"
               type="date"
               value={formData.visitDate}
               onChange={(e) => setFormData({ ...formData, visitDate: e.target.value })}

@@ -275,6 +275,12 @@ export default function AdminPage() {
                 <FiUserPlus /> Review Applications
               </Link>
               <Link 
+                href="/admin/properties/create" 
+                className="px-6 py-3 bg-gradient-to-r from-[#00A6A6] to-[#00C896] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
+              >
+                <FiHome /> Create Listing
+              </Link>
+              <Link 
                 href="/admin/users" 
                 className="px-6 py-3 bg-gradient-to-r from-[#3BAFDA] to-[#2A9FC7] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
@@ -293,10 +299,16 @@ export default function AdminPage() {
                 <FiActivity /> Manage Leads
               </Link>
               <Link 
-                href="/social" 
+                href="/admin/people?invite=agent" 
                 className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
-                <FiUsers /> Social Network
+                <FiUsers /> Invite Agent
+              </Link>
+              <Link 
+                href="/admin/people?invite=broker" 
+                className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
+              >
+                <FiUsers /> Invite Broker
               </Link>
               <Link 
                 href="/admin/settings" 

@@ -248,6 +248,7 @@ export default function PeopleLeadsPage() {
                     <select
                       value={filter}
                       onChange={(e) => setFilter(e.target.value as any)}
+                      aria-label="Filter by status"
                       className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A676]"
                     >
                       <option value="all">All Status</option>
@@ -263,6 +264,7 @@ export default function PeopleLeadsPage() {
                     <select
                       value={sourceFilter}
                       onChange={(e) => setSourceFilter(e.target.value as any)}
+                      aria-label="Filter by source"
                       className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A676]"
                     >
                       <option value="all">All Sources</option>
@@ -323,6 +325,7 @@ export default function PeopleLeadsPage() {
                               <select
                                 value={lead.status || 'new'}
                                 onChange={(e) => handleStatusChange(lead.id, lead.source, e.target.value as LeadStatus)}
+                                aria-label={`Change status for ${lead.name}`}
                                 className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(lead.status || 'new')} focus:outline-none focus:ring-2 focus:ring-[#00A676]`}
                               >
                                 <option value="new">New</option>
@@ -396,6 +399,7 @@ export default function PeopleLeadsPage() {
                   setSelectedLead(null)
                 }}
                 className="text-gray-400 hover:text-gray-600"
+                aria-label="Close assign modal"
               >
                 <FiX className="w-5 h-5" />
               </button>
@@ -407,10 +411,11 @@ export default function PeopleLeadsPage() {
                 <p className="text-sm text-gray-500">{selectedLead.email}</p>
               </div>
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="assign-agent" className="block text-sm font-medium text-gray-700 mb-2">
                   Select Agent/Broker
                 </label>
                 <select
+                  id="assign-agent"
                   value={selectedAgent}
                   onChange={(e) => setSelectedAgent(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A676]"
@@ -459,6 +464,7 @@ export default function PeopleLeadsPage() {
               <button
                 onClick={() => setSelectedLead(null)}
                 className="text-gray-400 hover:text-gray-600"
+                aria-label="Close lead details"
               >
                 <FiX className="w-5 h-5" />
               </button>

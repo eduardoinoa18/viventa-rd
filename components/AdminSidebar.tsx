@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { FiGrid, FiUsers, FiHome, FiSettings, FiUserCheck, FiBriefcase, FiMessageSquare, FiPlusSquare, FiClipboard, FiCreditCard, FiShield, FiActivity, FiTarget, FiBarChart2, FiChevronLeft } from 'react-icons/fi'
+import { FiGrid, FiUsers, FiHome, FiSettings, FiUserCheck, FiBriefcase, FiMessageSquare, FiPlusSquare, FiClipboard, FiCreditCard, FiShield, FiActivity, FiTarget, FiBarChart2, FiChevronLeft, FiMail } from 'react-icons/fi'
 
 export default function AdminSidebar() {
   const pathname = usePathname()
@@ -63,12 +63,26 @@ export default function AdminSidebar() {
       {!collapsed && (
         <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-inner border border-blue-100">
           <div className="text-xs font-bold text-blue-900 mb-2 tracking-wide">QUICK ACTIONS</div>
-          <Link href="/" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-            <span>🌐</span> View Public Site
-          </Link>
-          <Link href="/dashboard" className="text-sm text-blue-700 hover:text-blue-900 hover:underline mt-2 transition-colors duration-150 flex items-center gap-2">
-            <span>📊</span> User Dashboard
-          </Link>
+          <div className="space-y-2">
+            <Link href="/admin/properties/create" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <FiPlusSquare className="text-blue-600" /> <span>Create Listing</span>
+            </Link>
+            <Link href="/admin/people" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <FiUserCheck className="text-blue-600" /> <span>Create Professional</span>
+            </Link>
+            <Link href="/admin/people" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <FiMail className="text-blue-600" /> <span>Send Invitation</span>
+            </Link>
+            <Link href="/admin/leads" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <FiActivity className="text-blue-600" /> <span>Manage Leads</span>
+            </Link>
+            <Link href="/" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <span>🌐</span> View Public Site
+            </Link>
+            <Link href="/dashboard" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <span>📊</span> User Dashboard
+            </Link>
+          </div>
         </div>
       )}
     </aside>

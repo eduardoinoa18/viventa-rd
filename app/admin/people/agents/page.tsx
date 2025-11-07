@@ -6,20 +6,29 @@ import AdminSidebar from '@/components/AdminSidebar'
 import AdminTopbar from '@/components/AdminTopbar'
 import AdminPeopleTabs from '@/components/AdminPeopleTabs'
 import CreateProfessionalModal from '@/components/CreateProfessionalModal'
+import InviteModal from '@/components/InviteModal'
 import { db } from '@/lib/firebaseClient'
 import { collection, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore'
-import { FiUserPlus, FiCheck, FiX, FiEdit, FiTrash2 } from 'react-icons/fi'
+import { FiUserPlus, FiCheck, FiX, FiEdit, FiTrash2, FiMail } from 'react-icons/fi'
 import AdminUserDetailsModal from '@/components/AdminUserDetailsModal'
 import toast from 'react-hot-toast'
+import { useSearchParams } from 'next/navigation'
 
 export default function PeopleAgentsPage() {
   const [agents, setAgents] = useState<any[]>([])
   const [showModal, setShowModal] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
   const [selected, setSelected] = useState<any | null>(null)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     load()
   }, [])
+
+  useEffect(() => {
+    const invite = searchParams?.get('invite')
+    if (invite === 'agent') setShowInviteModal(true)
+  }, [searchParams])
 
   async function load() {
     try {
@@ -132,12 +141,22 @@ export default function PeopleAgentsPage() {
             <div className="max-w-7xl mx-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-gray-800">Agents</h2>
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]"
-                >
-                  <FiUserPlus /> Create Agent
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowInviteModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 border-2 border-[#0B2545] text-[#0B2545] rounded-lg font-semibold hover:bg-[#0B2545] hover:text-white"
+                    aria-label="Invite agent"
+                    title="Invite Agent"
+                  >
+                    <FiMail /> Invite Agent
+                  </button>
+                  <button
+                    onClick={() => setShowModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]"
+                  >
+                    <FiUserPlus /> Create Agent
+                  </button>
+                </div>
               </div>
 
               {showModal && (
@@ -146,6 +165,10 @@ export default function PeopleAgentsPage() {
                   onSubmit={handleCreateAgent}
                   initialRole="agent"
                 />
+              )}
+
+              {showInviteModal && (
+                <InviteModal inviteType="agent" onClose={() => setShowInviteModal(false)} />
               )}
 
               <div className="bg-white rounded-lg shadow overflow-hidden">

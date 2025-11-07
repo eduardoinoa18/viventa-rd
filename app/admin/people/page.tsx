@@ -6,7 +6,8 @@ import AdminSidebar from '@/components/AdminSidebar'
 import AdminTopbar from '@/components/AdminTopbar'
 import AdminPeopleTabs from '@/components/AdminPeopleTabs'
 import CreateProfessionalModal from '@/components/CreateProfessionalModal'
-import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiX, FiRefreshCcw, FiEye } from 'react-icons/fi'
+import InviteModal from '@/components/InviteModal'
+import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiX, FiRefreshCcw, FiEye, FiMail } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import AdminUserDetailsModal from '@/components/AdminUserDetailsModal'
 
@@ -40,6 +41,8 @@ export default function PeopleUsersPage() {
   const [details, setDetails] = useState<User | null>(null)
   const [showProfessionalModal, setShowProfessionalModal] = useState(false)
   const [professionalRole, setProfessionalRole] = useState<'agent' | 'broker'>('agent')
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [inviteType, setInviteType] = useState<'agent' | 'broker' | 'user'>('user')
 
   useEffect(() => { load() }, [filterRole])
 
@@ -203,12 +206,21 @@ export default function PeopleUsersPage() {
             <div className="max-w-7xl mx-auto">
               {/* Users Tab Content */}
               <div className="mb-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setShowForm(true)}
                     className="px-4 py-2 bg-[#00A676] text-white rounded-lg hover:bg-[#008F64] flex items-center gap-2 font-semibold"
                   >
                     <FiUserPlus /> Add User
+                  </button>
+                  <button
+                    onClick={() => {
+                      setInviteType('user')
+                      setShowInviteModal(true)
+                    }}
+                    className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2 font-semibold"
+                  >
+                    <FiMail /> Invite User
                   </button>
                   <button
                     onClick={() => {
@@ -221,12 +233,30 @@ export default function PeopleUsersPage() {
                   </button>
                   <button
                     onClick={() => {
+                      setInviteType('agent')
+                      setShowInviteModal(true)
+                    }}
+                    className="px-4 py-2 border-2 border-[#0B2545] text-[#0B2545] rounded-lg hover:bg-[#0B2545] hover:text-white flex items-center gap-2 font-semibold transition-colors"
+                  >
+                    <FiMail /> Invite Agent
+                  </button>
+                  <button
+                    onClick={() => {
                       setProfessionalRole('broker')
                       setShowProfessionalModal(true)
                     }}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 font-semibold"
                   >
                     <FiUserCheck /> Create Broker
+                  </button>
+                  <button
+                    onClick={() => {
+                      setInviteType('broker')
+                      setShowInviteModal(true)
+                    }}
+                    className="px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white flex items-center gap-2 font-semibold transition-colors"
+                  >
+                    <FiMail /> Invite Broker
                   </button>
                 </div>
                 <button
@@ -243,11 +273,13 @@ export default function PeopleUsersPage() {
                   placeholder="Search by name, email, phone, or code..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label="Search users"
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                 />
                 <select
                   value={filterRole}
                   onChange={(e) => setFilterRole(e.target.value)}
+                  aria-label="Filter by status"
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                 >
                   <option value="all">All Status</option>
@@ -363,35 +395,41 @@ export default function PeopleUsersPage() {
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-[#0B2545]">{editingId ? 'Edit User' : 'Add User'}</h2>
-              <button onClick={() => { setShowForm(false); setEditingId(null) }} className="text-gray-500 hover:text-gray-700">
+              <button onClick={() => { setShowForm(false); setEditingId(null) }} className="text-gray-500 hover:text-gray-700" aria-label="Close form">
                 <FiX size={24} />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label htmlFor="user-name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input
+                  id="user-name"
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Enter user name"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label htmlFor="user-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
+                  id="user-email"
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="user@example.com"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label htmlFor="user-phone" className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                 <input
+                  id="user-phone"
                   type="text"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="(809) 555-1234"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
@@ -419,6 +457,13 @@ export default function PeopleUsersPage() {
           initialRole={professionalRole}
           onClose={() => setShowProfessionalModal(false)}
           onSubmit={createProfessional}
+        />
+      )}
+
+      {showInviteModal && (
+        <InviteModal
+          inviteType={inviteType}
+          onClose={() => setShowInviteModal(false)}
         />
       )}
 
