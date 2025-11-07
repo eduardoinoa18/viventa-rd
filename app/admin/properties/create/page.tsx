@@ -153,8 +153,8 @@ export default function CreatePropertyPage() {
     const arr = Array.from(files || [])
     if (arr.length === 0) return
     const total = (form.images?.length || 0) + arr.length
-    if (total > 20) {
-      toast.error('Máximo 20 imágenes por propiedad')
+    if (total > 10) {
+      toast.error('Máximo 10 imágenes por propiedad')
       return
     }
     const v = validateImageFiles(arr)
@@ -226,7 +226,7 @@ export default function CreatePropertyPage() {
     if (!form.price || form.price <= 0) { toast.error('El precio debe ser mayor a 0'); setStep(1 as any); return }
     if (!form.location?.trim()) { toast.error('La ubicación es requerida'); setStep(2 as any); return }
     if (!form.publicRemarks?.trim() || form.publicRemarks.length < 50) { toast.error('Las notas públicas deben tener al menos 50 caracteres'); setStep(3 as any); return }
-    if (!form.images || form.images.length === 0) { toast.error('Debes agregar al menos una imagen'); setStep(5 as any); return }
+    // Imágenes opcionales; si no hay, se mostrará placeholder en la UI
 
     if (isE2E) {
       setSaving(true)
@@ -600,7 +600,7 @@ export default function CreatePropertyPage() {
               <div className="bg-white rounded-lg shadow p-6 animate-fade-in">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
                   <FiImage className="text-[#00A676]" />
-                  Imágenes * (Mínimo 1, Máximo 20)
+                  Imágenes (Opcional, Máximo 10)
                 </h2>
                 <div className="space-y-4">
                   <div className="space-y-3">
@@ -640,7 +640,7 @@ export default function CreatePropertyPage() {
                         ))}
                       </div>
                     )}
-                    <div className="text-xs text-gray-500">Formatos: JPG/PNG/WebP • Máx 5MB c/u • Hasta 20 imágenes</div>
+                    <div className="text-xs text-gray-500">Formatos: JPG/PNG/WebP • Máx 5MB c/u • Hasta 10 imágenes</div>
                   </div>
                   
                   {form.images && form.images.length > 0 && (
@@ -760,9 +760,7 @@ export default function CreatePropertyPage() {
                         if (step === 3) {
                           if (!form.publicRemarks?.trim() || (form.publicRemarks||'').length < 50) return toast.error('Añade al menos 50 caracteres en Notas Públicas')
                         }
-                        if (step === 5) {
-                          if (!form.images || form.images.length === 0) return toast.error('Agrega al menos 1 imagen')
-                        }
+                        // Paso 5 (Imágenes) ahora es opcional; sin validación de mínimo
                         setStep(((step+1) as 1|2|3|4|5|6))
                         window.scrollTo({ top: 0, behavior: 'smooth' })
                       }}

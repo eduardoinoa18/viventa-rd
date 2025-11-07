@@ -103,26 +103,68 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    let query: any = adminDb
+    // Fetch the user's role to include broadcast notifications
+    const userDoc = await adminDb.collection('users').doc(userId).get()
+    const userData = userDoc.data() || {}
+    const role = userData.role || 'user'
+
+    // Fetch personal notifications
+    let personalQuery: any = adminDb
       .collection('notifications')
       .where('userId', '==', userId)
       .orderBy('createdAt', 'desc')
       .limit(50)
 
     if (unreadOnly) {
-      query = query.where('read', '==', false)
+      personalQuery = personalQuery.where('read', '==', false)
     }
 
-    const snapshot = await query.get()
-    const notifications = snapshot.docs.map((doc: any) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null
-    }))
+    const [personalSnap, broadcastSnap] = await Promise.all([
+      personalQuery.get(),
+      adminDb
+        .collection('notifications')
+        .where('audience', 'array-contains-any', [role, 'all', role === 'admin' ? 'admin' : null].filter(Boolean))
+        .orderBy('createdAt', 'desc')
+        .limit(50)
+        .get()
+    ])
+
+    const personal = personalSnap.docs.map((doc: any) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        body: data.body || data.message || '',
+        read: !!data.read,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || null
+      }
+    })
+
+    let broadcast = broadcastSnap.docs.map((doc: any) => {
+      const data = doc.data()
+      const readBy = Array.isArray(data.readBy) ? data.readBy : []
+      const computedRead = readBy.includes(userId)
+      return {
+        id: doc.id,
+        ...data,
+        body: data.body || data.message || '',
+        read: computedRead,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || null
+      }
+    })
+
+    if (unreadOnly) {
+      broadcast = broadcast.filter((n: any) => !n.read)
+    }
+
+    // Merge and sort by createdAt desc
+    const merged = [...personal, ...broadcast]
+      .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+      .slice(0, 50)
 
     return NextResponse.json({
       ok: true,
-      data: notifications
+      data: merged
     })
   } catch (error: any) {
     console.error('Error fetching notifications:', error)
@@ -151,22 +193,39 @@ export async function PATCH(req: NextRequest) {
 
     if (markAllAsRead && userId) {
       // Mark all notifications as read for user
-      const snapshot = await adminDb
-        .collection('notifications')
-        .where('userId', '==', userId)
-        .where('read', '==', false)
-        .get()
+      const userDoc = await adminDb.collection('users').doc(userId).get()
+      const role = userDoc.data()?.role || 'user'
+
+      const [personalSnap, broadcastSnap] = await Promise.all([
+        adminDb
+          .collection('notifications')
+          .where('userId', '==', userId)
+          .where('read', '==', false)
+          .get(),
+        adminDb
+          .collection('notifications')
+          .where('audience', 'array-contains-any', [role, 'all', role === 'admin' ? 'admin' : null].filter(Boolean))
+          .get()
+      ])
 
       const batch = adminDb.batch()
-      snapshot.docs.forEach((doc: any) => {
+      personalSnap.docs.forEach((doc: any) => {
         batch.update(doc.ref, { read: true, readAt: new Date() })
+      })
+      // For broadcast, add to readBy if not present
+      broadcastSnap.docs.forEach((doc: any) => {
+        const data = doc.data()
+        const readBy: string[] = Array.isArray(data.readBy) ? data.readBy : []
+        if (!readBy.includes(userId)) {
+          batch.update(doc.ref, { readBy: [...readBy, userId] })
+        }
       })
 
       await batch.commit()
 
       return NextResponse.json({
         ok: true,
-        message: `Marked ${snapshot.docs.length} notifications as read`
+        message: 'Marked notifications as read'
       })
     }
 
@@ -178,10 +237,24 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Mark single notification as read
-    await adminDb.collection('notifications').doc(notificationId).update({
-      read: true,
-      readAt: new Date()
-    })
+    const docRef = adminDb.collection('notifications').doc(notificationId)
+    const snap = await docRef.get()
+    if (!snap.exists) {
+      return NextResponse.json({ ok: false, error: 'Notification not found' }, { status: 404 })
+    }
+    const data = snap.data() || {}
+    if (Array.isArray(data.audience)) {
+      // Broadcast notification: require userId to mark per-user read
+      if (!userId) {
+        return NextResponse.json({ ok: false, error: 'Missing userId for broadcast notification' }, { status: 400 })
+      }
+      const readBy: string[] = Array.isArray(data.readBy) ? data.readBy : []
+      if (!readBy.includes(userId)) {
+        await docRef.update({ readBy: [...readBy, userId] })
+      }
+    } else {
+      await docRef.update({ read: true, readAt: new Date() })
+    }
 
     return NextResponse.json({
       ok: true,

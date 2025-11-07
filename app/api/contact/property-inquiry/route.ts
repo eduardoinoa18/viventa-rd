@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
+import { FieldValue } from 'firebase-admin/firestore'
 import { sendEmail } from '@/lib/emailService'
 import { sendInquiryConfirmation } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
@@ -35,8 +35,13 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
 
-    // Save to Firestore property_inquiries collection
-    const docRef = await addDoc(collection(db, 'property_inquiries'), {
+    // Save to Firestore property_inquiries collection via Admin SDK
+    const adminDb = getAdminDb()
+    if (!adminDb) {
+      return NextResponse.json({ ok: false, error: 'Firebase Admin not configured' }, { status: 500 })
+    }
+
+    const inquiryRef = await adminDb.collection('property_inquiries').add({
       name,
       email,
       phone,
@@ -49,7 +54,7 @@ export async function POST(request: Request) {
       agentEmail: agentEmail || '',
       source: source || 'property-page',
       status: 'new',
-      createdAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       readBy: [],
     })
 
@@ -112,7 +117,7 @@ export async function POST(request: Request) {
               </div>
               <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; text-align: center;">
                 <p style="margin: 0; color: #0B2545; font-size: 14px;">
-                  📋 ID de Consulta: <strong>${docRef.id}</strong>
+                  📋 ID de Consulta: <strong>${inquiryRef.id}</strong>
                 </p>
                 <p style="margin: 10px 0 0 0; color: #666; font-size: 12px;">
                   Ver en Admin Dashboard → Property Inquiries
@@ -144,16 +149,18 @@ export async function POST(request: Request) {
       // Don't fail the request if email fails
     }
 
-    // In-app notification for admins and agent
+    // In-app notification for admins and agent (broadcast role-based)
     try {
-      await addDoc(collection(db, 'notifications'), {
+      await adminDb.collection('notifications').add({
         type: 'property_inquiry',
         title: 'Nueva consulta de propiedad',
-        message: `${name} consultó: ${propertyTitle}`,
-        refId: docRef.id,
+        body: `${name} consultó: ${propertyTitle}`,
+        icon: '/icons/icon-192x192.png',
+        url: `/admin/chat?tab=inquiries&id=${encodeURIComponent(inquiryRef.id)}`,
+        refId: inquiryRef.id,
         propertyId,
-        createdAt: serverTimestamp(),
-        audience: ['admin', 'master', 'agent'],
+        createdAt: FieldValue.serverTimestamp(),
+        audience: ['admin', 'agent'],
         readBy: [],
       })
     } catch (e) {
@@ -163,7 +170,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       ok: true, 
       message: 'Consulta enviada exitosamente',
-      id: docRef.id 
+      id: inquiryRef.id 
     })
 
   } catch (error) {

@@ -50,7 +50,7 @@ export default function NotificationCenter({ userId }: { userId: string }) {
       const res = await fetch('/api/notifications/send', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notificationId })
+        body: JSON.stringify({ notificationId, userId })
       })
 
       if (res.ok) {

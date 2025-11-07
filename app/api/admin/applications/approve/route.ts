@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     // Generate password reset link
     const resetLink = await adminAuth.generatePasswordResetLink(email)
 
-    // Send approval email with credentials
+  // Send approval email with credentials
     const subject = `¡Aprobado! Bienvenido a VIVENTA ${role === 'agent' ? 'Agente' : 'Bróker'}`
     
     const html = `
@@ -265,6 +265,23 @@ export async function POST(req: NextRequest) {
     } catch (emailError) {
       console.error('Failed to send approval email:', emailError)
       // Don't fail the request, user is created successfully
+    }
+
+    // Create in-app notification for the approved user
+    try {
+      await adminDb.collection('notifications').add({
+        userId: authUser.uid,
+        type: 'application_approved',
+        title: '¡Tu solicitud fue aprobada! ✅',
+        body: 'Ya puedes acceder y completar tu perfil profesional.',
+        icon: '/icons/icon-192x192.png',
+        url: role === 'agent' ? '/agent' : '/broker',
+        read: false,
+        createdAt: FieldValue.serverTimestamp()
+      })
+    } catch (e) {
+      // Non-critical
+      console.warn('Failed to create approval notification:', e)
     }
 
     return NextResponse.json({ 
