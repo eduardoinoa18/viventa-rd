@@ -118,30 +118,27 @@ export default function ActivityWidget() {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div>
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FiActivity className="text-[#00A676] text-2xl" />
-            <h2 className="text-xl font-bold text-[#0B2545]">Recent Activity</h2>
-          </div>
-          <Link 
-            href="/admin/activity"
-            className="text-sm text-[#00A676] hover:text-[#008F64] font-semibold inline-flex items-center gap-1"
-          >
-            View All <FiArrowRight />
-          </Link>
+      <div className="pb-4 flex items-center justify-between">
+        <div className="text-gray-600 text-sm">
+          Showing {stats.total} recent events
         </div>
+        <Link 
+          href="/admin/activity"
+          className="text-sm text-[#00A676] hover:text-[#008F64] font-semibold inline-flex items-center gap-1 transition-colors"
+        >
+          View All Activity <FiArrowRight />
+        </Link>
       </div>
 
       {/* Activity Types Summary */}
-      <div className="p-4 bg-gray-50 border-b border-gray-200">
+      <div className="mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
         <div className="flex flex-wrap gap-2">
           {Object.entries(stats.byType).map(([type, count]) => (
             <span
               key={type}
-              className={`px-3 py-1 rounded-full text-xs font-semibold ${getTypeColor(type)}`}
+              className={`px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${getTypeColor(type)}`}
             >
               {type}: {count}
             </span>
@@ -150,14 +147,14 @@ export default function ActivityWidget() {
       </div>
 
       {/* Recent Logs */}
-      <div className="divide-y divide-gray-100">
+      <div className="space-y-2">
         {stats.recentLogs.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
             No recent activity
           </div>
         ) : (
           stats.recentLogs.map((log) => (
-            <div key={log.id} className="p-4 hover:bg-gray-50 transition-colors">
+            <div key={log.id} className="p-4 bg-gradient-to-r from-white to-gray-50 rounded-lg border border-gray-200 hover:shadow-md hover:border-[#00A676] transition-all">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
