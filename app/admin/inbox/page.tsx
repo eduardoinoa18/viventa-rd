@@ -66,7 +66,7 @@ type OnlinePro = {
 function AdminInboxPageContent() {
   const searchParams = useSearchParams()
   const tabParam = searchParams?.get('tab')
-  const [mainTab, setMainTab] = useState<'chat' | 'notifications' | 'contacts' | 'inquiries' | 'waitlist'>(
+  const [mainTab, setMainTab] = useState<'chat' | 'notifications' | 'contacts' | 'waitlist'>(
     (tabParam as any) || 'chat'
   )
 
@@ -83,7 +83,6 @@ function AdminInboxPageContent() {
   // Notifications state
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [contactSubmissions, setContactSubmissions] = useState<any[]>([])
-  const [propertyInquiries, setPropertyInquiries] = useState<any[]>([])
   const [waitlist, setWaitlist] = useState<any[]>([])
   const [loadingNotifications, setLoadingNotifications] = useState(false)
 
@@ -255,15 +254,6 @@ function AdminInboxPageContent() {
       }))
       setContactSubmissions(contacts)
 
-      const inquiryRes = await fetch('/api/admin/inbox?tab=inquiries')
-      if (!inquiryRes.ok) throw new Error('Failed to load inquiries')
-      const inquiryData = await inquiryRes.json()
-      const inquiries = inquiryData.inquiries.map((i: any) => ({
-        ...i,
-        createdAt: i.createdAt ? { seconds: new Date(i.createdAt).getTime() / 1000 } : null
-      }))
-      setPropertyInquiries(inquiries)
-
       const waitlistRes = await fetch('/api/admin/inbox?tab=waitlist')
       if (!waitlistRes.ok) throw new Error('Failed to load waitlist')
       const waitlistData = await waitlistRes.json()
@@ -302,7 +292,7 @@ function AdminInboxPageContent() {
   async function markSubmissionAsRead(submissionId: string, type: 'contact' | 'inquiry' | 'waitlist', source?: 'social' | 'platform') {
     if (!currentUser) return
     try {
-      let collectionName = type === 'contact' ? 'contact_submissions' : type === 'inquiry' ? 'property_inquiries' : 'waitlist_social'
+      let collectionName = type === 'contact' ? 'contact_submissions' : 'waitlist_social'
       if (type === 'waitlist' && source) {
         collectionName = source === 'social' ? 'waitlist_social' : 'waitlist_platform'
       }
@@ -319,10 +309,6 @@ function AdminInboxPageContent() {
       if (type === 'contact') {
         setContactSubmissions(prev => 
           prev.map(c => c.id === submissionId ? { ...c, readBy: [...(c.readBy || []), currentUser.uid], status: 'read' } : c)
-        )
-      } else if (type === 'inquiry') {
-        setPropertyInquiries(prev => 
-          prev.map(i => i.id === submissionId ? { ...i, readBy: [...(i.readBy || []), currentUser.uid], status: 'read' } : i)
         )
       } else if (type === 'waitlist') {
         setWaitlist(prev =>
@@ -438,7 +424,6 @@ function AdminInboxPageContent() {
 
   const unreadNotifications = notifications.filter(n => !n.readBy.includes(currentUser?.uid || '')).length
   const unreadContacts = contactSubmissions.filter(c => !(c.readBy || []).includes(currentUser?.uid || '')).length
-  const unreadInquiries = propertyInquiries.filter(i => !(i.readBy || []).includes(currentUser?.uid || '')).length
   const unreadWaitlist = waitlist.filter(w => !(w.readBy || []).includes(currentUser?.uid || '')).length
 
   return (
@@ -453,7 +438,7 @@ function AdminInboxPageContent() {
                 <h1 className="text-3xl font-bold text-[#0B2545] flex items-center gap-2">
                   <FiMessageSquare /> Communications Hub
                 </h1>
-                <p className="text-gray-600 mt-1">Manage conversations, notifications, contacts & inquiries</p>
+                <p className="text-gray-600 mt-1">Manage conversations, notifications, and contacts</p>
               </div>
               <div className="flex gap-2">
                 {mainTab === 'chat' && (
@@ -515,22 +500,6 @@ function AdminInboxPageContent() {
                 {unreadContacts > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
                     {unreadContacts}
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => setMainTab('inquiries')}
-                className={`px-6 py-3 font-semibold whitespace-nowrap transition-all relative ${
-                  mainTab === 'inquiries'
-                    ? 'border-b-2 border-[#00A676] text-[#00A676]'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                <FiHome className="inline mr-2" />
-                Property Inquiries
-                {unreadInquiries > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
-                    {unreadInquiries}
                   </span>
                 )}
               </button>
@@ -1001,78 +970,6 @@ function AdminInboxPageContent() {
                       </div>
                       <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 shadow-inner">
                         <p className="text-sm text-gray-700 whitespace-pre-wrap">{contact.message}</p>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          )}
-
-          {/* Property Inquiries Tab Content */}
-          {mainTab === 'inquiries' && (
-            <div className="space-y-4">
-              {loadingNotifications ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00A676] mx-auto"></div>
-                  <p className="text-gray-600 mt-4">Loading...</p>
-                </div>
-              ) : propertyInquiries.length === 0 ? (
-                <div className="bg-white rounded-xl shadow p-12 text-center">
-                  <FiHome className="text-6xl text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600">No property inquiries</p>
-                </div>
-              ) : (
-                propertyInquiries.map(inquiry => {
-                  const isRead = (inquiry.readBy || []).includes(currentUser?.uid || '')
-                  return (
-                    <div
-                      key={inquiry.id}
-                      className={`bg-white rounded-xl shadow p-6 border-l-4 transition-all hover:shadow-lg ${
-                        isRead ? 'border-gray-300' : 'border-green-500'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
-                              Property
-                            </span>
-                            {!isRead && (
-                              <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold animate-pulse">
-                                New
-                              </span>
-                            )}
-                            {inquiry.visitDate && (
-                              <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
-                                📅 Visit: {new Date(inquiry.visitDate).toLocaleDateString('es-DO')}
-                              </span>
-                            )}
-                          </div>
-                          <h3 className="font-bold text-[#0B2545] text-lg mb-2">{inquiry.propertyTitle}</h3>
-                          <p className="text-sm text-gray-600 font-semibold">{inquiry.name}</p>
-                          <p className="text-sm text-gray-600">
-                            {inquiry.email} • {inquiry.phone}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Preferred contact: {inquiry.preferredContact === 'email' ? 'Email' : inquiry.preferredContact === 'phone' ? 'Phone' : 'WhatsApp'}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {inquiry.createdAt?.toDate?.().toLocaleString('es-DO') || 'Unknown date'}
-                          </p>
-                        </div>
-                        {!isRead && (
-                          <button
-                            onClick={() => markSubmissionAsRead(inquiry.id, 'inquiry')}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
-                            title="Mark as read"
-                          >
-                            <FiCheck />
-                          </button>
-                        )}
-                      </div>
-                      <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 shadow-inner">
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{inquiry.message}</p>
                       </div>
                     </div>
                   )
