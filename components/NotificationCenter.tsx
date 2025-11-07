@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { FiBell, FiCheck, FiX, FiSettings, FiCheckCircle } from 'react-icons/fi'
 import Link from 'next/link'
+import { db } from '@/lib/firebaseClient'
+import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore'
+import { getSession } from '@/lib/authSession'
 
 interface Notification {
   id: string
@@ -20,15 +23,103 @@ export default function NotificationCenter({ userId }: { userId: string }) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [personalLive, setPersonalLive] = useState<Notification[]>([])
+  const [broadcastLive, setBroadcastLive] = useState<Notification[]>([])
+  const [liveActive, setLiveActive] = useState(false)
 
   useEffect(() => {
-    if (userId) {
+    if (!userId) return
+    let unsubPersonal: any = null
+    let unsubBroadcast: any = null
+    let pollInterval: any = null
+
+    const session = getSession()
+    const role = session?.role || 'user'
+    try {
+      // Listen to personal notifications
+      const personalQ = query(
+        collection(db, 'notifications'),
+        where('userId', '==', userId),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      )
+      unsubPersonal = onSnapshot(personalQ, (snap: any) => {
+        const items: Notification[] = snap.docs.map((d: any) => {
+          const data = d.data() || {}
+          return {
+            id: d.id,
+            type: data.type,
+            title: data.title,
+            body: data.body || data.message || '',
+            icon: data.icon,
+            url: data.url,
+            read: !!data.read,
+            createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+          }
+        })
+        setPersonalLive(items)
+      })
+
+      // Build audiences for broadcast
+      const audSet = new Set<string>(['all'])
+      if (role) {
+        audSet.add(role)
+        if (role === 'admin' || role === 'master_admin') {
+          audSet.add('admin')
+          audSet.add('master_admin')
+        }
+      }
+      const audiences = Array.from(audSet)
+
+      const broadcastQ = query(
+        collection(db, 'notifications'),
+        where('audience', 'array-contains-any', audiences),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      )
+      unsubBroadcast = onSnapshot(broadcastQ, (snap: any) => {
+        const items: Notification[] = snap.docs.map((d: any) => {
+          const data = d.data() || {}
+          const readBy: string[] = Array.isArray(data.readBy) ? data.readBy : []
+          const computedRead = readBy.includes(userId)
+          return {
+            id: d.id,
+            type: data.type,
+            title: data.title,
+            body: data.body || data.message || '',
+            icon: data.icon,
+            url: data.url,
+            read: computedRead,
+            createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+          }
+        })
+        setBroadcastLive(items)
+      })
+
+      setLiveActive(true)
+    } catch (e) {
+      // Fallback to polling if Firestore listener fails
+      setLiveActive(false)
       loadNotifications()
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(loadNotifications, 30000)
-      return () => clearInterval(interval)
+      pollInterval = setInterval(loadNotifications, 30000)
+    }
+
+    return () => {
+      if (unsubPersonal) unsubPersonal()
+      if (unsubBroadcast) unsubBroadcast()
+      if (pollInterval) clearInterval(pollInterval)
     }
   }, [userId])
+
+  // Merge live results when active
+  useEffect(() => {
+    if (!liveActive) return
+    const merged = [...personalLive, ...broadcastLive]
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+      .slice(0, 50)
+    setNotifications(merged)
+    setUnreadCount(merged.filter(n => !n.read).length)
+  }, [personalLive, broadcastLive, liveActive])
 
   const loadNotifications = async () => {
     try {
