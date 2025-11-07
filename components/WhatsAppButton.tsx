@@ -1,5 +1,6 @@
 'use client'
 import { FaWhatsapp } from 'react-icons/fa'
+import { trackWhatsAppClick, getCurrentUserInfo } from '@/lib/analyticsService'
 
 interface WhatsAppButtonProps {
   phoneNumber: string
@@ -8,6 +9,7 @@ interface WhatsAppButtonProps {
   propertyPrice?: string
   className?: string
   agentName?: string
+  agentId?: string
 }
 
 export default function WhatsAppButton({
@@ -16,10 +18,14 @@ export default function WhatsAppButton({
   propertyId,
   propertyPrice,
   className = '',
-  agentName = 'el agente'
+  agentName = 'el agente',
+  agentId
 }: WhatsAppButtonProps) {
   
   function handleWhatsAppClick() {
+    // Track WhatsApp click
+    const { userId, userRole } = getCurrentUserInfo()
+    trackWhatsAppClick(propertyId, agentId, userId, userRole)
     // Format phone number (remove spaces, dashes, add country code if needed)
     let formattedPhone = phoneNumber.replace(/[\s-]/g, '')
     

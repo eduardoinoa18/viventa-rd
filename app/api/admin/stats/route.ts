@@ -9,6 +9,12 @@ export async function GET() {
     // Prefer Admin SDK for accurate counts without client auth
     const adminDb = getAdminDb()
     if (adminDb) {
+      const now = new Date()
+      const today = now.toISOString().split('T')[0]
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
+
       const [
         usersSnap,
         activePropsSnap,
@@ -19,6 +25,15 @@ export async function GET() {
         brokersSnap,
         regularUsersSnap,
         adminsSnap,
+        // Analytics for DAU/WAU/MAU
+        dailyActiveSnap,
+        weeklyActiveSnap,
+        monthlyActiveSnap,
+        // Property views
+        propertyViewsSnap,
+        // Contact submissions
+        contactsSnap,
+        inquiriesSnap,
       ] = await Promise.all([
         adminDb.collection('users').get(),
         adminDb.collection('properties').where('status', '==', 'active').get(),
@@ -29,7 +44,73 @@ export async function GET() {
         adminDb.collection('users').where('role', '==', 'broker').get(),
         adminDb.collection('users').where('role', '==', 'user').get(),
         adminDb.collection('users').where('role', 'in', ['admin','master_admin']).get(),
+        // DAU
+        adminDb.collection('analytics_events')
+          .where('timestamp', '>=', yesterday)
+          .get(),
+        // WAU
+        adminDb.collection('analytics_events')
+          .where('timestamp', '>=', sevenDaysAgo)
+          .get(),
+        // MAU
+        adminDb.collection('analytics_events')
+          .where('timestamp', '>=', thirtyDaysAgo)
+          .get(),
+        // Property views (last 30 days)
+        adminDb.collection('analytics_events')
+          .where('eventType', '==', 'listing_view')
+          .where('timestamp', '>=', thirtyDaysAgo)
+          .get(),
+        // Contact submissions
+        adminDb.collection('contacts').get(),
+        adminDb.collection('inquiries').get(),
       ])
+
+      // Calculate unique active users
+      const dauUsers = new Set()
+      dailyActiveSnap.docs.forEach((doc: any) => {
+        const data = doc.data()
+        if (data.userId) dauUsers.add(data.userId)
+      })
+
+      const wauUsers = new Set()
+      weeklyActiveSnap.docs.forEach((doc: any) => {
+        const data = doc.data()
+        if (data.userId) wauUsers.add(data.userId)
+      })
+
+      const mauUsers = new Set()
+      monthlyActiveSnap.docs.forEach((doc: any) => {
+        const data = doc.data()
+        if (data.userId) mauUsers.add(data.userId)
+      })
+
+      // Calculate property view stats
+      const propertyViews = propertyViewsSnap.size
+      const uniqueViewers = new Set()
+      const propertyViewCounts: { [key: string]: number } = {}
+      
+      propertyViewsSnap.docs.forEach((doc: any) => {
+        const data = doc.data()
+        if (data.userId) uniqueViewers.add(data.userId)
+        if (data.metadata?.listingId) {
+          const id = data.metadata.listingId
+          propertyViewCounts[id] = (propertyViewCounts[id] || 0) + 1
+        }
+      })
+
+      // Top viewed properties
+      const topViewedProperties = Object.entries(propertyViewCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([id, count]) => ({ propertyId: id, views: count }))
+
+      // Conversion funnel
+      const totalViews = propertyViews
+      const totalContacts = contactsSnap.size + inquiriesSnap.size
+      const totalLeads = leadsSnap.size
+      const conversionRate = totalViews > 0 ? ((totalContacts / totalViews) * 100).toFixed(2) : '0.00'
+      const leadConversionRate = totalContacts > 0 ? ((totalLeads / totalContacts) * 100).toFixed(2) : '0.00'
 
       return NextResponse.json({
         ok: true,
@@ -45,7 +126,28 @@ export async function GET() {
             brokers: brokersSnap.size || 0,
             users: regularUsersSnap.size || 0,
             admins: adminsSnap.size || 0,
-          }
+          },
+          userEngagement: {
+            dau: dauUsers.size,
+            wau: wauUsers.size,
+            mau: mauUsers.size,
+            dauPercentage: usersSnap.size > 0 ? ((dauUsers.size / usersSnap.size) * 100).toFixed(1) : '0.0',
+            wauPercentage: usersSnap.size > 0 ? ((wauUsers.size / usersSnap.size) * 100).toFixed(1) : '0.0',
+            mauPercentage: usersSnap.size > 0 ? ((mauUsers.size / usersSnap.size) * 100).toFixed(1) : '0.0',
+          },
+          propertyMetrics: {
+            totalViews: propertyViews,
+            uniqueViewers: uniqueViewers.size,
+            avgViewsPerProperty: activePropsSnap.size > 0 ? (propertyViews / activePropsSnap.size).toFixed(1) : '0.0',
+            topViewedProperties,
+          },
+          conversionMetrics: {
+            totalViews,
+            totalContacts,
+            totalLeads,
+            viewToContactRate: conversionRate + '%',
+            contactToLeadRate: leadConversionRate + '%',
+          },
         },
       })
     }

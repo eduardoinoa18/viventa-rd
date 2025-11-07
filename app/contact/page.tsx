@@ -5,6 +5,7 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import toast from 'react-hot-toast';
 import { FiArrowLeft, FiMail, FiPhone, FiMapPin, FiClock, FiMessageCircle, FiSend } from 'react-icons/fi';
+import { trackContactSubmission, getCurrentUserInfo } from '@/lib/analyticsService';
 
 export default function ContactPage() {
   const router = useRouter()
@@ -38,6 +39,20 @@ export default function ContactPage() {
       if (!data.ok) throw new Error(data.error || 'Failed to send message');
 
       toast.success('¡Mensaje enviado! Te contactaremos pronto.');
+      
+      // Track contact submission
+      const { userId, userRole } = getCurrentUserInfo();
+      trackContactSubmission(
+        'contact_page',
+        {
+          contactType: formData.type,
+          hasCompany: !!formData.company,
+          interestCount: formData.interests.length
+        },
+        userId,
+        userRole
+      );
+      
       setFormData({ name: '', email: '', phone: '', type: 'general', role: '', company: '', interests: [], message: '' });
     } catch (error) {
       toast.error('Error al enviar el mensaje. Intenta de nuevo.');

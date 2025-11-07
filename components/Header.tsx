@@ -1,5 +1,6 @@
 "use client"
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import LocaleSwitcher from './LocaleSwitcher'
 import NotificationCenter from './NotificationCenter'
 import { useEffect, useState } from 'react'
@@ -7,6 +8,7 @@ import { getSession, clearSession } from '../lib/authSession'
 import { FiMenu, FiX, FiLogOut, FiUser, FiSettings, FiHelpCircle } from 'react-icons/fi'
 
 export default function Header() {
+  const pathname = usePathname()
   const [session, setSession] = useState<any>(null)
   const [mounted, setMounted] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -40,6 +42,15 @@ export default function Header() {
           </nav>
           <div className="flex items-center gap-3">
             <LocaleSwitcher />
+          {/* Back to Admin button for admins on user-facing pages */}
+          {session && (session.role === 'admin' || session.role === 'master_admin') && !pathname?.startsWith('/admin') && (
+            <Link 
+              href="/admin" 
+              className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm bg-viventa-navy text-white rounded-lg font-medium hover:bg-viventa-ocean transition-all"
+            >
+              <span>Admin Panel</span>
+            </Link>
+          )}
             <Link href="/login" className="px-4 py-2 min-h-[44px] hidden sm:flex items-center justify-center text-sm border-2 border-viventa-ocean text-viventa-ocean rounded-lg font-bold hover:bg-viventa-ocean hover:text-white transition-all active:scale-95">Login</Link>
             <Link href="/signup" className="px-4 py-2 min-h-[44px] text-sm bg-gradient-to-r from-viventa-turquoise to-viventa-teal text-white rounded-lg font-bold hover:shadow-lg hover:scale-105 transition-all active:scale-95">Sign Up</Link>
           </div>
@@ -73,9 +84,18 @@ export default function Header() {
         </nav>
         <div className="flex items-center gap-3">
           <LocaleSwitcher />
+          {/* Back to Admin button for admins on user-facing pages */}
+          {session && (session.role === 'admin' || session.role === 'master_admin') && !pathname?.startsWith('/admin') && (
+            <Link 
+              href="/admin" 
+              className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm bg-viventa-navy text-white rounded-lg font-medium hover:bg-viventa-ocean transition-all"
+            >
+              <span>Admin Panel</span>
+            </Link>
+          )}
           {session ? (
             <>
-              {session.uid && <NotificationCenter userId={session.uid} />}
+              {session.uid && (session.role === 'admin' || session.role === 'master_admin') && <NotificationCenter userId={session.uid} />}
               {/* Online indicator (client-side presence) */}
               <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full bg-green-50 border border-green-200">
                 <span className="relative flex h-2.5 w-2.5">

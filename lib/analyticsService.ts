@@ -129,6 +129,116 @@ function getSessionId(): string {
 }
 
 /**
+ * Track favorite added
+ */
+export function trackFavoriteAdded(propertyId: string, metadata?: Record<string, any>, userId?: string, userRole?: string) {
+  return trackEvent('favorite_added', {
+    userId,
+    userRole,
+    metadata: { propertyId, ...metadata }
+  })
+}
+
+/**
+ * Track favorite removed
+ */
+export function trackFavoriteRemoved(propertyId: string, metadata?: Record<string, any>, userId?: string, userRole?: string) {
+  return trackEvent('favorite_removed', {
+    userId,
+    userRole,
+    metadata: { propertyId, ...metadata }
+  })
+}
+
+/**
+ * Track contact form submission
+ */
+export function trackContactSubmission(formType: string, metadata?: Record<string, any>, userId?: string, userRole?: string) {
+  return trackEvent('contact_form_submit', {
+    userId,
+    userRole,
+    metadata: { formType, ...metadata }
+  })
+}
+
+/**
+ * Track filter usage
+ */
+export function trackFilterUsage(filterType: string, filterValue: any, userId?: string, userRole?: string) {
+  return trackEvent('filter_used', {
+    userId,
+    userRole,
+    metadata: { filterType, filterValue }
+  })
+}
+
+/**
+ * Track property card click
+ */
+export function trackPropertyCardClick(propertyId: string, position?: number, listContext?: string, userId?: string, userRole?: string) {
+  return trackEvent('property_card_click', {
+    userId,
+    userRole,
+    metadata: { propertyId, position, listContext }
+  })
+}
+
+/**
+ * Track search refinement
+ */
+export function trackSearchRefinement(previousQuery: string, newQuery: string, metadata?: Record<string, any>, userId?: string, userRole?: string) {
+  return trackEvent('search_refined', {
+    userId,
+    userRole,
+    metadata: { previousQuery, newQuery, ...metadata }
+  })
+}
+
+/**
+ * Track navigation flow
+ */
+export function trackNavigation(fromPage: string, toPage: string, userId?: string, userRole?: string) {
+  return trackEvent('navigation', {
+    userId,
+    userRole,
+    metadata: { fromPage, toPage }
+  })
+}
+
+/**
+ * Track WhatsApp button click
+ */
+export function trackWhatsAppClick(propertyId?: string, agentId?: string, userId?: string, userRole?: string) {
+  return trackEvent('whatsapp_click', {
+    userId,
+    userRole,
+    metadata: { propertyId, agentId }
+  })
+}
+
+/**
+ * Track agent profile view
+ */
+export function trackAgentView(agentId: string, metadata?: Record<string, any>, userId?: string, userRole?: string) {
+  return trackEvent('agent_view', {
+    userId,
+    userRole,
+    metadata: { agentId, ...metadata }
+  })
+}
+
+/**
+ * Track saved search
+ */
+export function trackSavedSearch(searchCriteria: Record<string, any>, userId?: string, userRole?: string) {
+  return trackEvent('search_saved', {
+    userId,
+    userRole,
+    metadata: { searchCriteria }
+  })
+}
+
+/**
  * Helper to get current user info from session
  */
 export function getCurrentUserInfo(): { userId?: string; userRole?: string } {

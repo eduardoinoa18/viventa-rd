@@ -4,6 +4,7 @@ import ImagePlaceholder from './ImagePlaceholder';
 import FavoriteButton from './FavoriteButton';
 import { formatCurrency, formatFeatures, formatArea } from '@/lib/currency';
 import { analytics } from '@/lib/analytics';
+import { trackPropertyCardClick, getCurrentUserInfo } from '@/lib/analyticsService';
 
 export default function PropertyCard({ property }: { property: any }) {
   const [imgError, setImgError] = useState(false);
@@ -25,6 +26,16 @@ export default function PropertyCard({ property }: { property: any }) {
 
   const handleClick = () => {
     analytics.viewProperty(favoriteData.id, favoriteData.title);
+    
+    // Track property card click
+    const { userId, userRole } = getCurrentUserInfo();
+    trackPropertyCardClick(
+      favoriteData.id,
+      undefined,
+      'property_list',
+      userId,
+      userRole
+    );
   };
 
   const mainImage = property.images?.[0] || property.image || property.mainImage;

@@ -30,25 +30,129 @@ function getCookie(req: NextRequest, name: string): string | null {
 }
 
 async function getUserPreferences(userId: string) {
-  // In future, fetch from Firestore user_preferences collection
-  // For now, return defaults
-  return {
-    priceMin: 50000,
-    priceMax: 300000,
-    bedrooms: 2,
-    propertyType: null,
-    preferredCities: ['Santo Domingo', 'Santiago', 'Punta Cana']
+  try {
+    // Fetch from analytics_events to build preferences
+    const ninetyDaysAgo = new Date()
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+
+    const eventsRef = collection(db, 'analytics_events')
+    const q = query(
+      eventsRef,
+      where('userId', '==', userId),
+      where('timestamp', '>=', ninetyDaysAgo.toISOString()),
+      orderBy('timestamp', 'desc'),
+      limit(200)
+    )
+    
+    const snapshot = await getDocs(q)
+    const events = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }))
+
+    // Analyze events to build preferences
+    const locations: { [key: string]: number } = {}
+    const bedrooms: { [key: number]: number } = {}
+    const prices: number[] = []
+    const propertyTypes: { [key: string]: number } = {}
+
+    events.forEach((event: any) => {
+      const metadata = event.metadata || {}
+      
+      if (metadata.location) {
+        const loc = metadata.location.toString()
+        locations[loc] = (locations[loc] || 0) + (event.eventType === 'favorite_added' ? 3 : 1)
+      }
+      
+      if (metadata.bedrooms && typeof metadata.bedrooms === 'number') {
+        bedrooms[metadata.bedrooms] = (bedrooms[metadata.bedrooms] || 0) + 1
+      }
+      
+      if (metadata.price && typeof metadata.price === 'number') {
+        prices.push(metadata.price)
+      }
+      
+      if (metadata.propertyType) {
+        const type = metadata.propertyType.toString().toLowerCase()
+        propertyTypes[type] = (propertyTypes[type] || 0) + 1
+      }
+    })
+
+    const topLocation = Object.entries(locations).sort(([, a], [, b]) => b - a)[0]
+    const topBedrooms = Object.entries(bedrooms).sort(([, a], [, b]) => b - a)[0]
+    const topPropertyType = Object.entries(propertyTypes).sort(([, a], [, b]) => b - a)[0]
+
+    prices.sort((a, b) => a - b)
+    const medianPrice = prices[Math.floor(prices.length / 2)] || 150000
+
+    return {
+      priceMin: medianPrice * 0.7,
+      priceMax: medianPrice * 1.5,
+      bedrooms: topBedrooms ? parseInt(topBedrooms[0]) : 2,
+      propertyType: topPropertyType ? topPropertyType[0] : null,
+      preferredCities: topLocation ? [topLocation[0]] : ['Santo Domingo', 'Santiago', 'Punta Cana']
+    }
+  } catch (error) {
+    console.error('Error fetching user preferences:', error)
+    return {
+      priceMin: 50000,
+      priceMax: 300000,
+      bedrooms: 2,
+      propertyType: null,
+      preferredCities: ['Santo Domingo', 'Santiago', 'Punta Cana']
+    }
   }
 }
 
 async function getUserBehavior(userId: string) {
-  // In future, fetch from Firestore user_activity collection
-  // For now, return mock behavior
-  return {
-    viewedProperties: [],
-    searchedLocations: ['Santo Domingo'],
-    favoritePropertyTypes: ['apartment', 'house'],
-    avgPriceViewed: 150000,
+  try {
+    // Fetch from analytics_events for behavior patterns
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+    const eventsRef = collection(db, 'analytics_events')
+    const q = query(
+      eventsRef,
+      where('userId', '==', userId),
+      where('timestamp', '>=', thirtyDaysAgo.toISOString()),
+      orderBy('timestamp', 'desc'),
+      limit(100)
+    )
+    
+    const snapshot = await getDocs(q)
+    const events = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }))
+
+    const viewedProperties: string[] = []
+    const searchedLocations: string[] = []
+    const favoritePropertyTypes: string[] = []
+
+    events.forEach((event: any) => {
+      const metadata = event.metadata || {}
+      
+      if (event.eventType === 'listing_view' && metadata.listingId) {
+        viewedProperties.push(metadata.listingId)
+      }
+      
+      if (event.eventType === 'search_performed' && metadata.query) {
+        searchedLocations.push(metadata.query)
+      }
+      
+      if (event.eventType === 'favorite_added' && metadata.propertyType) {
+        favoritePropertyTypes.push(metadata.propertyType.toString().toLowerCase())
+      }
+    })
+
+    return {
+      viewedProperties: Array.from(new Set(viewedProperties)),
+      searchedLocations: Array.from(new Set(searchedLocations)),
+      favoritePropertyTypes: Array.from(new Set(favoritePropertyTypes)),
+      avgPriceViewed: 150000
+    }
+  } catch (error) {
+    console.error('Error fetching user behavior:', error)
+    return {
+      viewedProperties: [],
+      searchedLocations: ['Santo Domingo'],
+      favoritePropertyTypes: ['apartment', 'house'],
+      avgPriceViewed: 150000
+    }
   }
 }
 

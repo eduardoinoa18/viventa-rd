@@ -6,6 +6,7 @@ import BottomNav from '../components/BottomNav';
 import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import StructuredData from '../components/StructuredData';
+import RegistrationPrompt from '../components/RegistrationPrompt';
 import { useState, useEffect } from 'react';
 import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock, FiTrendingUp, FiStar } from 'react-icons/fi'
 
@@ -445,6 +446,7 @@ export default function HomePage() {
           </div>
         </section>
       </main>
+      <RegistrationPrompt />
       <Footer />
       <BottomNav />
     </div>

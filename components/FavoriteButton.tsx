@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { FaHeart, FaRegHeart } from 'react-icons/fa'
 import { saveFavoriteOffline, removeFavoriteOffline, isFavorite, isOffline } from '@/lib/offlineFavorites'
+import { trackFavoriteAdded, trackFavoriteRemoved, getCurrentUserInfo } from '@/lib/analyticsService'
 import toast from 'react-hot-toast'
 
 interface FavoriteButtonProps {
@@ -39,12 +40,25 @@ export default function FavoriteButton({ property, className = '' }: FavoriteBut
     e.stopPropagation()
     
     setLoading(true)
+    const { userId, userRole } = getCurrentUserInfo()
     
     try {
       if (favorited) {
         await removeFavoriteOffline(property.id)
         setFavorited(false)
         toast.success('Eliminado de favoritos')
+        
+        // Track removal
+        trackFavoriteRemoved(
+          property.id,
+          { 
+            title: property.title, 
+            price: property.price,
+            location: property.location 
+          },
+          userId,
+          userRole
+        )
       } else {
         await saveFavoriteOffline({
           ...property,
@@ -60,6 +74,18 @@ export default function FavoriteButton({ property, className = '' }: FavoriteBut
         } else {
           toast.success('Guardado en favoritos')
         }
+        
+        // Track addition
+        trackFavoriteAdded(
+          property.id,
+          { 
+            title: property.title, 
+            price: property.price,
+            location: property.location 
+          },
+          userId,
+          userRole
+        )
       }
     } catch (error) {
       console.error('Error toggling favorite:', error)

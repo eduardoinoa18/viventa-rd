@@ -20,6 +20,14 @@ export type AnalyticsEventType =
   | 'application_submitted'
   | 'conversion'
   | 'error'
+  | 'contact_form_submit'
+  | 'filter_used'
+  | 'property_card_click'
+  | 'search_refined'
+  | 'navigation'
+  | 'whatsapp_click'
+  | 'agent_view'
+  | 'search_saved'
 
 export interface AnalyticsEvent {
   eventId: string

@@ -6,11 +6,9 @@
   "scripts": {
     "build": "tsc -p .",
     "seed:master": "ts-node src/seedMasterAdmin.ts",
-    "algolia:configure": "ts-node src/configureAlgolia.ts",
-    "algolia:reindex": "ts-node src/reindex.ts"
+    
   },
   "dependencies": {
-    "algoliasearch": "4.17.0",
     "firebase-admin": "11.11.0",
     "firebase-functions": "4.4.0",
     "viventa-rd-mvp-full": "file:.."

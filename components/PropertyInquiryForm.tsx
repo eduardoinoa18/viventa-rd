@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { FiX, FiSend, FiMail, FiUser, FiPhone } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import { trackContactSubmission, getCurrentUserInfo } from '@/lib/analyticsService'
 
 interface PropertyInquiryFormProps {
   propertyId: string
@@ -50,6 +51,21 @@ export default function PropertyInquiryForm({
       if (!data.ok) throw new Error(data.error || 'Failed to send inquiry')
 
       toast.success('¡Consulta enviada! El agente te contactará pronto.')
+      
+      // Track contact form submission
+      const { userId, userRole } = getCurrentUserInfo()
+      trackContactSubmission(
+        'property_inquiry',
+        {
+          propertyId,
+          propertyTitle,
+          preferredContact: formData.preferredContact,
+          hasVisitDate: !!formData.visitDate
+        },
+        userId,
+        userRole
+      )
+      
       onClose()
     } catch (error) {
       toast.error('Error al enviar la consulta. Intenta de nuevo.')
