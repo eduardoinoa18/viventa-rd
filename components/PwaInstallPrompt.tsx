@@ -54,7 +54,7 @@ export default function PwaInstallPrompt() {
   if (!visible) return null
 
   return (
-    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md">
+    <div className="fixed bottom-20 md:bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md">
       <div className="bg-white rounded-xl shadow-2xl p-4 border border-gray-200">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0">

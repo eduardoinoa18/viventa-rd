@@ -30,7 +30,7 @@ export default function RegistrationPrompt() {
   }
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] sm:w-[680px]">
+    <div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] sm:w-[680px]">
       <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex-1">
           <div className="text-lg sm:text-xl font-bold text-[#0B2545]">Crea tu cuenta en VIVENTA</div>
