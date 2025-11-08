@@ -2,8 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSession } from '@/lib/authSession'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
+import ProfessionalSidebar from '@/components/ProfessionalSidebar'
 import dynamic from 'next/dynamic'
 import { FiUsers, FiHome, FiTrendingUp, FiDollarSign, FiAward, FiSettings, FiUserPlus, FiBarChart2, FiCheckCircle, FiClock, FiAlertCircle, FiEdit, FiX } from 'react-icons/fi'
 import { db } from '@/lib/firebaseClient'
@@ -191,8 +190,8 @@ export default function BrokerDashboard() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header />
+    <div className="min-h-screen bg-gray-50 flex">
+      <ProfessionalSidebar role="broker" userName={user.name} professionalCode={user.professionalCode || user.brokerCode} />
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Dashboard de Bróker</h1>
@@ -717,7 +716,6 @@ export default function BrokerDashboard() {
           </>
         )}
       </main>
-      <Footer />
     </div>
   )
 }

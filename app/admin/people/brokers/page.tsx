@@ -1,6 +1,6 @@
 // app/admin/people/brokers/page.tsx
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import ProtectedClient from '@/app/auth/ProtectedClient'
 import AdminSidebar from '@/components/AdminSidebar'
 import AdminTopbar from '@/components/AdminTopbar'
@@ -14,7 +14,7 @@ import AdminUserDetailsModal from '@/components/AdminUserDetailsModal'
 import toast from 'react-hot-toast'
 import { useSearchParams } from 'next/navigation'
 
-export default function PeopleBrokersPage() {
+function BrokersInner() {
   const [brokers, setBrokers] = useState<any[]>([])
   const [showModal, setShowModal] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -121,7 +121,7 @@ export default function PeopleBrokersPage() {
   }
 
   return (
-    <ProtectedClient allowed={['master_admin','admin']}>
+    <>
       <AdminTopbar />
       <div className="flex">
         <AdminSidebar />
@@ -132,9 +132,7 @@ export default function PeopleBrokersPage() {
               <p className="text-gray-600">Manage users, agents, brokers, leads, and applications</p>
             </div>
           </div>
-
           <AdminPeopleTabs />
-
           <div className="p-6">
             <div className="max-w-7xl mx-auto">
               <div className="flex justify-between items-center mb-6">
@@ -156,7 +154,6 @@ export default function PeopleBrokersPage() {
                   </button>
                 </div>
               </div>
-
               {showModal && (
                 <CreateProfessionalModal 
                   onClose={() => setShowModal(false)}
@@ -164,11 +161,9 @@ export default function PeopleBrokersPage() {
                   initialRole="broker"
                 />
               )}
-
               {showInviteModal && (
                 <InviteModal inviteType="broker" onClose={() => setShowInviteModal(false)} />
               )}
-
               <div className="bg-white rounded-lg shadow overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b">
@@ -244,7 +239,6 @@ export default function PeopleBrokersPage() {
                   </tbody>
                 </table>
               </div>
-
               {selected && (
                 <AdminUserDetailsModal
                   user={{
@@ -270,6 +264,16 @@ export default function PeopleBrokersPage() {
           </div>
         </main>
       </div>
+    </>
+  )
+}
+
+export default function PeopleBrokersPage() {
+  return (
+    <ProtectedClient allowed={['master_admin','admin']}>
+      <Suspense fallback={<div className="p-6">Cargando brokers...</div>}>
+        <BrokersInner />
+      </Suspense>
     </ProtectedClient>
   )
 }

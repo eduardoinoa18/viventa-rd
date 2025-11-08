@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
+import ProfessionalSidebar from '@/components/ProfessionalSidebar'
 import { getSession } from '@/lib/authSession'
 import { db } from '@/lib/firebaseClient'
 import { collection, query, where, getDocs } from 'firebase/firestore'
+import toast from 'react-hot-toast'
 import {
   FiHome,
   FiUsers,
@@ -22,6 +22,7 @@ import {
   FiEdit,
   FiClock,
   FiDollarSign,
+  FiTrash2,
 } from 'react-icons/fi'
 
 type Listing = {
@@ -60,6 +61,9 @@ export default function AgentDashboard() {
   const [listings, setListings] = useState<Listing[]>([])
   const [leads, setLeads] = useState<Lead[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
+  const [taskModal, setTaskModal] = useState(false)
+  const [newTask, setNewTask] = useState({ title: '', dueDate: '', priority: 'medium' as 'high'|'medium'|'low' })
+  const [taskSaving, setTaskSaving] = useState(false)
   const [stats, setStats] = useState({
     totalListings: 0,
     activeListings: 0,
@@ -119,41 +123,24 @@ export default function AgentDashboard() {
         },
       ]
 
-      // Mock tasks
-      const mockTasks: Task[] = [
-        {
-          id: '1',
-          title: 'Llamar a cliente Carlos Pérez',
-          dueDate: '2025-10-29',
-          priority: 'high',
-          completed: false,
-        },
-        {
-          id: '2',
-          title: 'Preparar documentos para cierre',
-          dueDate: '2025-10-30',
-          priority: 'high',
-          completed: false,
-        },
-        {
-          id: '3',
-          title: 'Actualizar fotos de listado',
-          dueDate: '2025-11-01',
-          priority: 'medium',
-          completed: false,
-        },
-      ]
+      // Fetch tasks from API
+      try {
+        const res = await fetch('/api/agent/tasks')
+        const data = await res.json()
+        if (data.ok) {
+          setTasks(data.tasks as Task[])
+        }
+      } catch {}
 
       setListings(listingsList)
       setLeads(mockLeads)
-      setTasks(mockTasks)
       setStats({
         totalListings: listingsList.length,
         activeListings,
         soldThisMonth,
         totalViews: Math.floor(Math.random() * 500) + 200,
         newLeads: mockLeads.filter((l) => l.status === 'new').length,
-        pendingTasks: mockTasks.filter((t) => !t.completed).length,
+        pendingTasks: tasks.filter((t) => !t.completed).length,
       })
     } catch (e) {
       console.error('Failed to load agent dashboard', e)
@@ -162,11 +149,71 @@ export default function AgentDashboard() {
     }
   }
 
+  async function createTask(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newTask.title || !newTask.dueDate) return
+    setTaskSaving(true)
+    try {
+      const res = await fetch('/api/agent/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTask)
+      })
+      const data = await res.json()
+      if (data.ok) {
+        // Refresh list quickly
+        const r = await fetch('/api/agent/tasks')
+        const d = await r.json()
+        if (d.ok) setTasks(d.tasks)
+        setTaskModal(false)
+        setNewTask({ title: '', dueDate: '', priority: 'medium' })
+        toast.success('Tarea creada exitosamente')
+      } else {
+        toast.error('Error al crear tarea')
+      }
+    } catch {
+      toast.error('Error de conexión')
+    } finally {
+      setTaskSaving(false)
+    }
+  }
+
+  async function toggleTaskComplete(task: Task) {
+    try {
+      const res = await fetch('/api/agent/tasks', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: task.id, completed: !task.completed })
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t))
+        toast.success(task.completed ? 'Tarea marcada como pendiente' : 'Tarea completada')
+      }
+    } catch {}
+  }
+
+  async function deleteTask(taskId: string) {
+    if (!confirm('¿Eliminar esta tarea?')) return
+    try {
+      const res = await fetch(`/api/agent/tasks?id=${taskId}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (data.ok) {
+        setTasks(prev => prev.filter(t => t.id !== taskId))
+        toast.success('Tarea eliminada')
+      } else {
+        toast.error('Error al eliminar')
+      }
+    } catch {
+      toast.error('Error de conexión')
+    }
+  }
+
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header />
+    <div className="min-h-screen bg-gray-50 flex">
+      <ProfessionalSidebar role="agent" userName={user.name} professionalCode={user.professionalCode || user.agentCode} />
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         {/* Header with Welcome Message */}
         <div className="mb-6 flex items-center justify-between">
@@ -566,7 +613,7 @@ export default function AgentDashboard() {
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-gray-800">Mis Tareas</h2>
-                  <button className="px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] inline-flex items-center gap-2">
+                  <button onClick={() => setTaskModal(true)} className="px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] inline-flex items-center gap-2">
                     <FiPlus /> Nueva Tarea
                   </button>
                 </div>
@@ -587,14 +634,27 @@ export default function AgentDashboard() {
                           .map((task) => (
                             <div key={task.id} className="p-3 border rounded-lg hover:bg-gray-50">
                               <div className="flex items-start gap-3">
-                                <input type="checkbox" className="mt-1 w-5 h-5" aria-label={`Mark task "${task.title}" as complete`} />
-                                <div className="flex-1">
+                                <input
+                                  type="checkbox"
+                                  className="mt-1 w-5 h-5 shrink-0"
+                                  checked={task.completed}
+                                  onChange={() => toggleTaskComplete(task)}
+                                  aria-label={`Mark task "${task.title}" as complete`}
+                                />
+                                <div className="flex-1 min-w-0">
                                   <div className="font-semibold text-gray-800">{task.title}</div>
                                   <div className="text-sm text-gray-600 mt-1 flex items-center gap-2">
                                     <FiClock />
                                     {task.dueDate}
                                   </div>
                                 </div>
+                                <button
+                                  onClick={() => deleteTask(task.id)}
+                                  className="p-1 text-red-500 hover:bg-red-50 rounded shrink-0"
+                                  aria-label="Eliminar tarea"
+                                >
+                                  <FiTrash2 />
+                                </button>
                               </div>
                             </div>
                           ))}
@@ -625,7 +685,51 @@ export default function AgentDashboard() {
           </>
         )}
       </main>
-      <Footer />
+      {taskModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <form onSubmit={createTask} className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 space-y-4">
+            <h3 className="text-lg font-bold text-[#0B2545]">Nueva Tarea</h3>
+            <input
+              required
+              value={newTask.title}
+              onChange={e => setNewTask(t => ({ ...t, title: e.target.value }))}
+              placeholder="Título de la tarea"
+              aria-label="Título de la tarea"
+              title="Título de la tarea"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+            />
+            <input
+              required
+              type="date"
+              value={newTask.dueDate}
+              onChange={e => setNewTask(t => ({ ...t, dueDate: e.target.value }))}
+              aria-label="Fecha de vencimiento"
+              title="Fecha de vencimiento"
+              placeholder="Selecciona la fecha"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+            />
+            <select
+              value={newTask.priority}
+              onChange={e => setNewTask(t => ({ ...t, priority: e.target.value as any }))}
+              aria-label="Prioridad de la tarea"
+              title="Prioridad de la tarea"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+            >
+              <option value="high">Alta</option>
+              <option value="medium">Media</option>
+              <option value="low">Baja</option>
+            </select>
+            <div className="flex gap-3 pt-2">
+              <button type="button" onClick={() => setTaskModal(false)} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Cancelar</button>
+              <button
+                type="submit"
+                disabled={taskSaving}
+                className="flex-1 px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] disabled:opacity-50"
+              >{taskSaving ? 'Guardando...' : 'Guardar'}</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }

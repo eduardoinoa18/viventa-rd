@@ -26,6 +26,8 @@ export default function Footer() {
     { href: '/profesionales', label: 'Profesionales' },
     { href: '/contact', label: 'Contacto' },
     { href: '/disclosures', label: 'Avisos Legales' },
+    { href: '/agent/login', label: 'Portal Agente' },
+    { href: '/broker/login', label: 'Portal Broker' },
   ]
 
   const links = loggedIn ? userLinks : publicLinks

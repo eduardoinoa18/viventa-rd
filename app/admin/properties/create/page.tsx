@@ -257,24 +257,38 @@ export default function CreatePropertyPage() {
         images: form.images,
         agentId: form.agentId?.trim() || '',
         agentName: form.agentName?.trim() || '',
+        agentEmail: form.agentId ? undefined : getSession()?.email, // attempt to include email if available
         status: form.status,
         featured: Boolean(form.featured),
         features,
       }
-      
-      // Create via server API (Admin SDK) to avoid client perms issues
-      const res = await fetch('/api/properties', {
+      // Determine endpoint based on role (admins vs professionals)
+      const session = getSession()
+      const role = session?.role
+      const isAdmin = role === 'admin' || role === 'master_admin'
+      const endpoint = isAdmin ? '/api/admin/properties' : '/api/properties'
+      const body = isAdmin
+        ? JSON.stringify({ ...payload })
+        : JSON.stringify({ action: 'create', ...payload })
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', ...payload }),
+        body,
       })
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err?.error || 'No se pudo crear la propiedad')
+        if (res.status === 403) {
+          toast.error('No autorizado. Vuelve a iniciar sesión con tu cuenta correcta.')
+        } else {
+          const err = await res.json().catch(() => ({}))
+          toast.error(err?.error || 'No se pudo crear la propiedad')
+        }
+        setSaving(false)
+        return
       }
-      // Optional: read listingId from response
-      // const json = await res.json(); console.log('Created listingId:', json.listingId)
-      toast.success('¡Propiedad creada exitosamente!')
+      const json = await res.json().catch(() => ({}))
+      const listingId = json?.listingId || json?.data?.listingId
+      toast.success(`¡Propiedad creada!${listingId ? ` ID: ${listingId}` : ''}`)
       
       // Reset form
       setForm({

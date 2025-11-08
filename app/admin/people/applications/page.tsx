@@ -5,12 +5,13 @@ import ProtectedClient from '@/app/auth/ProtectedClient'
 import AdminSidebar from '@/components/AdminSidebar'
 import AdminTopbar from '@/components/AdminTopbar'
 import AdminPeopleTabs from '@/components/AdminPeopleTabs'
-import { FiCheck, FiX, FiUser, FiUsers, FiBriefcase, FiTrash2 } from 'react-icons/fi'
+import { FiCheck, FiX, FiUser, FiUsers, FiBriefcase, FiTrash2, FiChevronDown } from 'react-icons/fi'
 
 export default function PeopleApplicationsPage() {
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     loadApplications()
@@ -89,6 +90,19 @@ export default function PeopleApplicationsPage() {
 
   const filtered = applications.filter((a) => filter === 'all' || a.status === filter)
 
+  function formatDateTime(ts: any) {
+    try {
+      if (!ts) return '—'
+      // Firestore Timestamp (has seconds & nanoseconds) or Date
+      if (ts.seconds) {
+        return new Date(ts.seconds * 1000).toLocaleString('es-DO')
+      }
+      const d = typeof ts === 'string' ? new Date(ts) : ts instanceof Date ? ts : new Date(ts)
+      if (isNaN(d.getTime())) return '—'
+      return d.toLocaleString('es-DO')
+    } catch { return '—' }
+  }
+
   return (
     <ProtectedClient allowed={['master_admin','admin']}>
       <AdminTopbar />
@@ -149,21 +163,39 @@ export default function PeopleApplicationsPage() {
               ) : (
                 <div className="space-y-4">
                   {filtered.map((app) => {
-                    const typeIcon = app.type === 'broker' ? <FiUsers /> : app.type === 'agent' ? <FiUser /> : <FiBriefcase />
-                    const typeLabel = app.type === 'broker' ? 'Broker' : app.type === 'agent' ? 'Agent' : 'Developer'
-                    
+                    const typeIcon = app.type === 'broker' ? <FiUsers /> : (app.type === 'agent' || app.type === 'new-agent') ? <FiUser /> : <FiBriefcase />
+                    const typeLabel = app.type === 'broker'
+                      ? 'Broker'
+                      : app.type === 'agent'
+                        ? 'Agent'
+                        : app.type === 'new-agent'
+                          ? 'Agent (New)'
+                          : 'Developer'
+                    const isExpanded = expanded[app.id] === true
                     return (
-                      <div key={app.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
+                      <div key={app.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div className="p-4 flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <div className="p-2 bg-[#0B2545]/10 rounded-full text-[#0B2545]">
                               {typeIcon}
                             </div>
                             <div>
-                              <div className="font-semibold text-gray-900">{app.contact || 'No name'}</div>
+                              <div className="font-semibold text-gray-900 flex items-center gap-2">
+                                {app.contact || 'No name'}
+                                <button
+                                  onClick={() => setExpanded(prev => ({ ...prev, [app.id]: !isExpanded }))}
+                                  className="p-1 rounded hover:bg-gray-100 text-gray-500"
+                                  aria-label={isExpanded ? 'Hide details' : 'Show details'}
+                                >
+                                  <FiChevronDown className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                </button>
+                              </div>
                               <div className="text-sm text-gray-600">{app.email}</div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {typeLabel} • {app.phone || 'No phone'} • {app.company || app.brokerage || '-'}
+                              <div className="text-xs text-gray-500 mt-1 flex flex-wrap gap-2">
+                                <span>{typeLabel}</span>
+                                <span>{app.phone || 'No phone'}</span>
+                                <span>{app.company || app.brokerage || '-'}</span>
+                                <span className="text-gray-400">Creado: {formatDateTime(app.createdAt)}</span>
                               </div>
                             </div>
                           </div>
@@ -209,6 +241,30 @@ export default function PeopleApplicationsPage() {
                             </button>
                           </div>
                         </div>
+                        {isExpanded && (
+                          <div className="px-6 pb-4 text-sm text-gray-700 space-y-2 border-t border-gray-100">
+                            {/* Experience */}
+                            {(app.years || app.volume12m || app.annualVolume12m) && (
+                              <div className="flex flex-wrap gap-4">
+                                {app.years ? <span><strong>Años:</strong> {app.years}</span> : null}
+                                {app.volume12m ? <span><strong>Volumen 12m:</strong> {app.volume12m}</span> : null}
+                                {app.annualVolume12m ? <span><strong>Volumen Anual:</strong> {app.annualVolume12m}</span> : null}
+                                {app.agents ? <span><strong>Agentes Equipo:</strong> {app.agents}</span> : null}
+                                {app.offices ? <span><strong>Oficinas:</strong> {app.offices}</span> : null}
+                              </div>
+                            )}
+                            {app.education && <div><strong>Educación:</strong> {app.education}</div>}
+                            {app.whyRealEstate && <div><strong>Motivación:</strong> {app.whyRealEstate}</div>}
+                            {app.specialties && <div><strong>Especialidades:</strong> {app.specialties}</div>}
+                            {app.languages && <div><strong>Idiomas:</strong> {app.languages}</div>}
+                            {app.markets && <div><strong>Mercados:</strong> {app.markets}</div>}
+                            {app.crm && <div><strong>CRM:</strong> {app.crm}</div>}
+                            {app.businessDetails && <div><strong>Detalles Negocio:</strong> {app.businessDetails}</div>}
+                            {app.resumeUrl && <div><strong>CV:</strong> <a className="text-[#00A676] underline" href={app.resumeUrl} target="_blank" rel="noopener noreferrer">Ver documento</a></div>}
+                            {app.documentUrl && <div><strong>Documento:</strong> <a className="text-[#00A676] underline" href={app.documentUrl} target="_blank" rel="noopener noreferrer">Ver documento</a></div>}
+                            {app.reviewNotes && <div className="bg-blue-50 border border-blue-200 rounded p-2"><strong>Notas Revisión:</strong> {app.reviewNotes}</div>}
+                          </div>
+                        )}
                       </div>
                     )
                   })}

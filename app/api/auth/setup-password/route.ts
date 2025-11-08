@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many attempts. Try again later.' }, { status: 429 })
     }
-    const { token, email, password } = await req.json()
+  const { token, email, password } = await req.json()
 
     if (!token || !email || !password) {
       return NextResponse.json(
@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify token
-    const userId = verifyPasswordSetupToken(token)
+  // Verify token
+  const userId = verifyPasswordSetupToken(token)
     
     if (!userId) {
       return NextResponse.json(
@@ -47,15 +47,33 @@ export async function POST(req: NextRequest) {
         throw new Error('Firebase Admin no disponible')
       }
 
+      // Verify email-user match and ensure not already set
+      const adminDb = getAdminDb()
+      if (adminDb) {
+        const userRef = adminDb.collection('users').doc(userId)
+        const userSnap = await userRef.get()
+        if (!userSnap.exists) {
+          return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+        }
+        const data = userSnap.data() as any
+        const emailMatches = (data.email || '').toLowerCase() === (email || '').toLowerCase()
+        if (!emailMatches) {
+          return NextResponse.json({ error: 'Email no coincide con el usuario' }, { status: 401 })
+        }
+        if (data.passwordSet === true) {
+          return NextResponse.json({ error: 'La contraseña ya fue configurada' }, { status: 409 })
+        }
+      }
+
       await adminAuth.updateUser(userId, {
         password,
         emailVerified: true
       })
 
       // Update user document to mark password as set
-      const adminDb = getAdminDb()
-      if (adminDb) {
-        await adminDb.collection('users').doc(userId).update({
+      const adminDb2 = getAdminDb()
+      if (adminDb2) {
+        await adminDb2.collection('users').doc(userId).update({
           passwordSet: true,
           passwordSetAt: new Date(),
           updatedAt: new Date()

@@ -38,6 +38,7 @@ export default function Header() {
             <Link href="/search" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Buscar</Link>
             <Link href="/agents" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Agentes</Link>
             <Link href="/brokers" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Brokerages</Link>
+            <Link href="/profesionales" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Profesionales</Link>
             <Link href="/contact" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Contacto</Link>
           </nav>
           <div className="flex items-center gap-3">
@@ -71,6 +72,7 @@ export default function Header() {
               <Link href="/search" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Buscar</Link>
               <Link href="/agents" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Agentes</Link>
               <Link href="/brokers" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Brokerages</Link>
+              <Link href="/profesionales" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Profesionales</Link>
               <Link href="/contact" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Contacto</Link>
             </>
           ) : (
@@ -181,6 +183,29 @@ export default function Header() {
             >
               Brokerages
             </Link>
+            <Link
+              href="/profesionales"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-4 py-3 rounded-lg hover:bg-viventa-sand transition-colors font-medium text-viventa-navy"
+            >
+              Profesionales (Agentes/Brokers)
+            </Link>
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/agent/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 text-center rounded-lg border-2 border-viventa-ocean text-viventa-ocean font-semibold hover:bg-viventa-ocean hover:text-white transition-all"
+              >
+                Portal Agente
+              </Link>
+              <Link
+                href="/broker/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 text-center rounded-lg border-2 border-viventa-teal text-viventa-teal font-semibold hover:bg-viventa-teal hover:text-white transition-all"
+              >
+                Portal Broker
+              </Link>
+            </div>
             <Link
               href="/contact"
               onClick={() => setMobileMenuOpen(false)}
