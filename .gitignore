@@ -20,9 +20,17 @@ firebase-debug.log*
 functions/lib/
 functions/node_modules/
 
+# TypeScript
+tsconfig.tsbuildinfo
+
+# PWA / Service Worker
+public/service-worker.js
+public/workbox-*.js
+
 # OS
 .DS_Store
 Thumbs.db
+
 # Dependencies
 node_modules/
 
