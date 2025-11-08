@@ -2,15 +2,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
+import { rateLimit, keyFromRequest } from '@/lib/rateLimiter'
 
 export const dynamic = 'force-dynamic'
 
 /**
  * WARNING: This endpoint permanently deletes Firebase data.
  * Only accessible to master_admin role with confirmation token.
+ * Rate limited to 1 request per hour.
  */
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting - 1 request per hour
+    const key = keyFromRequest(req, 'firebase-cleanup')
+    const { allowed } = rateLimit(key, 1, 60 * 60 * 1000) // 1 per hour
+
+    if (!allowed) {
+      return NextResponse.json({
+        ok: false,
+        error: 'Rate limit exceeded. Firebase cleanup can only be run once per hour.'
+      }, { status: 429 })
+    }
+
     const { confirmation, collections, deleteAuth, adminEmail } = await req.json()
 
     // Security check: require exact confirmation string

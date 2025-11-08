@@ -12,6 +12,9 @@ import FavoriteButton from '../../../components/FavoriteButton'
 import PropertyInquiryForm from '../../../components/PropertyInquiryForm'
 import StructuredData from '../../../components/StructuredData'
 import RegistrationPrompt from '../../../components/RegistrationPrompt'
+import ImageGalleryCarousel from '../../../components/ImageGalleryCarousel'
+import ShareButtons from '../../../components/ShareButtons'
+import SimilarProperties from '../../../components/SimilarProperties'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaParking, FaBuilding, FaCalendar } from 'react-icons/fa'
@@ -296,30 +299,21 @@ export default function ListingDetail(){
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Image Gallery */}
-              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="h-96 bg-gray-100">
-                  {listing.images && listing.images[0] ? (
-                    <img 
-                      src={listing.images[0]} 
-                      alt={listing.title}
-                      className="w-full h-full object-cover" 
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <span>Sin imagen</span>
-                    </div>
-                  )}
-                </div>
-                {listing.images && listing.images.length > 1 && (
-                  <div className="grid grid-cols-4 gap-2 p-4">
-                    {listing.images.slice(1, 5).map((img: string, idx: number) => (
-                      <div key={idx} className="h-24 bg-gray-100 rounded overflow-hidden">
-                        <img src={img} alt={`Vista ${idx + 2}`} className="w-full h-full object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                )}
+              {/* Enhanced Image Gallery Carousel */}
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden p-4">
+                <ImageGalleryCarousel 
+                  images={listing.images || []} 
+                  title={listing.title} 
+                />
+              </div>
+
+              {/* Share Buttons */}
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <ShareButtons 
+                  url={propertyUrl}
+                  title={listing.title}
+                  description={metaDescription}
+                />
               </div>
               
               {/* Property Features */}
@@ -643,6 +637,21 @@ export default function ListingDetail(){
             </div>
           </div>
         </div>
+
+        {/* Similar Properties */}
+        {listing.propertyType && listing.city && listing.price && (
+          <div className="container mx-auto px-4 max-w-7xl">
+            <SimilarProperties 
+              currentPropertyId={listing.id}
+              propertyType={listing.propertyType}
+              city={listing.city}
+              priceRange={{
+                min: listing.price * 0.7,
+                max: listing.price * 1.3
+              }}
+            />
+          </div>
+        )}
       </main>
       {showInquiryForm && (
         <PropertyInquiryForm
