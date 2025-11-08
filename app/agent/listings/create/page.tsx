@@ -415,77 +415,79 @@ export default function CreateListingPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    
+
     // Validation
     if (images.length === 0) {
       toast.error('Debes subir al menos una imagen')
       return
     }
-
     if (!formData.title || !formData.description) {
       toast.error('El título y descripción son requeridos')
       return
     }
 
-    // Recommend adding pro info but not required
-
     setLoading(true)
-
     try {
-      const session = await getSession()
+      const session = getSession()
       if (!session || session.role !== 'agent') {
         toast.error('Debes estar autenticado como agente')
         router.push('/agent/login')
         return
       }
 
+      // NOTE: Direct Firebase writes require Firebase Auth; we currently rely on custom session.
+      // Provide graceful failure messaging if security rules reject.
       const listingId = await generateListingId()
 
-      // Upload images with progress
+      // Upload images (best-effort). If permission denied, abort with guidance.
       const imageUrls: string[] = []
       toast.loading('Subiendo imágenes...', { id: 'upload' })
-      
       for (let i = 0; i < images.length; i++) {
-        const file = images[i]
-        const fileName = `${Date.now()}-${i}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
-        const storageRef = ref(storage, `properties/${session.uid}/${fileName}`)
-        
-        await uploadBytes(storageRef, file)
-        const url = await getDownloadURL(storageRef)
-        imageUrls.push(url)
+        try {
+          const file = images[i]
+          const fileName = `${Date.now()}-${i}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
+          const storageRef = ref(storage, `properties/${session.uid}/${fileName}`)
+          await uploadBytes(storageRef, file)
+          const url = await getDownloadURL(storageRef)
+          imageUrls.push(url)
+        } catch (err: any) {
+          console.error('Image upload error', err)
+          toast.error('Error al subir una imagen (permiso). Revisa autenticación Firebase.')
+          throw err
+        }
       }
-      
       toast.success('Imágenes subidas', { id: 'upload' })
 
-      // Upload documents with progress
+      // Documents upload
       const uploadedDocuments: Array<{ name: string; url: string; type: string; visibility: string; uploadedAt: number }> = []
-      
       if (documents.length > 0) {
         setUploadingDocs(true)
         toast.loading('Subiendo documentos...', { id: 'docs-upload' })
-        
-        for (const doc of documents) {
-          const fileName = `${Date.now()}-${doc.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
-          const storageRef = ref(storage, `properties/${session.uid}/documents/${fileName}`)
-          
-          await uploadBytes(storageRef, doc.file)
-          const url = await getDownloadURL(storageRef)
-          
-          uploadedDocuments.push({
-            name: doc.name,
-            url,
-            type: doc.type,
-            visibility: doc.visibility,
-            uploadedAt: Date.now()
-          })
+        for (const docFile of documents) {
+          try {
+            const fileName = `${Date.now()}-${docFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
+            const storageRef = ref(storage, `properties/${session.uid}/documents/${fileName}`)
+            await uploadBytes(storageRef, docFile.file)
+            const url = await getDownloadURL(storageRef)
+            uploadedDocuments.push({
+              name: docFile.name,
+              url,
+              type: docFile.type,
+              visibility: docFile.visibility,
+              uploadedAt: Date.now()
+            })
+          } catch (err: any) {
+            console.error('Doc upload error', err)
+            toast.error('Error al subir documentos (permiso).')
+            throw err
+          }
         }
-        
         toast.success('Documentos subidos', { id: 'docs-upload' })
         setUploadingDocs(false)
       }
 
-      // Create property document with complete structure
-  const propertyData = {
+      // Prepare data
+      const propertyData = {
         // Spanish content (primary)
         title: formData.title,
         description: formData.description,
@@ -557,26 +559,33 @@ export default function CreateListingPage() {
         updatedAt: serverTimestamp()
       }
 
-      const docRef = await addDoc(collection(db, 'properties'), propertyData)
-
-      // Fire-and-forget: notify agent via email that listing is under review
-      fetch('/api/listings/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event: 'received',
-          listingId: docRef.id,
-          listingTitle: formData.title,
-          agentEmail: session.email,
-          agentName: session.name || session.displayName || session.email
-        })
-      }).catch(() => {})
-
-      toast.success('¡Propiedad enviada para revisión! (24-48h)')
-      router.push('/agent/listings')
-    } catch (error: any) {
-      console.error('Error creating property:', error)
-      toast.error(error.message || 'Error al crear la propiedad. Intenta de nuevo.')
+      // Attempt direct Firestore write; if permission error, instruct user.
+      try {
+        const docRef = await addDoc(collection(db, 'properties'), propertyData)
+        // Fire-and-forget email
+        fetch('/api/listings/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: 'received',
+            listingId: docRef.id,
+            listingTitle: formData.title,
+            agentEmail: session.email,
+            agentName: session.name || session.displayName || session.email
+          })
+        }).catch(() => {})
+        toast.success('¡Propiedad enviada para revisión! (24-48h)')
+        router.push('/agent/listings')
+      } catch (err: any) {
+        const msg = (err?.code === 'permission-denied')
+          ? 'Permisos insuficientes. Necesitas iniciar sesión con Firebase Auth. (Configura autenticación)'
+          : (err.message || 'Error al crear la propiedad.')
+        console.error('Firestore create error', err)
+        toast.error(msg)
+      }
+    } catch (outer: any) {
+      // Already handled granular errors above
+      console.error('Create listing workflow error', outer)
     } finally {
       setLoading(false)
     }

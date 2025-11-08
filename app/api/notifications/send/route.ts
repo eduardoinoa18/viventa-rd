@@ -166,8 +166,28 @@ export async function GET(req: NextRequest) {
       broadcast = broadcast.filter((n: any) => !n.read)
     }
 
-    // Merge and sort by createdAt desc
+    // Default URL mapping by type
+    const defaultUrlByType = (type: string, role: string) => {
+      const isAdmin = role === 'admin' || role === 'master_admin'
+      const base = isAdmin ? '/admin' : ''
+      switch (type) {
+        case 'new_message': return '/messages'
+        case 'lead_inquiry': return `${base}/leads`
+        case 'application_approved': return `${base}/people`
+        case 'application_rejected': return `${base}/people`
+        case 'new_property': return isAdmin ? `${base}/properties` : '/agent/listings'
+        case 'price_alert': return '/favorites'
+        case 'saved_search': return '/search'
+        default: return isAdmin ? `${base}/notifications` : '/notifications'
+      }
+    }
+
+    // Merge, add default url when missing, and sort by createdAt desc
     const merged = [...personal, ...broadcast]
+      .map((n: any) => ({
+        ...n,
+        url: n.url || defaultUrlByType(n.type, role)
+      }))
       .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
       .slice(0, 50)
 

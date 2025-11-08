@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getSession } from '@/lib/authSession'
-import ProfessionalSidebar from '@/components/ProfessionalSidebar'
+import { getSession } from '../../../lib/authSession'
+import ProfessionalSidebar from '../../../components/ProfessionalSidebar'
 import { FiCalendar, FiClock, FiMapPin, FiPlus, FiTrash2 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 

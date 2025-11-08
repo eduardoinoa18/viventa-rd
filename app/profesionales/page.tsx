@@ -34,73 +34,68 @@ export default function ProfesionalesLanding() {
           </div>
         </section>
 
-        {/* Professional Login Portal Section */}
+        {/* Consolidated Pricing + Access Section */}
         <section className="max-w-6xl mx-auto px-4 py-16">
           <div className="bg-gradient-to-br from-blue-50 to-teal-50 rounded-2xl shadow-xl p-8 md:p-12 border-2 border-blue-200">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-4 text-[#0B2545]">Acceso para Profesionales</h2>
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold mb-4 text-[#0B2545]">Acceso Profesional y Planes</h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                Accede a tu portal profesional con herramientas avanzadas de gestión,
-                CRM integrado, y analíticas en tiempo real.
+                Un ecosistema unificado para agentes, brókers y constructoras. Elige tu camino y potencia tu operación inmobiliaria.
               </p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {/* Agent Portal Card */}
-              <Link href="/agent/login" className="group">
-                <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-2 border-transparent hover:border-[#004AAD]">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-[#004AAD] to-[#0066cc] rounded-xl flex items-center justify-center">
-                      <FiUsers className="text-2xl text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-[#0B2545]">Portal de Agentes</h3>
-                      <p className="text-sm text-gray-500">Para agentes inmobiliarios</p>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200 flex flex-col">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#004AAD] to-[#0066cc] rounded-lg flex items-center justify-center">
+                    <FiUsers className="text-xl text-white" />
                   </div>
-                  <ul className="space-y-2 mb-4 text-sm text-gray-700">
-                    <li className="flex items-start gap-2">✓ Gestión de listados</li>
-                    <li className="flex items-start gap-2">✓ CRM de clientes</li>
-                    <li className="flex items-start gap-2">✓ Analytics de rendimiento</li>
-                    <li className="flex items-start gap-2">✓ Calendario y citas</li>
-                  </ul>
-                  <div className="flex items-center justify-between text-[#004AAD] font-semibold group-hover:translate-x-2 transition-transform">
-                    <span>Iniciar sesión</span>
-                    <FiLogIn className="text-xl" />
-                  </div>
+                  <h3 className="text-lg font-bold text-[#0B2545]">Agentes</h3>
                 </div>
-              </Link>
-
-              {/* Broker Portal Card */}
-              <Link href="/broker/login" className="group">
-                <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-2 border-transparent hover:border-[#00A6A6]">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-[#00A6A6] to-[#00C896] rounded-xl flex items-center justify-center">
-                      <FiTrendingUp className="text-2xl text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-[#0B2545]">Portal de Brókers</h3>
-                      <p className="text-sm text-gray-500">Para brókers y gerentes</p>
-                    </div>
+                <ul className="text-sm text-gray-600 space-y-2 mb-4 flex-1">
+                  <li>✓ Gestión de listados</li>
+                  <li>✓ CRM básico</li>
+                  <li>✓ Analytics inicial</li>
+                  <li>✓ Calendario y citas</li>
+                </ul>
+                <Link href="/agent/login" className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#004AAD] text-white rounded-lg text-sm font-semibold hover:bg-[#003d8f] transition-colors">
+                  <FiLogIn /> Portal Agentes
+                </Link>
+              </div>
+              <div className="bg-white rounded-xl shadow-md p-6 border-2 border-[#00A6A6] flex flex-col relative">
+                <span className="absolute -top-3 left-4 bg-[#00A6A6] text-white text-xs px-2 py-1 rounded-full">Recomendado</span>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#00A6A6] to-[#00C896] rounded-lg flex items-center justify-center">
+                    <FiTrendingUp className="text-xl text-white" />
                   </div>
-                  <ul className="space-y-2 mb-4 text-sm text-gray-700">
-                    <li className="flex items-start gap-2">✓ Gestión de equipo</li>
-                    <li className="flex items-start gap-2">✓ Dashboard ejecutivo</li>
-                    <li className="flex items-start gap-2">✓ Reportes y comisiones</li>
-                    <li className="flex items-start gap-2">✓ Supervisión de agentes</li>
-                  </ul>
-                  <div className="flex items-center justify-between text-[#00A6A6] font-semibold group-hover:translate-x-2 transition-transform">
-                    <span>Iniciar sesión</span>
-                    <FiLogIn className="text-xl" />
-                  </div>
+                  <h3 className="text-lg font-bold text-[#0B2545]">Brókers</h3>
                 </div>
-              </Link>
+                <ul className="text-sm text-gray-600 space-y-2 mb-4 flex-1">
+                  <li>✓ Panel equipo</li>
+                  <li>✓ CRM avanzado</li>
+                  <li>✓ Comisiones</li>
+                  <li>✓ Reportes ejecutivos</li>
+                </ul>
+                <Link href="/broker/login" className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#00A6A6] text-white rounded-lg text-sm font-semibold hover:bg-[#008f8f] transition-colors">
+                  <FiLogIn /> Portal Brókers
+                </Link>
+              </div>
+              <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl shadow-md p-6 border border-orange-200 flex flex-col">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center">
+                    <FiDollarSign className="text-xl text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-[#0B2545]">Constructoras</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-4 flex-1">Planes personalizados: showcase proyectos, inventario, marketing y análisis.</p>
+                <Link href="/contact" className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-semibold hover:bg-orange-700 transition-colors">
+                  Contactar
+                </Link>
+              </div>
             </div>
-
-            <div className="mt-8 text-center">
-              <p className="text-gray-600 mb-4">¿Aún no tienes cuenta profesional?</p>
-              <Link href="/apply" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#004AAD] to-[#00A6A6] text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all">
-                <FiUserPlus /> Solicitar Acceso Profesional
+            <div className="mt-10 text-center">
+              <p className="text-gray-600 mb-3 text-sm">¿Necesitas acceso profesional?</p>
+              <Link href="/apply" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#004AAD] to-[#00A6A6] text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all text-sm">
+                <FiUserPlus /> Solicitar Acceso
               </Link>
             </div>
           </div>

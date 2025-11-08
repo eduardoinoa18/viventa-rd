@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { FiBell, FiCheck, FiX, FiSettings, FiCheckCircle, FiFilter } from 'react-icons/fi'
 import Link from 'next/link'
 import { db } from '@/lib/firebaseClient'
@@ -29,6 +30,7 @@ export default function NotificationCenter({ userId }: { userId: string }) {
   const [broadcastLive, setBroadcastLive] = useState<Notification[]>([])
   const [liveActive, setLiveActive] = useState(false)
   const [filter, setFilter] = useState<FilterType>('all')
+  const router = useRouter()
 
   useEffect(() => {
     if (!userId) return
@@ -92,6 +94,7 @@ export default function NotificationCenter({ userId }: { userId: string }) {
             body: data.body || data.message || '',
             icon: data.icon,
             url: data.url,
+          import { useRouter } from 'next/navigation'
             read: computedRead,
             createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
           }
@@ -115,6 +118,7 @@ export default function NotificationCenter({ userId }: { userId: string }) {
   }, [userId])
 
   // Merge live results when active
+            const router = useRouter()
   useEffect(() => {
     if (!liveActive) return
     const merged = [...personalLive, ...broadcastLive]
@@ -347,10 +351,13 @@ export default function NotificationCenter({ userId }: { userId: string }) {
                       }`}
                       onClick={() => {
                         if (!notification.read) markAsRead(notification.id)
-                        if (notification.url) {
-                          setIsOpen(false)
-                          window.location.href = notification.url
-                        }
+                        setIsOpen(false)
+                        const session = getSession()
+                        const role = session?.role || 'user'
+                        // Use provided url or route to role-appropriate notifications page
+                        const fallback = (role === 'admin' || role === 'master_admin') ? '/admin/notifications' : '/notifications'
+                        const target = notification.url || fallback
+                        router.push(target)
                       }}
                     >
                       <div className="flex items-start gap-3">
