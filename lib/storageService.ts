@@ -3,7 +3,7 @@
  */
 
 import { storage } from './firebaseClient'
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject, UploadTaskSnapshot } from 'firebase/storage'
 
 export interface UploadProgress {
   progress: number

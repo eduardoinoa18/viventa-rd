@@ -41,8 +41,9 @@ export async function createCheckoutSession(
 
     const data = (await res.json()) as CheckoutSessionResponse;
     return data;
-  } catch (err: any) {
-    return { error: err?.message || 'Unexpected error creating checkout session' };
+  } catch (err: unknown) {
+    const error = err as Error;
+    return { error: error?.message || 'Unexpected error creating checkout session' };
   }
 }
 
