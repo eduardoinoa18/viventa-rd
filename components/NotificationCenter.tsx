@@ -94,7 +94,6 @@ export default function NotificationCenter({ userId }: { userId: string }) {
             body: data.body || data.message || '',
             icon: data.icon,
             url: data.url,
-          import { useRouter } from 'next/navigation'
             read: computedRead,
             createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
           }
@@ -118,7 +117,6 @@ export default function NotificationCenter({ userId }: { userId: string }) {
   }, [userId])
 
   // Merge live results when active
-            const router = useRouter()
   useEffect(() => {
     if (!liveActive) return
     const merged = [...personalLive, ...broadcastLive]
