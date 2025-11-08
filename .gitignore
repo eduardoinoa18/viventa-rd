@@ -23,6 +23,10 @@ functions/node_modules/
 # TypeScript
 tsconfig.tsbuildinfo
 
+# PWA / Service Worker
+public/service-worker.js
+public/workbox-*.js
+
 # OS
 .DS_Store
 Thumbs.db
