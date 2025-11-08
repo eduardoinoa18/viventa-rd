@@ -4,10 +4,161 @@ import { useEffect, useState } from 'react'
 import ProtectedClient from '../../auth/ProtectedClient'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
-import { FiSettings, FiServer, FiRefreshCw, FiMail, FiShield, FiLink, FiBell, FiZap, FiGlobe, FiDollarSign, FiImage } from 'react-icons/fi'
+import { FiSettings, FiServer, FiRefreshCw, FiMail, FiShield, FiLink, FiBell, FiZap, FiGlobe, FiDollarSign, FiImage, FiDatabase, FiTrash2, FiAlertTriangle } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import Button from '../../../components/ui/Button'
 import Card from '../../../components/ui/Card'
+
+// Firebase Cleanup Component
+function DatabaseCleanupTab() {
+  const [confirmation, setConfirmation] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [results, setResults] = useState<any>(null)
+  const [deleteAuth, setDeleteAuth] = useState(false)
+
+  async function runCleanup() {
+    if (confirmation !== 'DELETE_ALL_TEST_DATA_PERMANENTLY') {
+      toast.error('Invalid confirmation text')
+      return
+    }
+
+    if (!confirm('⚠️ This will PERMANENTLY delete all selected data. Are you absolutely sure?')) {
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await fetch('/api/admin/firebase/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmation,
+          deleteAuth,
+          adminEmail: 'admin@viventa.com'
+        })
+      })
+
+      const data = await res.json()
+      
+      if (data.ok) {
+        toast.success(`Cleanup completed! ${data.totalDeleted} documents deleted.`)
+        setResults(data)
+        setConfirmation('')
+      } else {
+        toast.error(data.error || 'Cleanup failed')
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Cleanup failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Warning Banner */}
+      <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6">
+        <div className="flex items-start gap-4">
+          <FiAlertTriangle className="text-3xl text-red-600 flex-shrink-0 mt-1" />
+          <div>
+            <h3 className="text-lg font-bold text-red-900 mb-2">⚠️ Danger Zone - Firebase Cleanup</h3>
+            <p className="text-red-800 text-sm mb-3">
+              This tool permanently deletes test data from Firebase. This action <strong>CANNOT BE UNDONE</strong>.
+            </p>
+            <ul className="text-red-700 text-sm space-y-1 list-disc list-inside">
+              <li>All users, agents, brokers, and admins will be deleted</li>
+              <li>All properties, applications, and leads will be deleted</li>
+              <li>All conversations, messages, and notifications will be deleted</li>
+              <li>Firebase Authentication users can optionally be deleted</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Cleanup Form */}
+      <Card>
+        <div className="p-6 space-y-6">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Cleanup Configuration</h3>
+            <p className="text-gray-600 text-sm">
+              Configure what data to delete. Master admin emails will be protected.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
+              <input
+                type="checkbox"
+                id="delete-auth"
+                checked={deleteAuth}
+                onChange={(e) => setDeleteAuth(e.target.checked)}
+                className="w-5 h-5 text-[#00A676] rounded"
+              />
+              <label htmlFor="delete-auth" className="text-sm font-medium text-gray-700 cursor-pointer">
+                Also delete Firebase Authentication users (excluding admin emails)
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Confirmation Text
+              </label>
+              <p className="text-xs text-gray-600 mb-2">
+                Type exactly: <code className="bg-gray-100 px-2 py-1 rounded">DELETE_ALL_TEST_DATA_PERMANENTLY</code>
+              </p>
+              <input
+                type="text"
+                value={confirmation}
+                onChange={(e) => setConfirmation(e.target.value)}
+                placeholder="Type confirmation text..."
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent font-mono text-sm"
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={runCleanup}
+            disabled={loading || confirmation !== 'DELETE_ALL_TEST_DATA_PERMANENTLY'}
+            className="w-full px-6 py-4 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          >
+            <FiTrash2 />
+            {loading ? 'Cleaning up...' : 'Run Firebase Cleanup'}
+          </button>
+        </div>
+      </Card>
+
+      {/* Results */}
+      {results && (
+        <Card>
+          <div className="p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Cleanup Results</h3>
+            <div className="space-y-2">
+              <p className="text-sm"><strong>Total Documents Deleted:</strong> {results.totalDeleted}</p>
+              {Object.entries(results.results || {}).map(([collection, count]: [string, any]) => (
+                <div key={collection} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded text-sm">
+                  <span className="font-medium">{collection}</span>
+                  <span className={count > 0 ? 'text-green-600' : count === 0 ? 'text-gray-500' : 'text-red-600'}>
+                    {count >= 0 ? `${count} deleted` : 'Failed'}
+                  </span>
+                </div>
+              ))}
+              {results.errors && results.errors.length > 0 && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
+                  <p className="font-semibold text-red-900 mb-2">Errors:</p>
+                  <ul className="text-sm text-red-700 space-y-1">
+                    {results.errors.map((err: string, i: number) => (
+                      <li key={i}>• {err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+    </div>
+  )
+}
 import FormField from '../../../components/ui/FormField'
 import TextInput from '../../../components/ui/TextInput'
 import Select from '../../../components/ui/Select'
@@ -78,7 +229,7 @@ type SettingsData = {
 }
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<'general' | 'email' | 'security' | 'integrations' | 'notifications' | 'gamification' | 'advanced' | 'status'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'email' | 'security' | 'integrations' | 'notifications' | 'gamification' | 'advanced' | 'status' | 'database'>('general')
   const [settings, setSettings] = useState<SettingsData>({
     siteTitle: 'VIVENTA',
     siteDescription: 'Tu Espacio, Tu Futuro',
@@ -202,6 +353,7 @@ export default function AdminSettingsPage() {
     { id: 'notifications', label: 'Notifications', icon: <FiBell /> },
     { id: 'gamification', label: 'Gamification', icon: <FiZap /> },
     { id: 'advanced', label: 'Advanced', icon: <FiZap /> },
+    { id: 'database', label: 'Database', icon: <FiDatabase /> },
     { id: 'status', label: 'System Status', icon: <FiServer /> },
   ]
 
@@ -962,6 +1114,9 @@ export default function AdminSettingsPage() {
                 </div>
               </div>
             )}
+
+            {/* Database Tab - Firebase Cleanup */}
+            {activeTab === 'database' && <DatabaseCleanupTab />}
 
             {/* System Status Tab (keep existing) */}
             {activeTab === 'status' && (

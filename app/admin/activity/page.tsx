@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
 import ProtectedClient from '../../auth/ProtectedClient'
-import { FiActivity, FiUser, FiFileText, FiHome, FiServer, FiClock, FiCheckCircle, FiXCircle, FiRefreshCw, FiDownload } from 'react-icons/fi'
+import { FiActivity, FiUser, FiFileText, FiHome, FiServer, FiClock, FiCheckCircle, FiXCircle, FiRefreshCw, FiDownload, FiSettings } from 'react-icons/fi'
 
 type ActivityLog = {
   id: string
@@ -220,6 +220,41 @@ export default function AdminActivityPage() {
                               {log.metadata.updated !== undefined && <span className="mr-3">Actualizados: <strong>{log.metadata.updated}</strong></span>}
                             </div>
                           )}
+                          {/* Quick Actions */}
+                          <div className="mt-3 flex items-center gap-2">
+                            {log.userId && (
+                              <a
+                                href={`/admin/users?search=${log.userId}`}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#00A676] text-white text-xs rounded-lg hover:bg-[#008F64] transition-colors"
+                              >
+                                <FiUser size={12} /> Ver Usuario
+                              </a>
+                            )}
+                            {log.metadata?.propertyId && (
+                              <a
+                                href={`/admin/properties/${log.metadata.propertyId}/edit`}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#004AAD] text-white text-xs rounded-lg hover:bg-[#003d8f] transition-colors"
+                              >
+                                <FiHome size={12} /> Ver Propiedad
+                              </a>
+                            )}
+                            {log.metadata?.applicationId && (
+                              <a
+                                href={`/admin/people/applications`}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#00A6A6] text-white text-xs rounded-lg hover:bg-[#008f8f] transition-colors"
+                              >
+                                <FiFileText size={12} /> Ver Aplicación
+                              </a>
+                            )}
+                            {(log.type === 'user' || log.type === 'auth') && log.userId && (
+                              <a
+                                href={`/admin/roles?userId=${log.userId}`}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-700 text-white text-xs rounded-lg hover:bg-gray-600 transition-colors"
+                              >
+                                <FiSettings size={12} /> Gestionar Roles
+                              </a>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

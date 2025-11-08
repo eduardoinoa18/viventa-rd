@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -7,6 +7,8 @@ import BottomNav from '@/components/BottomNav'
 import { getSession } from '@/lib/authSession'
 import { FiSend, FiSearch, FiMessageSquare, FiUser, FiArrowLeft, FiHelpCircle, FiUserPlus, FiPlus, FiX } from 'react-icons/fi'
 import ChatQuitModal from '@/components/ChatQuitModal'
+import { db } from '@/lib/firebaseClient'
+import { collection, query, where, onSnapshot, orderBy, Timestamp } from 'firebase/firestore'
 
 export default function MessagesPage() {
   const router = useRouter()
@@ -23,14 +25,53 @@ export default function MessagesPage() {
   const [chatType, setChatType] = useState<'support' | 'agent' | null>(null)
   const [newChatMessage, setNewChatMessage] = useState('')
   const [newChatSubject, setNewChatSubject] = useState('')
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
+  const [typingUsers, setTypingUsers] = useState<Record<string, string>>({})
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Real-time conversations listener
   useEffect(() => {
-    if (!session) {
+    if (!session?.uid) {
       setLoadingConvos(false)
       return
     }
-    loadConversations()
-  }, [])
+    
+    const q = query(
+      collection(db, 'conversations'),
+      where('participantIds', 'array-contains', session.uid),
+      orderBy('lastMessageAt', 'desc')
+    )
+    
+    const unsubscribe = onSnapshot(q, (snapshot: any) => {
+      const convos = snapshot.docs.map((doc: any) => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          ...data,
+          lastMessageAt: data.lastMessageAt?.toDate?.()?.toISOString() || new Date().toISOString()
+        }
+      })
+      setConversations(convos)
+      
+      // Calculate unread counts
+      const counts: Record<string, number> = {}
+      convos.forEach((conv: any) => {
+        const unread = conv.unreadCount?.[session.uid] || 0
+        if (unread > 0) counts[conv.id] = unread
+      })
+      setUnreadCounts(counts)
+      
+      setLoadingConvos(false)
+      if (!activeId && convos[0]) setActiveId(convos[0].id)
+    }, (error: any) => {
+      console.error('Conversations listener error:', error)
+      setLoadingConvos(false)
+      // Fallback to API
+      loadConversations()
+    })
+
+    return () => unsubscribe()
+  }, [session?.uid])
 
   async function loadConversations() {
     setLoadingConvos(true)
@@ -48,7 +89,37 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!activeId) return
-    loadMessages(activeId)
+    setLoadingMessages(true)
+    
+    // Real-time messages listener
+    const q = query(
+      collection(db, 'messages'),
+      where('conversationId', '==', activeId),
+      orderBy('createdAt', 'asc')
+    )
+    
+    const unsubscribe = onSnapshot(q, (snapshot: any) => {
+      const msgs = snapshot.docs.map((doc: any) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+      }))
+      setMessages(msgs)
+      setLoadingMessages(false)
+      
+      // Auto-scroll to bottom
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+      
+      // Mark as read
+      markAsRead(activeId)
+    }, (error: any) => {
+      console.error('Messages listener error:', error)
+      setLoadingMessages(false)
+      // Fallback to API
+      loadMessages(activeId)
+    })
+
+    return () => unsubscribe()
   }, [activeId])
 
   async function loadMessages(id: string) {
@@ -61,6 +132,19 @@ export default function MessagesPage() {
       setMessages([])
     } finally {
       setLoadingMessages(false)
+    }
+  }
+
+  async function markAsRead(conversationId: string) {
+    if (!session?.uid) return
+    try {
+      await fetch('/api/messages/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId, userId: session.uid })
+      })
+    } catch (error) {
+      console.error('Mark as read error:', error)
     }
   }
 
@@ -201,19 +285,27 @@ export default function MessagesPage() {
             ) : filteredConvos.length === 0 ? (
               <div className="p-6 text-center text-gray-500">No tienes conversaciones</div>
             ) : (
-              filteredConvos.map((c: any) => (
-                <button key={c.id} onClick={()=>setActiveId(c.id)} className={`w-full text-left p-4 border-b hover:bg-viventa-sand/30 transition-colors ${activeId === c.id ? 'bg-viventa-turquoise/10 border-l-4 border-l-viventa-turquoise' : ''}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-viventa-turquoise to-viventa-ocean text-white flex items-center justify-center shadow-md">
-                      <FiUser />
+              filteredConvos.map((c: any) => {
+                const unread = unreadCounts[c.id] || 0
+                return (
+                  <button key={c.id} onClick={()=>setActiveId(c.id)} className={`w-full text-left p-4 border-b hover:bg-viventa-sand/30 transition-colors ${activeId === c.id ? 'bg-viventa-turquoise/10 border-l-4 border-l-viventa-turquoise' : ''}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-viventa-turquoise to-viventa-ocean text-white flex items-center justify-center shadow-md relative">
+                        <FiUser />
+                        {unread > 0 && (
+                          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                            {unread > 9 ? '9+' : unread}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={`truncate ${unread > 0 ? 'font-bold text-viventa-navy' : 'font-semibold text-viventa-navy'}`}>{c.title || 'Conversación'}</div>
+                        <div className={`text-sm truncate ${unread > 0 ? 'font-semibold text-gray-800' : 'text-gray-600'}`}>{c.lastMessage || 'Sin mensajes'}</div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-viventa-navy truncate">{c.title || 'Conversación'}</div>
-                      <div className="text-sm text-gray-600 truncate">{c.lastMessage || 'Sin mensajes'}</div>
-                    </div>
-                  </div>
-                </button>
-              ))
+                  </button>
+                )
+              })
             )}
           </div>
         </div>
@@ -253,13 +345,14 @@ export default function MessagesPage() {
                     )
                   })
                 )}
+                <div ref={messagesEndRef} />
               </div>
 
               <div className="p-3 border-t flex items-center gap-2 bg-gray-50">
                 <input
                   value={text}
-                  onChange={e=>setText(e.target.value)}
-                  onKeyDown={(e:any)=>{ if(e.key==='Enter' && !e.shiftKey) sendMessage() }}
+                  onChange={e => { setText(e.target.value) }}
+                  onKeyDown={(e:any)=>{ if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
                   placeholder="Escribe un mensaje..."
                   className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-viventa-turquoise focus:border-transparent transition-all"
                 />

@@ -559,29 +559,30 @@ export default function CreateListingPage() {
         updatedAt: serverTimestamp()
       }
 
-      // Attempt direct Firestore write; if permission error, instruct user.
+      // Use API route to bypass Firebase Auth requirements
       try {
-        const docRef = await addDoc(collection(db, 'properties'), propertyData)
-        // Fire-and-forget email
-        fetch('/api/listings/email', {
+        const response = await fetch('/api/listings/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            event: 'received',
-            listingId: docRef.id,
-            listingTitle: formData.title,
+            propertyData,
+            agentId: session.uid,
             agentEmail: session.email,
             agentName: session.name || session.displayName || session.email
           })
-        }).catch(() => {})
-        toast.success('¡Propiedad enviada para revisión! (24-48h)')
-        router.push('/agent/listings')
+        })
+
+        const result = await response.json()
+        
+        if (result.ok) {
+          toast.success('¡Propiedad enviada para revisión! (24-48h)')
+          router.push('/agent/listings')
+        } else {
+          throw new Error(result.error || 'Error al crear la propiedad')
+        }
       } catch (err: any) {
-        const msg = (err?.code === 'permission-denied')
-          ? 'Permisos insuficientes. Necesitas iniciar sesión con Firebase Auth. (Configura autenticación)'
-          : (err.message || 'Error al crear la propiedad.')
         console.error('Firestore create error', err)
-        toast.error(msg)
+        toast.error(err.message || 'Error al crear la propiedad. Intenta de nuevo.')
       }
     } catch (outer: any) {
       // Already handled granular errors above
