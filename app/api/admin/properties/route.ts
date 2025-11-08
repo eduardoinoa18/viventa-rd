@@ -4,6 +4,7 @@ import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, serverTimestamp, getDoc } from 'firebase/firestore'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
+import { ActivityLogger } from '@/lib/activityLogger'
 
 function initFirebase() {
   const config = {
@@ -101,6 +102,16 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date(),
       }
       const ref = await adminDb.collection('properties').add(propertyDoc)
+      // Activity log
+      try {
+        await ActivityLogger.log({
+          type: 'property',
+            action: 'Property Created',
+            userId: agentId,
+            userName: agentName,
+            metadata: { propertyId: ref.id, title, price: propertyDoc.price, listingType, propertyType }
+        })
+      } catch (e) { console.debug('activity log failed (create property)', e) }
       return NextResponse.json({ ok: true, data: { id: ref.id, ...propertyDoc }, message: 'Property created successfully' })
     }
 
@@ -162,6 +173,15 @@ export async function PATCH(req: NextRequest) {
       const snap = await ref.get()
       const before = snap.exists ? snap.data() : null
       await ref.update(updates)
+      try {
+        await ActivityLogger.log({
+          type: 'property',
+          action: 'Property Updated',
+          userId: (before as any)?.agentId,
+          userName: (before as any)?.agentName,
+          metadata: { propertyId: id, updates }
+        })
+      } catch (e) { console.debug('activity log failed (update property)', e) }
 
       // If approved, email agent
       try {
@@ -270,6 +290,13 @@ export async function DELETE(req: NextRequest) {
     const adminDb = getAdminDb()
     if (adminDb) {
       await adminDb.collection('properties').doc(id).delete()
+      try {
+        await ActivityLogger.log({
+          type: 'property',
+          action: 'Property Deleted',
+          metadata: { propertyId: id }
+        })
+      } catch (e) { console.debug('activity log failed (delete property)', e) }
       return NextResponse.json({ ok: true, message: 'Property deleted successfully' })
     }
 

@@ -1,12 +1,12 @@
 // app/admin/properties/[id]/edit/page.tsx
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import ProtectedClient from '@/app/auth/ProtectedClient'
 import AdminSidebar from '@/components/AdminSidebar'
 import AdminTopbar from '@/components/AdminTopbar'
-import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock, FiArrowLeft } from 'react-icons/fi'
+import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock, FiArrowLeft, FiAlertCircle } from 'react-icons/fi'
 import { uploadMultipleImages, validateImageFiles, generatePropertyImagePath } from '@/lib/storageService'
 import { getSession } from '@/lib/authSession'
 import { auth } from '@/lib/firebaseClient'
@@ -19,8 +19,11 @@ export default function EditPropertyPage() {
   const propertyId = params?.id as string
 
   const [form, setForm] = useState<any>(null)
+  const [originalForm, setOriginalForm] = useState<any>(null)
+  const [isDirty, setIsDirty] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [progressByIndex, setProgressByIndex] = useState<number[]>([])
@@ -28,6 +31,7 @@ export default function EditPropertyPage() {
   const [currency, setCurrency] = useState<'USD' | 'DOP'>('USD')
   const exchangeRate = 58.5
   const [features, setFeatures] = useState<string[]>([])
+  const autosaveTimerRef = useRef<any>(null)
 
   const amenitiesCategories = {
     interior: {
@@ -139,8 +143,10 @@ export default function EditPropertyPage() {
         const json = await res.json()
         if (json.ok && json.data) {
           setForm(json.data)
+          setOriginalForm(JSON.parse(JSON.stringify(json.data)))
           setCurrency(json.data.currency || 'USD')
           setFeatures(json.data.features || [])
+          setIsDirty(false)
         } else {
           toast.error('No se encontró la propiedad')
           router.push('/admin/properties')
@@ -155,6 +161,96 @@ export default function EditPropertyPage() {
       router.push('/admin/properties')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Track dirty state
+  useEffect(() => {
+    if (!form || !originalForm) return
+    const current = JSON.stringify({ ...form, features })
+    const original = JSON.stringify({ ...originalForm, features: originalForm.features || [] })
+    setIsDirty(current !== original)
+  }, [form, features, originalForm])
+
+  // Autosave draft every 30s if dirty
+  useEffect(() => {
+    if (!isDirty || saving) return
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    autosaveTimerRef.current = setTimeout(() => {
+      saveDraft()
+    }, 30000)
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    }
+  }, [isDirty, form, features, saving])
+
+  // Keyboard shortcut Ctrl+S to save
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        if (!saving && form) {
+          submit(new Event('submit') as any)
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [saving, form])
+
+  // Warn on navigate with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isDirty])
+
+  async function saveDraft() {
+    if (!form || saving) return
+    try {
+      setSaving(true)
+      const payload: any = {
+        id: propertyId,
+        title: form.title?.trim() || 'Sin título',
+        description: form.description?.trim() || form.publicRemarks?.trim() || '',
+        publicRemarks: form.publicRemarks?.trim() || '',
+        professionalRemarks: form.professionalRemarks?.trim() || '',
+        price: Number(form.price || 0),
+        currency,
+        location: form.location?.trim() || '',
+        city: form.city?.trim() || '',
+        neighborhood: form.neighborhood?.trim() || '',
+        bedrooms: Number(form.bedrooms || 0),
+        bathrooms: Number(form.bathrooms || 0),
+        area: Number(form.area || 0),
+        propertyType: form.propertyType || 'apartment',
+        listingType: form.listingType || 'sale',
+        images: form.images || [],
+        agentId: form.agentId?.trim() || '',
+        agentName: form.agentName?.trim() || '',
+        status: 'draft',
+        featured: Boolean(form.featured),
+        features,
+      }
+      const res = await fetch('/api/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', ...payload }),
+      })
+      if (res.ok) {
+        setLastSaved(new Date())
+        setOriginalForm(JSON.parse(JSON.stringify({ ...form, features })))
+        setIsDirty(false)
+      }
+    } catch (e) {
+      console.error('Autosave failed:', e)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -258,6 +354,9 @@ export default function EditPropertyPage() {
         throw new Error(err?.error || 'No se pudo actualizar la propiedad')
       }
       toast.success('¡Propiedad actualizada exitosamente!')
+      setLastSaved(new Date())
+      setOriginalForm(JSON.parse(JSON.stringify({ ...form, features })))
+      setIsDirty(false)
       router.push('/admin/properties')
     } catch (e: any) {
       console.error('Failed to update listing:', e)
@@ -298,14 +397,65 @@ export default function EditPropertyPage() {
                     <FiArrowLeft size={24} />
                   </Link>
                   <h1 className="text-3xl font-bold text-[#0B2545]">Editar Propiedad</h1>
+                  {isDirty && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 text-sm font-semibold rounded-full">
+                      <FiAlertCircle size={14} />
+                      Cambios sin guardar
+                    </span>
+                  )}
                 </div>
-                <p className="text-gray-600">ID: {form.listingId || propertyId}</p>
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <span>ID: {form.listingId || propertyId}</span>
+                  {lastSaved && (
+                    <span className="text-green-600">
+                      • Guardado {new Date(lastSaved).toLocaleTimeString('es-DO')}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
-            <form onSubmit={submit} className="space-y-6">
+            {/* Tabbed form for better UX */}
+            <div className="sticky top-0 z-40 -mx-6 px-6 py-3 bg-gradient-to-r from-white to-gray-50 border-b flex flex-wrap items-center gap-3 shadow-sm">
+              {['Basico','Ubicacion','Descripciones','Amenidades','Media','Config'].map(tab => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => document.getElementById(`section-${tab.toLowerCase()}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className="px-3 py-2 text-sm rounded-lg border border-gray-300 hover:border-[#00A676] hover:text-[#00A676] font-medium bg-white transition-all"
+                >
+                  {tab}
+                </button>
+              ))}
+              <div className="ml-auto flex items-center gap-3">
+                {isDirty && !saving && (
+                  <span className="text-xs text-orange-600 font-medium flex items-center gap-1">
+                    <FiAlertCircle size={12} />
+                    Sin guardar
+                  </span>
+                )}
+                {saving && <span className="text-sm text-gray-500 animate-pulse">Guardando...</span>}
+                {!saving && lastSaved && !isDirty && (
+                  <span className="text-xs text-green-600">
+                    ✓ Guardado
+                  </span>
+                )}
+                {!saving && !isDirty && (
+                  <span className="text-xs text-gray-400">Autosave 30s • Ctrl+S</span>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => submit(e as any)}
+                  disabled={saving}
+                  className="px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] disabled:opacity-50 transition-all shadow-md"
+                >
+                  {saving ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+            <form onSubmit={submit} className="space-y-10">
               {/* Basic Information */}
-              <div className="bg-white rounded-lg shadow p-6">
+              <div id="section-basico" className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
                   <FiHome className="text-[#00A676]" />
                   Información Básica
@@ -322,7 +472,6 @@ export default function EditPropertyPage() {
                       required
                     />
                   </div>
-
                   <div>
                     <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1" htmlFor="edit-price">
                       <FiDollarSign className="text-gray-400" />
@@ -349,7 +498,6 @@ export default function EditPropertyPage() {
                       </select>
                     </div>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-area">Área (m²) *</label>
                     <input
@@ -362,7 +510,6 @@ export default function EditPropertyPage() {
                       required
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-bedrooms">Habitaciones *</label>
                     <input
@@ -376,7 +523,6 @@ export default function EditPropertyPage() {
                       required
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-bathrooms">Baños *</label>
                     <input
@@ -391,7 +537,6 @@ export default function EditPropertyPage() {
                       required
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Propiedad *</label>
                     <select
@@ -408,7 +553,6 @@ export default function EditPropertyPage() {
                       <option value="commercial">Comercial</option>
                     </select>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Operación *</label>
                     <select
@@ -426,7 +570,7 @@ export default function EditPropertyPage() {
               </div>
 
               {/* Location */}
-              <div className="bg-white rounded-lg shadow p-6">
+              <div id="section-ubicacion" className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
                   <FiMapPin className="text-[#00A676]" />
                   Ubicación
@@ -467,7 +611,7 @@ export default function EditPropertyPage() {
               </div>
 
               {/* Descriptions */}
-              <div className="bg-white rounded-lg shadow p-6">
+              <div id="section-descripciones" className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
                   <FiFileText className="text-[#00A676]" />
                   Descripciones
@@ -510,7 +654,7 @@ export default function EditPropertyPage() {
               </div>
 
               {/* Amenities */}
-              <div className="bg-white rounded-lg shadow p-6">
+              <div id="section-amenidades" className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4">Amenidades</h2>
                 <div className="space-y-6">
                   {Object.entries(amenitiesCategories).map(([key, cat]) => (
@@ -538,7 +682,7 @@ export default function EditPropertyPage() {
               </div>
 
               {/* Images */}
-              <div className="bg-white rounded-lg shadow p-6">
+              <div id="section-media" className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4 flex items-center gap-2">
                   <FiImage className="text-[#00A676]" />
                   Imágenes (Máximo 10)
@@ -591,7 +735,6 @@ export default function EditPropertyPage() {
                       )}
                     </div>
                   </div>
-                  
                   {form.images && form.images.length > 0 && (
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                       {form.images.map((url: string, i: number) => (
@@ -619,7 +762,7 @@ export default function EditPropertyPage() {
               </div>
 
               {/* Configuration */}
-              <div className="bg-white rounded-lg shadow p-6">
+              <div id="section-config" className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4">Configuración</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>

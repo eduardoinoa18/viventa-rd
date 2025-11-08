@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { getSession } from '@/lib/authSession'
 import ProfessionalSidebar from '@/components/ProfessionalSidebar'
 import { FiSave, FiUpload, FiUser, FiGlobe, FiMail, FiPhone, FiBriefcase } from 'react-icons/fi'
+import toast from 'react-hot-toast'
 
 export default function AgentProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -16,6 +17,9 @@ export default function AgentProfilePage() {
     languages: 'Español',
     website: '',
     company: '',
+    officeAddress: '',
+    certifications: '',
+    photoUrl: '',
   })
   const router = useRouter()
 
@@ -26,7 +30,27 @@ export default function AgentProfilePage() {
       return
     }
     setUser(s)
-    // In production load profile details
+    ;(async () => {
+      try {
+        const res = await fetch('/api/professionals/profile')
+        const data = await res.json()
+        if (data.ok) {
+          const p = data.profile
+          setForm(f => ({
+            ...f,
+            name: p.name || s.name || '',
+            bio: p.bio || '',
+            specialties: Array.isArray(p.specialties) ? p.specialties.join(', ') : '',
+            languages: Array.isArray(p.languages) ? p.languages.join(', ') : (p.languages || 'Español'),
+            website: p.website || '',
+            company: p.company || '',
+            officeAddress: p.officeAddress || '',
+            certifications: p.certifications || '',
+            photoUrl: p.photoUrl || ''
+          }))
+        }
+      } catch {}
+    })()
   }, [])
 
   function handleChange(field: string, value: string) {
@@ -36,8 +60,28 @@ export default function AgentProfilePage() {
   async function save() {
     setSaving(true)
     try {
-      // POST to /api/profile (to implement)
-      await new Promise((res) => setTimeout(res, 800))
+      const payload = {
+        bio: form.bio,
+        specialties: form.specialties.split(',').map(s => s.trim()).filter(Boolean),
+        languages: form.languages.split(',').map(s => s.trim()).filter(Boolean),
+        officeAddress: form.officeAddress,
+        website: form.website,
+        certifications: form.certifications,
+        photoUrl: form.photoUrl,
+      }
+      const res = await fetch('/api/professionals/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      const data = await res.json()
+      if (data.ok) {
+        toast.success('Perfil actualizado exitosamente')
+      } else {
+        toast.error('Error al actualizar perfil')
+      }
+    } catch {
+      toast.error('Error de conexión')
     } finally {
       setSaving(false)
     }
@@ -62,13 +106,21 @@ export default function AgentProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start mb-10">
               <div className="md:col-span-1">
                 <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#00A676] to-[#00C896] mx-auto flex items-center justify-center text-white text-4xl font-bold mb-4">
-                    {user.name?.[0] || 'A'}
-                  </div>
+                  {form.photoUrl ? (
+                    <img src={form.photoUrl} alt="Foto de perfil" className="w-32 h-32 rounded-full object-cover mx-auto mb-4" />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#00A676] to-[#00C896] mx-auto flex items-center justify-center text-white text-4xl font-bold mb-4">
+                      {user.name?.[0] || 'A'}
+                    </div>
+                  )}
                   <p className="text-sm text-gray-500 mb-4">Foto de perfil</p>
-                  <button className="px-4 py-2 text-sm font-medium bg-[#0B2545] text-white rounded-lg hover:bg-[#123960] inline-flex items-center gap-2">
-                    <FiUpload /> Subir nueva
-                  </button>
+                  <input
+                    value={form.photoUrl}
+                    onChange={(e)=>setForm(f=>({...f, photoUrl: e.target.value }))}
+                    placeholder="URL de la foto"
+                    className="w-full px-3 py-2 border rounded-lg mb-3"
+                    aria-label="URL de la foto"
+                  />
                 </div>
               </div>
 
@@ -130,6 +182,24 @@ export default function AgentProfilePage() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Dirección de Oficina</label>
+                  <input
+                    value={form.officeAddress}
+                    onChange={(e) => handleChange('officeAddress', e.target.value)}
+                    placeholder="Calle, ciudad"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Certificaciones</label>
+                  <input
+                    value={form.certifications}
+                    onChange={(e) => handleChange('certifications', e.target.value)}
+                    placeholder="CCIM, CRS, etc."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Biografía</label>

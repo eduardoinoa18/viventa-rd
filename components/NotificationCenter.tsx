@@ -124,9 +124,13 @@ export default function NotificationCenter({ userId }: { userId: string }) {
     setUnreadCount(merged.filter(n => !n.read).length)
   }, [personalLive, broadcastLive, liveActive])
 
-  const loadNotifications = async () => {
+  const loadNotifications = async (unreadOnly = false, limit = 50) => {
     try {
-      const res = await fetch(`/api/notifications/send?userId=${userId}`)
+      const params = new URLSearchParams({ userId })
+      if (unreadOnly) params.append('unreadOnly', 'true')
+      if (limit) params.append('limit', limit.toString())
+      
+      const res = await fetch(`/api/notifications/send?${params.toString()}`)
       if (res.ok) {
         const data = await res.json()
         if (data.ok) {
@@ -263,6 +267,16 @@ export default function NotificationCenter({ userId }: { userId: string }) {
                     >
                       <FiCheckCircle size={14} />
                       Todas
+                    </button>
+                  )}
+                  {!liveActive && (
+                    <button
+                      onClick={() => loadNotifications(filter === 'unread', 50)}
+                      disabled={loading}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-semibold disabled:opacity-50"
+                      title="Refrescar notificaciones"
+                    >
+                      ↻
                     </button>
                   )}
                   <Link

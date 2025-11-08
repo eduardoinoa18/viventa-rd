@@ -1,4 +1,3 @@
-// app/api/notifications/send/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
