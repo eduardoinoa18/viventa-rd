@@ -269,7 +269,7 @@ export default function AdminPage() {
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Quick Actions</h2>
             <div className="flex gap-3 flex-wrap">
               <Link 
-                href="/admin/applications" 
+                href="/admin/people/applications" 
                 className="px-6 py-3 bg-gradient-to-r from-[#00A676] to-[#008F64] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
                 <FiUserPlus /> Review Applications
@@ -293,7 +293,7 @@ export default function AdminPage() {
                 <FiHome /> Review Listings
               </Link>
               <Link 
-                href="/admin/leads" 
+                href="/admin/people/leads" 
                 className="px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
                 <FiActivity /> Manage Leads

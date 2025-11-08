@@ -73,7 +73,7 @@ export default function AdminSidebar() {
             <Link href="/admin/people" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
               <FiMail className="text-blue-600" /> <span>Send Invitation</span>
             </Link>
-            <Link href="/admin/leads" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+            <Link href="/admin/people/leads" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
               <FiActivity className="text-blue-600" /> <span>Manage Leads</span>
             </Link>
             <Link href="/" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
