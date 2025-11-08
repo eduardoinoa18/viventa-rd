@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getSession } from '@/lib/authSession'
-import ProfessionalSidebar from '@/components/ProfessionalSidebar'
+import { getSession } from '../../../lib/authSession'
+import ProfessionalSidebar from '../../../components/ProfessionalSidebar'
 import { FiDollarSign, FiUser, FiPercent } from 'react-icons/fi'
 
 export default function BrokerCommissionsPage() {
