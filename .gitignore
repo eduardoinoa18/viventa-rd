@@ -20,9 +20,13 @@ firebase-debug.log*
 functions/lib/
 functions/node_modules/
 
+# TypeScript
+tsconfig.tsbuildinfo
+
 # OS
 .DS_Store
 Thumbs.db
+
 # Dependencies
 node_modules/
 
