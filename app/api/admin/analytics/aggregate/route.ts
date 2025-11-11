@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import type { AnalyticsDailySummary, AnalyticsEvent } from '@/types/analytics'
 
+export const dynamic = 'force-dynamic'
+
 function toDateStringUTC(d: Date) {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
     .toISOString()

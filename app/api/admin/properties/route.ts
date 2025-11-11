@@ -6,6 +6,8 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
 import { ActivityLogger } from '@/lib/activityLogger'
 
+export const dynamic = 'force-dynamic'
+
 function initFirebase() {
   const config = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

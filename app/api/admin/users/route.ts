@@ -5,6 +5,8 @@ import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
 
+export const dynamic = 'force-dynamic'
+
 function initFirebase() {
   const config = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Get notification preferences for a user
  * GET /api/notifications/preferences?userId=xxx

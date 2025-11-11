@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Send push notification to a user via FCM
  * POST /api/notifications/send
