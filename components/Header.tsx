@@ -38,7 +38,6 @@ export default function Header() {
             <Link href="/search" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Buscar</Link>
             <Link href="/agents" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Agentes</Link>
             <Link href="/brokers" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Brokerages</Link>
-            <Link href="/profesionales" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Profesionales</Link>
             <Link href="/contact" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Contacto</Link>
           </nav>
           <div className="flex items-center gap-3">

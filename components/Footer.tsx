@@ -23,11 +23,11 @@ export default function Footer() {
     { href: '/', label: 'Inicio' },
     { href: '/search', label: 'Buscar' },
     { href: '/agents', label: 'Agentes' },
+    { href: '/brokers', label: 'Brokerages' },
     { href: '/profesionales', label: 'Profesionales' },
+    { href: '/constructoras', label: 'Constructoras' },
     { href: '/contact', label: 'Contacto' },
     { href: '/disclosures', label: 'Avisos Legales' },
-    { href: '/agent/login', label: 'Portal Agente' },
-    { href: '/broker/login', label: 'Portal Broker' },
   ]
 
   const links = loggedIn ? userLinks : publicLinks

@@ -152,7 +152,7 @@ export default function ProfesionalesLanding() {
         <section className="bg-white py-16">
           <div className="max-w-6xl mx-auto px-4">
             <h2 className="text-3xl font-bold mb-12 text-[#0B2545] text-center">Planes y Precios</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {/* Agent Plan */}
               <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-gray-200">
                 <div className="flex items-center gap-3 mb-4">
@@ -190,25 +190,6 @@ export default function ProfesionalesLanding() {
                 </ul>
                 <a href="/apply" className="block w-full px-6 py-3 bg-[#00A6A6] text-white rounded-lg font-semibold text-center hover:bg-[#008f8f] transition-colors">
                   Solicitar Acceso
-                </a>
-              </div>
-
-              {/* Developer */}
-              <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl shadow-lg p-8 border-2 border-orange-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <FiDollarSign className="text-3xl text-orange-600" />
-                  <h3 className="text-2xl font-bold">Constructoras</h3>
-                </div>
-                <div className="text-lg font-semibold text-gray-800 mb-6">Soluciones Personalizadas</div>
-                <p className="text-gray-700 mb-6 text-sm">Planes personalizados para desarrolladores y constructoras.</p>
-                <ul className="space-y-3 mb-8 text-sm text-gray-700">
-                  <li className="flex items-start gap-2">✓ Showcase de proyectos</li>
-                  <li className="flex items-start gap-2">✓ Integración con inventario</li>
-                  <li className="flex items-start gap-2">✓ Marketing destacado</li>
-                  <li className="flex items-start gap-2">✓ Análisis de mercado</li>
-                </ul>
-                <a href="/contact" className="block w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold text-center hover:bg-orange-700 transition-colors">
-                  Contactar
                 </a>
               </div>
             </div>
@@ -261,8 +242,8 @@ export default function ProfesionalesLanding() {
               {/* Professional Story 3 */}
               <div className="bg-gradient-to-br from-viventa-sand/50 to-white rounded-2xl p-6 shadow-lg border-2 border-viventa-palm/20 hover:border-viventa-palm/40 transition-all">
                 <div className="mb-3">
-                  <h4 className="font-bold text-viventa-navy">Miguel Fernández</h4>
-                  <p className="text-sm text-gray-600">Desarrollador • Santiago</p>
+                  <h4 className="font-bold text-viventa-navy">Ana Fernández</h4>
+                  <p className="text-sm text-gray-600">Agente • Santiago</p>
                 </div>
                 <div className="flex mb-3">
                   {[...Array(5)].map((_, i) => (
@@ -270,7 +251,7 @@ export default function ProfesionalesLanding() {
                   ))}
                 </div>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  "VIVENTA nos ayudó a vender 30 unidades en 6 meses. La exposición y las herramientas de marketing son incomparables."
+                  "VIVENTA transformó mi forma de trabajar. La plataforma es intuitiva y me ayuda a cerrar ventas más rápido."
                 </p>
               </div>
             </div>
