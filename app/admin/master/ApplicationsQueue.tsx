@@ -81,7 +81,12 @@ export default function ApplicationsQueue() {
             <div className="mb-2 text-sm">Notes: {selected.notes}</div>
             {selected.brokerage_id && <div className="mb-2 text-xs text-blue-700">Brokerage ID: {selected.brokerage_id}</div>}
             {selected.agent_id && <div className="mb-2 text-xs text-blue-700">Agent ID: {selected.agent_id}</div>}
-            {/* TODO: Show invite token if available */}
+            {selected.inviteToken && (
+              <div className="mb-2 p-2 bg-green-50 border border-green-200 rounded">
+                <span className="text-xs font-semibold text-green-700">Invite Token:</span>
+                <code className="ml-2 text-xs text-green-800">{selected.inviteToken}</code>
+              </div>
+            )}
             <div className="mt-4">
               <strong>Audit History:</strong>
               <div className="text-xs text-gray-500">(Coming soon)</div>

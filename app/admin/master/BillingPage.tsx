@@ -16,14 +16,28 @@ export default function BillingPage() {
       <h2 className="text-xl font-bold mb-4">Billing / Pricing</h2>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium">Product Name</label>
-          <input value={product} onChange={e => setProduct(e.target.value)} className="px-3 py-2 border rounded w-full" />
+          <label htmlFor="product-name" className="block text-sm font-medium">Product Name</label>
+          <input 
+            id="product-name"
+            type="text"
+            value={product} 
+            onChange={e => setProduct(e.target.value)} 
+            placeholder="Enter product name"
+            className="px-3 py-2 border rounded w-full" 
+          />
         </div>
         <div>
-          <label className="block text-sm font-medium">Price</label>
-          <input value={price} onChange={e => setPrice(e.target.value)} className="px-3 py-2 border rounded w-full" />
+          <label htmlFor="product-price" className="block text-sm font-medium">Price</label>
+          <input 
+            id="product-price"
+            type="text"
+            value={price} 
+            onChange={e => setPrice(e.target.value)} 
+            placeholder="Enter price (e.g., $29.99)"
+            className="px-3 py-2 border rounded w-full" 
+          />
         </div>
-        {/* TODO: Add save logic, connect to landing page, etc. */}
+        {/* TODO: Add save button and API integration once Stripe is configured */}
       </div>
     </div>
   )

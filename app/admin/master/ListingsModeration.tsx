@@ -3,6 +3,8 @@ import { db } from '../../../lib/firebaseClient'
 import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore'
 import { useRequireRole } from '../../../lib/useRequireRole'
 import AdminCodeModal from '../../../components/AdminCodeModal'
+import { ActivityLogger } from '../../../lib/activityLogger'
+import { getSession } from '../../../lib/authSession'
 
 export default function ListingsModeration() {
   const { loading, ok, showModal, setShowModal } = useRequireRole(['master_admin'])
@@ -15,12 +17,28 @@ export default function ListingsModeration() {
   }, [])
 
   async function approveListing(id: string) {
+    const session = getSession()
     await updateDoc(doc(db, 'listings', id), { status: 'active', verified: true, updatedAt: new Date() })
-    // TODO: Write audit log entry
+    if (session?.uid) {
+      await ActivityLogger.log({
+        userId: session.uid,
+        type: 'listing',
+        action: 'listing_approved',
+        metadata: { listingId: id, moderator: session.email || session.name }
+      })
+    }
   }
   async function rejectListing(id: string) {
+    const session = getSession()
     await updateDoc(doc(db, 'listings', id), { status: 'rejected', updatedAt: new Date() })
-    // TODO: Write audit log entry
+    if (session?.uid) {
+      await ActivityLogger.log({
+        userId: session.uid,
+        type: 'listing',
+        action: 'listing_rejected',
+        metadata: { listingId: id, moderator: session.email || session.name }
+      })
+    }
   }
 
   if (loading) return <div>Loading...</div>
