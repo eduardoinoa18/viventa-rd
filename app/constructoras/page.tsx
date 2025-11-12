@@ -1,10 +1,8 @@
+"use client";
 import Footer from '../../components/Footer'
 import Header from '../../components/Header'
 import Link from 'next/link'
 import { FiHome, FiTrendingUp, FiUsers, FiBarChart2, FiAward, FiCheck, FiZap, FiDollarSign, FiTarget, FiMapPin, FiEye, FiPhone } from 'react-icons/fi'
-
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 export default function ConstructorasLanding() {
   return (
