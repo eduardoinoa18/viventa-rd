@@ -443,6 +443,101 @@ export default function ConstructorasLanding() {
           </div>
         </section>
 
+        {/* Developer Portal - Coming Soon */}
+        <section className="bg-gradient-to-br from-orange-50 to-red-50 py-24">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="text-center mb-12">
+              <div className="inline-block px-6 py-2 bg-orange-600 text-white rounded-full font-bold text-sm mb-6">
+                🚀 PRÓXIMAMENTE
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-[#0B2545]">Portal Exclusivo para Constructoras</h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Estamos desarrollando un portal profesional dedicado para desarrolladores y constructoras
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {/* Developer Application - Coming Soon */}
+              <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-orange-200 relative overflow-hidden">
+                <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-xs font-bold">
+                  EN DESARROLLO
+                </div>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-red-600 rounded-2xl flex items-center justify-center shadow-lg opacity-50">
+                    <FiHome className="text-3xl text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-[#0B2545]">Solicitud de Cuenta</h3>
+                    <p className="text-gray-500">Para nuevas constructoras</p>
+                  </div>
+                </div>
+                <ul className="space-y-3 mb-6 text-gray-600">
+                  <li className="flex items-start gap-2">✓ Registro de empresa</li>
+                  <li className="flex items-start gap-2">✓ Verificación de documentos</li>
+                  <li className="flex items-start gap-2">✓ Configuración de perfil</li>
+                  <li className="flex items-start gap-2">✓ Acceso al dashboard</li>
+                </ul>
+                <div className="bg-gray-100 rounded-xl p-4 text-center">
+                  <p className="text-gray-700 font-semibold mb-2">Aplicación en desarrollo</p>
+                  <p className="text-sm text-gray-600">Por ahora, contáctanos directamente para registrarte</p>
+                </div>
+                <Link 
+                  href="/contact" 
+                  className="mt-4 block w-full px-6 py-3 bg-orange-600 text-white rounded-xl font-bold text-center hover:bg-orange-700 transition-all"
+                >
+                  Contactar Ahora
+                </Link>
+              </div>
+
+              {/* Developer Login - Coming Soon */}
+              <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-orange-200 relative overflow-hidden">
+                <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-xs font-bold">
+                  EN DESARROLLO
+                </div>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-red-600 rounded-2xl flex items-center justify-center shadow-lg opacity-50">
+                    <FiTarget className="text-3xl text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-[#0B2545]">Portal de Acceso</h3>
+                    <p className="text-gray-500">Para constructoras registradas</p>
+                  </div>
+                </div>
+                <ul className="space-y-3 mb-6 text-gray-600">
+                  <li className="flex items-start gap-2">✓ Gestión de proyectos</li>
+                  <li className="flex items-start gap-2">✓ Inventario de unidades</li>
+                  <li className="flex items-start gap-2">✓ Dashboard de ventas</li>
+                  <li className="flex items-start gap-2">✓ Analytics y reportes</li>
+                </ul>
+                <div className="bg-gray-100 rounded-xl p-4 text-center">
+                  <p className="text-gray-700 font-semibold mb-2">Portal en construcción</p>
+                  <p className="text-sm text-gray-600">Serás notificado cuando esté disponible</p>
+                </div>
+                <Link 
+                  href="/contact" 
+                  className="mt-4 block w-full px-6 py-3 bg-gray-400 text-white rounded-xl font-bold text-center cursor-not-allowed"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  Próximamente
+                </Link>
+              </div>
+            </div>
+
+            <div className="mt-12 text-center">
+              <p className="text-gray-600 mb-4 text-lg">
+                ¿Interesado en ser de los primeros en acceder?
+              </p>
+              <Link 
+                href="/contact" 
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all text-lg"
+              >
+                <FiPhone className="text-xl" />
+                Únete a la Lista de Espera
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* Final CTA */}
         <section className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-500 py-24 px-4">
           <div className="max-w-5xl mx-auto text-center text-white">
