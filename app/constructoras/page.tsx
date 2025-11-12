@@ -258,7 +258,7 @@ export default function ConstructorasLanding() {
                 <div className="flex-1">
                   <div className="text-6xl font-bold text-orange-600 mb-4">30 unidades</div>
                   <p className="text-2xl text-gray-700 mb-4 leading-relaxed italic">
-                    "VIVENTA nos ayudó a vender 30 unidades en solo 6 meses. La exposición y las herramientas de marketing digital son incomparables en el mercado dominicano."
+                    &quot;VIVENTA nos ayudó a vender 30 unidades en solo 6 meses. La exposición y las herramientas de marketing digital son incomparables en el mercado dominicano.&quot;
                   </p>
                   <div>
                     <h4 className="text-xl font-bold text-[#0B2545]">Miguel Fernández</h4>

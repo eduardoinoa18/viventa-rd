@@ -145,7 +145,7 @@ export default function InviteAcceptPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#00A676] to-[#00C896] rounded-full mb-6">
             <div className="text-white">{getIcon()}</div>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">You're Invited! 🎉</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">You&apos;re Invited! 🎉</h1>
           <p className="text-xl text-gray-600">{getTitle()}</p>
         </div>
 
@@ -174,7 +174,7 @@ export default function InviteAcceptPage() {
               <div>
                 <label className="text-sm font-medium text-gray-600">Personal Message:</label>
                 <p className="text-gray-700 bg-white p-4 rounded-lg mt-2 italic">
-                  "{invitation.message}"
+                  &quot;{invitation.message}&quot;
                 </p>
               </div>
             )}
@@ -195,7 +195,7 @@ export default function InviteAcceptPage() {
         {/* Benefits */}
         {invitation.inviteType !== 'user' && (
           <div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-6 mb-8">
-            <h3 className="font-bold text-gray-900 mb-3">What's Included:</h3>
+            <h3 className="font-bold text-gray-900 mb-3">What&apos;s Included:</h3>
             <ul className="space-y-2 text-gray-700">
               <li className="flex items-start gap-2">
                 <FiCheck className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -239,7 +239,7 @@ export default function InviteAcceptPage() {
 
         {/* Footer Note */}
         <p className="text-center text-sm text-gray-500 mt-8">
-          By accepting this invitation, you agree to VIVENTA's Terms of Service and Privacy Policy
+          By accepting this invitation, you agree to VIVENTA&apos;s Terms of Service and Privacy Policy
         </p>
       </div>
     </div>

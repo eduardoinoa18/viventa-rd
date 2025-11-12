@@ -3,8 +3,10 @@ import { useState } from 'react'
 import ImagePlaceholder from './ImagePlaceholder'
 
 export default function ListingDetail({ listing }: { listing: any }) {
-  if (!listing) return null
   const [imgError, setImgError] = useState(false)
+  
+  if (!listing) return null
+  
   const img = listing.images?.[0]
   const currency = listing.currency || 'USD'
   const price = listing.price

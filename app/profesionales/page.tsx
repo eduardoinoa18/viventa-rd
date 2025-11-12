@@ -273,7 +273,7 @@ export default function ProfesionalesLanding() {
                   ))}
                 </div>
                 <p className="text-gray-700 text-lg leading-relaxed mb-6 italic">
-                  "Desde que uso VIVENTA, mis ventas aumentaron un 40%. El sistema de leads y el CRM integrado me permiten gestionar más clientes eficientemente."
+                  &quot;Desde que uso VIVENTA, mis ventas aumentaron un 40%. El sistema de leads y el CRM integrado me permiten gestionar más clientes eficientemente.&quot;
                 </p>
                 <div>
                   <h4 className="font-bold text-[#0B2545] text-lg">Roberto Sánchez</h4>
@@ -290,7 +290,7 @@ export default function ProfesionalesLanding() {
                   ))}
                 </div>
                 <p className="text-gray-700 text-lg leading-relaxed mb-6 italic">
-                  "La herramienta perfecta para gestionar mi equipo de 15 agentes. Los reportes en tiempo real me dan control total del negocio."
+                  &quot;La herramienta perfecta para gestionar mi equipo de 15 agentes. Los reportes en tiempo real me dan control total del negocio.&quot;
                 </p>
                 <div>
                   <h4 className="font-bold text-[#0B2545] text-lg">Patricia Jiménez</h4>
@@ -307,7 +307,7 @@ export default function ProfesionalesLanding() {
                   ))}
                 </div>
                 <p className="text-gray-700 text-lg leading-relaxed mb-6 italic">
-                  "VIVENTA transformó mi forma de trabajar. La plataforma es intuitiva y me ayuda a cerrar ventas más rápido que nunca."
+                  &quot;VIVENTA transformó mi forma de trabajar. La plataforma es intuitiva y me ayuda a cerrar ventas más rápido que nunca.&quot;
                 </p>
                 <div>
                   <h4 className="font-bold text-[#0B2545] text-lg">Ana Fernández</h4>
@@ -326,7 +326,7 @@ export default function ProfesionalesLanding() {
                 <div className="flex-1">
                   <div className="text-6xl font-bold text-[#004AAD] mb-4">+40% ventas</div>
                   <p className="text-2xl text-gray-700 mb-4 leading-relaxed italic">
-                    "Con VIVENTA, no solo mejoré mis números, transformé completamente mi negocio. Tengo más tiempo, más clientes y mejores comisiones."
+                    &quot;Con VIVENTA, no solo mejoré mis números, transformé completamente mi negocio. Tengo más tiempo, más clientes y mejores comisiones.&quot;
                   </p>
                   <div>
                     <h4 className="text-xl font-bold text-[#0B2545]">Roberto Sánchez</h4>
@@ -571,7 +571,7 @@ export default function ProfesionalesLanding() {
                 <span className="font-bold text-xl text-gray-700">Keller Williams</span>
               </div>
               <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg">
-                <span className="font-bold text-xl text-gray-700">Sotheby's RD</span>
+                <span className="font-bold text-xl text-gray-700">Sotheby&apos;s RD</span>
               </div>
             </div>
             
