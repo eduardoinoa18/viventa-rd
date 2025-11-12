@@ -11,7 +11,7 @@ export async function middleware(req: NextRequest) {
   const trustedAdmin = req.cookies.get('trusted_admin')?.value;
 
   // Public directories that should never trigger auth redirects
-  if (path.startsWith('/agents') || path.startsWith('/brokers') || path.startsWith('/contact') || path === '/' ) {
+  if (path.startsWith('/agents') || path.startsWith('/brokers') || path.startsWith('/contact') || path.startsWith('/profesionales') || path.startsWith('/constructoras') || path === '/' ) {
     return NextResponse.next()
   }
 
