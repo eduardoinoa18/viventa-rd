@@ -120,7 +120,7 @@ export default function ProfessionalsPage(){
                 <div className="bg-white/10 rounded-lg px-4 py-2">RE/MAX RD</div>
                 <div className="bg-white/10 rounded-lg px-4 py-2">Century 21 Dominicana</div>
                 <div className="bg-white/10 rounded-lg px-4 py-2">Keller Williams RD</div>
-                <div className="bg-white/10 rounded-lg px-4 py-2">Santo Domingo Sotheby's</div>
+                <div className="bg-white/10 rounded-lg px-4 py-2">Santo Domingo Sotheby&apos;s</div>
               </div>
               <div className="text-center mt-2">
                 <p className="text-white/90 mb-3">Join VIVENTA Pro and grow with the leading MLS in the Caribbean.</p>

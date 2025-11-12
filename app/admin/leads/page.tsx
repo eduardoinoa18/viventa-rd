@@ -147,7 +147,7 @@ export default function AdminLeadsPage() {
                     <li><strong>Waitlist Social:</strong> Usuarios interesados en la red social (fase beta)</li>
                   </ul>
                   <p className="text-gray-600 mt-4">
-                    💡 <strong>Próximos pasos:</strong> Asigna leads manualmente a agentes activos o usa el botón "Auto-asignar" para distribución inteligente.
+                    💡 <strong>Próximos pasos:</strong> Asigna leads manualmente a agentes activos o usa el botón &quot;Auto-asignar&quot; para distribución inteligente.
                   </p>
                 </div>
               </div>

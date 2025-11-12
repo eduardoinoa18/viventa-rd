@@ -399,7 +399,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  "Encontré mi apartamento soñado en Piantini gracias a VIVENTA. El proceso fue rápido, transparente y mi agente me acompañó en cada paso. ¡Altamente recomendado!"
+                  &quot;Encontré mi apartamento soñado en Piantini gracias a VIVENTA. El proceso fue rápido, transparente y mi agente me acompañó en cada paso. ¡Altamente recomendado!&quot;
                 </p>
               </div>
 
@@ -415,7 +415,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  "Invertir en una villa en Bávaro fue la mejor decisión. VIVENTA me conectó con expertos que conocían perfectamente la zona y el mercado turístico."
+                  &quot;Invertir en una villa en Bávaro fue la mejor decisión. VIVENTA me conectó con expertos que conocían perfectamente la zona y el mercado turístico.&quot;
                 </p>
               </div>
 
@@ -431,7 +431,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  "Como compradora primeriza, tenía muchas dudas. Los agentes de VIVENTA me educaron sobre todo el proceso y me ayudaron a conseguir excelentes condiciones de financiamiento."
+                  &quot;Como compradora primeriza, tenía muchas dudas. Los agentes de VIVENTA me educaron sobre todo el proceso y me ayudaron a conseguir excelentes condiciones de financiamiento.&quot;
                 </p>
               </div>
             </div>
@@ -452,7 +452,7 @@ export default function HomePage() {
               <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">RE/MAX RD</span></div>
               <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Century 21 Dominicana</span></div>
               <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Keller Williams RD</span></div>
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Santo Domingo Sotheby's</span></div>
+              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Santo Domingo Sotheby&apos;s</span></div>
             </div>
             
             <div className="text-center mt-10">
