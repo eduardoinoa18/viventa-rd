@@ -224,7 +224,6 @@ export default function CreateListingPage() {
   function calculateCompletion(): number {
     let filled = 0
     requiredForPublish.forEach((key) => {
-      // @ts-ignore
       if (String(formData[key] || '').trim().length > 0) filled++
     })
     // images are important but not required for draft; count them softly

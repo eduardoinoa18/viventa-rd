@@ -1,5 +1,6 @@
 // app/admin/leads/page.tsx
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 import ProtectedClient from '../../auth/ProtectedClient'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'

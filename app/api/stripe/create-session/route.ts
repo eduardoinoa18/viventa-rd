@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { doc, getDoc } from 'firebase/firestore'
+import Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Initialize Stripe
-    const stripe = require('stripe')(stripeSecretKey)
+    const stripe = new Stripe(stripeSecretKey)
 
     // Create Checkout Session
     const session = await stripe.checkout.sessions.create({

@@ -1,5 +1,6 @@
 // components/InviteModal.tsx
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 import { useState } from 'react'
 import { FiX, FiMail, FiUser, FiBriefcase, FiSend, FiCopy, FiCheck } from 'react-icons/fi'
 import toast from 'react-hot-toast'

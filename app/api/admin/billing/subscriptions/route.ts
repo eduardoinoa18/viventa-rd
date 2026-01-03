@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { collection, getDocs, doc, setDoc, getDoc, serverTimestamp, query, orderBy } from 'firebase/firestore'
+import Stripe from 'stripe'
 
 export async function GET() {
   try {
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: `Price ID for ${plan} not configured` }, { status: 400 })
     }
 
-    const stripe = require('stripe')(stripeSecretKey)
+    const stripe = new Stripe(stripeSecretKey)
 
     // Find or create customer
     const existingCustomers = await stripe.customers.list({ email, limit: 1 })

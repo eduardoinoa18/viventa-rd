@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
     }
 
-    const stripe = require('stripe')(stripeSecretKey)
+    const stripe = new Stripe(stripeSecretKey)
     const sig = req.headers.get('stripe-signature')
     const body = await req.text()
 

@@ -1,5 +1,6 @@
 // app/admin/users/page.tsx
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 import { useState, useEffect } from 'react'
 import ProtectedClient from '../../auth/ProtectedClient'
 import AdminSidebar from '../../../components/AdminSidebar'

@@ -218,9 +218,7 @@ export async function GET(req: NextRequest) {
     const maxReq = 30
     const windowMs = 5 * 60 * 1000
 
-    // @ts-ignore - module scoped caches
     ;(globalThis as any).__recCache = (globalThis as any).__recCache || new Map<string, { data: any; expires: number }>()
-    // @ts-ignore
     ;(globalThis as any).__recRL = (globalThis as any).__recRL || new Map<string, number[]>()
 
     const cache: Map<string, { data: any; expires: number }> = (globalThis as any).__recCache

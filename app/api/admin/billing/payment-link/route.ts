@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { doc, getDoc } from 'firebase/firestore'
+import Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: `Price ID for ${plan} not configured` }, { status: 400 })
     }
 
-    const stripe = require('stripe')(stripeSecretKey)
+    const stripe = new Stripe(stripeSecretKey)
 
     // Create a Payment Link
     const paymentLink = await stripe.paymentLinks.create({

@@ -3,6 +3,8 @@
 export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { verificationCodes } from '@/lib/verificationStore'
+import sgMail from '@sendgrid/mail'
+import nodemailer from 'nodemailer'
 
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -140,7 +142,6 @@ async function sendVerificationEmail(email: string, code: string): Promise<boole
     // Option 1: Using SendGrid (recommended for production)
     if (process.env.SENDGRID_API_KEY) {
       console.log('📧 Using SendGrid...')
-      const sgMail = require('@sendgrid/mail')
       sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
       const msg = {
@@ -188,8 +189,6 @@ async function sendVerificationEmail(email: string, code: string): Promise<boole
         pass: process.env.SMTP_PASS ? '***' : 'missing',
       })
 
-      const nodemailer = require('nodemailer')
-      
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || '587'),
