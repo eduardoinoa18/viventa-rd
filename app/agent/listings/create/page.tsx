@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { collection, addDoc, serverTimestamp, doc, runTransaction, query, where, getDocs, deleteDoc, updateDoc } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp, doc, query, where, getDocs, deleteDoc, updateDoc } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '@/lib/firebaseClient'
 import { getSession, type UserSession } from '@/lib/authSession'
@@ -69,8 +69,8 @@ export default function CreateListingPage() {
     representation: 'independent' as 'independent' | 'broker' | 'builder',
     brokerName: '',
     builderName: '',
-    // Default to pending so listings go through admin approval
-    status: 'pending',
+    // Default to active so listings publish and appear in search
+    status: 'active',
     featured: false,
     // Pro-to-pro information (not shown publicly)
     showingInstructions: '',
@@ -192,31 +192,6 @@ export default function CreateListingPage() {
     }
     setAgent(s)
   }, [router])
-
-  // Generate a listing ID (VIV-YYYY-NNNNNN)
-  const generateListingId = async (): Promise<string> => {
-    const year = new Date().getFullYear()
-    const countersRef = doc(db, 'counters', 'listings')
-    try {
-  const seq = await runTransaction(db, async (tx: any) => {
-        const snap = await tx.get(countersRef)
-        const data = (snap.exists() ? snap.data() : {}) as Record<string, number>
-        const current = data[String(year)] || 0
-        const next = current + 1
-        if (!snap.exists()) {
-          tx.set(countersRef, { [String(year)]: next })
-        } else {
-          tx.update(countersRef, { [String(year)]: next })
-        }
-        return next
-      })
-      const id = `VIV-${year}-${String(seq).padStart(6, '0')}`
-      return id
-    } catch (err) {
-      console.warn('Falling back to timestamp-based listingId due to counter error:', err)
-      return `VIV-${year}-${Date.now().toString().slice(-6)}`
-    }
-  }
 
   // --- Drafts helpers ---
   const requiredForPublish = ['title','description','propertyType','listingType','price','city','neighborhood','area'] as const
@@ -434,10 +409,6 @@ export default function CreateListingPage() {
         return
       }
 
-      // NOTE: Direct Firebase writes require Firebase Auth; we currently rely on custom session.
-      // Provide graceful failure messaging if security rules reject.
-      const listingId = await generateListingId()
-
       // Upload images (best-effort). If permission denied, abort with guidance.
       const imageUrls: string[] = []
       toast.loading('Subiendo imágenes...', { id: 'upload' })
@@ -509,7 +480,10 @@ export default function CreateListingPage() {
         lotSize: parseInt(formData.lotSize) || 0,
         yearBuilt: parseInt(formData.yearBuilt) || null,
         
-        // Location
+        // Location (duplicated at top-level for search filters)
+        city: formData.city,
+        neighborhood: formData.neighborhood,
+        address: formData.address,
         location: {
           city: formData.city,
           neighborhood: formData.neighborhood,
@@ -526,7 +500,6 @@ export default function CreateListingPage() {
         features: formData.features,
         
   // Agent and representation information
-  listingId,
   agentId: session.uid,
   agentName: session.name || session.displayName || session.email,
   agentEmail: session.email,
@@ -534,7 +507,7 @@ export default function CreateListingPage() {
   brokerName: formData.representation === 'broker' ? formData.brokerName : '',
   builderName: formData.representation === 'builder' ? formData.builderName : '',
         
-        // Status and visibility (pending by default until admin approval)
+        // Status and visibility (active by default so it is searchable)
         status: formData.status,
         featured: formData.featured,
 
@@ -558,23 +531,21 @@ export default function CreateListingPage() {
         updatedAt: serverTimestamp()
       }
 
-      // Use API route to bypass Firebase Auth requirements
+      // Use API route with server-side auth + counters
       try {
-        const response = await fetch('/api/listings/create', {
+        const response = await fetch('/api/properties', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            propertyData,
-            agentId: session.uid,
-            agentEmail: session.email,
-            agentName: session.name || session.displayName || session.email
+            action: 'create',
+            ...propertyData
           })
         })
 
         const result = await response.json()
         
-        if (result.ok) {
-          toast.success('¡Propiedad enviada para revisión! (24-48h)')
+        if (result.success) {
+          toast.success('Propiedad publicada')
           router.push('/agent/listings')
         } else {
           throw new Error(result.error || 'Error al crear la propiedad')

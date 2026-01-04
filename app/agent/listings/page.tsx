@@ -97,11 +97,6 @@ export default function AgentListingsPage() {
 
   async function handleStatusChange(listingId: string, newStatus: string) {
     try {
-      const current = listings.find((l) => l.id === listingId)
-      if (current && current.status === 'pending' && newStatus === 'active') {
-        toast('Tu propiedad se activará cuando el equipo la apruebe (24–48h).', { icon: '⏳' })
-        return
-      }
       await updateDoc(doc(db, 'properties', listingId), {
         status: newStatus,
         updatedAt: new Date()
@@ -351,7 +346,7 @@ export default function AgentListingsPage() {
                       <option value="pending">Pendiente</option>
                       <option value="inactive">Inactiva</option>
                       <option value="sold">Vendida</option>
-                      <option value="active" disabled={listing.status === 'pending'}>Activa (requiere aprobación)</option>
+                      <option value="active">Activa</option>
                     </select>
                   </div>
                 </div>

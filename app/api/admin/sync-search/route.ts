@@ -1,8 +1,3 @@
-import { cookies } from 'next/headers';
-import { getAdminDb } from '@/lib/firebaseAdmin';
-import { algoliaClient } from '@/lib/algoliaClient';
-import { NextResponse } from 'next/server';
-
 // Deprecated route: Algolia sync disabled. Returning 410 Gone.
 
 /**

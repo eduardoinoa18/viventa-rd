@@ -167,17 +167,6 @@ function buildFirestoreQuery(filters: SearchFilters) {
   // Always filter for active listings
   constraints.push(where('status', '==', 'active'));
 
-  // Apply exact match filters
-  if (filters.city) {
-    // Our properties store city at the top level
-    constraints.push(where('city', '==', filters.city));
-  }
-
-  if (filters.neighborhood) {
-    // Our properties store neighborhood at the top level
-    constraints.push(where('neighborhood', '==', filters.neighborhood));
-  }
-
   if (filters.propertyType) {
     constraints.push(where('propertyType', '==', filters.propertyType));
   }
@@ -215,6 +204,35 @@ function applyClientFilters(
   filters: SearchFilters
 ): Listing[] {
   return listings.filter((listing) => {
+    // Location filters (support top-level and nested location fields)
+    const city = listing.city || listing.location?.city;
+    const neighborhood = listing.neighborhood || listing.location?.neighborhood;
+
+    if (filters.city && city && city !== filters.city) {
+      return false;
+    }
+
+    if (filters.neighborhood && neighborhood && neighborhood !== filters.neighborhood) {
+      return false;
+    }
+
+    // Listing type filters (fallback to default)
+    if (filters.propertyType && listing.propertyType && listing.propertyType !== filters.propertyType) {
+      return false;
+    }
+
+    if (filters.listingType && listing.listingType && listing.listingType !== filters.listingType) {
+      return false;
+    }
+
+    if (filters.bedrooms && typeof listing.bedrooms === 'number' && listing.bedrooms < filters.bedrooms) {
+      return false;
+    }
+
+    if (filters.bathrooms && typeof listing.bathrooms === 'number' && listing.bathrooms < filters.bathrooms) {
+      return false;
+    }
+
     // Price range
     if (filters.minPrice && listing.price < filters.minPrice) {
       return false;

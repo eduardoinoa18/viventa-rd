@@ -3,6 +3,61 @@ import { cookies } from 'next/headers'
 import { ActivityLogger } from "@/lib/activityLogger"
 import { getAdminDb } from "@/lib/firebaseAdmin"
 import { FieldValue } from 'firebase-admin/firestore'
+import { logger } from '@/lib/logger'
+
+type PropertyStatus = 'active' | 'pending' | 'inactive' | 'sold'
+type ListingType = 'sale' | 'rent'
+
+interface PropertyPayload {
+  id?: string
+  title?: string
+  description?: string
+  price?: number
+  currency?: 'USD' | 'DOP'
+  city?: string
+  neighborhood?: string
+  address?: string
+  bedrooms?: number
+  bathrooms?: number
+  area?: number
+  propertyType?: string
+  listingType?: ListingType
+  status?: PropertyStatus
+  featured?: boolean
+  agentId?: string
+  agentName?: string
+  agentEmail?: string
+  images?: string[]
+}
+
+function validatePayload(action: string, data: PropertyPayload) {
+  const errors: string[] = []
+  const requiredForCreate: Array<keyof PropertyPayload> = [
+    'title', 'description', 'price', 'currency', 'city', 'neighborhood', 'listingType', 'status'
+  ]
+
+  if (action === 'create') {
+    requiredForCreate.forEach((key) => {
+      if (data[key] === undefined || data[key] === null || data[key] === '') {
+        errors.push(`Missing field: ${key}`)
+      }
+    })
+  }
+
+  if (data.price !== undefined && Number.isNaN(Number(data.price))) {
+    errors.push('price must be a number')
+  }
+  if (data.bedrooms !== undefined && Number.isNaN(Number(data.bedrooms))) {
+    errors.push('bedrooms must be a number')
+  }
+  if (data.bathrooms !== undefined && Number.isNaN(Number(data.bathrooms))) {
+    errors.push('bathrooms must be a number')
+  }
+  if (data.area !== undefined && Number.isNaN(Number(data.area))) {
+    errors.push('area must be a number')
+  }
+  return { ok: errors.length === 0, errors }
+}
 
 export async function GET(req: Request) {
   try {
@@ -26,7 +81,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ properties })
   } catch (error: any) {
-    console.error('Error fetching properties:', error)
+    logger.error('Error fetching properties', error)
     return NextResponse.json({ error: error.message || 'Failed to fetch properties' }, { status: 500 })
   }
 }
@@ -37,7 +92,7 @@ export async function POST(req: Request) {
     const { action, ...data } = body
     const db = getAdminDb()
     if (!db) {
-      console.error('Admin DB not available')
+      logger.error('Admin DB not available')
       return NextResponse.json({ error: 'Server config error' }, { status: 500 })
     }
 
@@ -47,15 +102,26 @@ export async function POST(req: Request) {
     const isAdmin = role === 'admin' || role === 'master_admin'
     const isPro = role === 'agent' || role === 'broker'
 
+    const { ok, errors } = validatePayload(action, data)
+    if (!ok) {
+      return NextResponse.json({ error: errors.join(', ') }, { status: 400 })
+    }
+
     if (action === 'create') {
       if (!(isAdmin || isPro)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
       // Ensure agentId defaults to caller uid for pros
-      const createData = { ...data }
-      if (isPro && uid && !createData.agentId) {
+      const createData: PropertyPayload = { ...data }
+      if (isPro && uid) {
         createData.agentId = uid
       }
+      // default to active if not provided
+      if (!createData.status) createData.status = 'active'
+      if (typeof createData.price === 'string') createData.price = Number(createData.price)
+      if (typeof createData.bedrooms === 'string') createData.bedrooms = Number(createData.bedrooms)
+      if (typeof createData.bathrooms === 'string') createData.bathrooms = Number(createData.bathrooms)
+      if (typeof createData.area === 'string') createData.area = Number(createData.area)
       // Generate listingId via yearly counter in a transaction
       const { listingId, id } = await db.runTransaction(async (tx) => {
         const year = new Date().getFullYear().toString()
@@ -110,8 +176,13 @@ export async function POST(req: Request) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
       }
+      const updateData: PropertyPayload = { ...rest }
+      if (typeof updateData.price === 'string') updateData.price = Number(updateData.price)
+      if (typeof updateData.bedrooms === 'string') updateData.bedrooms = Number(updateData.bedrooms)
+      if (typeof updateData.bathrooms === 'string') updateData.bathrooms = Number(updateData.bathrooms)
+      if (typeof updateData.area === 'string') updateData.area = Number(updateData.area)
       await db.collection('properties').doc(id).set({
-        ...rest,
+        ...updateData,
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true })
       
@@ -164,7 +235,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
   } catch (error: any) {
-    console.error('Error managing property:', error)
+    logger.error('Error managing property', error)
     return NextResponse.json({ error: error.message || 'Failed to manage property' }, { status: 500 })
   }
 }
