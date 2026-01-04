@@ -26,7 +26,7 @@ export default function AdminEmailEventsPage() {
   const [loading, setLoading] = useState(true)
   const [items, setItems] = useState<EmailEvent[]>([])
   const [range, setRange] = useState<'24h' | '7d' | '30d'>('24h')
-  const [provider, setProvider] = useState<'all' | 'resend' | 'sendgrid' | 'smtp'>('all')
+  const [provider, setProvider] = useState<'all' | 'sendgrid' | 'smtp'>('all')
   const [type, setType] = useState<'all' | 'sent' | 'delivered' | 'opened' | 'bounced' | 'complaint' | 'unknown'>('all')
 
   useEffect(() => { fetchEvents() }, [range])
@@ -100,7 +100,6 @@ export default function AdminEmailEventsPage() {
                   <label htmlFor="provider" className="sr-only">Provider</label>
                   <select id="provider" aria-label="Provider" value={provider} onChange={(e) => setProvider(e.target.value as any)} className="border rounded-md px-2 py-1">
                     <option value="all">All Providers</option>
-                    <option value="resend">Resend</option>
                     <option value="sendgrid">SendGrid</option>
                     <option value="smtp">SMTP</option>
                   </select>

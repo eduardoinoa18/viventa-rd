@@ -196,9 +196,6 @@ type SettingsData = {
   // Integrations
   stripePublishableKey: string
   stripeSecretKey: string
-  algoliaAppId: string
-  algoliaApiKey: string
-  algoliaIndex: string
   firebaseProjectId: string
   googleAnalyticsId: string
   facebookPixelId: string
@@ -255,9 +252,6 @@ export default function AdminSettingsPage() {
     allowedDomains: '',
     stripePublishableKey: '',
     stripeSecretKey: '',
-    algoliaAppId: '',
-    algoliaApiKey: '',
-    algoliaIndex: 'properties',
     firebaseProjectId: '',
     googleAnalyticsId: '',
     facebookPixelId: '',
@@ -729,35 +723,6 @@ export default function AdminSettingsPage() {
                   </div>
                 </Card>
 
-                <Card title="Algolia Search" description="Configure Algolia search integration (optional)">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField id="algolia-app-id" label="App ID">
-                      <TextInput
-                        id="algolia-app-id"
-                        type="text"
-                        value={settings.algoliaAppId}
-                        onChange={(e) => updateSetting('algoliaAppId', e.target.value)}
-                      />
-                    </FormField>
-                    <FormField id="algolia-api-key" label="API Key">
-                      <TextInput
-                        id="algolia-api-key"
-                        type="password"
-                        value={settings.algoliaApiKey}
-                        onChange={(e) => updateSetting('algoliaApiKey', e.target.value)}
-                      />
-                    </FormField>
-                    <FormField id="algolia-index" label="Index Name">
-                      <TextInput
-                        id="algolia-index"
-                        type="text"
-                        value={settings.algoliaIndex}
-                        onChange={(e) => updateSetting('algoliaIndex', e.target.value)}
-                      />
-                    </FormField>
-                  </div>
-                </Card>
-
                 <Card title="Analytics" description="Third-party analytics integrations">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField id="google-analytics-id" label="Google Analytics ID">
@@ -1148,11 +1113,6 @@ export default function AdminSettingsPage() {
                           {label:'Project ID', ok: diag.firebase.projectId},
                           {label:'App ID', ok: diag.firebase.appId},
                         ]} />
-                        <Section title="Algolia" items={[
-                          {label:'App ID', ok: diag.algolia.appId},
-                          {label:'Search Key', ok: diag.algolia.searchKey},
-                          {label:'Index', ok: diag.algolia.index},
-                        ]} tip={!diag.algolia.appId || !diag.algolia.searchKey ? 'Set NEXT_PUBLIC_ALGOLIA_* to enable search' : undefined} />
                         <Section title="Email" items={[
                           {label:'SendGrid', ok: diag.email.sendgrid},
                           {label:'SMTP', ok: diag.email.smtp},
