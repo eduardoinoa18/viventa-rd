@@ -64,14 +64,12 @@ export default function LoginPage() {
       trackLogin(uid, role)
       setError('')
       if (!profileComplete && (role === 'agent' || role === 'broker')) {
-        router.push('/onboarding')
+        router.push('/search?welcome=1')
         return
       }
-  let dest = '/dashboard'
-  if (role === 'master_admin') dest = '/admin'
-  else if (role === 'broker') dest = '/broker'
-  else if (role === 'agent') dest = '/agent'
-  router.push(dest + '?welcome=1')
+      let dest = '/search'
+      if (role === 'master_admin') dest = '/admin'
+      router.push(dest + '?welcome=1')
       toast.success('¡Bienvenido de vuelta!')
     } catch (err: any) {
       const msg = err?.message || 'No se pudo iniciar sesión.'

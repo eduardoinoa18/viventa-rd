@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FiBell, FiCheck, FiX, FiSettings, FiCheckCircle, FiFilter } from 'react-icons/fi'
-import Link from 'next/link'
 import { db } from '@/lib/firebaseClient'
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore'
 import { getSession } from '@/lib/authSession'
@@ -281,13 +280,13 @@ export default function NotificationCenter({ userId }: { userId: string }) {
                       ↻
                     </button>
                   )}
-                  <Link
-                    href="/dashboard/notifications"
+                  <button
                     className="text-gray-400 hover:text-gray-600 transition-colors"
                     title="Configuración"
+                    onClick={() => setIsOpen(false)}
                   >
                     <FiSettings size={18} />
-                  </Link>
+                  </button>
                 </div>
               </div>
               
@@ -353,7 +352,7 @@ export default function NotificationCenter({ userId }: { userId: string }) {
                         const session = getSession()
                         const role = session?.role || 'user'
                         // Use provided url or route to role-appropriate notifications page
-                        const fallback = (role === 'admin' || role === 'master_admin') ? '/admin/notifications' : '/notifications'
+                        const fallback = (role === 'admin' || role === 'master_admin') ? '/admin' : '/search'
                         const target = notification.url || fallback
                         router.push(target)
                       }}
@@ -412,13 +411,12 @@ export default function NotificationCenter({ userId }: { userId: string }) {
             {/* Footer */}
             {notifications.length > 0 && (
               <div className="p-3 border-t border-gray-200 text-center">
-                <Link
-                  href="/dashboard/notifications"
+                <button
                   className="text-sm text-[#00A676] hover:text-[#008F64] font-semibold"
                   onClick={() => setIsOpen(false)}
                 >
-                  Ver todas las notificaciones →
-                </Link>
+                  Cerrar notificaciones
+                </button>
               </div>
             )}
           </div>

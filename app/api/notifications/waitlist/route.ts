@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
                 <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-left: 4px solid #2196F3; border-radius: 4px;">
                   <p style="margin: 0; color: #0B2545;">
                     <strong>📊 Acción Rápida:</strong> Ver todas las inscripciones en tu 
-                    <a href="${process.env.NEXT_PUBLIC_BASE_URL}/admin/chat?tab=waitlist" style="color: #00A676;">Portal de Administración</a>
+                    <a href="${process.env.NEXT_PUBLIC_BASE_URL}/admin/leads?source=social_waitlist" style="color: #00A676;">Portal de Administración</a>
                   </p>
                 </div>
               </div>

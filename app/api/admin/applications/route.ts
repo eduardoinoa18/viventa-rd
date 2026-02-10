@@ -5,10 +5,13 @@ import { ActivityLogger } from '@/lib/activityLogger'
 import { createPasswordSetupToken } from '@/lib/credentialGenerator'
 import { sendProfessionalCredentials } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
+import { requireAdmin } from '@/lib/adminApiAuth'
 export const dynamic = 'force-dynamic'
 
 export async function PATCH(req: NextRequest) {
   try {
+    const guard = requireAdmin(req)
+    if (guard) return guard
     const { id, status, notes, adminEmail } = await req.json()
 
     if (!id || !status) {
@@ -143,6 +146,8 @@ export async function PATCH(req: NextRequest) {
 // Send notification email
 export async function POST(req: NextRequest) {
   try {
+    const guard = requireAdmin(req)
+    if (guard) return guard
     const { applicationId, email, name, status, notes, type, resetLink, code } = await req.json()
 
     if (!email || !status) {
@@ -222,6 +227,8 @@ export async function POST(req: NextRequest) {
 // GET /api/admin/applications - list applications via Admin SDK
 export async function GET(req: NextRequest) {
   try {
+    const guard = requireAdmin(req)
+    if (guard) return guard
     const adminDb = getAdminDb()
     if (!adminDb) {
       return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
@@ -250,6 +257,8 @@ export async function GET(req: NextRequest) {
 // DELETE /api/admin/applications - delete an application by id (Admin SDK)
 export async function DELETE(req: NextRequest) {
   try {
+    const guard = requireAdmin(req)
+    if (guard) return guard
     const body = await req.json()
     const id = body?.id
     if (!id) {

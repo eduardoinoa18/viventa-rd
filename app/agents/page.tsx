@@ -132,8 +132,8 @@ export default function AgentsPage() {
               Conecta con {agents.length} profesionales expertos certificados en República Dominicana
             </p>
           </div>
-          <a href="/apply" className="self-start md:self-auto px-4 py-2 bg-[#00A6A6] text-white rounded font-semibold hover:bg-[#008c8c] transition">
-            ¿Eres agente? Únete
+          <a href="/contact" className="self-start md:self-auto px-4 py-2 bg-[#00A6A6] text-white rounded font-semibold hover:bg-[#008c8c] transition">
+            ¿Eres agente? Contáctanos
           </a>
         </div>
 

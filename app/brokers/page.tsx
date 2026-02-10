@@ -98,10 +98,10 @@ export default function BrokersPage() {
             </p>
           </div>
           <a 
-            href="/apply" 
+            href="/contact" 
             className="self-start md:self-auto px-4 py-2 bg-[#3BAFDA] text-white rounded font-semibold hover:bg-[#2A9FC7] transition inline-flex items-center gap-2"
           >
-            <FiUsers /> ¿Tienes un brokerage? Únete
+            <FiUsers /> ¿Tienes un brokerage? Contáctanos
           </a>
         </div>
 

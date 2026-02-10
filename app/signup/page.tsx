@@ -59,7 +59,7 @@ export default function SignupPage() {
         // Track signup event
         trackSignup(cred.user.uid, 'user')
         setError('')
-        router.push('/dashboard')
+        router.push('/search')
         toast.success('¡Cuenta creada exitosamente! Revisa tu email.')
       }
     } catch (err: any) {

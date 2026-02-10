@@ -1,6 +1,7 @@
 // app/admin/people/page.tsx
 'use client'
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import ProtectedClient from '@/app/auth/ProtectedClient'
 import AdminSidebar from '@/components/AdminSidebar'
 import AdminTopbar from '@/components/AdminTopbar'
@@ -44,7 +45,18 @@ export default function PeopleUsersPage() {
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteType, setInviteType] = useState<'agent' | 'broker' | 'user'>('user')
 
-  useEffect(() => { load() }, [filterRole])
+  const searchParams = useSearchParams()
+  const activeTab = (searchParams?.get('tab') || 'users') as 'users' | 'agents' | 'brokers'
+
+  useEffect(() => { load() }, [filterRole, activeTab])
+
+  useEffect(() => {
+    const invite = searchParams?.get('invite')
+    if (invite === 'agent' || invite === 'broker' || invite === 'user') {
+      setInviteType(invite)
+      setShowInviteModal(true)
+    }
+  }, [searchParams])
 
   const filteredUsers = users.filter(u => {
     if (!searchTerm) return true
@@ -61,7 +73,8 @@ export default function PeopleUsersPage() {
   async function load() {
     setLoading(true)
     try {
-      const url = '/api/admin/users?role=user'
+      const roleParam = activeTab === 'users' ? 'user' : activeTab === 'agents' ? 'agent' : 'broker'
+      const url = `/api/admin/users?role=${encodeURIComponent(roleParam)}`
       const res = await fetch(url)
       const json = await res.json()
       if (json.ok) {
@@ -127,7 +140,7 @@ export default function PeopleUsersPage() {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
     try {
       const res = await fetch('/api/admin/users', {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: uid, status: newStatus }),
       })
@@ -147,7 +160,11 @@ export default function PeopleUsersPage() {
   async function deleteUser(uid: string) {
     if (!confirm('Are you sure you want to delete this user?')) return
     try {
-      const res = await fetch(`/api/admin/users?id=${uid}`, { method: 'DELETE' })
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: uid })
+      })
       const json = await res.json()
       if (json.ok) {
         toast.success('User deleted')
@@ -187,6 +204,26 @@ export default function PeopleUsersPage() {
     setShowForm(true)
   }
 
+  async function setProfessionalStatus(uid: string, status: 'active' | 'declined') {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: uid, status, approved: status === 'active' })
+      })
+      const json = await res.json()
+      if (json.ok) {
+        toast.success(status === 'active' ? 'Professional approved' : 'Professional declined')
+        load()
+      } else {
+        toast.error(json.error || 'Failed to update status')
+      }
+    } catch (e) {
+      console.error('Failed to update professional status', e)
+      toast.error('Failed to update status')
+    }
+  }
+
   return (
     <ProtectedClient allowed={['master_admin','admin']}>
       <AdminTopbar />
@@ -196,7 +233,7 @@ export default function PeopleUsersPage() {
           <div className="p-6">
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-[#0B2545]">People</h1>
-              <p className="text-gray-600">Manage users, agents, brokers, leads, and applications</p>
+              <p className="text-gray-600">Manage users, agents, and brokers</p>
             </div>
           </div>
 
@@ -204,60 +241,72 @@ export default function PeopleUsersPage() {
 
           <div className="p-6">
             <div className="max-w-7xl mx-auto">
-              {/* Users Tab Content */}
+              {/* People Tab Content */}
               <div className="mb-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setShowForm(true)}
-                    className="px-4 py-2 bg-[#00A676] text-white rounded-lg hover:bg-[#008F64] flex items-center gap-2 font-semibold"
-                  >
-                    <FiUserPlus /> Add User
-                  </button>
-                  <button
-                    onClick={() => {
-                      setInviteType('user')
-                      setShowInviteModal(true)
-                    }}
-                    className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2 font-semibold"
-                  >
-                    <FiMail /> Invite User
-                  </button>
-                  <button
-                    onClick={() => {
-                      setProfessionalRole('agent')
-                      setShowProfessionalModal(true)
-                    }}
-                    className="px-4 py-2 bg-[#0B2545] text-white rounded-lg hover:bg-[#1a3a5f] flex items-center gap-2 font-semibold"
-                  >
-                    <FiUserCheck /> Create Agent
-                  </button>
-                  <button
-                    onClick={() => {
-                      setInviteType('agent')
-                      setShowInviteModal(true)
-                    }}
-                    className="px-4 py-2 border-2 border-[#0B2545] text-[#0B2545] rounded-lg hover:bg-[#0B2545] hover:text-white flex items-center gap-2 font-semibold transition-colors"
-                  >
-                    <FiMail /> Invite Agent
-                  </button>
-                  <button
-                    onClick={() => {
-                      setProfessionalRole('broker')
-                      setShowProfessionalModal(true)
-                    }}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 font-semibold"
-                  >
-                    <FiUserCheck /> Create Broker
-                  </button>
-                  <button
-                    onClick={() => {
-                      setInviteType('broker')
-                      setShowInviteModal(true)
-                    }}
-                    className="px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white flex items-center gap-2 font-semibold transition-colors"
-                  >
-                    <FiMail /> Invite Broker
-                  </button>
+                  {activeTab === 'users' && (
+                    <>
+                      <button
+                        onClick={() => setShowForm(true)}
+                        className="px-4 py-2 bg-[#00A676] text-white rounded-lg hover:bg-[#008F64] flex items-center gap-2 font-semibold"
+                      >
+                        <FiUserPlus /> Add User
+                      </button>
+                      <button
+                        onClick={() => {
+                          setInviteType('user')
+                          setShowInviteModal(true)
+                        }}
+                        className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2 font-semibold"
+                      >
+                        <FiMail /> Invite User
+                      </button>
+                    </>
+                  )}
+                  {activeTab === 'agents' && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setProfessionalRole('agent')
+                          setShowProfessionalModal(true)
+                        }}
+                        className="px-4 py-2 bg-[#0B2545] text-white rounded-lg hover:bg-[#1a3a5f] flex items-center gap-2 font-semibold"
+                      >
+                        <FiUserCheck /> Create Agent
+                      </button>
+                      <button
+                        onClick={() => {
+                          setInviteType('agent')
+                          setShowInviteModal(true)
+                        }}
+                        className="px-4 py-2 border-2 border-[#0B2545] text-[#0B2545] rounded-lg hover:bg-[#0B2545] hover:text-white flex items-center gap-2 font-semibold transition-colors"
+                      >
+                        <FiMail /> Invite Agent
+                      </button>
+                    </>
+                  )}
+                  {activeTab === 'brokers' && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setProfessionalRole('broker')
+                          setShowProfessionalModal(true)
+                        }}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 font-semibold"
+                      >
+                        <FiUserCheck /> Create Broker
+                      </button>
+                      <button
+                        onClick={() => {
+                          setInviteType('broker')
+                          setShowInviteModal(true)
+                        }}
+                        className="px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white flex items-center gap-2 font-semibold transition-colors"
+                      >
+                        <FiMail /> Invite Broker
+                      </button>
+                    </>
+                  )}
                 </div>
                 <button
                   onClick={load}
@@ -283,8 +332,10 @@ export default function PeopleUsersPage() {
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                 >
                   <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
+                  <option value="declined">Declined</option>
                 </select>
               </div>
 
@@ -357,17 +408,38 @@ export default function PeopleUsersPage() {
                                 >
                                   <FiEdit />
                                 </button>
-                                <button
-                                  onClick={() => toggleStatus(u.id, u.status)}
-                                  className={`p-2 rounded ${
-                                    u.status === 'active'
-                                      ? 'text-orange-600 hover:bg-orange-50'
-                                      : 'text-green-600 hover:bg-green-50'
-                                  }`}
-                                  title={u.status === 'active' ? 'Deactivate' : 'Activate'}
-                                >
-                                  {u.status === 'active' ? <FiUserX /> : <FiUserCheck />}
-                                </button>
+                                {activeTab === 'users' ? (
+                                  <button
+                                    onClick={() => toggleStatus(u.id, u.status)}
+                                    className={`p-2 rounded ${
+                                      u.status === 'active'
+                                        ? 'text-orange-600 hover:bg-orange-50'
+                                        : 'text-green-600 hover:bg-green-50'
+                                    }`}
+                                    title={u.status === 'active' ? 'Deactivate' : 'Activate'}
+                                  >
+                                    {u.status === 'active' ? <FiUserX /> : <FiUserCheck />}
+                                  </button>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={() => setProfessionalStatus(u.id, 'active')}
+                                      className="p-2 text-green-600 hover:bg-green-50 rounded"
+                                      title="Approve"
+                                      aria-label="Approve"
+                                    >
+                                      <FiUserCheck />
+                                    </button>
+                                    <button
+                                      onClick={() => setProfessionalStatus(u.id, 'declined')}
+                                      className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                      title="Decline"
+                                      aria-label="Decline"
+                                    >
+                                      <FiUserX />
+                                    </button>
+                                  </>
+                                )}
                                 <button
                                   onClick={() => deleteUser(u.id)}
                                   className="p-2 text-red-600 hover:bg-red-50 rounded"

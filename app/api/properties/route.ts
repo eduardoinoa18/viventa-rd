@@ -116,6 +116,18 @@ export async function POST(req: Request) {
       if (isPro && uid) {
         createData.agentId = uid
       }
+      if (isPro) {
+        delete createData.agentName
+        delete createData.agentEmail
+      }
+      if (uid) {
+        const userSnap = await db.collection('users').doc(uid).get()
+        if (userSnap.exists) {
+          const userData = userSnap.data() as { name?: string; displayName?: string; email?: string }
+          createData.agentName = userData?.name || userData?.displayName || userData?.email || createData.agentName
+          createData.agentEmail = userData?.email || createData.agentEmail
+        }
+      }
       // default to active if not provided
       if (!createData.status) createData.status = 'active'
       if (typeof createData.price === 'string') createData.price = Number(createData.price)
@@ -177,6 +189,11 @@ export async function POST(req: Request) {
         }
       }
       const updateData: PropertyPayload = { ...rest }
+      if (isPro) {
+        delete updateData.agentId
+        delete updateData.agentName
+        delete updateData.agentEmail
+      }
       if (typeof updateData.price === 'string') updateData.price = Number(updateData.price)
       if (typeof updateData.bedrooms === 'string') updateData.bedrooms = Number(updateData.bedrooms)
       if (typeof updateData.bathrooms === 'string') updateData.bathrooms = Number(updateData.bathrooms)

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { FiGrid, FiUsers, FiHome, FiSettings, FiUserCheck, FiBriefcase, FiMessageSquare, FiPlusSquare, FiClipboard, FiCreditCard, FiShield, FiActivity, FiTarget, FiBarChart2, FiChevronLeft, FiMail } from 'react-icons/fi'
+import { FiGrid, FiUsers, FiHome, FiSettings, FiPlusSquare, FiClipboard, FiTarget, FiChevronLeft } from 'react-icons/fi'
 
 export default function AdminSidebar() {
   const pathname = usePathname()
@@ -22,13 +22,10 @@ export default function AdminSidebar() {
   
   const links = [
     { href: '/admin', label: 'Dashboard', icon: <FiGrid /> },
-    { href: '/admin/inbox', label: 'Inbox', icon: <FiClipboard /> },
+    { href: '/admin/properties', label: 'Properties', icon: <FiHome /> },
     { href: '/admin/people', label: 'People', icon: <FiUsers /> },
-    { href: '/admin/properties', label: 'Listings', icon: <FiHome /> },
-    { href: '/admin/analytics', label: 'Analytics & AI', icon: <FiBarChart2 /> },
-    { href: '/admin/activity', label: 'Activity Feed', icon: <FiActivity /> },
-    { href: '/admin/billing', label: 'Billing', icon: <FiCreditCard /> },
-    { href: '/admin/roles', label: 'Roles & Access', icon: <FiShield /> },
+    { href: '/admin/leads', label: 'Leads', icon: <FiTarget /> },
+    { href: '/admin/applications', label: 'Applications', icon: <FiClipboard /> },
     { href: '/admin/settings', label: 'Settings', icon: <FiSettings /> },
   ]
 
@@ -65,22 +62,16 @@ export default function AdminSidebar() {
           <div className="text-xs font-bold text-blue-900 mb-2 tracking-wide">QUICK ACTIONS</div>
           <div className="space-y-2">
             <Link href="/admin/properties/create" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-              <FiPlusSquare className="text-blue-600" /> <span>Create Listing</span>
+              <FiPlusSquare className="text-blue-600" /> <span>Create Property</span>
             </Link>
             <Link href="/admin/people" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-              <FiUserCheck className="text-blue-600" /> <span>Create Professional</span>
-            </Link>
-            <Link href="/admin/people" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-              <FiMail className="text-blue-600" /> <span>Send Invitation</span>
+              <FiUsers className="text-blue-600" /> <span>Manage People</span>
             </Link>
             <Link href="/admin/leads" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-              <FiActivity className="text-blue-600" /> <span>Manage Leads</span>
+              <FiTarget className="text-blue-600" /> <span>Manage Leads</span>
             </Link>
             <Link href="/" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
               <span>🌐</span> View Public Site
-            </Link>
-            <Link href="/dashboard" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-              <span>📊</span> User Dashboard
             </Link>
           </div>
         </div>

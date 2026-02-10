@@ -171,14 +171,14 @@ export async function GET(req: NextRequest) {
       const isAdmin = role === 'admin' || role === 'master_admin'
       const base = isAdmin ? '/admin' : ''
       switch (type) {
-        case 'new_message': return '/messages'
-        case 'lead_inquiry': return `${base}/leads`
-        case 'application_approved': return `${base}/people`
-        case 'application_rejected': return `${base}/people`
-        case 'new_property': return isAdmin ? `${base}/properties` : '/agent/listings'
-        case 'price_alert': return '/favorites'
+        case 'new_message': return isAdmin ? `${base}/leads` : '/contact'
+        case 'lead_inquiry': return isAdmin ? `${base}/leads` : '/contact'
+        case 'application_approved': return isAdmin ? `${base}/applications` : '/contact'
+        case 'application_rejected': return isAdmin ? `${base}/applications` : '/contact'
+        case 'new_property': return isAdmin ? `${base}/properties` : '/search'
+        case 'price_alert': return '/search'
         case 'saved_search': return '/search'
-        default: return isAdmin ? `${base}/notifications` : '/notifications'
+        default: return isAdmin ? `${base}` : '/search'
       }
     }
 

@@ -10,6 +10,58 @@ export async function middleware(req: NextRequest) {
   let admin2FA = req.cookies.get('admin_2fa_ok')?.value === '1';
   const trustedAdmin = req.cookies.get('trusted_admin')?.value;
 
+  // ===== Legacy and removed routes =====
+  // Legacy property route
+  if (path.startsWith('/properties/')) {
+    const id = path.replace('/properties/', '').split('/')[0];
+    if (id) {
+      return NextResponse.redirect(new URL(`/listing/${id}`, req.url), 308);
+    }
+  }
+
+  // Public pages removed in Step 1A
+  const publicRemoved = [
+    '/properties',
+    '/social',
+    '/favorites',
+    '/messages',
+    '/notifications',
+    '/dashboard',
+    '/onboarding',
+    '/profesionales',
+    '/agent',
+    '/broker'
+  ];
+  if (publicRemoved.some((p) => path === p || path.startsWith(`${p}/`))) {
+    return NextResponse.redirect(new URL('/search', req.url), 308);
+  }
+
+  // Removed admin surfaces
+  const adminRemoved = [
+    '/admin/inbox',
+    '/admin/chat',
+    '/admin/notifications',
+    '/admin/analytics',
+    '/admin/billing',
+    '/admin/email',
+    '/admin/push',
+    '/admin/activity',
+    '/admin/master',
+    '/admin/agents',
+    '/admin/brokers',
+    '/admin/users',
+    '/admin/roles',
+    '/admin/people/leads',
+    '/admin/people/applications'
+  ];
+  if (adminRemoved.some((p) => path === p || path.startsWith(`${p}/`))) {
+    return NextResponse.redirect(new URL('/admin', req.url), 308);
+  }
+
+  if (path === '/admin/verify' || path.startsWith('/admin/verify/')) {
+    return NextResponse.redirect(new URL('/admin/login', req.url), 308);
+  }
+
   // Public directories that should never trigger auth redirects
   if (path.startsWith('/agents') || path.startsWith('/brokers') || path.startsWith('/contact') || path === '/' ) {
     return NextResponse.next()
@@ -27,7 +79,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Protect admin routes (all other admin pages require role and 2FA)
-  if (path.startsWith('/admin') && !['/admin/login','/admin/gate','/admin/verify'].includes(path)) {
+  if (path.startsWith('/admin') && !['/admin/login','/admin/gate'].includes(path)) {
     // Must have passed gate
     if (!adminGate) {
       return NextResponse.redirect(new URL('/admin/gate', req.url));
@@ -40,7 +92,13 @@ export async function middleware(req: NextRequest) {
     if (!admin2FA) {
       // Try trusted device cookie if present
       if (trustedAdmin) {
-        const ok = await verifyTrustedToken(trustedAdmin, process.env.TRUSTED_DEVICE_SECRET || 'dev-secret-change-me');
+        const secret = process.env.TRUSTED_DEVICE_SECRET;
+        if (!secret && process.env.NODE_ENV === 'production') {
+          console.error('CRITICAL: TRUSTED_DEVICE_SECRET not set in production');
+          // Don't trust the device cookie if secret is missing in production
+          return NextResponse.redirect(new URL('/admin', request.url));
+        }
+        const ok = secret ? await verifyTrustedToken(trustedAdmin, secret) : false;
         if (ok) {
           const res = NextResponse.next();
           // Refresh short-lived 2FA cookie to avoid repeated checks within session
@@ -48,9 +106,9 @@ export async function middleware(req: NextRequest) {
           return res;
         }
       }
-      // Otherwise, redirect to 2FA verify
-      const verifyUrl = new URL('/admin/verify', req.url);
-      return NextResponse.redirect(verifyUrl);
+      // Otherwise, redirect to inline 2FA on admin login
+      const loginUrl = new URL('/admin/login', req.url);
+      return NextResponse.redirect(loginUrl);
     }
   }
 
@@ -60,8 +118,7 @@ export async function middleware(req: NextRequest) {
   const needsStrictAuth = (p: string) => {
     // Admin routes already handled above
     if (p.startsWith('/admin')) return false;
-    // Only strict auth for pro dashboards
-    return p.startsWith('/broker') || (p.startsWith('/agent') && p !== '/agent/assistant');
+    return false;
   }
   if (needsStrictAuth(path)) {
     const verified = await initAuth(req);
@@ -72,34 +129,11 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Protect broker routes
-  if (pathname.startsWith("/broker")) {
-    if (role !== "broker" && role !== "master_admin" && role !== "admin") {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-  }
-
-  // Protect agent routes (excluding /agent/assistant which is open to all pros)
-  if (pathname.startsWith("/agent") && pathname !== "/agent/assistant") {
-    if (role !== "agent" && role !== "broker" && role !== "master_admin" && role !== "admin") {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-  }
-
-  // User app experience: if a logged-in non-admin user hits auth routes (NOT homepage), send to appropriate dashboard
-  const isLoggedInUser = role && role !== 'master_admin' && role !== 'admin';
+  // User app experience: if a logged-in user hits auth routes, send to search
+  const isLoggedInUser = role && role !== 'master_admin';
   const redirectToDashboard = ['/login', '/signup'].includes(pathname); // REMOVED '/' from this list
   if (isLoggedInUser && redirectToDashboard) {
-    // Route to appropriate dashboard based on role
-    let dest;
-    if (role === 'broker') {
-      dest = new URL('/broker', req.url);
-    } else if (role === 'agent') {
-      dest = new URL('/agent', req.url);
-    } else {
-      dest = new URL('/dashboard', req.url);
-    }
-    return NextResponse.redirect(dest);
+    return NextResponse.redirect(new URL('/search', req.url));
   }
 
   return NextResponse.next();

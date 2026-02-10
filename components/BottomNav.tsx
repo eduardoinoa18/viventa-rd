@@ -1,6 +1,6 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
-import { FiHome, FiSearch, FiHeart, FiMessageCircle, FiUser, FiStar, FiLogIn } from 'react-icons/fi'
+import { FiHome, FiSearch, FiUsers, FiMail, FiUser } from 'react-icons/fi'
 import { useEffect, useState } from 'react'
 import { getSession } from '@/lib/authSession'
 
@@ -21,11 +21,7 @@ export default function BottomNav() {
   }
 
   // Build nav items based on auth state
-  const adminHome = session?.role === 'master_admin' ? '/admin'
-    : session?.role === 'admin' ? '/admin'
-    : session?.role === 'broker' ? '/broker'
-    : session?.role === 'agent' ? '/agent'
-    : '/dashboard'
+  const adminHome = session?.role === 'master_admin' || session?.role === 'admin' ? '/admin' : '/search'
 
   const navItems = session ? [
     {
@@ -41,29 +37,27 @@ export default function BottomNav() {
       active: pathname?.startsWith('/search')
     },
     {
-      name: 'Social',
-      icon: FiStar,
-      path: '/social',
-      active: pathname?.startsWith('/social'),
-      comingSoon: true
+      name: 'Agentes',
+      icon: FiUsers,
+      path: '/agents',
+      active: pathname?.startsWith('/agents')
     },
     {
-      name: 'Favoritos',
-      icon: FiHeart,
-      path: '/favorites',
-      active: pathname?.startsWith('/favorites')
+      name: 'Brokers',
+      icon: FiUsers,
+      path: '/brokers',
+      active: pathname?.startsWith('/brokers')
     },
-    {
-      name: 'Chat',
-      icon: FiMessageCircle,
-      path: '/messages',
-      active: pathname?.startsWith('/messages')
-    },
-    {
-      name: (session.role === 'master_admin' || session.role === 'admin') ? 'Admin' : 'Perfil',
+    (session.role === 'master_admin' || session.role === 'admin') ? {
+      name: 'Admin',
       icon: FiUser,
       path: adminHome,
-      active: pathname?.startsWith(adminHome)
+      active: pathname?.startsWith('/admin')
+    } : {
+      name: 'Contacto',
+      icon: FiMail,
+      path: '/contact',
+      active: pathname?.startsWith('/contact')
     }
   ] : [
     {
@@ -79,24 +73,22 @@ export default function BottomNav() {
       active: pathname?.startsWith('/search')
     },
     {
-      name: 'Social',
-      icon: FiStar,
-      path: '/social',
-      active: pathname?.startsWith('/social'),
-      comingSoon: true
+      name: 'Agentes',
+      icon: FiUsers,
+      path: '/agents',
+      active: pathname?.startsWith('/agents')
     },
     {
-      name: 'Chat',
-      icon: FiMessageCircle,
-      path: '/messages',
-      active: pathname?.startsWith('/messages')
+      name: 'Brokers',
+      icon: FiUsers,
+      path: '/brokers',
+      active: pathname?.startsWith('/brokers')
     },
     {
-      name: 'Login',
-      icon: FiLogIn,
-      path: '/login',
-      active: pathname === '/login',
-      highlight: true
+      name: 'Contacto',
+      icon: FiMail,
+      path: '/contact',
+      active: pathname?.startsWith('/contact')
     }
   ]
 

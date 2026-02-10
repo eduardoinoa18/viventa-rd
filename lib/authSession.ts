@@ -33,6 +33,11 @@ export function saveSession(session: UserSession) {
   } catch {}
 }
 
+export function saveSessionLocal(session: UserSession) {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(KEY, JSON.stringify(session));
+}
+
 export function getSession(): UserSession | null {
   if (typeof window === 'undefined') return null;
   const raw = sessionStorage.getItem(KEY);
@@ -73,5 +78,6 @@ export function clearSession() {
     document.cookie = `viventa_uid=; ${expired}`;
     document.cookie = `viventa_name=; ${expired}`;
     document.cookie = `viventa_phone=; ${expired}`;
+    document.cookie = `viventa_admin_email=; ${expired}`;
   } catch {}
 }

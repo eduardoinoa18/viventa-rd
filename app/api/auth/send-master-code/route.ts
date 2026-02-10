@@ -35,6 +35,9 @@ function checkRateLimit(email: string): { allowed: boolean; retryAfter?: number 
 export async function POST(request: Request) {
   try {
     const { email } = await request.json()
+    const cookieHeader = request.headers.get('cookie') || ''
+    const pwOk = cookieHeader.match(/(?:^|;\s*)admin_pw_ok=([^;]+)/)?.[1] || ''
+    const pwEmail = cookieHeader.match(/(?:^|;\s*)admin_pw_email=([^;]+)/)?.[1] || ''
 
     // Build allowed email list: prefer MASTER_ADMIN_EMAILS (comma-separated), fallback to MASTER_ADMIN_EMAIL
     const rawList = (process.env.MASTER_ADMIN_EMAILS || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com')
@@ -65,6 +68,10 @@ export async function POST(request: Request) {
     if (!isAllowed) {
       // Security: Use generic error message to prevent email enumeration
       return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })
+    }
+
+    if (pwOk !== '1' || (pwEmail && pwEmail.toLowerCase() !== incoming)) {
+      return NextResponse.json({ ok: false, error: 'Password verification required' }, { status: 401 })
     }
 
     // Rate limiting (only in production)

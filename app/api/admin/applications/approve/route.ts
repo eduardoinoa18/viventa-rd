@@ -275,7 +275,7 @@ export async function POST(req: NextRequest) {
         title: '¡Tu solicitud fue aprobada! ✅',
         body: 'Ya puedes acceder y completar tu perfil profesional.',
         icon: '/icons/icon-192x192.png',
-        url: role === 'agent' ? '/agent' : '/broker',
+        url: '/search',
         read: false,
         createdAt: FieldValue.serverTimestamp()
       })

@@ -12,25 +12,15 @@ export default function Footer() {
     if (s) { setLoggedIn(true); setRole(s.role) }
   }, [])
 
-  const userLinks = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/favorites', label: 'Favoritos' },
-    { href: '/search', label: 'Buscar' },
-    { href: '/contact', label: 'Soporte' },
-  ]
-
   const publicLinks = [
     { href: '/', label: 'Inicio' },
     { href: '/search', label: 'Buscar' },
     { href: '/agents', label: 'Agentes' },
-    { href: '/profesionales', label: 'Profesionales' },
+    { href: '/brokers', label: 'Brokerages' },
     { href: '/contact', label: 'Contacto' },
     { href: '/disclosures', label: 'Avisos Legales' },
-    { href: '/agent/login', label: 'Portal Agente' },
-    { href: '/broker/login', label: 'Portal Broker' },
   ]
-
-  const links = loggedIn ? userLinks : publicLinks
+  const links = publicLinks
 
   return (
     <footer className="bg-[#FAFAFA] border-t mt-12 pt-8 pb-4 text-sm text-gray-600">
