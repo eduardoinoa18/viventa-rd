@@ -104,7 +104,7 @@ export default function BottomNav() {
             const Icon = item.icon
             const isActive = item.active
             const isHighlight = 'highlight' in item && item.highlight
-            const isComingSoon = 'comingSoon' in item && item.comingSoon
+            const isComingSoon = !!('comingSoon' in item && item.comingSoon)
             
             return (
               <button

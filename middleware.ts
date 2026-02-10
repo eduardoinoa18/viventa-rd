@@ -96,7 +96,7 @@ export async function middleware(req: NextRequest) {
         if (!secret && process.env.NODE_ENV === 'production') {
           console.error('CRITICAL: TRUSTED_DEVICE_SECRET not set in production');
           // Don't trust the device cookie if secret is missing in production
-          return NextResponse.redirect(new URL('/admin', request.url));
+          return NextResponse.redirect(new URL('/admin', req.url));
         }
         const ok = secret ? await verifyTrustedToken(trustedAdmin, secret) : false;
         if (ok) {

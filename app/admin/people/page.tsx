@@ -1,6 +1,8 @@
 // app/admin/people/page.tsx
 'use client'
-import { useState, useEffect } from 'react'
+export const dynamic = 'force-dynamic'
+
+import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ProtectedClient from '@/app/auth/ProtectedClient'
 import AdminSidebar from '@/components/AdminSidebar'
@@ -31,7 +33,7 @@ type User = {
   brokerCode?: string
 }
 
-export default function PeopleUsersPage() {
+function PeopleUsersContent() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -547,5 +549,13 @@ export default function PeopleUsersPage() {
         />
       )}
     </ProtectedClient>
+  )
+}
+
+export default function PeopleUsersPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PeopleUsersContent />
+    </Suspense>
   )
 }

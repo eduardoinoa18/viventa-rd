@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     const notifyEmails = Array.from(new Set([
       masterEmail, 
       ...adminList,
-      ...(agentEmail ? [agentEmail] : [])
+      ...(resolvedAgentEmail ? [resolvedAgentEmail] : [])
     ]))
 
     try {
