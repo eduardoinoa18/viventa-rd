@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
+import { adminSuccessResponse, adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
+import { logAdminAction } from '@/lib/logAdminAction'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
-    const role = req.cookies.get('viventa_role')?.value
-    if (role !== 'admin' && role !== 'master_admin') {
-      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-    }
+    const admin = await requireMasterAdmin(req)
 
     const db = getAdminDb()
     if (!db) {
-      return NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 500 })
+      return adminErrorResponse('SERVICE_UNAVAILABLE', undefined, 'Database unavailable')
     }
 
     const docSnap = await db.collection('settings').doc('admin').get()
     if (docSnap.exists) {
-      return NextResponse.json({ ok: true, data: docSnap.data() })
+      return adminSuccessResponse(docSnap.data())
     }
     
     // Return default settings
@@ -31,30 +31,34 @@ export async function GET(req: NextRequest) {
       maxPropertiesPerAgent: 100,
       featuredPropertiesLimit: 10,
     }
-    return NextResponse.json({ ok: true, data: defaults })
-  } catch (e: any) {
-    console.error('Error fetching admin settings:', e)
-    return NextResponse.json({ ok: false, error: e.message || 'Failed to fetch settings' }, { status: 500 })
+    return adminSuccessResponse(defaults)
+  } catch (error) {
+    return handleAdminError(error, 'settings-get')
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const role = req.cookies.get('viventa_role')?.value
-    if (role !== 'admin' && role !== 'master_admin') {
-      return NextResponse.json({ ok: false, error: 'Unauthorized - Admin access required' }, { status: 401 })
-    }
+    const admin = await requireMasterAdmin(req)
 
     const db = getAdminDb()
     if (!db) {
-      return NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 500 })
+      return adminErrorResponse('SERVICE_UNAVAILABLE', undefined, 'Database unavailable')
     }
 
     const body = await req.json()
     await db.collection('settings').doc('admin').set(body, { merge: true })
-    return NextResponse.json({ ok: true, data: body })
-  } catch (e: any) {
-    console.error('Error updating admin settings:', e)
-    return NextResponse.json({ ok: false, error: e?.message || 'Failed to update settings' }, { status: 500 })
+    
+    // Log the settings update
+    await logAdminAction({
+      actor: admin.email,
+      action: 'settings_update',
+      target: 'settings',
+      metadata: { updates: body }
+    })
+    
+    return adminSuccessResponse(body)
+  } catch (error) {
+    return handleAdminError(error, 'settings-post')
   }
 }

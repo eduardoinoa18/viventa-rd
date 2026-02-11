@@ -4,7 +4,9 @@ import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, serverTimestamp } from 'firebase/firestore'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
-import { requireAdmin } from '@/lib/adminApiAuth'
+import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
+import { adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
+import { logAdminAction } from '@/lib/logAdminAction'
 
 function initFirebase() {
   const config = {
@@ -31,8 +33,7 @@ function initFirebase() {
 // GET /api/admin/users - list users with optional role filter
 export async function GET(req: NextRequest) {
   try {
-    const guard = requireAdmin(req)
-    if (guard) return guard
+    const admin = await requireMasterAdmin(req)
     // Prefer Admin SDK for server-side reads (bypass client auth rules)
     const adminDb = getAdminDb()
     if (adminDb) {
@@ -82,8 +83,7 @@ export async function GET(req: NextRequest) {
 // POST /api/admin/users - create or invite a new user
 export async function POST(req: NextRequest) {
   try {
-    const guard = requireAdmin(req)
-    if (guard) return guard
+    const admin = await requireMasterAdmin(req)
     const adminDb = getAdminDb()
     if (adminDb) {
       const body = await req.json()
@@ -151,8 +151,7 @@ export async function POST(req: NextRequest) {
 // PATCH /api/admin/users - update user status or role
 export async function PATCH(req: NextRequest) {
   try {
-    const guard = requireAdmin(req)
-    if (guard) return guard
+    const admin = await requireMasterAdmin(req)
     const adminDb = getAdminDb()
     // Parse once; reuse across both admin and client paths
   const body = await req.json()
@@ -241,8 +240,7 @@ export async function PATCH(req: NextRequest) {
 // DELETE /api/admin/users - delete a user
 export async function DELETE(req: NextRequest) {
   try {
-    const guard = requireAdmin(req)
-    if (guard) return guard
+    const admin = await requireMasterAdmin(req)
     const body = await req.json()
     const { id } = body
     if (!id) return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })

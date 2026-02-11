@@ -1,42 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin'
 import { rateLimit, keyFromRequest } from '@/lib/rateLimiter'
-import { requireMasterAdmin } from '@/lib/adminApiAuth'
+import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
+import { adminSuccessResponse, adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
+import { logAdminAction } from '@/lib/logAdminAction'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   try {
-    const guard = requireMasterAdmin(req)
-    if (guard) return guard
+    const admin = await requireMasterAdmin(req)
 
     if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DB_CLEANUP !== 'true') {
-      return NextResponse.json({ ok: false, error: 'Database cleanup disabled in production' }, { status: 403 })
+      return adminErrorResponse('FORBIDDEN', undefined, 'Database cleanup disabled in production')
     }
 
     const key = keyFromRequest(req, 'firebase-cleanup')
     const { allowed } = rateLimit(key, 1, 60 * 60 * 1000)
     if (!allowed) {
-      return NextResponse.json({ ok: false, error: 'Rate limit exceeded. Cleanup can only run once per hour.' }, { status: 429 })
+      return adminErrorResponse('RATE_LIMIT', undefined, 'Cleanup can only run once per hour')
     }
 
     const { confirmation, collections, deleteAuth } = await req.json()
-    
-    // Admin identity must come from verified session cookie, not request body
-    const adminEmail = req.cookies.get('viventa_admin_email')?.value
-    if (!adminEmail) {
-      return NextResponse.json({ ok: false, error: 'Admin email not found in session' }, { status: 401 })
-    }
 
     if (confirmation !== 'DELETE_ALL_TEST_DATA_PERMANENTLY') {
-      return NextResponse.json({ ok: false, error: 'Invalid confirmation' }, { status: 403 })
+      return adminErrorResponse('INVALID_REQUEST', undefined, 'Invalid confirmation')
     }
 
     const db = getAdminDb()
     const auth = getAdminAuth()
     if (!db) {
-      return NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 500 })
+      return adminErrorResponse('SERVICE_UNAVAILABLE', undefined, 'Database unavailable')
     }
 
     const results: Record<string, number> = {}
@@ -71,7 +66,7 @@ export async function POST(req: NextRequest) {
         let authCount = 0
         for (const user of listUsersResult.users) {
           // Skip admin/master accounts and the actor performing cleanup
-          if (user.email && (user.email.includes('admin@') || user.email.includes('master@') || user.email === adminEmail)) {
+          if (user.email && (user.email.includes('admin@') || user.email.includes('master@') || user.email === admin.email)) {
             continue
           }
           try {
@@ -88,9 +83,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    await db.collection('audit_logs').add({
-      actorId: adminEmail || null,
-      actorRole: 'master_admin',
+    // Log the Firebase cleanup action
+    await logAdminAction({
+      actor: admin.email,
       action: 'firebase_cleanup',
       target: 'firebase',
       metadata: {
@@ -99,19 +94,16 @@ export async function POST(req: NextRequest) {
         deleteAuth: !!deleteAuth,
         errors: errors.length ? errors : undefined,
         userAgent: req.headers.get('user-agent') || null
-      },
-      createdAt: new Date()
+      }
     })
 
-    return NextResponse.json({
-      ok: true,
+    return adminSuccessResponse({
       message: 'Firebase cleanup completed',
       results,
       errors: errors.length ? errors : undefined,
       totalDeleted: Object.values(results).reduce((sum, count) => sum + (count > 0 ? count : 0), 0)
     })
-  } catch (error: any) {
-    console.error('Firebase cleanup error:', error)
-    return NextResponse.json({ ok: false, error: error.message || 'Firebase cleanup failed' }, { status: 500 })
+  } catch (error) {
+    return handleAdminError(error, 'firebase-cleanup')
   }
 }

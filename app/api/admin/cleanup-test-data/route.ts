@@ -1,33 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
-import { requireMasterAdmin } from '@/lib/adminApiAuth'
+import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
+import { adminSuccessResponse, adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
+import { logAdminAction } from '@/lib/logAdminAction'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   try {
-    const guard = requireMasterAdmin(req)
-    if (guard) return guard
+    const admin = await requireMasterAdmin(req)
 
     if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DB_CLEANUP !== 'true') {
-      return NextResponse.json({ ok: false, error: 'Database cleanup disabled in production' }, { status: 403 })
+      return adminErrorResponse('FORBIDDEN', undefined, 'Database cleanup disabled in production')
     }
 
     const body = await req.json()
     const confirmEmail = (body?.confirmEmail || '').toString().trim().toLowerCase()
     if (!confirmEmail) {
-      return NextResponse.json({ ok: false, error: 'Email confirmation required' }, { status: 400 })
+      return adminErrorResponse('INVALID_REQUEST', undefined, 'Email confirmation required')
     }
 
-    const adminEmail = req.cookies.get('viventa_admin_email')?.value?.toLowerCase() || ''
-    if (!adminEmail || adminEmail !== confirmEmail) {
-      return NextResponse.json({ ok: false, error: 'Email verification failed' }, { status: 403 })
+    if (!admin.email || admin.email.toLowerCase() !== confirmEmail) {
+      return adminErrorResponse('FORBIDDEN', undefined, 'Email verification failed')
     }
 
     const db = getAdminDb()
     if (!db) {
-      return NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 500 })
+      return adminErrorResponse('SERVICE_UNAVAILABLE', undefined, 'Database unavailable')
     }
 
     const results: Record<string, number> = {
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     let userBatchCount = 0
     for (const doc of usersSnap.docs) {
       const data = doc.data() as any
-      if (data?.email?.toLowerCase() === adminEmail) continue
+      if (data?.email?.toLowerCase() === admin.email) continue
       userBatch.delete(doc.ref)
       userBatchCount++
       results.users++
@@ -143,33 +143,30 @@ export async function POST(req: NextRequest) {
       const notificationsBatch = db.batch()
       notificationsSnap.docs.forEach((doc) => {
         const data = doc.data() as any
-        if (data?.userId === 'master_admin' || data?.email === adminEmail) return
+        if (data?.userId === 'master_admin' || data?.email === admin.email) return
         notificationsBatch.delete(doc.ref)
         results.notifications++
       })
       await notificationsBatch.commit()
     }
 
-    await db.collection('audit_logs').add({
-      actorId: adminEmail,
-      actorRole: 'master_admin',
+    // Log the cleanup action
+    await logAdminAction({
+      actor: admin.email,
       action: 'cleanup_test_data',
       target: 'database',
       metadata: {
         results,
         confirmEmail,
         userAgent: req.headers.get('user-agent') || null
-      },
-      createdAt: new Date()
+      }
     })
 
-    return NextResponse.json({
-      ok: true,
+    return adminSuccessResponse({
       message: 'Test data cleaned successfully',
       results
     })
-  } catch (error: any) {
-    console.error('Cleanup error:', error)
-    return NextResponse.json({ ok: false, error: error.message || 'Failed to clean test data' }, { status: 500 })
+  } catch (error) {
+    return handleAdminError(error, 'cleanup-test-data')
   }
 }

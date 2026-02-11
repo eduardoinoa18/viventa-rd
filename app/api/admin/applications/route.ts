@@ -5,29 +5,30 @@ import { ActivityLogger } from '@/lib/activityLogger'
 import { createPasswordSetupToken } from '@/lib/credentialGenerator'
 import { sendProfessionalCredentials } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
-import { requireAdmin } from '@/lib/adminApiAuth'
+import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
+import { adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
+import { logAdminAction } from '@/lib/logAdminAction'
 export const dynamic = 'force-dynamic'
 
 export async function PATCH(req: NextRequest) {
   try {
-    const guard = requireAdmin(req)
-    if (guard) return guard
-    const { id, status, notes, adminEmail } = await req.json()
+    const admin = await requireMasterAdmin(req)
+    const { id, status, notes } = await req.json()
 
     if (!id || !status) {
-      return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 })
+      return adminErrorResponse('INVALID_REQUEST', undefined, 'Missing required fields')
     }
 
     const adminDb = getAdminDb()
     if (!adminDb) {
-      return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
+      return adminErrorResponse('SERVICE_UNAVAILABLE', undefined, 'Admin SDK not configured')
     }
 
     // Update application in Firestore using Admin SDK
     const updateData: any = {
       status,
       reviewedAt: new Date(),
-      reviewedBy: adminEmail || 'admin',
+      reviewedBy: admin.email,
     }
     if (notes) updateData.reviewNotes = notes
 
@@ -146,8 +147,7 @@ export async function PATCH(req: NextRequest) {
 // Send notification email
 export async function POST(req: NextRequest) {
   try {
-    const guard = requireAdmin(req)
-    if (guard) return guard
+    const admin = await requireMasterAdmin(req)
     const { applicationId, email, name, status, notes, type, resetLink, code } = await req.json()
 
     if (!email || !status) {
@@ -227,8 +227,7 @@ export async function POST(req: NextRequest) {
 // GET /api/admin/applications - list applications via Admin SDK
 export async function GET(req: NextRequest) {
   try {
-    const guard = requireAdmin(req)
-    if (guard) return guard
+    const admin = await requireMasterAdmin(req)
     const adminDb = getAdminDb()
     if (!adminDb) {
       return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
@@ -257,8 +256,7 @@ export async function GET(req: NextRequest) {
 // DELETE /api/admin/applications - delete an application by id (Admin SDK)
 export async function DELETE(req: NextRequest) {
   try {
-    const guard = requireAdmin(req)
-    if (guard) return guard
+    const admin = await requireMasterAdmin(req)
     const body = await req.json()
     const id = body?.id
     if (!id) {
