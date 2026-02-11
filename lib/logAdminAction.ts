@@ -120,8 +120,8 @@ export async function getAuditLogs(
   if (!db) return []
 
   try {
-    let collection = db.collection('audit_logs')
-    let whereConditions: Array<[string, '==' | '<=' | '>=' | '<' | '>' | '!=', any]> = []
+    const collection = db.collection('audit_logs')
+    const whereConditions: Array<[string, '==' | '<=' | '>=' | '<' | '>' | '!=', any]> = []
 
     if (filters?.actor) {
       whereConditions.push(['actorEmail', '==', filters.actor.toLowerCase()])
@@ -145,7 +145,7 @@ export async function getAuditLogs(
     }
 
     const snapshot = await query.orderBy('timestamp', 'desc').limit(100).get()
-    return snapshot.docs.map((doc) => doc.data() as AdminActionLog)
+    return snapshot.docs.map((doc: any) => doc.data() as AdminActionLog)
   } catch (error) {
     console.error('Failed to query audit logs:', error)
     return []
