@@ -76,7 +76,7 @@ type SettingsData = {
 }
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<'general' | 'email' | 'security' | 'integrations' | 'notifications' | 'gamification' | 'advanced' | 'database' | 'status'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'security' | 'notifications' | 'advanced' | 'database' | 'status'>('general')
   const [settings, setSettings] = useState<SettingsData>({
     siteTitle: 'VIVENTA',
     siteDescription: 'Tu Espacio, Tu Futuro',
@@ -267,13 +267,10 @@ export default function AdminSettingsPage() {
 
   const tabs = [
     { id: 'general', label: 'General', icon: <FiGlobe /> },
-    { id: 'email', label: 'Email', icon: <FiMail /> },
     { id: 'security', label: 'Security', icon: <FiShield /> },
-    { id: 'integrations', label: 'Integrations', icon: <FiLink /> },
     { id: 'notifications', label: 'Notifications', icon: <FiBell /> },
-    { id: 'gamification', label: 'Gamification', icon: <FiZap /> },
     { id: 'advanced', label: 'Advanced', icon: <FiZap /> },
-    { id: 'database', label: 'Database', icon: <FiDatabase /> },
+    { id: 'database', label: 'Database Tools', icon: <FiDatabase /> },
     { id: 'status', label: 'System Status', icon: <FiServer /> },
   ]
 
@@ -463,8 +460,8 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
-            {/* Email Settings */}
-            {activeTab === 'email' && (
+            {/* Email Settings - REMOVED (not used) */}
+            {false && (
               <div className="space-y-6">
                 <Card title="Email Provider" description="Configure your email service provider">
                   <FormField id="email-provider" label="Email Service">
@@ -616,8 +613,8 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
-            {/* Integrations */}
-            {activeTab === 'integrations' && (
+            {/* Integrations - REMOVED (Stripe/GA/Facebook not used) */}
+            {false && (
               <div className="space-y-6">
                 <Card 
                   title={
@@ -734,8 +731,8 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
-            {/* Gamification */}
-            {activeTab === 'gamification' && (
+            {/* Gamification - REMOVED (no content) */}
+            {false && (
               <div className="space-y-6">
                 {/* Coming Soon Banner */}
                 <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-8 text-white text-center shadow-lg">

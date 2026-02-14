@@ -288,7 +288,11 @@ export default function CreatePropertyPage() {
       }
       const json = await res.json().catch(() => ({}))
       const listingId = json?.listingId || json?.data?.listingId
-      toast.success(`¡Propiedad creada!${listingId ? ` ID: ${listingId}` : ''}`)
+      const publishedNow = form.status === 'active'
+      const message = publishedNow 
+        ? `✅ ¡Propiedad publicada! Ahora es visible en búsquedas${listingId ? ` (ID: ${listingId})` : ''}` 
+        : `✅ Propiedad guardada como ${form.status === 'draft' ? 'borrador' : 'pendiente'}${listingId ? ` (ID: ${listingId})` : ''}`
+      toast.success(message, { duration: 5000 })
       
       // Reset form
       setForm({
@@ -700,7 +704,7 @@ export default function CreatePropertyPage() {
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4">Configuración</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ID del Agente</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Título de la Propiedad <span className="text-red-500">*</span></label>
                     <input
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       placeholder="agent-12345"

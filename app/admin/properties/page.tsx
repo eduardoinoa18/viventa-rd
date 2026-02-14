@@ -340,10 +340,11 @@ export default function AdminPropertiesPage() {
                             <span className={`px-2 py-1 rounded-full text-xs font-bold shadow-lg ${
                               l.status === 'active' ? 'bg-green-500 text-white' :
                               l.status === 'pending' ? 'bg-yellow-500 text-white' :
+                              l.status === 'draft' ? 'bg-gray-500 text-white' :
                               l.status === 'sold' ? 'bg-blue-500 text-white' :
                               'bg-red-500 text-white'
                             }`}>
-                              {l.status === 'active' ? '✓ Activa' : l.status === 'pending' ? '⏳ Pendiente' : l.status === 'sold' ? '🏆 Vendida' : '❌ Rechazada'}
+                              {l.status === 'active' ? '✓ Activa' : l.status === 'pending' ? '⏳ Pendiente' : l.status === 'draft' ? '📝 Borrador' : l.status === 'sold' ? '🏆 Vendida' : '❌ Rechazada'}
                             </span>
                           </div>
                         </div>
