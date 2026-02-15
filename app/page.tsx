@@ -19,14 +19,12 @@ type Property = {
   currency?: string;
   propertyType?: string;
   city?: string;
-  neighborhood?: string;
+  sector?: string;
   bedrooms?: number;
   bathrooms?: number;
   area?: number;
   images?: string[];
-  location?: string;
   agentId?: string;
-  agentName?: string;
 };
 
 type Agent = {
@@ -69,14 +67,12 @@ export default function HomePage() {
           currency: p.currency || 'USD',
           propertyType: p.propertyType || p.type,
           city: p.city,
-          neighborhood: p.neighborhood,
+          sector: p.sector,
           bedrooms: p.bedrooms,
           bathrooms: p.bathrooms,
           area: p.area,
           images: p.images || [],
-          location: p.location,
           agentId: p.agentId,
-          agentName: p.agentName,
         }))
         setProperties(list)
       })
@@ -128,8 +124,7 @@ export default function HomePage() {
     const matchesLocation = filters.location
       ? (
           (p.city || '').toLowerCase().includes(filters.location.toLowerCase()) ||
-          (p.neighborhood || '').toLowerCase().includes(filters.location.toLowerCase()) ||
-          (p.location || '').toLowerCase().includes(filters.location.toLowerCase())
+          (p.sector || '').toLowerCase().includes(filters.location.toLowerCase())
         )
       : true;
     return matchesType && matchesMin && matchesMax && matchesLocation;

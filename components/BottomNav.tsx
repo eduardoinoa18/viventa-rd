@@ -21,7 +21,7 @@ export default function BottomNav() {
   }
 
   // Build nav items based on auth state
-  const adminHome = session?.role === 'master_admin' || session?.role === 'admin' ? '/admin' : '/search'
+  const adminHome = session?.role === 'master_admin' ? '/admin' : '/search'
 
   const navItems = session ? [
     {
@@ -48,7 +48,7 @@ export default function BottomNav() {
       path: '/brokers',
       active: pathname?.startsWith('/brokers')
     },
-    (session.role === 'master_admin' || session.role === 'admin') ? {
+    session.role === 'master_admin' ? {
       name: 'Admin',
       icon: FiUser,
       path: adminHome,

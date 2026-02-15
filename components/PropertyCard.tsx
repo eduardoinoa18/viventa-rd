@@ -12,7 +12,7 @@ export default function PropertyCard({ property }: { property: any }) {
   const displayTitle = property.title || property.name || 'Propiedad';
   const displayPrice = property.price || property.price_usd || 0;
   const displayCurrency = (property.currency || 'USD') as 'USD' | 'DOP';
-  const displayLocation = property.location?.city || property.city || property.location || '';
+  const displayLocation = property.city || '';
   const displayBedrooms = property.bedrooms || property.beds || 0;
   const displayBathrooms = property.bathrooms || property.baths || 0;
   const displayArea = property.area || property.sqft || 0;
@@ -32,8 +32,8 @@ export default function PropertyCard({ property }: { property: any }) {
   };
 
   const mainImage = property.images?.[0] || property.image || property.mainImage;
-  const displayCity = property.location?.city || property.city || '';
-  const displayNeighborhood = property.location?.neighborhood || property.neighborhood || '';
+  const displayCity = property.city || '';
+  const displayNeighborhood = property.sector || '';
 
   return (
     <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col relative group">

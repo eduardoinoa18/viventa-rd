@@ -1,13 +1,4 @@
-export type Listing = {
-  id: string
-  images?: string[]
-  description?: string
-  amenities?: string[]
-  featured_until?: string | Date | null
-  views?: number
-  createdAt: string | Date
-  updatedAt?: string | Date
-}
+import type { Listing } from '../../types/listing';
 
 export function computeQualityScore(listing: Listing) {
   const photos = Math.min(listing.images?.length || 0, 10) / 10

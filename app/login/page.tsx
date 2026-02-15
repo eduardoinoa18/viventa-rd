@@ -47,7 +47,7 @@ export default function LoginPage() {
             uid,
             email: cred.user.email?.toLowerCase() || '',
             name: name || cred.user.email?.split('@')[0] || '',
-            role: 'user',
+            role: 'buyer',
             status: 'active',
             profileComplete: true,
             createdAt: serverTimestamp(),

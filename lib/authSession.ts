@@ -1,6 +1,8 @@
+import type { UserRole } from '@/types/user';
+
 export type UserSession = {
   uid: string;
-  role: 'admin' | 'master_admin' | 'agent' | 'broker' | 'user';
+  role: UserRole;
   email?: string;
   token?: string;
   profileComplete?: boolean;

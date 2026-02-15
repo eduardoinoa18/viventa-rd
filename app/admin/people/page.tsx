@@ -38,7 +38,7 @@ function PeopleUsersContent() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'user', brokerage: '', company: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'buyer', brokerage: '', company: '' })
   const [filterRole, setFilterRole] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [details, setDetails] = useState<User | null>(null)
@@ -127,7 +127,7 @@ function PeopleUsersContent() {
         toast.success(editingId ? 'User updated' : 'User created')
         setShowForm(false)
         setEditingId(null)
-        setForm({ name: '', email: '', phone: '', role: 'user', brokerage: '', company: '' })
+        setForm({ name: '', email: '', phone: '', role: 'buyer', brokerage: '', company: '' })
         load()
       } else {
         toast.error(json.error || 'Failed to save')

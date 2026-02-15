@@ -61,7 +61,7 @@ export async function POST() {
         // Else create new with doc id = uid
         const newDoc = {
           ...payload,
-          role: 'user',
+          role: 'buyer',
           status: user.disabled ? 'suspended' : 'active',
           createdAt: creationTime,
         }

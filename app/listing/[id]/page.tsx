@@ -111,7 +111,7 @@ export default function ListingDetail(){
 
   // Restrict visibility for non-active listings (allow admins and owners)
   const isOwnerOrAdmin = currentSession && (
-    currentSession.role === 'admin' || 
+    currentSession.role === 'master_admin' || 
     currentSession.role === 'master_admin' || 
     currentSession.uid === listing.agentId || 
     currentSession.uid === listing.ownerId
@@ -137,10 +137,10 @@ export default function ListingDetail(){
   const propertySchema = listing ? generatePropertySchema({
     id: listing.id,
     title: listing.title,
-    description: listing.description || `${listing.title} en ${listing.location?.city || listing.city}`,
+    description: listing.description || `${listing.title} en ${listing.city}`,
     price: listing.price || 0,
     currency: listing.currency || 'USD',
-    location: `${listing.location?.city || listing.city || ''}${listing.location?.neighborhood || listing.neighborhood ? ', ' + (listing.location?.neighborhood || listing.neighborhood) : ''}`,
+    location: `${listing.city || ''}${listing.sector ? ', ' + listing.sector : ''}`,
     bedrooms: listing.bedrooms,
     bathrooms: listing.bathrooms,
     area: listing.area,
@@ -177,7 +177,7 @@ export default function ListingDetail(){
   // Generate meta description
   const metaDescription = listing.description 
     ? listing.description.substring(0, 155) + '...'
-    : `${listing.title} en ${listing.location?.city || listing.city}. ${listing.bedrooms} hab, ${listing.bathrooms} baños, ${listing.area}m². ${formatCurrency(listing.price || 0, { currency: listing.currency || 'USD' })}`;
+    : `${listing.title} en ${listing.city}. ${listing.bedrooms} hab, ${listing.bathrooms} baños, ${listing.area}m². ${formatCurrency(listing.price || 0, { currency: listing.currency || 'USD' })}`;
   
   const metaTitle = `${listing.title} - VIVENTA RD`;
   const propertyUrl = `https://viventa-rd.com/listing/${listing.id}`;
@@ -190,7 +190,7 @@ export default function ListingDetail(){
         <title>{metaTitle}</title>
         <meta name="title" content={metaTitle} />
         <meta name="description" content={metaDescription} />
-        <meta name="keywords" content={`${listing.propertyType}, ${listing.listingType}, ${listing.location?.city}, ${listing.location?.neighborhood}, propiedad, inmueble, República Dominicana, VIVENTA`} />
+        <meta name="keywords" content={`${listing.propertyType}, ${listing.listingType}, ${listing.city}, ${listing.sector}, propiedad, inmueble, República Dominicana, VIVENTA`} />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
@@ -225,7 +225,7 @@ export default function ListingDetail(){
                 <h1 className="text-4xl font-bold text-[#0B2545] mb-2">{listing.title}</h1>
                 <div className="flex items-center text-gray-600">
                   <FaMapMarkerAlt className="mr-2 text-[#FF6B35]" />
-                  <span>{listing.location?.city || listing.city || 'N/A'} • {listing.location?.neighborhood || listing.neighborhood || 'N/A'}</span>
+                  <span>{listing.city || 'N/A'} • {listing.sector || 'N/A'}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3" />

@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
     const broadcastAudiences = new Set<string>(['all'])
     if (role) {
       broadcastAudiences.add(role)
-      if (role === 'admin' || role === 'master_admin') {
+      if (role === 'master_admin') {
         broadcastAudiences.add('admin')
         broadcastAudiences.add('master_admin')
       }
@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
 
     // Default URL mapping by type
     const defaultUrlByType = (type: string, role: string) => {
-      const isAdmin = role === 'admin' || role === 'master_admin'
+      const isAdmin = role === 'master_admin'
       const base = isAdmin ? '/admin' : ''
       switch (type) {
         case 'new_message': return isAdmin ? `${base}/leads` : '/contact'
@@ -233,7 +233,7 @@ export async function PATCH(req: NextRequest) {
           .get(),
         adminDb
           .collection('notifications')
-          .where('audience', 'array-contains-any', [role, 'all', role === 'admin' ? 'admin' : null].filter(Boolean))
+          .where('audience', 'array-contains-any', [role, 'all', role === 'master_admin' ? 'master_admin' : null].filter(Boolean))
           .get()
       ])
 

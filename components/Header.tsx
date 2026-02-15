@@ -43,7 +43,7 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <LocaleSwitcher />
           {/* Back to Admin button for admins on user-facing pages */}
-          {session && (session.role === 'admin' || session.role === 'master_admin') && !pathname?.startsWith('/admin') && (
+          {session && session.role === 'master_admin' && !pathname?.startsWith('/admin') && (
             <Link 
               href="/admin" 
               className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm bg-viventa-navy text-white rounded-lg font-medium hover:bg-viventa-ocean transition-all"
@@ -86,7 +86,7 @@ export default function Header() {
         <div className="flex items-center gap-3">
           <LocaleSwitcher />
           {/* Back to Admin button for admins on user-facing pages */}
-          {session && (session.role === 'admin' || session.role === 'master_admin') && !pathname?.startsWith('/admin') && (
+          {session && session.role === 'master_admin' && !pathname?.startsWith('/admin') && (
             <Link 
               href="/admin" 
               className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm bg-viventa-navy text-white rounded-lg font-medium hover:bg-viventa-ocean transition-all"
@@ -96,7 +96,7 @@ export default function Header() {
           )}
           {session ? (
             <>
-              {session.uid && (session.role === 'admin' || session.role === 'master_admin') && <NotificationCenter userId={session.uid} />}
+              {session.uid && session.role === 'master_admin' && <NotificationCenter userId={session.uid} />}
               {/* Online indicator (client-side presence) */}
               <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full bg-green-50 border border-green-200">
                 <span className="relative flex h-2.5 w-2.5">

@@ -12,7 +12,8 @@ import { FiSave, FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { auth, db } from '../../lib/firebaseClient'
 import { collection, getDocs } from 'firebase/firestore'
 import { getUserCurrency, type Currency } from '../../lib/currency'
-import { searchListings, type SearchFilters, type Listing } from '../../lib/customSearchService'
+import { searchListings, type SearchFilters } from '../../lib/customSearchService'
+import type { Listing } from '@/types/listing'
 import { usePageViewTracking } from '../../hooks/useAnalytics'
 import { trackSearch } from '../../lib/analyticsService'
 
@@ -47,7 +48,7 @@ function SearchPageContent() {
     query: searchParams?.get('q') || '',
     city: searchParams?.get('city') || undefined,
     neighborhood: searchParams?.get('neighborhood') || undefined,
-    propertyType: searchParams?.get('type') || undefined,
+    propertyType: (searchParams?.get('type') as SearchFilters['propertyType']) || undefined,
     listingType: (searchParams?.get('listingType') as 'sale' | 'rent') || undefined,
     minPrice: searchParams?.get('minPrice') ? Number(searchParams.get('minPrice')) : undefined,
     maxPrice: searchParams?.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined,

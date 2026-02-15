@@ -68,7 +68,7 @@ export default function NotificationCenter({ userId }: { userId: string }) {
       const audSet = new Set<string>(['all'])
       if (role) {
         audSet.add(role)
-        if (role === 'admin' || role === 'master_admin') {
+        if (role === 'master_admin') {
           audSet.add('admin')
           audSet.add('master_admin')
         }
@@ -352,7 +352,7 @@ export default function NotificationCenter({ userId }: { userId: string }) {
                         const session = getSession()
                         const role = session?.role || 'user'
                         // Use provided url or route to role-appropriate notifications page
-                        const fallback = (role === 'admin' || role === 'master_admin') ? '/admin' : '/search'
+                        const fallback = role === 'master_admin' ? '/admin' : '/search'
                         const target = notification.url || fallback
                         router.push(target)
                       }}

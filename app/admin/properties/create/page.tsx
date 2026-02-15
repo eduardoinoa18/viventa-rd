@@ -265,7 +265,7 @@ export default function CreatePropertyPage() {
       // Determine endpoint based on role (admins vs professionals)
       const session = getSession()
       const role = session?.role
-      const isAdmin = role === 'admin' || role === 'master_admin'
+      const isAdmin = role === 'master_admin'
       const endpoint = isAdmin ? '/api/admin/properties' : '/api/properties'
       const body = isAdmin
         ? JSON.stringify({ ...payload })

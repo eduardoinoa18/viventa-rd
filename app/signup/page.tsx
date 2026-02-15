@@ -33,7 +33,7 @@ export default function SignupPage() {
           email: form.email,
           name: form.name,
           phone: form.phone || '',
-          role: 'user',
+          role: 'buyer',
           profileComplete: true,
           createdAt: serverTimestamp(),
         }, { merge: true })
@@ -55,9 +55,9 @@ export default function SignupPage() {
         }
 
         // Save session locally for client routing and middleware cookies
-        saveSession({ uid: cred.user.uid, role: 'user', profileComplete: true, name: form.name })
+        saveSession({ uid: cred.user.uid, role: 'buyer', profileComplete: true, name: form.name })
         // Track signup event
-        trackSignup(cred.user.uid, 'user')
+        trackSignup(cred.user.uid, 'buyer')
         setError('')
         router.push('/search')
         toast.success('¡Cuenta creada exitosamente! Revisa tu email.')

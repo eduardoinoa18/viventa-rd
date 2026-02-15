@@ -99,7 +99,7 @@ export async function POST(req: Request) {
     // Basic role-based authorization
     const role = cookies().get('viventa_role')?.value
     const uid = cookies().get('viventa_uid')?.value
-    const isAdmin = role === 'admin' || role === 'master_admin'
+    const isAdmin = role === 'master_admin'
     const isPro = role === 'agent' || role === 'broker'
 
     const { ok, errors } = validatePayload(action, data)
