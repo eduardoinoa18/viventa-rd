@@ -36,12 +36,32 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/search', req.url), 308);
   }
 
-  // Removed admin surfaces
+  // Redirect old admin routes to new master namespace
+  // Keep /admin/gate and /admin/login for auth flow
+  const adminToMaster: Record<string, string> = {
+    '/admin/dashboard': '/master',
+    '/admin/people': '/master/users',
+    '/admin/properties': '/master/listings',
+    '/admin/leads': '/master/leads',
+    '/admin/applications': '/master/verification',
+    '/admin/analytics': '/master/analytics',
+  }
+  
+  // Exact matches
+  if (adminToMaster[path]) {
+    return NextResponse.redirect(new URL(adminToMaster[path], req.url), 308);
+  }
+  
+  // Redirect /admin root to /master (after auth)
+  if (path === '/admin' && role === 'master_admin') {
+    return NextResponse.redirect(new URL('/master', req.url), 308);
+  }
+
+  // Removed admin surfaces (dead routes)
   const adminRemoved = [
     '/admin/inbox',
     '/admin/chat',
     '/admin/notifications',
-    '/admin/analytics',
     '/admin/billing',
     '/admin/email',
     '/admin/push',
@@ -55,7 +75,7 @@ export async function middleware(req: NextRequest) {
     '/admin/people/applications'
   ];
   if (adminRemoved.some((p) => path === p || path.startsWith(`${p}/`))) {
-    return NextResponse.redirect(new URL('/admin', req.url), 308);
+    return NextResponse.redirect(new URL('/master', req.url), 308);
   }
 
   if (path === '/admin/verify' || path.startsWith('/admin/verify/')) {

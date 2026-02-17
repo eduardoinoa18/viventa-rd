@@ -77,7 +77,7 @@ export default function MasterLoginPage() {
         name: json.user?.name || email.split('@')[0],
         email: json.user?.email || email
       })
-      router.push('/admin')
+      router.push('/master')
     } catch (e) {
       setError('Error de red. Inténtalo de nuevo.')
     } finally {
