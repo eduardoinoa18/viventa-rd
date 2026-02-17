@@ -1,4 +1,6 @@
-﻿import Link from 'next/link'
+﻿'use client'
+
+import Link from 'next/link'
 import { useState, useEffect } from 'react';
 import ImagePlaceholder from './ImagePlaceholder';
 import { formatCurrency, formatFeatures, formatArea } from '@/lib/currency';
