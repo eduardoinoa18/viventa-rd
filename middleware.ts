@@ -112,6 +112,38 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // ============ MASTER CONTROL AUTHENTICATION ============
+  // /master namespace uses the same auth as /admin during migration
+  // Both paths coexist until migration is complete
+  if (path.startsWith('/master')) {
+    // Must have passed gate
+    if (!adminGate) {
+      return NextResponse.redirect(new URL('/admin/gate', req.url));
+    }
+    // Must be master admin
+    if (role !== 'master_admin') {
+      return NextResponse.redirect(new URL('/admin/login', req.url));
+    }
+    // Must have completed 2FA
+    if (!admin2FA) {
+      // Try trusted device cookie if present
+      if (trustedAdmin) {
+        const secret = process.env.TRUSTED_DEVICE_SECRET;
+        if (!secret && process.env.NODE_ENV === 'production') {
+          console.error('CRITICAL: TRUSTED_DEVICE_SECRET not set in production');
+          return NextResponse.redirect(new URL('/admin', req.url));
+        }
+        const ok = secret ? await verifyTrustedToken(trustedAdmin, secret) : false;
+        if (ok) {
+          const res = NextResponse.next();
+          res.cookies.set('admin_2fa_ok', '1', { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 30 });
+          return res;
+        }
+      }
+      return NextResponse.redirect(new URL('/admin/login', req.url));
+    }
+  }
+
   // ============ GENERAL USER/PRO AUTHENTICATION ============
   // For most user routes, rely on client-side session checks and cookie-based role
   // Only use strict Firebase auth for critical pro routes (broker/agent dashboards)
