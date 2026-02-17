@@ -45,7 +45,8 @@ export async function middleware(req: NextRequest) {
   // ========== PUBLIC ROUTES (NEVER BLOCK) ==========
   const publicRoutes = [
     '/', '/search', '/ciudad', '/listing', '/agents', '/brokers',
-    '/contact', '/apply', '/signup', '/forgot-password', '/disclosures'
+    '/contact', '/apply', '/signup', '/forgot-password', '/disclosures',
+    '/login', '/verify-2fa'  // Auth routes must be public
   ]
   
   if (publicRoutes.some(route => pathname === route || pathname.startsWith(`${route}/`))) {
