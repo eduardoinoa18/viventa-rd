@@ -11,7 +11,8 @@
     "check-config": "node scripts/check-config.js",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "db:cleanup": "cd functions && npx ts-node ../scripts/cleanup-database.ts"
+    "db:cleanup": "cd functions && npx ts-node ../scripts/cleanup-database.ts",
+    "db:wipe": "cd functions && npx ts-node ../scripts/wipe-database.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

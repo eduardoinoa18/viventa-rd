@@ -5,19 +5,17 @@
  * EXCEPT the master admin user (viventa.rd@gmail.com)
  * 
  * Usage:
- *   npx tsx scripts/cleanup-database.ts
+ *   npm run db:cleanup
  * 
  * Environment Variables Required:
  *   - MASTER_ADMIN_EMAIL (defaults to viventa.rd@gmail.com)
  *   - Firebase credentials via GOOGLE_APPLICATION_CREDENTIALS or default app initialization
  */
 
-import * as admin from 'firebase-admin'
+const admin = require('firebase-admin')
 
-// Initialize Firebase Admin (uses service account from environment)
-if (!admin.apps.length) {
-  admin.initializeApp()
-}
+// Initialize Firebase Admin
+admin.initializeApp()
 
 const MASTER_ADMIN_EMAIL = process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com'
 
@@ -57,7 +55,7 @@ async function getMasterAdminUID(): Promise<string | null> {
 }
 
 async function deleteCollection(
-  db: admin.firestore.Firestore,
+  db: any,
   collectionPath: string,
   batchSize: number = 500,
   preserveDocId?: string
@@ -73,8 +71,8 @@ async function deleteCollection(
 }
 
 async function deleteQueryBatch(
-  db: admin.firestore.Firestore,
-  query: admin.firestore.Query,
+  db: any,
+  query: any,
   resolve: (count: number) => void,
   reject: (error: Error) => void,
   preserveDocId: string | undefined,
@@ -91,7 +89,7 @@ async function deleteQueryBatch(
     const batch = db.batch()
     let batchDeleteCount = 0
     
-    snapshot.docs.forEach((doc) => {
+    snapshot.docs.forEach((doc: any) => {
       // Skip the document we want to preserve (master admin user)
       if (preserveDocId && doc.id === preserveDocId) {
         console.log(`   ⏭️  Skipping preserved document: ${doc.id}`)
@@ -122,8 +120,8 @@ async function deleteAllAuthUsers(masterAdminUID: string): Promise<number> {
     const listResult = await auth.listUsers(1000, pageToken)
     
     const deletePromises = listResult.users
-      .filter(user => user.uid !== masterAdminUID)
-      .map(async (user) => {
+      .filter((user: any) => user.uid !== masterAdminUID)
+      .map(async (user: any) => {
         try {
           await auth.deleteUser(user.uid)
           deletedCount++
