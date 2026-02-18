@@ -222,12 +222,6 @@ export default function MasterOverviewPage() {
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Quick Actions</h2>
         <div className="flex gap-3 flex-wrap">
           <Link 
-  href="/master/verification" 
-            className="px-6 py-3 bg-gradient-to-r from-[#00A676] to-[#008F64] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
-          >
-            <FiUserPlus /> Review Applications
-          </Link>
-          <Link 
             href="/admin/properties/create" 
             className="px-6 py-3 bg-gradient-to-r from-[#00A6A6] to-[#00C896] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
           >
@@ -238,12 +232,6 @@ export default function MasterOverviewPage() {
             className="px-6 py-3 bg-gradient-to-r from-[#0B2545] to-[#0a1f3a] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
           >
             <FiHome /> Review Listings
-          </Link>
-          <Link 
-            href="/master/leads" 
-            className="px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
-          >
-            <FiActivity /> Manage Leads
           </Link>
           <Link 
             href="/master/users?invite=agent" 
