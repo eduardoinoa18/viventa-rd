@@ -12,11 +12,11 @@ const client = algoliasearch(appId, apiKey)
 const index = client.initIndex(indexName)
 
 async function main() {
-  const snap = await db.collection('listings').get()
+  const snap = await db.collection('properties').get()
   const objects = snap.docs.map((d) => ({ objectID: d.id, ...d.data(), score: computeFinalScore(d.data() as any) }))
   await index.saveObjects(objects)
   // eslint-disable-next-line no-console
-  console.log('Reindexed', objects.length, 'listings')
+  console.log('Reindexed', objects.length, 'properties')
 }
 
 main().catch((e) => {

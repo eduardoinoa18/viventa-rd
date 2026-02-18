@@ -33,7 +33,7 @@ export async function getListings(
       return { listings: [], total: 0 }
     }
 
-    let query = adminDb.collection('listings') as any
+    let query = adminDb.collection('properties') as any
 
     // Default to active listings only
     const status = filters.status || 'active'
@@ -64,6 +64,8 @@ export async function getListings(
     let listings: Listing[] = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
+      // Normalize neighborhood to sector if needed
+      sector: doc.get('sector') || doc.get('neighborhood') || '',
     })) as Listing[]
 
     // Client-side filters for price and bedrooms (Firestore composite index limitation)
@@ -107,7 +109,7 @@ export async function getListingById(id: string): Promise<Listing | null> {
       return null
     }
 
-    const doc = await adminDb.collection('listings').doc(id).get()
+    const doc = await adminDb.collection('properties').doc(id).get()
 
     if (!doc.exists) {
       return null
@@ -135,7 +137,7 @@ export async function getActiveCities(): Promise<string[]> {
     }
 
     const snapshot = await adminDb
-      .collection('listings')
+      .collection('properties')
       .where('status', '==', 'active')
       .select('city')
       .get()
@@ -165,15 +167,15 @@ export async function getSectorsByCity(city: string): Promise<string[]> {
     }
 
     const snapshot = await adminDb
-      .collection('listings')
+      .collection('properties')
       .where('status', '==', 'active')
       .where('city', '==', city)
-      .select('sector')
+      .select('sector', 'neighborhood')
       .get()
 
     const sectors = new Set<string>()
     snapshot.docs.forEach((doc) => {
-      const sector = doc.get('sector')
+      const sector = doc.get('sector') || doc.get('neighborhood')
       if (sector) sectors.add(sector)
     })
 

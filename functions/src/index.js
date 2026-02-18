@@ -12,7 +12,7 @@ const ALG_INDEX = functions.config().algolia.index || 'viventa_listings';
 const client = algoliasearch(ALG_APP, ALG_KEY);
 const index = client.initIndex(ALG_INDEX);
 
-exports.onListingCreate = functions.firestore.document('listings/{id}')
+exports.onListingCreate = functions.firestore.document('properties/{id}')
   .onCreate(async (snap, ctx) => {
     const data = snap.data();
     const score = computeFinalScore(data);
@@ -21,7 +21,7 @@ exports.onListingCreate = functions.firestore.document('listings/{id}')
     console.log('Indexed', snap.id);
   });
 
-exports.onListingUpdate = functions.firestore.document('listings/{id}')
+exports.onListingUpdate = functions.firestore.document('properties/{id}')
   .onUpdate(async (change, ctx) => {
     const data = change.after.data();
     const score = computeFinalScore(data);
@@ -30,7 +30,7 @@ exports.onListingUpdate = functions.firestore.document('listings/{id}')
     console.log('Updated index', change.after.id);
   });
 
-exports.onListingDelete = functions.firestore.document('listings/{id}')
+exports.onListingDelete = functions.firestore.document('properties/{id}')
   .onDelete(async (snap, ctx) => {
     await index.deleteObject(snap.id).catch(()=>{});
     console.log('Deleted from index', snap.id);
