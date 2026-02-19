@@ -183,14 +183,14 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     if (error?.code && authErrorMessages[error.code]) {
       return NextResponse.json(
-        { ok: false, error: authErrorMessages[error.code] },
+        { ok: false, error: authErrorMessages[error.code], errorCode: error.code },
         { status: 401 }
       )
     }
 
     console.error('Login error:', error)
     return NextResponse.json(
-      { ok: false, error: 'Error del servidor' },
+      { ok: false, error: 'Error del servidor', errorCode: error?.code || 'SERVER_ERROR' },
       { status: 500 }
     )
   }

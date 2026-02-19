@@ -65,7 +65,7 @@ module.exports = withPWA({
 			"img-src 'self' data: blob: https://*",
 			"connect-src 'self' https://* wss://* https://vercel.live",
 			"font-src 'self' https://fonts.gstatic.com data:",
-			"frame-src https://js.stripe.com https://hooks.stripe.com",
+			"frame-src https://js.stripe.com https://hooks.stripe.com https://vercel.live",
 			"manifest-src 'self'",
 		].join('; ')
 		return [
