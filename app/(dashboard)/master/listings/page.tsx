@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
 import { FiPlusSquare } from 'react-icons/fi'
 import toast from 'react-hot-toast'
@@ -20,7 +21,6 @@ export default function MasterListingsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [selected, setSelected] = useState<Record<string, boolean>>({})
-  const [showCreate, setShowCreate] = useState(false)
 
   // Filtered listings based on search
   const filteredListings = useMemo(() => {
@@ -192,12 +192,12 @@ export default function MasterListingsPage() {
               <h1 className="text-3xl font-bold text-[#0B2545]">Gestión de Propiedades</h1>
               <p className="text-gray-600 mt-1">Administra y aprueba publicaciones de propiedades</p>
             </div>
-            <button
-              onClick={() => setShowCreate(true)}
+            <Link
+              href="/master/listings/create"
               className="inline-flex items-center gap-2 px-5 py-3 bg-[#FF6B35] text-white rounded-lg font-semibold hover:bg-[#E55A2B] shadow-lg shadow-[#FF6B35]/30 transition-all"
             >
               <FiPlusSquare /> Nueva Propiedad
-            </button>
+            </Link>
           </div>
 
           {/* Stats Cards */}
@@ -247,34 +247,6 @@ export default function MasterListingsPage() {
           onDelete={deleteListing}
         />
 
-        {/* Create Listing Overlay (Modal) */}
-        {showCreate && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-            <div className="relative w-full h-[90vh] max-w-6xl bg-white rounded-xl shadow-2xl overflow-hidden">
-              <div className="absolute top-3 right-3 z-10 flex gap-2">
-                <button
-                  onClick={() => {
-                    setShowCreate(false)
-                    setTimeout(load, 300)
-                  }}
-                  className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm font-medium"
-                  aria-label="Cerrar creador de propiedad"
-                >
-                  Cerrar
-                </button>
-                <a
-                  href="/admin/properties/create"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-[#FF6B35] text-white hover:bg-[#E55A2B] text-sm font-semibold"
-                >
-                  Abrir en nueva pestaña
-                </a>
-              </div>
-              <iframe src="/admin/properties/create" title="Crear Propiedad" className="w-full h-full" />
-            </div>
-          </div>
-        )}
       </div>
     </main>
   )

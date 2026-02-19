@@ -18,6 +18,14 @@ export interface ListingSearchResult {
   total: number
 }
 
+function normalizeTimestamp(value: any): Date | null {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value.toDate === 'function') return value.toDate()
+  if (typeof value === 'string' || typeof value === 'number') return new Date(value)
+  return null
+}
+
 /**
  * Fetch listings from Firestore (server-side only)
  * Used for SSR pages: /search, /ciudad/[city], etc.
@@ -61,12 +69,17 @@ export async function getListings(
 
     const snapshot = await query.get()
 
-    let listings: Listing[] = snapshot.docs.map((doc: any) => ({
-      id: doc.id,
-      ...doc.data(),
-      // Normalize neighborhood to sector if needed
-      sector: doc.get('sector') || doc.get('neighborhood') || '',
-    })) as Listing[]
+    let listings: Listing[] = snapshot.docs.map((doc: any) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        // Normalize neighborhood to sector if needed
+        sector: doc.get('sector') || doc.get('neighborhood') || '',
+        createdAt: normalizeTimestamp(data?.createdAt) || new Date(0),
+        updatedAt: normalizeTimestamp(data?.updatedAt) || new Date(0),
+      }
+    }) as Listing[]
 
     // Client-side filters for price and bedrooms (Firestore composite index limitation)
     if (filters.minPrice) {
@@ -115,9 +128,12 @@ export async function getListingById(id: string): Promise<Listing | null> {
       return null
     }
 
+    const data = doc.data()
     return {
       id: doc.id,
-      ...doc.data(),
+      ...data,
+      createdAt: normalizeTimestamp(data?.createdAt) || new Date(0),
+      updatedAt: normalizeTimestamp(data?.updatedAt) || new Date(0),
     } as Listing
   } catch (error) {
     console.error('[getListingById] Error:', error)

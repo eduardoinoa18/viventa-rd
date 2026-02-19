@@ -39,7 +39,9 @@ export default function Verify2FAPage() {
 
       // Session cookie updated by server with twoFactorVerified=true
       toast.success('Verificación exitosa')
-      router.push(data.redirect || '/master')
+      
+      // Use full page redirect to ensure cookie is sent with next request
+      window.location.href = data.redirect || '/master'
     } catch (err) {
       console.error('2FA verification error:', err)
       setError('Error de red. Inténtalo de nuevo.')

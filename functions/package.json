@@ -5,8 +5,7 @@
   },
   "scripts": {
     "build": "tsc -p .",
-    "seed:master": "ts-node src/seedMasterAdmin.ts",
-    
+    "seed:master": "ts-node src/seedMasterAdmin.ts"
   },
   "dependencies": {
     "firebase-admin": "11.11.0",

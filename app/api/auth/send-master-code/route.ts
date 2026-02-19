@@ -34,7 +34,7 @@ function checkRateLimit(email: string): { allowed: boolean; retryAfter?: number 
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json()
+    const { email, uid } = await request.json()
     const cookieHeader = request.headers.get('cookie') || ''
     const pwOk = cookieHeader.match(/(?:^|;\s*)admin_pw_ok=([^;]+)/)?.[1] || ''
     const pwEmail = cookieHeader.match(/(?:^|;\s*)admin_pw_email=([^;]+)/)?.[1] || ''
@@ -57,8 +57,9 @@ export async function POST(request: Request) {
     
     // Security: Don't log sensitive data in production
     if (isDev) {
-      console.log('═══ Master Admin Login Attempt ═══')
+      console.log('═══ Master Admin 2FA Code Request ═══')
       console.log('Email:', incoming)
+      console.log('UID provided:', !!uid)
       console.log('Allowlist:', Array.from(allowedEmails))
       console.log('Dev mode:', isDev)
       console.log('Allow any:', allowAny)
@@ -70,7 +71,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })
     }
 
-    if (pwOk !== '1' || (pwEmail && pwEmail.toLowerCase() !== incoming)) {
+    // NEW FLOW: If uid is provided (from unified login), skip password cookie check
+    // LEGACY FLOW: If no uid, require password cookies (old gate system)
+    if (!uid && (pwOk !== '1' || (pwEmail && pwEmail.toLowerCase() !== incoming))) {
       return NextResponse.json({ ok: false, error: 'Password verification required' }, { status: 401 })
     }
 

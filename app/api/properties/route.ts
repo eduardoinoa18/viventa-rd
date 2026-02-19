@@ -69,17 +69,26 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Server config error' }, { status: 500 })
     }
 
-    let q = db.collection('properties').orderBy('createdAt', 'desc')
+    let q = db.collection('properties')
     if (agentId) {
-      q = db.collection('properties').where('agentId', '==', agentId).orderBy('createdAt', 'desc')
+      q = q.where('agentId', '==', agentId)
     } else {
       // default to active properties for public listing
-      q = db.collection('properties').where('status', '==', 'active').orderBy('createdAt', 'desc')
+      q = q.where('status', '==', 'active')
     }
     const snap = await q.limit(100).get()
-    const properties = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    const properties = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
 
-    return NextResponse.json({ properties })
+    // Sort in-memory to avoid composite index requirement on status + createdAt
+    const sorted = properties.sort((a: any, b: any) => {
+      const aDate = a?.createdAt?.toDate ? a.createdAt.toDate() : a?.createdAt
+      const bDate = b?.createdAt?.toDate ? b.createdAt.toDate() : b?.createdAt
+      const aTime = aDate instanceof Date ? aDate.getTime() : 0
+      const bTime = bDate instanceof Date ? bDate.getTime() : 0
+      return bTime - aTime
+    })
+
+    return NextResponse.json({ properties: sorted })
   } catch (error: any) {
     logger.error('Error fetching properties', error)
     return NextResponse.json({ error: error.message || 'Failed to fetch properties' }, { status: 500 })

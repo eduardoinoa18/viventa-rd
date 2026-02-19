@@ -27,7 +27,9 @@ export async function POST(req: NextRequest) {
     try {
       userCredential = await signInWithEmailAndPassword(auth, email, password)
     } catch (authError: any) {
-      console.error('Auth error:', authError.code)
+      console.error('Auth error full:', authError)
+      console.error('Auth error code:', authError.code)
+      console.error('Auth error message:', authError.message)
       
       const errorMessages: Record<string, string> = {
         'auth/user-not-found': 'Usuario no encontrado',
@@ -35,10 +37,11 @@ export async function POST(req: NextRequest) {
         'auth/invalid-email': 'Email inválido',
         'auth/user-disabled': 'Usuario deshabilitado',
         'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde',
+        'auth/invalid-credential': 'Credenciales inválidas',
       }
 
       return NextResponse.json(
-        { ok: false, error: errorMessages[authError.code] || 'Credenciales inválidas' },
+        { ok: false, error: errorMessages[authError.code] || authError.message || 'Credenciales inválidas' },
         { status: 401 }
       )
     }

@@ -1,19 +1,26 @@
 'use client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { FiUsers, FiHome, FiDollarSign, FiClock, FiUserPlus, FiActivity } from 'react-icons/fi'
+import { FiUsers, FiHome, FiDollarSign, FiClock, FiUserPlus, FiActivity, FiCheckCircle, FiXCircle } from 'react-icons/fi'
 
 export default function MasterOverviewPage() {
   const [stats, setStats] = useState({
+    // Property Management KPIs
+    totalProperties: 0,
+    approvedProperties: 0,
+    pendingApprovals: 0,
+    rejectedProperties: 0,
+    publishedProperties: 0,
+    draftProperties: 0,
+    thisWeekProperties: 0,
+    // User & Engagement Metrics
     totalUsers: 0,
     activeListings: 0,
     monthlyRevenueUSD: 0,
-    pendingApprovals: 0,
     leads: 0,
+    pendingApplications: 0,
     totalAgents: 0,
     totalBrokers: 0,
-    pendingApplications: 0,
-    window: 'all' as 'all'|'day'|'week'|'month',
     newUsers: 0,
     listingsCreated: 0,
     newLeads: 0,
@@ -31,6 +38,7 @@ export default function MasterOverviewPage() {
         contactToLeadRate: '0.00%',
       },
     },
+    window: 'all' as 'all'|'day'|'week'|'month',
   })
   const [timeWindow, setTimeWindow] = useState<'all'|'day'|'week'|'month'>('all')
 
@@ -39,33 +47,47 @@ export default function MasterOverviewPage() {
     fetch(url)
       .then(r => r.json())
       .then((statsRes) => {
-        const baseStats = statsRes?.ok ? statsRes.data : {}
-        const agents = baseStats.roleCounts?.agents ?? 0
-        const brokers = baseStats.roleCounts?.brokers ?? 0
-        setStats({
-          ...baseStats,
-          totalAgents: agents,
-          totalBrokers: brokers,
-          pendingApplications: baseStats.pendingApplications || 0,
-          window: (baseStats.window || 'all'),
-          newUsers: baseStats.newUsers || 0,
-          listingsCreated: baseStats.listingsCreated || 0,
-          newLeads: baseStats.newLeads || 0,
-          conversionMetrics: baseStats.conversionMetrics || {
-            totalViews: 0,
-            totalContacts: 0,
-            totalLeads: 0,
-            viewToContactRate: '0.00%',
-            contactToLeadRate: '0.00%',
-            window: {
-              views: 0,
-              contacts: 0,
-              leads: 0,
+        if (statsRes?.ok && statsRes.data) {
+          const d = statsRes.data
+          const agents = d.roleCounts?.agents ?? 0
+          const brokers = d.roleCounts?.brokers ?? 0
+          setStats({
+            // Property counts (from admin stats endpoint)
+            totalProperties: (d.activeListings || 0) + (d.pendingApprovals || 0) + (d.rejectedProperties || 0),
+            approvedProperties: d.activeListings || 0,
+            pendingApprovals: d.pendingApprovals || 0,
+            rejectedProperties: d.rejectedProperties || 0,
+            publishedProperties: d.activeListings || 0,
+            draftProperties: d.draftProperties || 0,
+            thisWeekProperties: d.listingsCreated || 0,
+            // User metrics
+            totalUsers: d.totalUsers || 0,
+            activeListings: d.activeListings || 0,
+            monthlyRevenueUSD: d.monthlyRevenueUSD || 0,
+            leads: d.leads || 0,
+            pendingApplications: d.pendingApplications || 0,
+            totalAgents: agents,
+            totalBrokers: brokers,
+            newUsers: d.newUsers || 0,
+            listingsCreated: d.listingsCreated || 0,
+            newLeads: d.newLeads || 0,
+            conversionMetrics: d.conversionMetrics || {
+              totalViews: 0,
+              totalContacts: 0,
+              totalLeads: 0,
               viewToContactRate: '0.00%',
               contactToLeadRate: '0.00%',
+              window: {
+                views: 0,
+                contacts: 0,
+                leads: 0,
+                viewToContactRate: '0.00%',
+                contactToLeadRate: '0.00%',
+              },
             },
-          },
-        })
+            window: timeWindow,
+          })
+        }
       })
       .catch(() => {})
   }, [timeWindow])
@@ -80,7 +102,7 @@ export default function MasterOverviewPage() {
       </div>
       
       {/* Time window selector */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         <span className="text-sm text-gray-600 mr-2">Time window:</span>
         {([
           { key: 'all', label: 'All' },
@@ -98,43 +120,91 @@ export default function MasterOverviewPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-[#00A676] to-[#008F64] text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white/80 text-sm font-medium">{timeWindow==='all' ? 'Total Users' : 'New Users'}</span>
-            <FiUsers className="text-3xl opacity-80" />
+      {/* === PROPERTY MODERATION KPIs (MAIN SECTION) === */}
+      <section className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <FiHome className="text-[#00A676]" />
+          Property Inventory Status
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Properties */}
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/80 text-sm font-medium">Total Properties</span>
+              <FiHome className="text-3xl opacity-80" />
+            </div>
+            <div className="text-4xl font-bold">{stats.totalProperties}</div>
+            <div className="text-white/70 text-xs mt-2">All inventory</div>
           </div>
-          <div className="text-4xl font-bold mb-1">{timeWindow==='all' ? stats.totalUsers : stats.newUsers}</div>
-          <div className="text-white/70 text-xs">{timeWindow==='all' ? 'All roles' : 'Within selected window'}</div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white/80 text-sm font-medium">{timeWindow==='all' ? 'Active Listings' : 'New Listings'}</span>
-            <FiHome className="text-3xl opacity-80" />
+
+          {/* Approved/Active */}
+          <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/80 text-sm font-medium">Published</span>
+              <FiCheckCircle className="text-3xl opacity-80" />
+            </div>
+            <div className="text-4xl font-bold">{stats.approvedProperties}</div>
+            <div className="text-white/70 text-xs mt-2">status = active</div>
           </div>
-          <div className="text-4xl font-bold mb-1">{timeWindow==='all' ? stats.activeListings : stats.listingsCreated}</div>
-          <div className="text-white/70 text-xs">{timeWindow==='all' ? 'Published' : 'Within selected window'}</div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white/80 text-sm font-medium">Monthly Revenue</span>
-            <FiDollarSign className="text-3xl opacity-80" />
+
+          {/* Pending Approval */}
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/80 text-sm font-medium">Pending Review</span>
+              <FiClock className="text-3xl opacity-80" />
+            </div>
+            <div className="text-4xl font-bold">{stats.pendingApprovals}</div>
+            <div className="text-white/70 text-xs mt-2">Awaiting moderation</div>
           </div>
-          <div className="text-4xl font-bold mb-1">${Number(stats.monthlyRevenueUSD || 0).toLocaleString()}</div>
-          <div className="text-white/70 text-xs">USD</div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white/80 text-sm font-medium">Pending Listings</span>
-            <FiClock className="text-3xl opacity-80" />
+
+          {/* Rejected */}
+          <div className="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/80 text-sm font-medium">Rejected</span>
+              <FiXCircle className="text-3xl opacity-80" />
+            </div>
+            <div className="text-4xl font-bold">{stats.rejectedProperties}</div>
+            <div className="text-white/70 text-xs mt-2">status = rejected</div>
           </div>
-          <div className="text-4xl font-bold mb-1">{stats.pendingApprovals}</div>
-          <div className="text-white/70 text-xs">Awaiting review</div>
         </div>
-      </div>
+
+        {/* Second Row: Additional Property Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          {/* Draft */}
+          <div className="bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/80 text-sm font-medium">Draft</span>
+              <FiHome className="text-3xl opacity-80" />
+            </div>
+            <div className="text-4xl font-bold">{stats.draftProperties}</div>
+            <div className="text-white/70 text-xs mt-2">Incomplete listings</div>
+          </div>
+
+          {/* This Week */}
+          <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/80 text-sm font-medium">This Week</span>
+              <FiActivity className="text-3xl opacity-80" />
+            </div>
+            <div className="text-4xl font-bold">{stats.thisWeekProperties}</div>
+            <div className="text-white/70 text-xs mt-2">New submissions</div>
+          </div>
+
+          {/* Quick Access */}
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/80 text-sm font-medium">Quick Action</span>
+              <FiActivity className="text-3xl opacity-80" />
+            </div>
+            <Link
+              href="/master/listings"
+              className="inline-block mt-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-colors text-sm"
+            >
+              Review Queue →
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* Leads & Conversion Metrics */}
       <section className="mb-8">
@@ -222,16 +292,16 @@ export default function MasterOverviewPage() {
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Quick Actions</h2>
         <div className="flex gap-3 flex-wrap">
           <Link 
-            href="/admin/properties/create" 
+            href="/master/listings" 
             className="px-6 py-3 bg-gradient-to-r from-[#00A6A6] to-[#00C896] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
           >
-            <FiHome /> Create Property
+            <FiHome /> Review Listings
           </Link>
           <Link 
-            href="/master/listings" 
-            className="px-6 py-3 bg-gradient-to-r from-[#0B2545] to-[#0a1f3a] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
+            href="/master/applications" 
+            className="px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
           >
-            <FiHome /> Review Listings
+            <FiClock /> Review Applications
           </Link>
           <Link 
             href="/master/users?invite=agent" 
@@ -244,12 +314,6 @@ export default function MasterOverviewPage() {
             className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
           >
             <FiUsers /> Invite Broker
-          </Link>
-          <Link 
-            href="/admin/settings" 
-            className="px-6 py-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
-          >
-            System Settings
           </Link>
         </div>
       </section>

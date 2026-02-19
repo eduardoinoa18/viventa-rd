@@ -5,10 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { doc, getDoc, deleteDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebaseClient'
 import { getAdminAuth } from '@/lib/firebaseAdmin'
 import { getServerSession, createSessionCookie } from '@/lib/auth/session'
+import { verificationCodes } from '@/lib/verificationStore'
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,6 +32,13 @@ export async function POST(req: NextRequest) {
 
     const { uid, email } = session
 
+    if (!email) {
+      return NextResponse.json(
+        { ok: false, error: 'Email no encontrado en sesión' },
+        { status: 400 }
+      )
+    }
+
     // 2. Verify user is master_admin
     if (session.role !== 'master_admin') {
       return NextResponse.json(
@@ -41,23 +47,31 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 3. Fetch stored 2FA code from Firestore
-    const codeDocRef = doc(db, 'twoFactorCodes', uid)
-    const codeDoc = await getDoc(codeDocRef)
+    // 3. Fetch stored 2FA code from in-memory store (keyed by email)
+    const emailKey = email.toLowerCase()
+    const codeData = verificationCodes.get(emailKey)
 
-    if (!codeDoc.exists()) {
+    if (!codeData) {
       return NextResponse.json(
         { ok: false, error: 'Código no encontrado o expirado' },
         { status: 404 }
       )
     }
 
-    const codeData = codeDoc.data()
-    const storedCode = codeData?.code
-    const expiresAt = codeData?.expiresAt
+    const storedCode = codeData.code
+    const expiresAt = codeData.expiresAt
 
     // 4. Validate code and expiration
     if (code !== storedCode) {
+      // Increment attempts
+      codeData.attempts++
+      if (codeData.attempts >= 3) {
+        verificationCodes.delete(emailKey)
+        return NextResponse.json(
+          { ok: false, error: 'Demasiados intentos. Solicita un nuevo código.' },
+          { status: 401 }
+        )
+      }
       return NextResponse.json(
         { ok: false, error: 'Código inválido' },
         { status: 401 }
@@ -65,7 +79,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (Date.now() > expiresAt) {
-      await deleteDoc(codeDocRef)
+      verificationCodes.delete(emailKey)
       return NextResponse.json(
         { ok: false, error: 'Código expirado. Solicita uno nuevo.' },
         { status: 401 }
@@ -87,46 +101,38 @@ export async function POST(req: NextRequest) {
       lastVerified: Date.now(),
     })
 
-    // 6. Get fresh ID token with updated claims
-    const user = await adminAuth.getUser(uid)
+    // 6. Create custom token and exchange for ID token with updated claims
     const customToken = await adminAuth.createCustomToken(uid)
     
-    // Sign in with custom token to get ID token
-    // Note: This is server-side, so we use Admin SDK to create the token
-    // Client will need to refresh their token, but we can force it via session cookie
+    console.log('✅ Created custom token for UID:', uid)
     
-    // 7. CRITICAL: Recreate session cookie with new claims
-    // We need to generate a new ID token with updated claims
-    // Admin SDK doesn't directly give us ID tokens, so we use a workaround:
-    // Create a new session cookie from a fresh custom token
-    
-    // The user's existing session cookie will have stale claims
-    // We need to create a completely new session cookie
-    
-    // For now, we'll use the custom token approach
-    // In production, you might want to have the client re-authenticate
-    // But for seamless UX, we can create a new session cookie
-    
-    // Actually, we need to be smarter here. Let me use a different approach:
-    // We'll create a short-lived custom token, and the client will use it to sign in
-    // But we're server-side, so we need to create the session cookie directly
-    
-    // Best approach: Create a new custom token, exchange it for an ID token server-side
-    // Using firebase-admin's session cookie creation
-    
-    // Import necessary for token exchange (client-side auth on server)
+    // Import client auth to sign in with custom token
     const { signInWithCustomToken } = await import('firebase/auth')
     const { auth } = await import('@/lib/firebaseClient')
     
-    // Sign in with custom token to get ID token
+    if (!auth) {
+      console.error('❌ Firebase client auth not initialized')
+      return NextResponse.json(
+        { ok: false, error: 'Error de configuración del servidor' },
+        { status: 500 }
+      )
+    }
+    
+    console.log('🔐 Signing in with custom token...')
+    
+    // Sign in with custom token to get ID token with updated claims
     const userCredential = await signInWithCustomToken(auth, customToken)
     const idToken = await userCredential.user.getIdToken(true)
     
-    // Create new session cookie with updated claims
+    console.log('✅ Got ID token with updated claims')
+    
+    // 7. Create new session cookie with updated claims
     const { value: sessionCookie, options } = await createSessionCookie(idToken)
+    
+    console.log('✅ Created new session cookie')
 
-    // 8. Clean up 2FA code
-    await deleteDoc(codeDocRef)
+    // 8. Clean up 2FA code from in-memory store
+    verificationCodes.delete(emailKey)
 
     // 9. Return success and set new session cookie
     const response = NextResponse.json({
@@ -140,6 +146,8 @@ export async function POST(req: NextRequest) {
     })
 
     response.cookies.set('__session', sessionCookie, options)
+    
+    console.log('✅ 2FA verification complete - redirecting to /master')
 
     return response
   } catch (error) {

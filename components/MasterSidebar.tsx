@@ -2,12 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FiGrid, FiUsers, FiHome, FiBarChart2 } from 'react-icons/fi'
+import { FiGrid, FiUsers, FiHome, FiBarChart2, FiClipboard, FiTarget, FiInbox } from 'react-icons/fi'
 
 const navigation = [
   { href: '/master', label: 'Overview', icon: FiGrid },
-  { href: '/master/users', label: 'Users', icon: FiUsers },
   { href: '/master/listings', label: 'Listings', icon: FiHome },
+  { href: '/master/applications', label: 'Applications', icon: FiClipboard },
+  { href: '/master/leads', label: 'Leads', icon: FiTarget },
+  { href: '/master/inbox', label: 'Inbox', icon: FiInbox },
+  { href: '/master/users', label: 'Users', icon: FiUsers },
   { href: '/master/analytics', label: 'Analytics', icon: FiBarChart2 },
 ]
 

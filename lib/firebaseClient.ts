@@ -47,11 +47,16 @@ function initializeFirebase() {
       }
       // Firestore can be accessed in SSR for read-only operations, but guard if needed
       try { _db = getFirestore(app); } catch {}
+      
+      // Auth SDK works in both Node.js and browser environments
+      try { _auth = getAuth(app); } catch {}
+      
+      // Storage and Functions can work in Node.js too
+      try { _storage = getStorage(app); } catch {}
+      try { _functions = getFunctions(app); } catch {}
+      
       // Only initialize browser-only SDKs in the client
       if (typeof window !== 'undefined') {
-        try { _auth = getAuth(app); } catch {}
-        try { _storage = getStorage(app); } catch {}
-        try { _functions = getFunctions(app); } catch {}
         // Messaging requires browser support check
         isSupported().then(supported => {
           if (supported) {

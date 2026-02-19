@@ -43,7 +43,7 @@ export default function Footer() {
         {/* Master Admin link - subtle in corner */}
         {!loggedIn && (
           <Link
-            href="/admin/login"
+            href="/login"
             aria-label="Master Admin Login"
             className="hidden md:inline-block absolute bottom-1 right-2 text-[11px] text-gray-400 hover:text-gray-700 opacity-60 hover:opacity-100 transition-opacity"
           >
