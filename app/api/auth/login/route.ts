@@ -5,11 +5,60 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebaseClient'
-import { getAdminAuth } from '@/lib/firebaseAdmin'
+import { FieldValue } from 'firebase-admin/firestore'
+import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin'
 import { createSessionCookie } from '@/lib/auth/session'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+const authErrorMessages: Record<string, string> = {
+  EMAIL_NOT_FOUND: 'Usuario no encontrado',
+  INVALID_PASSWORD: 'Contraseña incorrecta',
+  INVALID_EMAIL: 'Email inválido',
+  USER_DISABLED: 'Usuario deshabilitado',
+  TOO_MANY_ATTEMPTS_TRY_LATER: 'Demasiados intentos. Intenta más tarde',
+}
+
+async function signInWithPassword(apiKey: string, email: string, password: string) {
+  const res = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, returnSecureToken: true }),
+    }
+  )
+
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const code = data?.error?.message || 'INVALID_CREDENTIALS'
+    const message = authErrorMessages[code] || 'Credenciales inválidas'
+    const err = new Error(message) as Error & { code?: string }
+    err.code = code
+    throw err
+  }
+
+  return data as { idToken: string; localId: string; email: string }
+}
+
+async function signInWithCustomToken(apiKey: string, token: string) {
+  const res = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, returnSecureToken: true }),
+    }
+  )
+
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data?.error?.message || 'CUSTOM_TOKEN_FAILED')
+  }
+
+  return data as { idToken: string }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,55 +71,43 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 1. Authenticate with Firebase Auth
-    let userCredential
-    try {
-      userCredential = await signInWithEmailAndPassword(auth, email, password)
-    } catch (authError: any) {
-      console.error('Auth error full:', authError)
-      console.error('Auth error code:', authError.code)
-      console.error('Auth error message:', authError.message)
-      
-      const errorMessages: Record<string, string> = {
-        'auth/user-not-found': 'Usuario no encontrado',
-        'auth/wrong-password': 'Contraseña incorrecta',
-        'auth/invalid-email': 'Email inválido',
-        'auth/user-disabled': 'Usuario deshabilitado',
-        'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde',
-        'auth/invalid-credential': 'Credenciales inválidas',
-      }
-
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+    if (!apiKey) {
       return NextResponse.json(
-        { ok: false, error: errorMessages[authError.code] || authError.message || 'Credenciales inválidas' },
-        { status: 401 }
+        { ok: false, error: 'Configuración de Firebase incompleta' },
+        { status: 500 }
       )
     }
 
-    const uid = userCredential.user.uid
+    // 1. Verify credentials using Firebase Auth REST API
+    const signInData = await signInWithPassword(apiKey, email, password)
+    const uid = signInData.localId
 
     // 2. Fetch role from Firestore (SOURCE OF TRUTH)
-    const userDocRef = doc(db, 'users', uid)
-    const userDoc = await getDoc(userDocRef)
-    
-    let role = 'buyer' // Default role
-    let userData = userDoc.data()
-
-    if (userDoc.exists()) {
-      role = userData?.role || 'buyer'
-    } else {
-      // Create user document if doesn't exist
-      userData = {
-        email,
-        role: 'buyer',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-      await setDoc(userDocRef, userData)
+    const adminDb = getAdminDb()
+    if (!adminDb) {
+      return NextResponse.json(
+        { ok: false, error: 'Error de configuración del servidor' },
+        { status: 500 }
+      )
     }
 
-    // 3. Set custom claims on Firebase Auth token
-    // For master_admin: Initial 2FA state is FALSE
-    // For others: No 2FA required
+    const userDocRef = adminDb.collection('users').doc(uid)
+    const userDoc = await userDocRef.get()
+
+    let role = 'buyer'
+    if (userDoc.exists) {
+      role = (userDoc.data()?.role as string) || 'buyer'
+    } else {
+      await userDocRef.set({
+        email,
+        role: 'buyer',
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+    }
+
+    // 3. Set custom claims on Firebase Auth
     const adminAuth = getAdminAuth()
     if (!adminAuth) {
       return NextResponse.json(
@@ -80,22 +117,23 @@ export async function POST(req: NextRequest) {
     }
 
     await adminAuth.setCustomUserClaims(uid, {
-      role: role,
-      twoFactorVerified: role !== 'master_admin', // Only master needs 2FA
+      role,
+      twoFactorVerified: role !== 'master_admin',
       lastUpdated: Date.now(),
     })
 
-    // 4. Get fresh ID token with updated claims
-    const idToken = await userCredential.user.getIdToken(true) // Force refresh
+    // 4. Exchange custom token for fresh ID token with updated claims
+    const customToken = await adminAuth.createCustomToken(uid)
+    const tokenData = await signInWithCustomToken(apiKey, customToken)
+    const idToken = tokenData.idToken
 
     // 5. Create secure session cookie (httpOnly)
     const { value: sessionCookie, options } = await createSessionCookie(idToken)
 
     // 6. Determine flow based on role
     if (role === 'master_admin') {
-      // Master admin requires 2FA
-      // Send verification code
-      const sendCodeRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/send-master-code`, {
+      const sendCodeUrl = new URL('/api/auth/send-master-code', req.url)
+      const sendCodeRes = await fetch(sendCodeUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, uid }),
@@ -108,44 +146,49 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      const sendCodeData = await sendCodeRes.json()
+      const sendCodeData = await sendCodeRes.json().catch(() => ({}))
 
-      // Set session cookie (but twoFactorVerified=false, so middleware will redirect)
       const response = NextResponse.json({
         ok: true,
         requires2FA: true,
         email,
-        devCode: sendCodeData.devCode, // Only in development
-      })
-
-      response.cookies.set('__session', sessionCookie, options)
-
-      return response
-    } else {
-      // Buyers and professionals: Direct login
-      const redirectMap: Record<string, string> = {
-        buyer: '/search',
-        agent: '/dashboard',
-        broker: '/dashboard',
-        constructora: '/dashboard',
-      }
-
-      const response = NextResponse.json({
-        ok: true,
-        requires2FA: false,
-        redirect: redirectMap[role] || '/search',
-        user: {
-          uid,
-          email,
-          role,
-        },
+        devCode: sendCodeData.devCode,
       })
 
       response.cookies.set('__session', sessionCookie, options)
 
       return response
     }
-  } catch (error) {
+
+    const redirectMap: Record<string, string> = {
+      buyer: '/search',
+      agent: '/dashboard',
+      broker: '/dashboard',
+      constructora: '/dashboard',
+    }
+
+    const response = NextResponse.json({
+      ok: true,
+      requires2FA: false,
+      redirect: redirectMap[role] || '/search',
+      user: {
+        uid,
+        email,
+        role,
+      },
+    })
+
+    response.cookies.set('__session', sessionCookie, options)
+
+    return response
+  } catch (error: any) {
+    if (error?.code && authErrorMessages[error.code]) {
+      return NextResponse.json(
+        { ok: false, error: authErrorMessages[error.code] },
+        { status: 401 }
+      )
+    }
+
     console.error('Login error:', error)
     return NextResponse.json(
       { ok: false, error: 'Error del servidor' },

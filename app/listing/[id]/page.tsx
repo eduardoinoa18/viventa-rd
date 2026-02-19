@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { db, auth } from '../../../lib/firebaseClient'
-import { doc, getDoc, updateDoc, increment, query, where, collection, getDocs } from 'firebase/firestore'
+import { doc, updateDoc, increment } from 'firebase/firestore'
 import { useParams } from 'next/navigation'
 import Head from 'next/head'
 import Header from '../../../components/Header'
@@ -36,35 +36,49 @@ export default function ListingDetail(){
     setCurrentSession(sess)
   }, [])
   
-  useEffect(()=> {
-    if(!id) return
+  useEffect(() => {
+    if (!id) return
+    let isMounted = true
     setLoading(true)
-    getDoc(doc(db,'properties',id as string))
-      .then(async (snap: any)=> { 
-        if(snap.exists()) {
-          const data = snap.data()
-          setListing({...data, id: snap.id})
-          // Increment view count
-          updateDoc(doc(db,'properties',id as string), { views: increment(1) }).catch((err: any) => console.error('Error updating views:', err))
-          // Track listing view
-          const user = auth.currentUser
-          trackListingView(id as string, { title: data.title, price: data.price, city: data.city }, user?.uid, user?.uid ? 'user' : null)
-        } else {
-          // Fallback: lookup by listingId field
-          const q = query(collection(db, 'properties'), where('listingId', '==', id))
-          const qs = await getDocs(q)
-          if (!qs.empty) {
-            const d = qs.docs[0]
-            const data = d.data()
-            setListing({ ...data, id: d.id })
-            updateDoc(doc(db,'properties',d.id), { views: increment(1) }).catch((err: any) => console.error('Error updating views:', err))
-            const user = auth.currentUser
-            trackListingView(d.id, { title: data.title, price: data.price, city: data.city }, user?.uid, user?.uid ? 'user' : null)
+
+    fetch(`/api/properties/${id}`)
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}))
+        if (!isMounted) return
+
+        if (res.ok && json.ok && json.data) {
+          const data = json.data
+          setListing({ ...data, id: data.id })
+
+          if (db && data.id) {
+            updateDoc(doc(db, 'properties', data.id), { views: increment(1) })
+              .catch((err: any) => console.error('Error updating views:', err))
           }
+
+          const user = auth.currentUser
+          trackListingView(
+            data.id,
+            { title: data.title, price: data.price, city: data.city },
+            user?.uid,
+            user?.uid ? 'user' : null
+          )
+          return
         }
+
+        setListing(null)
       })
-      .finally(() => setLoading(false))
-  },[id])
+      .catch((err) => {
+        console.error('Listing fetch error:', err)
+        if (isMounted) setListing(null)
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [id])
 
   // Currency listener
   useEffect(() => {
