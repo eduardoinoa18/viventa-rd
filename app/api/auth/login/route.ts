@@ -86,14 +86,24 @@ export async function POST(req: NextRequest) {
     // 2. Fetch role from Firestore (SOURCE OF TRUTH)
     const adminDb = getAdminDb()
     if (!adminDb) {
+      console.error('[LOGIN] Admin DB not initialized')
       return NextResponse.json(
         { ok: false, error: 'Error de configuración del servidor' },
         { status: 500 }
       )
     }
 
-    const userDocRef = adminDb.collection('users').doc(uid)
-    const userDoc = await userDocRef.get()
+    let userDoc
+    try {
+      const userDocRef = adminDb.collection('users').doc(uid)
+      userDoc = await userDocRef.get()
+    } catch (dbError: any) {
+      console.error('[LOGIN] Firestore fetch error:', dbError?.message)
+      return NextResponse.json(
+        { ok: false, error: 'Error al acceder a la base de datos' },
+        { status: 500 }
+      )
+    }
 
     let role = 'buyer'
     if (userDoc.exists) {
@@ -110,37 +120,87 @@ export async function POST(req: NextRequest) {
     // 3. Set custom claims on Firebase Auth
     const adminAuth = getAdminAuth()
     if (!adminAuth) {
+      console.error('[LOGIN] Admin Auth not initialized')
       return NextResponse.json(
         { ok: false, error: 'Error de configuración del servidor' },
         { status: 500 }
       )
     }
 
-    await adminAuth.setCustomUserClaims(uid, {
-      role,
-      twoFactorVerified: role !== 'master_admin',
-      lastUpdated: Date.now(),
-    })
+    try {
+      await adminAuth.setCustomUserClaims(uid, {
+        role,
+        twoFactorVerified: role !== 'master_admin',
+        lastUpdated: Date.now(),
+      })
+    } catch (claimsError: any) {
+      console.error('[LOGIN] Failed to set custom claims:', claimsError?.message)
+      return NextResponse.json(
+        { ok: false, error: 'Error al configurar permisos' },
+        { status: 500 }
+      )
+    }
 
     // 4. Exchange custom token for fresh ID token with updated claims
-    const customToken = await adminAuth.createCustomToken(uid)
-    const tokenData = await signInWithCustomToken(apiKey, customToken)
+    let customToken
+    try {
+      customToken = await adminAuth.createCustomToken(uid)
+    } catch (tokenError: any) {
+      console.error('[LOGIN] Failed to create custom token:', tokenError?.message)
+      return NextResponse.json(
+        { ok: false, error: 'Error al crear token de autenticación' },
+        { status: 500 }
+      )
+    }
+
+    let tokenData
+    try {
+      tokenData = await signInWithCustomToken(apiKey, customToken)
+    } catch (exchangeError: any) {
+      console.error('[LOGIN] Failed to exchange custom token:', exchangeError?.message)
+      return NextResponse.json(
+        { ok: false, error: 'Error al validar token' },
+        { status: 500 }
+      )
+    }
+
     const idToken = tokenData.idToken
 
     // 5. Create secure session cookie (httpOnly)
-    const { value: sessionCookie, options } = await createSessionCookie(idToken)
+    let sessionCookie, options
+    try {
+      const cookieData = await createSessionCookie(idToken)
+      sessionCookie = cookieData.value
+      options = cookieData.options
+    } catch (cookieError: any) {
+      console.error('[LOGIN] Failed to create session cookie:', cookieError?.message)
+      return NextResponse.json(
+        { ok: false, error: 'Error al crear sesión' },
+        { status: 500 }
+      )
+    }
 
     // 6. Determine flow based on role
     if (role === 'master_admin') {
       const sendCodeUrl = new URL('/api/auth/send-master-code', req.url)
-      const sendCodeRes = await fetch(sendCodeUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, uid }),
-      })
+      let sendCodeRes
+      try {
+        sendCodeRes = await fetch(sendCodeUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, uid }),
+        })
+      } catch (fetchError: any) {
+        console.error('[LOGIN] Failed to call send-master-code:', fetchError?.message)
+        return NextResponse.json(
+          { ok: false, error: 'Error al enviar código 2FA' },
+          { status: 500 }
+        )
+      }
 
       const sendCodeData = await sendCodeRes.json().catch(() => ({}))
       if (!sendCodeRes.ok) {
+        console.error('[LOGIN] send-master-code failed:', sendCodeData?.error)
         return NextResponse.json(
           { ok: false, error: sendCodeData?.error || 'Error al enviar código 2FA' },
           { status: sendCodeRes.status || 500 }
