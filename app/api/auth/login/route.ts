@@ -93,9 +93,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const userDocRef = adminDb.collection('users').doc(uid)
     let userDoc
     try {
-      const userDocRef = adminDb.collection('users').doc(uid)
       userDoc = await userDocRef.get()
     } catch (dbError: any) {
       console.error('[LOGIN] Firestore fetch error:', dbError?.message)
