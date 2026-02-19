@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { ActivityLogger } from "@/lib/activityLogger"
 import { getAdminDb } from "@/lib/firebaseAdmin"
 import { FieldValue } from 'firebase-admin/firestore'
+import type { Query } from 'firebase-admin/firestore'
 import { logger } from '@/lib/logger'
 
 type PropertyStatus = 'active' | 'pending' | 'inactive' | 'sold'
@@ -69,7 +70,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Server config error' }, { status: 500 })
     }
 
-    let q = db.collection('properties')
+    let q: Query = db.collection('properties')
     if (agentId) {
       q = q.where('agentId', '==', agentId)
     } else {
