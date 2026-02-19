@@ -103,7 +103,8 @@ export async function POST(request: Request) {
 
     // If sending fails in development, still allow sign-in by surfacing the code
     if (!emailSent) {
-      const allowDevResponse = isDev || isLocalHost || process.env.ALLOW_DEV_2FA_RESPONSE === 'true'
+      const isPreview = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production'
+      const allowDevResponse = isDev || isLocalHost || isPreview || process.env.ALLOW_DEV_2FA_RESPONSE === 'true'
       if (allowDevResponse) {
         console.log('⚠️  Email failed but DEV mode - returning code in response')
         return NextResponse.json({ 
@@ -128,7 +129,8 @@ export async function POST(request: Request) {
       expiresIn: 600 // seconds
     }
     // Helpful for development and staging
-    if (isDev || isLocalHost || process.env.ALLOW_DEV_2FA_RESPONSE === 'true') {
+    const isPreview = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production'
+    if (isDev || isLocalHost || isPreview || process.env.ALLOW_DEV_2FA_RESPONSE === 'true') {
       response.devCode = code
       console.log('🔐 DEV CODE:', code)
     }

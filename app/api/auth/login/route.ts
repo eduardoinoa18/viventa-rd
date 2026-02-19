@@ -139,14 +139,13 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({ email, uid }),
       })
 
+      const sendCodeData = await sendCodeRes.json().catch(() => ({}))
       if (!sendCodeRes.ok) {
         return NextResponse.json(
-          { ok: false, error: 'Error al enviar código 2FA' },
-          { status: 500 }
+          { ok: false, error: sendCodeData?.error || 'Error al enviar código 2FA' },
+          { status: sendCodeRes.status || 500 }
         )
       }
-
-      const sendCodeData = await sendCodeRes.json().catch(() => ({}))
 
       const response = NextResponse.json({
         ok: true,
