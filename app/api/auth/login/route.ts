@@ -62,7 +62,9 @@ async function signInWithCustomToken(apiKey: string, token: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json()
+    const payload = await req.json().catch(() => null)
+    const email = String(payload?.email || '').trim().toLowerCase()
+    const password = String(payload?.password || '')
 
     if (!email || !password) {
       return NextResponse.json(

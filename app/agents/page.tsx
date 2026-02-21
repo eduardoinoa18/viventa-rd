@@ -4,8 +4,6 @@ import Footer from '../../components/Footer'
 import AgentCard from '../../components/AgentCard'
 import { useMemo, useState, useEffect } from 'react'
 import { FiSearch, FiStar } from 'react-icons/fi'
-import { collection, getDocs, query, where } from 'firebase/firestore'
-import { db } from '@/lib/firebaseClient'
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<any[]>([])
@@ -26,51 +24,23 @@ export default function AgentsPage() {
   async function loadAgents() {
     try {
       setLoading(true)
-      // Fetch all active AND approved agents from Firestore
-      const agentsQuery = query(
-        collection(db, 'users'),
-        where('role', '==', 'agent'),
-        where('status', '==', 'active'),
-        where('approved', '==', true)
-      )
-      const snapshot = await getDocs(agentsQuery)
-      const agentsList = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data(),
-        // Normalize fields for AgentCard
-        photo: doc.data().profileImage || doc.data().avatar || '/agent-placeholder.jpg',
-        area: doc.data().areas || doc.data().markets || doc.data().city || 'República Dominicana',
-        rating: doc.data().rating || 4.5,
+      const res = await fetch('/api/agents?limit=500', { cache: 'no-store' })
+      const json = await res.json().catch(() => ({ ok: false, data: [] }))
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || 'Failed to fetch agents')
+      }
+
+      const agentsList = (json.data || []).map((agent: any) => ({
+        ...agent,
+        photo: agent.profileImage || agent.photo || '/agent-placeholder.jpg',
+        area: agent.area || agent.city || 'República Dominicana',
+        rating: agent.rating || 4.5,
       }))
+
       setAgents(agentsList)
     } catch (error: any) {
       console.error('Error loading agents:', error)
-      // If compound index doesn't exist, fall back to filtering client-side
-      if (error.message?.includes('index')) {
-        console.warn('Missing composite index, filtering client-side')
-        try {
-          const basicQuery = query(
-            collection(db, 'users'),
-            where('role', '==', 'agent')
-          )
-          const snapshot = await getDocs(basicQuery)
-          const agentsList = snapshot.docs
-            .filter((doc: any) => {
-              const data = doc.data()
-              return data.status === 'active' && data.approved === true
-            })
-            .map((doc: any) => ({
-              id: doc.id,
-              ...doc.data(),
-              photo: doc.data().profileImage || doc.data().avatar || '/agent-placeholder.jpg',
-              area: doc.data().areas || doc.data().markets || doc.data().city || 'República Dominicana',
-              rating: doc.data().rating || 4.5,
-            }))
-          setAgents(agentsList)
-        } catch (fallbackError) {
-          console.error('Fallback query also failed:', fallbackError)
-        }
-      }
+      setAgents([])
     } finally {
       setLoading(false)
     }

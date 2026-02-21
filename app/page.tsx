@@ -83,7 +83,7 @@ export default function HomePage() {
   // Load agents (prefer verified, but fallback to active; prefer agents with active listings; must be approved)
   useEffect(() => {
     setLoadingAgents(true)
-    fetch('/api/admin/users?role=agent')
+    fetch('/api/agents?limit=200')
       .then(r => r.json())
       .then(data => {
         const all: any[] = data?.data || []
