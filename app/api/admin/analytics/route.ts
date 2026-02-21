@@ -1,5 +1,6 @@
 // app/api/admin/analytics/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 export const dynamic = 'force-dynamic'
 import { initializeApp, getApps } from 'firebase/app'
 import {
@@ -94,6 +95,9 @@ function mockAnalytics() {
 }
 
 export async function GET(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
+
   const { searchParams } = new URL(req.url)
   const range = (searchParams.get('range') || '30d') as '7d' | '30d' | '90d' | '1y'
 

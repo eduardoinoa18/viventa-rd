@@ -2,10 +2,14 @@
 import { NextResponse } from 'next/server'
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST() {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const adminDb = getAdminDb()
     const adminAuth = getAdminAuth()

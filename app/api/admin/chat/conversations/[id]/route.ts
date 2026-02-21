@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const runtime = 'nodejs'
 
 // Update conversation meta, e.g., status open/closed
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
+
   const db = getAdminDb()
   if (!db) return NextResponse.json({ ok: false }, { status: 500 })
   try {

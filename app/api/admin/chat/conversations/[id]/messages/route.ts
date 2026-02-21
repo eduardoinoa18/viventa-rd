@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const runtime = 'nodejs'
 
 export async function GET(_: Request, { params }: { params: { id: string } }) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
+
   const db = getAdminDb()
   if (!db) return NextResponse.json({ messages: [] })
   try {
@@ -18,6 +22,9 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 }
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
+
   const db = getAdminDb()
   if (!db) return NextResponse.json({ ok: false }, { status: 500 })
   try {

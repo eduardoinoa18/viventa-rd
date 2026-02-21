@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import type { AnalyticsDailySummary, AnalyticsEvent } from '@/types/analytics'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,9 @@ function assertCronSecret(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     if (!assertCronSecret(req)) {
       return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })

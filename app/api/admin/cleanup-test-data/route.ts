@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,13 +10,11 @@ export const dynamic = 'force-dynamic'
  * Use with extreme caution!
  */
 export async function POST(req: NextRequest) {
-  try {
-    const role = req.cookies.get('viventa_role')?.value
-    const uid = req.cookies.get('viventa_uid')?.value
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
 
-    if (role !== 'master_admin') {
-      return NextResponse.json({ error: 'Unauthorized - Master admin only' }, { status: 401 })
-    }
+  try {
+    const uid = authResult.uid
 
     const db = getAdminDb()
     if (!db) {
@@ -30,7 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify master admin email
-    const masterAdminDoc = await db.collection('users').doc(uid!).get()
+    const masterAdminDoc = await db.collection('users').doc(uid).get()
     if (!masterAdminDoc.exists || masterAdminDoc.data()?.email !== confirmEmail) {
       return NextResponse.json({ error: 'Email verification failed' }, { status: 403 })
     }

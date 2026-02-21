@@ -1,5 +1,6 @@
 // app/api/admin/analytics/events/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 export const dynamic = 'force-dynamic'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 
@@ -8,6 +9,9 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
  * GET /api/admin/analytics/events?range=7d|30d|90d
  */
 export async function GET(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { searchParams } = new URL(req.url)
     const range = searchParams.get('range') || '30d'

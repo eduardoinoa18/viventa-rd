@@ -1,9 +1,11 @@
+import { logAdminAction } from '@/lib/admin/auditLog'
 // app/api/admin/users/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, serverTimestamp } from 'firebase/firestore'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,6 +33,9 @@ function initFirebase() {
 
 // GET /api/admin/users - list users with optional role filter
 export async function GET(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     // Prefer Admin SDK for server-side reads (bypass client auth rules)
     const adminDb = getAdminDb()
@@ -80,6 +85,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/users - create or invite a new user
 export async function POST(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const adminDb = getAdminDb()
     if (adminDb) {
@@ -147,6 +155,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/admin/users - update user status or role
 export async function PATCH(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const adminDb = getAdminDb()
     // Parse once; reuse across both admin and client paths
@@ -184,6 +195,17 @@ export async function PATCH(req: NextRequest) {
         })
       }
       
+      try {
+        await logAdminAction({
+          actorUid: authResult.uid,
+          actorRole: authResult.role,
+          action: role ? 'USER_ROLE_CHANGED' : 'USER_UPDATED',
+          targetType: 'user',
+          targetId: id,
+          metadata: { updatedFields: Object.keys(updates).filter(k => k !== 'updatedAt'), newRole: role || null },
+        })
+      } catch {}
+
       return NextResponse.json({ ok: true, message: 'User updated successfully' })
     }
 
@@ -223,6 +245,17 @@ export async function PATCH(req: NextRequest) {
       })
     }
 
+    try {
+      await logAdminAction({
+        actorUid: authResult.uid,
+        actorRole: authResult.role,
+        action: role ? 'USER_ROLE_CHANGED' : 'USER_UPDATED',
+        targetType: 'user',
+        targetId: id,
+        metadata: { updatedFields: Object.keys(updates).filter(k => k !== 'updatedAt'), newRole: role || null },
+      })
+    } catch {}
+
     return NextResponse.json({
       ok: true,
       message: 'User updated successfully',
@@ -235,6 +268,9 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/admin/users - delete a user
 export async function DELETE(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const body = await req.json()
     const { id } = body
@@ -260,6 +296,17 @@ export async function DELETE(req: NextRequest) {
         })
       }
       
+      try {
+        await logAdminAction({
+          actorUid: authResult.uid,
+          actorRole: authResult.role,
+          action: 'USER_DELETED',
+          targetType: 'user',
+          targetId: id,
+          metadata: { deletedUserRole: userData?.role || null },
+        })
+      } catch {}
+
       return NextResponse.json({ ok: true, message: 'User deleted successfully' })
     }
 
@@ -285,6 +332,17 @@ export async function DELETE(req: NextRequest) {
       })
     }
     
+    try {
+      await logAdminAction({
+        actorUid: authResult.uid,
+        actorRole: authResult.role,
+        action: 'USER_DELETED',
+        targetType: 'user',
+        targetId: id,
+        metadata: { deletedUserRole: userData?.role || null },
+      })
+    } catch {}
+
     return NextResponse.json({ ok: true, message: 'User deleted successfully' })
   } catch (e: any) {
     console.error('admin users DELETE error', e)

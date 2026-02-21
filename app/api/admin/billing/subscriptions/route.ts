@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { collection, getDocs, doc, setDoc, getDoc, serverTimestamp, query, orderBy } from 'firebase/firestore'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export async function GET() {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const q = query(collection(db, 'billing_subscriptions'), orderBy('createdAt', 'desc'))
     const snapshot = await getDocs(q)
@@ -19,6 +23,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { email, plan } = await req.json()
     if (!email || !plan) return NextResponse.json({ ok: false, error: 'Email and plan are required' }, { status: 400 })

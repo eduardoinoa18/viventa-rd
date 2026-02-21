@@ -4,10 +4,14 @@ import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getCountFromServer, query, where } from 'firebase/firestore'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { Timestamp as AdminTimestamp } from 'firebase-admin/firestore'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { searchParams } = new URL(req.url)
     const windowParam = (searchParams.get('window') || 'all').toLowerCase()

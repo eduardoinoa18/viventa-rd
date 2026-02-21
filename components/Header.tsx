@@ -43,9 +43,9 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <LocaleSwitcher />
           {/* Back to Admin button for admins on user-facing pages */}
-          {session && (session.role === 'admin' || session.role === 'master_admin') && !pathname?.startsWith('/admin') && (
+          {session && (session.role === 'admin' || session.role === 'master_admin') && !pathname?.startsWith('/master') && (
             <Link 
-              href="/admin" 
+              href="/master" 
               className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm bg-viventa-navy text-white rounded-lg font-medium hover:bg-viventa-ocean transition-all"
             >
               <span>Admin Panel</span>
@@ -85,9 +85,9 @@ export default function Header() {
         <div className="flex items-center gap-3">
           <LocaleSwitcher />
           {/* Back to Admin button for admins on user-facing pages */}
-          {session && (session.role === 'admin' || session.role === 'master_admin') && !pathname?.startsWith('/admin') && (
+          {session && (session.role === 'admin' || session.role === 'master_admin') && !pathname?.startsWith('/master') && (
             <Link 
-              href="/admin" 
+              href="/master" 
               className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm bg-viventa-navy text-white rounded-lg font-medium hover:bg-viventa-ocean transition-all"
             >
               <span>Admin Panel</span>

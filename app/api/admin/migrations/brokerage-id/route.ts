@@ -1,6 +1,7 @@
 // app/api/admin/migrations/brokerage-id/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 function slugify(name: string) {
   return String(name || '')
@@ -43,6 +44,9 @@ async function ensureBrokerage(adminDb: any, { id, name }: { id?: string | null;
 
 // GET: dry-run summary
 export async function GET(_req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   const adminDb = getAdminDb()
   if (!adminDb) return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
   const usersSnap = await adminDb.collection('users').get()
@@ -62,6 +66,9 @@ export async function GET(_req: NextRequest) {
 
 // POST: perform migration to set brokerage_id consistently
 export async function POST(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   const adminDb = getAdminDb()
   if (!adminDb) return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
   const { dryRun } = await req.json().catch(() => ({ dryRun: false }))

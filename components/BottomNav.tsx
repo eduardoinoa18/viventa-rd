@@ -16,13 +16,13 @@ export default function BottomNav() {
   }, [])
 
   // Don't show on admin pages, special pages, or auth pages
-  if (!mounted || pathname?.startsWith('/admin') || pathname?.startsWith('/onboarding') || pathname === '/login' || pathname === '/signup') {
+  if (!mounted || pathname?.startsWith('/master') || pathname?.startsWith('/onboarding') || pathname === '/login' || pathname === '/signup') {
     return null
   }
 
   // Build nav items based on auth state
-  const adminHome = session?.role === 'master_admin' ? '/admin'
-    : session?.role === 'admin' ? '/admin'
+  const adminHome = session?.role === 'master_admin' ? '/master'
+    : session?.role === 'admin' ? '/master'
     : session?.role === 'broker' ? '/broker'
     : session?.role === 'agent' ? '/agent'
     : '/dashboard'

@@ -2,9 +2,14 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from 'firebase/firestore'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
+import { logAdminAction } from '@/lib/admin/auditLog'
 
 // GET - List all roles
 export async function GET() {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const q = query(collection(db, 'admin_roles'), orderBy('createdAt', 'desc'))
     const snapshot = await getDocs(q)
@@ -13,7 +18,6 @@ export async function GET() {
     return NextResponse.json({ ok: true, roles })
   } catch (error: any) {
     console.error('Error fetching roles:', error)
-    // Return empty array if collection doesn't exist or permission denied
     if (error?.code === 'permission-denied' || error?.message?.includes('index')) {
       return NextResponse.json({ ok: true, roles: [] })
     }
@@ -23,6 +27,9 @@ export async function GET() {
 
 // POST - Create new role
 export async function POST(request: Request) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { name, displayName, description, permissions, color } = await request.json()
 
@@ -40,6 +47,17 @@ export async function POST(request: Request) {
       updatedAt: serverTimestamp()
     })
 
+    try {
+      await logAdminAction({
+        actorUid: authResult.uid,
+        actorRole: authResult.role,
+        action: 'ROLE_CREATED',
+        targetType: 'admin_role',
+        targetId: docRef.id,
+        metadata: { name, displayName },
+      })
+    } catch {}
+
     return NextResponse.json({ ok: true, id: docRef.id })
   } catch (error) {
     console.error('Error creating role:', error)
@@ -49,6 +67,9 @@ export async function POST(request: Request) {
 
 // PUT - Update role
 export async function PUT(request: Request) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { id, name, displayName, description, permissions, color } = await request.json()
 
@@ -65,6 +86,17 @@ export async function PUT(request: Request) {
       updatedAt: serverTimestamp()
     })
 
+    try {
+      await logAdminAction({
+        actorUid: authResult.uid,
+        actorRole: authResult.role,
+        action: 'ROLE_UPDATED',
+        targetType: 'admin_role',
+        targetId: id,
+        metadata: { name, displayName },
+      })
+    } catch {}
+
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Error updating role:', error)
@@ -74,6 +106,9 @@ export async function PUT(request: Request) {
 
 // DELETE - Remove role
 export async function DELETE(request: Request) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
@@ -83,6 +118,17 @@ export async function DELETE(request: Request) {
     }
 
     await deleteDoc(doc(db, 'admin_roles', id))
+
+    try {
+      await logAdminAction({
+        actorUid: authResult.uid,
+        actorRole: authResult.role,
+        action: 'ROLE_DELETED',
+        targetType: 'admin_role',
+        targetId: id,
+        metadata: {},
+      })
+    } catch {}
 
     return NextResponse.json({ ok: true })
   } catch (error) {

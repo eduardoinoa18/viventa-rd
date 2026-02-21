@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 export const dynamic = 'force-dynamic'
 import { db } from '@/lib/firebaseClient'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 
 export async function GET() {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const q = query(collection(db, 'billing_invoices'), orderBy('paidAt', 'desc'))
     const snapshot = await getDocs(q)

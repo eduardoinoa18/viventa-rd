@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "check-config": "node scripts/check-config.js",
     "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "test": "tsc -p tsconfig.test.json && node --test .tmp-tests/tests/admin-auth.test.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

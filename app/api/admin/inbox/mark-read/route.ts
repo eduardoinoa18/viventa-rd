@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { FieldValue } from 'firebase-admin/firestore'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const dynamic = 'force-dynamic'
 
 export async function PATCH(request: NextRequest) {
-  try {
-    const role = request.cookies.get('viventa_role')?.value
-    const uid = request.cookies.get('viventa_uid')?.value
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
 
-    if (role !== 'admin' || !uid) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  try {
+    const uid = authResult.uid
 
     const db = getAdminDb()
     if (!db) {

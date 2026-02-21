@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 export const dynamic = 'force-dynamic'
 
 // GET /api/admin/leads - fetch all leads from multiple sources
 export async function GET(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const adminDb = getAdminDb()
     if (!adminDb) {
@@ -70,6 +74,9 @@ export async function GET(req: NextRequest) {
 
 // PATCH /api/admin/leads - update lead assignment or status
 export async function PATCH(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const adminDb = getAdminDb()
     if (!adminDb) {

@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": ".tmp-tests",
+    "esModuleInterop": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["tests/admin-auth.test.ts", "lib/auth/requireMasterSession.ts", "lib/auth/session.ts", "lib/firebaseAdmin.ts"]
+}
