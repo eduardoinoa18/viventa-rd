@@ -17,6 +17,7 @@ export default function MasterListingsPage() {
   // State
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
@@ -55,9 +56,16 @@ export default function MasterListingsPage() {
     load()
   }, [statusFilter])
 
+  const getUiErrorMessage = (status?: number) => {
+    if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente para gestionar propiedades.'
+    if (status === 403) return 'No tienes permisos para gestionar propiedades en el panel maestro.'
+    return 'No se pudieron cargar las propiedades del panel maestro.'
+  }
+
   // API: Load listings
   async function load() {
     setLoading(true)
+    setError(null)
     try {
       // Map UI filter to database status
       const dbStatus = mapUIFilterToDB(statusFilter)
@@ -65,10 +73,19 @@ export default function MasterListingsPage() {
 
       const res = await fetch(url)
       const json = await res.json()
-      if (json.ok) setListings(json.data || [])
+      if (!res.ok || !json.ok) {
+        const message = json?.error || getUiErrorMessage(res.status)
+        setError(message)
+        toast.error(message)
+        setListings([])
+        return
+      }
+      setListings(json.data || [])
     } catch (e) {
       console.error('Failed to load properties', e)
-      toast.error('Failed to load properties')
+      const message = getUiErrorMessage()
+      setError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -233,6 +250,12 @@ export default function MasterListingsPage() {
             onBulkReject={() => bulkUpdate('rejected')}
           />
         </div>
+
+        {error && !loading && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Listings Table */}
         <ListingTable

@@ -43,12 +43,12 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <LocaleSwitcher />
           {/* Back to Admin button for admins on user-facing pages */}
-          {session && session.role === 'master_admin' && !pathname?.startsWith('/admin') && (
+          {session && session.role === 'master_admin' && !pathname?.startsWith('/master') && (
             <Link 
-              href="/admin" 
+              href="/master" 
               className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm bg-viventa-navy text-white rounded-lg font-medium hover:bg-viventa-ocean transition-all"
             >
-              <span>Admin Panel</span>
+              <span>Master Panel</span>
             </Link>
           )}
             <Link href="/login" className="px-4 py-2 min-h-[44px] hidden sm:flex items-center justify-center text-sm border-2 border-viventa-ocean text-viventa-ocean rounded-lg font-bold hover:bg-viventa-ocean hover:text-white transition-all active:scale-95">Login</Link>
@@ -86,12 +86,12 @@ export default function Header() {
         <div className="flex items-center gap-3">
           <LocaleSwitcher />
           {/* Back to Admin button for admins on user-facing pages */}
-          {session && session.role === 'master_admin' && !pathname?.startsWith('/admin') && (
+          {session && session.role === 'master_admin' && !pathname?.startsWith('/master') && (
             <Link 
-              href="/admin" 
+              href="/master" 
               className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm bg-viventa-navy text-white rounded-lg font-medium hover:bg-viventa-ocean transition-all"
             >
-              <span>Admin Panel</span>
+              <span>Master Panel</span>
             </Link>
           )}
           {session ? (

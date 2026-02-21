@@ -28,6 +28,7 @@ interface Application {
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState('pending')
   const [searchQuery, setSearchQuery] = useState('')
   const [processingId, setProcessingId] = useState<string | null>(null)
@@ -77,8 +78,15 @@ export default function ApplicationsPage() {
     loadApplications()
   }, [statusFilter])
 
+  const getUiErrorMessage = (status?: number) => {
+    if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente para revisar solicitudes.'
+    if (status === 403) return 'No tienes permisos para revisar solicitudes profesionales.'
+    return 'No se pudieron cargar las solicitudes profesionales.'
+  }
+
   async function loadApplications() {
     setLoading(true)
+    setError(null)
     try {
       const url = statusFilter && statusFilter !== 'all' 
         ? `/api/admin/applications?status=${statusFilter}` 
@@ -86,8 +94,15 @@ export default function ApplicationsPage() {
       
       const res = await fetch(url)
       const json = await res.json()
+      if (!res.ok || !json.ok) {
+        const message = json?.error || getUiErrorMessage(res.status)
+        setError(message)
+        toast.error(message)
+        setApplications([])
+        return
+      }
       
-      if (json.ok && Array.isArray(json.data)) {
+      if (Array.isArray(json.data)) {
         // Normalize timestamps from Firestore
         const normalized = json.data.map((app: any) => ({
           ...app,
@@ -98,7 +113,9 @@ export default function ApplicationsPage() {
       }
     } catch (e) {
       console.error('Failed to load applications', e)
-      toast.error('Failed to load applications')
+      const message = getUiErrorMessage()
+      setError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -347,17 +364,22 @@ export default function ApplicationsPage() {
 
         {/* Applications Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {error && !loading && (
+            <div className="p-4 border-b border-red-100 bg-red-50 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           {loading ? (
             <div className="flex items-center justify-center p-12">
               <div className="text-center">
                 <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading applications...</p>
+                <p className="text-gray-600">Cargando solicitudes...</p>
               </div>
             </div>
           ) : filteredApplications.length === 0 ? (
             <div className="flex items-center justify-center p-12">
               <div className="text-center">
-                <p className="text-gray-500 text-lg">No applications found</p>
+                <p className="text-gray-500 text-lg">No se encontraron solicitudes</p>
               </div>
             </div>
           ) : (

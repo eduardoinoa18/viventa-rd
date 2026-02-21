@@ -31,6 +31,7 @@ interface MessageItem {
 export default function MasterInboxPage() {
   const [tab, setTab] = useState<'conversations' | 'leads'>('conversations')
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
+  const [error, setError] = useState<string | null>(null)
   const [loadingConversations, setLoadingConversations] = useState(true)
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const [messages, setMessages] = useState<MessageItem[]>([])
@@ -47,18 +48,27 @@ export default function MasterInboxPage() {
     [conversations, selectedConversationId]
   )
 
+  const getUiErrorMessage = (status?: number) => {
+    if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente para abrir el inbox maestro.'
+    if (status === 403) return 'No tienes permisos para ver mensajes y conversaciones.'
+    return 'No se pudo cargar el inbox. Intenta nuevamente.'
+  }
+
   async function loadConversations() {
     try {
       setLoadingConversations(true)
+      setError(null)
       const res = await fetch('/api/admin/inbox/conversations?limit=200')
       const json = await res.json()
-      if (!res.ok || !json.ok) throw new Error(json.error || 'Failed to load conversations')
+      if (!res.ok || !json.ok) throw new Error(json.error || getUiErrorMessage(res.status))
       setConversations(json.conversations || [])
       if (!selectedConversationId && (json.conversations || []).length > 0) {
         setSelectedConversationId(json.conversations[0].conversationId)
       }
     } catch (e: any) {
-      toast.error(e?.message || 'No se pudieron cargar las conversaciones')
+      const message = e?.message || getUiErrorMessage()
+      setError(message)
+      toast.error(message)
     } finally {
       setLoadingConversations(false)
     }
@@ -111,16 +121,19 @@ export default function MasterInboxPage() {
   async function loadLeads() {
     try {
       setLoadingLeads(true)
+      setError(null)
       const res = await fetch('/api/admin/leads?limit=100')
       const json = await res.json()
-      if (!res.ok || !json.ok) throw new Error(json.error || 'Failed to load leads')
+      if (!res.ok || !json.ok) throw new Error(json.error || getUiErrorMessage(res.status))
       const parsed = (json.leads || []).map((lead: any) => ({
         ...lead,
         createdAt: lead.createdAt ? new Date(lead.createdAt) : new Date(),
       }))
       setLeads(parsed)
     } catch (e: any) {
-      toast.error(e?.message || 'No se pudieron cargar los leads')
+      const message = e?.message || getUiErrorMessage()
+      setError(message)
+      toast.error(message)
       setLeads([])
     } finally {
       setLoadingLeads(false)
@@ -180,6 +193,12 @@ export default function MasterInboxPage() {
           </button>
         </div>
 
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm">
+            {error}
+          </div>
+        )}
+
         {tab === 'conversations' ? (
           <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4">
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -189,7 +208,7 @@ export default function MasterInboxPage() {
               </div>
               <div className="max-h-[640px] overflow-y-auto">
                 {loadingConversations ? (
-                  <div className="p-4 text-center text-gray-500">Cargando...</div>
+                  <div className="p-4 text-center text-gray-500">Cargando conversaciones...</div>
                 ) : conversations.length === 0 ? (
                   <div className="p-4 text-center text-gray-500">No hay conversaciones aún</div>
                 ) : (

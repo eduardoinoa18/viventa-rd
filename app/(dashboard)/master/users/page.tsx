@@ -25,6 +25,7 @@ type User = {
 export default function MasterUsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -80,17 +81,34 @@ export default function MasterUsersPage() {
     loadUsers()
   }, [])
 
+  const getUiErrorMessage = (status?: number) => {
+    if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente para continuar.'
+    if (status === 403) return 'No tienes permisos para ver la gestión de usuarios.'
+    return 'No se pudo cargar la lista de usuarios.'
+  }
+
   async function loadUsers() {
     setLoading(true)
+    setError(null)
     try {
       const res = await fetch('/api/admin/users')
       const json = await res.json()
-      if (json.ok && Array.isArray(json.data)) {
+      if (!res.ok || !json.ok) {
+        const message = json?.error || getUiErrorMessage(res.status)
+        setError(message)
+        toast.error(message)
+        setUsers([])
+        return
+      }
+
+      if (Array.isArray(json.data)) {
         setUsers(json.data)
       }
     } catch (e) {
       console.error('Failed to load users', e)
-      toast.error('Failed to load users')
+      const message = getUiErrorMessage()
+      setError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -258,17 +276,22 @@ export default function MasterUsersPage() {
 
         {/* Users Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {error && !loading && (
+            <div className="p-4 border-b border-red-100 bg-red-50 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           {loading ? (
             <div className="flex items-center justify-center p-12">
               <div className="text-center">
                 <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading users...</p>
+                <p className="text-gray-600">Cargando usuarios...</p>
               </div>
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="flex items-center justify-center p-12">
               <div className="text-center">
-                <p className="text-gray-500 text-lg">No users found</p>
+                <p className="text-gray-500 text-lg">No se encontraron usuarios</p>
               </div>
             </div>
           ) : (

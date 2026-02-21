@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { FiUsers, FiHome, FiDollarSign, FiClock, FiUserPlus, FiActivity, FiCheckCircle, FiXCircle } from 'react-icons/fi'
 
 export default function MasterOverviewPage() {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState({
     // Property Management KPIs
     totalProperties: 0,
@@ -42,10 +44,24 @@ export default function MasterOverviewPage() {
   })
   const [timeWindow, setTimeWindow] = useState<'all'|'day'|'week'|'month'>('all')
 
+  const getUiErrorMessage = (status?: number) => {
+    if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente para ver el panel maestro.'
+    if (status === 403) return 'No tienes permisos para acceder a este módulo del panel maestro.'
+    return 'No se pudo cargar el resumen del panel maestro. Intenta nuevamente.'
+  }
+
   useEffect(() => {
+    setLoading(true)
+    setError(null)
     const url = `/api/admin/stats${timeWindow && timeWindow !== 'all' ? `?window=${timeWindow}` : ''}`
     fetch(url)
-      .then(r => r.json())
+      .then(async (r) => {
+        const payload = await r.json().catch(() => ({}))
+        if (!r.ok || !payload?.ok) {
+          throw new Error(payload?.error || getUiErrorMessage(r.status))
+        }
+        return payload
+      })
       .then((statsRes) => {
         if (statsRes?.ok && statsRes.data) {
           const d = statsRes.data
@@ -89,7 +105,10 @@ export default function MasterOverviewPage() {
           })
         }
       })
-      .catch(() => {})
+      .catch((e: any) => {
+        setError(e?.message || getUiErrorMessage())
+      })
+      .finally(() => setLoading(false))
   }, [timeWindow])
 
   return (
@@ -112,13 +131,26 @@ export default function MasterOverviewPage() {
         ] as const).map(({ key, label }) => (
           <button
             key={key}
+            disabled={loading}
             onClick={() => setTimeWindow(key as any)}
-            className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${timeWindow===key ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+            className={`px-3 py-1.5 rounded-lg text-sm border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${timeWindow===key ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
           >
             {label}
           </button>
         ))}
       </div>
+
+      {loading && (
+        <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4 text-sm text-gray-600">
+          Cargando métricas del panel maestro...
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm">
+          {error}
+        </div>
+      )}
 
       {/* === PROPERTY MODERATION KPIs (MAIN SECTION) === */}
       <section className="mb-8">

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 
 export default function MasterLeadsPage() {
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [leads, setLeads] = useState<any[]>([])
   const [assigning, setAssigning] = useState<string | null>(null)
   const [candidates, setCandidates] = useState<any[]>([])
@@ -12,15 +13,23 @@ export default function MasterLeadsPage() {
   const [loadingCandidates, setLoadingCandidates] = useState(false)
   const [filter, setFilter] = useState<'all'|'unassigned'|'assigned'>('all')
 
+  const getUiErrorMessage = (status?: number) => {
+    if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente para gestionar leads.'
+    if (status === 403) return 'No tienes permisos para acceder al módulo de leads.'
+    return 'No se pudieron cargar los leads.'
+  }
+
   async function loadLeads() {
     try {
       setLoading(true)
+      setError(null)
       
       // Fetch leads from API (server-side with Admin SDK)
       const res = await fetch('/api/admin/leads?limit=100')
       if (!res.ok) {
-        toast.error('Failed to load leads')
-        throw new Error('Failed to fetch leads')
+        const message = getUiErrorMessage(res.status)
+        toast.error(message)
+        throw new Error(message)
       }
       
       const data = await res.json()
@@ -36,7 +45,7 @@ export default function MasterLeadsPage() {
       }
     } catch (e) {
       console.error('Failed to load leads:', e)
-      toast.error('Could not load leads. Please try again.')
+      setError(e instanceof Error ? e.message : getUiErrorMessage())
       setLeads([])
     } finally {
       setLoading(false)
@@ -168,6 +177,11 @@ export default function MasterLeadsPage() {
           <div className="mt-8">
             <h3 className="text-lg font-semibold text-[#0B2545] mb-3">Consultas recientes</h3>
             <div className="rounded-lg border overflow-hidden bg-white">
+              {error && !loading && (
+                <div className="p-4 border-b border-red-100 bg-red-50 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
               <div className="flex items-center justify-between p-3 border-b bg-gray-50">
                 <div className="flex items-center gap-2 text-sm">
                   <button onClick={()=>setFilter('all')} className={`px-3 py-1.5 rounded ${filter==='all'?'bg-[#00A6A6] text-white':'text-gray-700 hover:bg-gray-100'}`}>Todas</button>
@@ -192,7 +206,7 @@ export default function MasterLeadsPage() {
                   </thead>
                   <tbody className="divide-y">
                     {loading ? (
-                      <tr><td colSpan={6} className="p-4 text-center text-gray-500">Cargando...</td></tr>
+                      <tr><td colSpan={6} className="p-4 text-center text-gray-500">Cargando leads...</td></tr>
                     ) : visibleLeads.length === 0 ? (
                       <tr><td colSpan={6} className="p-6 text-center text-gray-500">No hay leads en esta vista</td></tr>
                     ) : (
