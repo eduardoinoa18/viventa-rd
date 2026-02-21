@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
 import { FieldValue } from 'firebase-admin/firestore'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 function generateRandomPassword(length: number = 12): string {
   const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
@@ -24,6 +25,9 @@ function generateAgentCode(role: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { applicationId, email, name, role, phone, company } = await req.json()
 

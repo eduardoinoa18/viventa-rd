@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { getAdminAuth } from '@/lib/firebaseAdmin'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export async function POST(req: NextRequest) {
-  try {
-    const role = cookies().get('viventa_role')?.value
-    if (role !== 'master_admin' && role !== 'admin') {
-      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
 
+  try {
     const { uid, email } = await req.json()
     if (!uid && !email) {
       return NextResponse.json({ ok: false, error: 'uid or email required' }, { status: 400 })

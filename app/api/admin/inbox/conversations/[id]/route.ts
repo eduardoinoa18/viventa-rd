@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,12 +11,10 @@ interface Params {
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
-  try {
-    const role = request.cookies.get('viventa_role')?.value
-    if (role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
 
+  try {
     const db = getAdminDb()
     if (!db) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 500 })
@@ -56,13 +55,11 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 export async function POST(request: NextRequest, { params }: Params) {
-  try {
-    const role = request.cookies.get('viventa_role')?.value
-    const uid = request.cookies.get('viventa_uid')?.value
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
 
-    if (role !== 'admin' || !uid) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  try {
+    const uid = authResult.uid
 
     const db = getAdminDb()
     if (!db) {

@@ -5,6 +5,7 @@ import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
 import { ActivityLogger } from '@/lib/activityLogger'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +33,9 @@ function initFirebase() {
 
 // GET /api/admin/properties - list all properties with optional status filter
 export async function GET(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const adminDb = getAdminDb()
     if (adminDb) {
@@ -73,6 +77,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/properties - create new property listing
 export async function POST(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const adminDb = getAdminDb()
     const body = await req.json()
@@ -158,6 +165,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/admin/properties - update property status or details
 export async function PATCH(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const body = await req.json()
     const { id, status, featured } = body
@@ -282,6 +292,9 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/admin/properties - delete a property
 export async function DELETE(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const body = await req.json()
     const { id } = body

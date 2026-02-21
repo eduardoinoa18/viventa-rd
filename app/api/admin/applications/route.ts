@@ -5,9 +5,13 @@ import { ActivityLogger } from '@/lib/activityLogger'
 import { createPasswordSetupToken } from '@/lib/credentialGenerator'
 import { sendProfessionalCredentials } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 export const dynamic = 'force-dynamic'
 
 export async function PATCH(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { id, status, notes, adminEmail } = await req.json()
 
@@ -142,6 +146,9 @@ export async function PATCH(req: NextRequest) {
 
 // Send notification email
 export async function POST(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { applicationId, email, name, status, notes, type, resetLink, code } = await req.json()
 
@@ -221,6 +228,9 @@ export async function POST(req: NextRequest) {
 
 // GET /api/admin/applications - list applications via Admin SDK
 export async function GET(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const adminDb = getAdminDb()
     if (!adminDb) {
@@ -249,6 +259,9 @@ export async function GET(req: NextRequest) {
 
 // DELETE /api/admin/applications - delete an application by id (Admin SDK)
 export async function DELETE(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const body = await req.json()
     const id = body?.id

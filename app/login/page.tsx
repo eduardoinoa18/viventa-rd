@@ -68,7 +68,7 @@ export default function LoginPage() {
         return
       }
   let dest = '/dashboard'
-  if (role === 'master_admin') dest = '/admin'
+  if (role === 'master_admin') dest = '/master'
   else if (role === 'broker') dest = '/broker'
   else if (role === 'agent') dest = '/agent'
   router.push(dest + '?welcome=1')

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { doc, getDoc } from 'firebase/firestore'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export async function POST(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { plan, email } = await req.json()
     if (!plan) return NextResponse.json({ ok: false, error: 'Plan required' }, { status: 400 })

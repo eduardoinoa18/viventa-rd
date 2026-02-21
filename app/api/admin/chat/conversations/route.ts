@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 export const dynamic = 'force-dynamic'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 
 export const runtime = 'nodejs'
 
 export async function GET(request: Request) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
+
   // Admin: list latest conversations by grouping messages by conversationId
   const db = getAdminDb()
   if (!db) return NextResponse.json({ conversations: [] })

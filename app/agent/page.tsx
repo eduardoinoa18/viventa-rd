@@ -376,7 +376,7 @@ export default function AgentDashboard() {
                 <div className="bg-gradient-to-r from-[#0B2545] via-[#00A676] to-[#00A6A6] rounded-xl shadow-lg p-8 text-white">
                   <h3 className="text-xl font-bold mb-4">Acciones Rápidas</h3>
                   <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
-                    <a href="/admin/properties/create" className="bg-white/20 hover:bg-white/30 rounded-lg p-4 text-left transition-colors">
+                    <a href="/master/properties/create" className="bg-white/20 hover:bg-white/30 rounded-lg p-4 text-left transition-colors">
                       <FiPlus className="text-2xl mb-2" />
                       <div className="font-semibold">Crear Listado</div>
                     </a>
@@ -460,7 +460,7 @@ export default function AgentDashboard() {
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-gray-800">Mis Listados</h2>
                   <a
-                    href="/admin/properties/create"
+                    href="/master/properties/create"
                     className="px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] inline-flex items-center gap-2"
                   >
                     <FiPlus /> Crear Listado
@@ -471,7 +471,7 @@ export default function AgentDashboard() {
                   <div className="bg-white rounded-xl shadow p-12 text-center">
                     <FiHome className="text-6xl text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-600 mb-4">No tienes listados aún</p>
-                    <a href="/admin/properties/create" className="inline-flex items-center gap-2 px-6 py-3 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]">
+                    <a href="/master/properties/create" className="inline-flex items-center gap-2 px-6 py-3 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64]">
                       <FiPlus /> Crear tu primer listado
                     </a>
                   </div>

@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { algoliaClient } from '@/lib/algoliaClient';
 import { NextResponse } from 'next/server';
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 // Deprecated route: Algolia sync disabled. Returning 410 Gone.
 
@@ -18,5 +19,8 @@ import { NextResponse } from 'next/server';
 
 
 export async function POST() {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   return new Response('Algolia sync disabled', { status: 410 })
 }

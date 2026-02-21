@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
+import { logAdminAction } from '@/lib/admin/auditLog'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
-  try {
-    const role = req.cookies.get('viventa_role')?.value
-    if (role !== 'admin' && role !== 'master_admin') {
-      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
 
+  try {
     const db = getAdminDb()
     if (!db) {
       return NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 500 })
@@ -39,12 +39,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const role = req.cookies.get('viventa_role')?.value
-    if (role !== 'admin' && role !== 'master_admin') {
-      return NextResponse.json({ ok: false, error: 'Unauthorized - Admin access required' }, { status: 401 })
-    }
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
 
+  try {
     const db = getAdminDb()
     if (!db) {
       return NextResponse.json({ ok: false, error: 'Database unavailable' }, { status: 500 })
@@ -52,6 +50,16 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     await db.collection('settings').doc('admin').set(body, { merge: true })
+    try {
+      await logAdminAction({
+        actorUid: authResult.uid,
+        actorRole: authResult.role,
+        action: 'SETTINGS_UPDATED',
+        targetType: 'settings',
+        targetId: 'admin',
+        metadata: { keys: Object.keys(body || {}) },
+      })
+    } catch {}
     return NextResponse.json({ ok: true, data: body })
   } catch (e: any) {
     console.error('Error updating admin settings:', e)

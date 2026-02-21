@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getDocs, query, limit, getCountFromServer } from 'firebase/firestore'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 function initFirebase() {
   const config = {
@@ -27,6 +28,9 @@ function initFirebase() {
 }
 
 export async function GET() {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const firebase = {
       apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const runtime = 'nodejs'
 
@@ -14,6 +15,9 @@ export const runtime = 'nodejs'
  *  - Round-robin among chosen set using counters/lead_assignment doc
  */
 export async function POST(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { leadId } = await req.json()
     if (!leadId) return NextResponse.json({ ok: false, error: 'leadId required' }, { status: 400 })

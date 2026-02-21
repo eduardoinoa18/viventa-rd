@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,9 @@ function getStartDate(range: '7d' | '30d' | '90d' | '1y'): string {
 }
 
 export async function GET(req: NextRequest) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN','ADMIN','SUPPORT'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const db = getAdminDb()
     if (!db) return NextResponse.json({ ok: false, error: 'Admin DB unavailable' }, { status: 500 })

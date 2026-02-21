@@ -2,11 +2,15 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { collection, addDoc, getDocs, doc, setDoc, serverTimestamp, query, orderBy, where } from 'firebase/firestore'
+import { requireMasterSession } from '@/lib/auth/requireMasterSession'
 // NOTE: Creating Firebase Auth users server-side requires the Firebase Admin SDK.
 // For now, we will create a pending admin user record in Firestore.
 
 // GET - List all admin users
 export async function GET() {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const q = query(collection(db, 'users'), where('role', 'in', ['master_admin', 'support', 'moderator', 'content_manager']))
     const snapshot = await getDocs(q)
@@ -37,6 +41,9 @@ export async function GET() {
 
 // POST - Create new admin user
 export async function POST(request: Request) {
+  const authResult = await requireMasterSession({ roles: ['SUPER_ADMIN'] })
+  if (authResult instanceof Response) return authResult
+
   try {
     const { email, name, role, password } = await request.json()
 

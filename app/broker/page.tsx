@@ -561,7 +561,7 @@ export default function BrokerDashboard() {
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-gray-800">Listados del Equipo</h2>
                   <a
-                    href="/admin/properties/create"
+                    href="/master/properties/create"
                     className="px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] inline-flex items-center gap-2"
                   >
                     <FiHome /> Crear Listado
