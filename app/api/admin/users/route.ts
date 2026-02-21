@@ -8,6 +8,8 @@ import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
 import { adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
 import { logAdminAction } from '@/lib/logAdminAction'
 
+export const dynamic = 'force-dynamic'
+
 function initFirebase() {
   const config = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

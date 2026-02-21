@@ -168,7 +168,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
             <div className="space-y-4">
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mb-6">
                 <p className="text-sm text-blue-800">
-                  <strong>Step 1:</strong> Enter the professional's basic contact information
+                  <strong>Step 1:</strong> Enter the professional&apos;s basic contact information
                 </p>
               </div>
 

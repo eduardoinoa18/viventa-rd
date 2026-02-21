@@ -60,6 +60,8 @@ function validatePayload(action: string, data: PropertyPayload) {
   return { ok: errors.length === 0, errors }
 }
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
