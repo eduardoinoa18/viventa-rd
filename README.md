@@ -58,6 +58,7 @@ See **[TESTING.md](./TESTING.md)** for manual QA checklist and CI/CD setup.
 - **[VERCEL-DEPLOYMENT.md](./VERCEL-DEPLOYMENT.md)** - Production deployment guide
 - **[ADMIN-LOGIN-GUIDE.md](./ADMIN-LOGIN-GUIDE.md)** - Admin portal access
 - **[MASTER-ADMIN-SETUP.md](./MASTER-ADMIN-SETUP.md)** - Master admin configuration
+- **[docs/AI-COORDINATION-PROTOCOL.md](./docs/AI-COORDINATION-PROTOCOL.md)** - Drift-free multi-agent workflow and Git authority rules
 	- When a property is set to a non-active status or deleted, it will be removed from the index.
 
 ## Phase-One Core MVP Scope (Dominican Republic)

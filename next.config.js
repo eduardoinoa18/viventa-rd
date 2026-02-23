@@ -46,6 +46,12 @@ const withPWA = require('next-pwa')({
 
 module.exports = withPWA({
 	reactStrictMode: true,
+	env: {
+		NEXT_PUBLIC_BUILD_SHA:
+			process.env.NEXT_PUBLIC_BUILD_SHA ||
+			process.env.VERCEL_GIT_COMMIT_SHA ||
+			'local',
+	},
 	images: {
 		formats: ['image/avif', 'image/webp'],
 		deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],

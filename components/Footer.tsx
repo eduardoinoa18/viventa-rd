@@ -6,6 +6,7 @@ import { getSession } from '../lib/authSession'
 export default function Footer() {
   const [loggedIn, setLoggedIn] = useState(false)
   const [role, setRole] = useState<string>('user')
+  const buildSha = (process.env.NEXT_PUBLIC_BUILD_SHA || 'local').slice(0, 7)
 
   useEffect(() => {
     const s = getSession()
@@ -38,6 +39,7 @@ export default function Footer() {
           </div>
           <div className="text-xs text-center md:text-right">
             <div>© VIVENTA 2025</div>
+            <div className="text-[11px] text-gray-500 mt-1">Build {buildSha}</div>
           </div>
         </div>
         {/* Master Admin link - subtle in corner */}
