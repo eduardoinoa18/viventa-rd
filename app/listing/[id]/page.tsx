@@ -18,7 +18,6 @@ import { generatePropertySchema } from '../../../lib/seoUtils'
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaParking, FaBuilding, FaCalendar } from 'react-icons/fa'
 import { usePageViewTracking } from '@/hooks/useAnalytics'
 import { trackListingView } from '@/lib/analyticsService'
-import { getSession } from '@/lib/authSession'
 
 export default function ListingDetail(){
   usePageViewTracking()
@@ -32,8 +31,21 @@ export default function ListingDetail(){
 
   // Check session for agent-to-agent features
   useEffect(() => {
-    const sess = getSession()
-    setCurrentSession(sess)
+    let cancelled = false
+    const loadSession = async () => {
+      try {
+        const res = await fetch('/api/auth/session', { cache: 'no-store' })
+        const json = await res.json().catch(() => ({}))
+        if (cancelled) return
+        setCurrentSession(res.ok ? json.session : null)
+      } catch {
+        if (!cancelled) setCurrentSession(null)
+      }
+    }
+    loadSession()
+    return () => {
+      cancelled = true
+    }
   }, [])
   
   useEffect(() => {
@@ -125,9 +137,8 @@ export default function ListingDetail(){
 
   // Restrict visibility for non-active listings (allow admins and owners)
   const isOwnerOrAdmin = currentSession && (
-    currentSession.role === 'master_admin' || 
-    currentSession.role === 'master_admin' || 
-    currentSession.uid === listing.agentId || 
+    currentSession.role === 'master_admin' ||
+    currentSession.uid === listing.agentId ||
     currentSession.uid === listing.ownerId
   )
   

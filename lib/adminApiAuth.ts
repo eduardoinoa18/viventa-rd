@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSessionFromRequest } from './auth/session'
 
 const MASTER_ROLE = 'master_admin'
 
@@ -9,7 +10,7 @@ type GuardResult = NextResponse | null
  * Tiered admin roles (admin, master_admin) were consolidated to master_admin only
  * during Q1 2024 security overhaul. Keeping this for backward compatibility during migration.
  */
-export function requireAdmin(req: NextRequest): GuardResult {
+export async function requireAdmin(req: NextRequest): Promise<GuardResult> {
   // All admin API routes now require master_admin role
   return requireMasterAdmin(req)
 }
@@ -22,19 +23,21 @@ function getAllowedMasterEmails(): Set<string> {
   return new Set(raw)
 }
 
-export function requireMasterAdmin(req: NextRequest): GuardResult {
-  const role = req.cookies.get('viventa_role')?.value
-  const adminGate = req.cookies.get('admin_gate_ok')?.value === '1'
-  const admin2FA = req.cookies.get('admin_2fa_ok')?.value === '1'
-  const session = req.cookies.get('viventa_session')?.value
-  const adminEmail = req.cookies.get('viventa_admin_email')?.value
-
-  if (!role || role !== MASTER_ROLE) {
-    return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
-  }
-  if (!adminGate || !admin2FA || !session) {
+export async function requireMasterAdmin(req: NextRequest): Promise<GuardResult> {
+  const session = await getSessionFromRequest(req)
+  if (!session) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
+
+  if (session.role !== MASTER_ROLE) {
+    return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
+  }
+
+  if (!session.twoFactorVerified) {
+    return NextResponse.json({ ok: false, error: '2FA verification required' }, { status: 401 })
+  }
+
+  const adminEmail = session.email
   if (!adminEmail) {
     return NextResponse.json({ ok: false, error: 'Admin email missing' }, { status: 401 })
   }

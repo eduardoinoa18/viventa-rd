@@ -2,7 +2,6 @@
 'use client'
 import React, { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getSession } from '../../lib/authSession'
 
 export default function ProtectedClient({ children, allowed = ['master_admin'] }: { children: ReactNode, allowed?: string[] }) {
   const router = useRouter()
@@ -20,20 +19,45 @@ export default function ProtectedClient({ children, allowed = ['master_admin'] }
       }
     } catch {}
 
-    const session = getSession()
-    if (!session) {
-      // not logged in — redirect to login
-      setTimeout(() => router.push('/login'), 200)
-      setOk(false)
-      return
+    let cancelled = false
+
+    const check = async () => {
+      try {
+        const res = await fetch('/api/auth/session', { cache: 'no-store' })
+        const json = await res.json().catch(() => ({}))
+        if (cancelled) return
+
+        const session = json?.session
+        if (!res.ok || !session) {
+          setTimeout(() => router.push('/login'), 200)
+          setOk(false)
+          return
+        }
+
+        if (session.role === 'master_admin' && session.twoFactorVerified === false) {
+          setTimeout(() => router.push('/verify-2fa'), 200)
+          setOk(false)
+          return
+        }
+
+        if (!allowed.includes(session.role)) {
+          setTimeout(() => router.push('/'), 200)
+          setOk(false)
+          return
+        }
+
+        setOk(true)
+      } catch {
+        if (cancelled) return
+        setTimeout(() => router.push('/login'), 200)
+        setOk(false)
+      }
     }
-    if (!allowed.includes(session.role)) {
-      // not authorized
-      setTimeout(() => router.push('/'), 200)
-      setOk(false)
-      return
+
+    check()
+    return () => {
+      cancelled = true
     }
-    setOk(true)
   }, [allowed, router])
 
   if (ok === null) return <div className="p-6">Checking access...</div>

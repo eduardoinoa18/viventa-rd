@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSessionFromRequest } from '@/lib/auth/session'
 
 /**
  * Comprehensive master admin guard
  * 
  * Validates:
  * - Role is master_admin
- * - Gate has been passed
  * - 2FA is complete
- * - Session is valid
+ * - Session is valid (httpOnly)
  * - Email is in allowlist (production only)
  * 
  * Returns structured admin identity or throws
@@ -44,57 +44,25 @@ function getAllowedMasterEmails(): Set<string> {
  * Throws AdminAuthError if validation fails
  */
 export async function requireMasterAdmin(request: NextRequest): Promise<AdminContext> {
-  // 1. Check role
-  const role = request.cookies.get('viventa_role')?.value
-  if (!role || role !== 'master_admin') {
-    throw new AdminAuthError(
-      'FORBIDDEN',
-      403,
-      'Master admin role required'
-    )
+  const session = await getSessionFromRequest(request)
+  if (!session) {
+    throw new AdminAuthError('UNAUTHORIZED', 401, 'Session token missing. Re-authenticate.')
   }
 
-  // 2. Check gate (coarse password/email check from middleware)
-  const adminGate = request.cookies.get('admin_gate_ok')?.value === '1'
-  if (!adminGate) {
-    throw new AdminAuthError(
-      'UNAUTHORIZED',
-      401,
-      'Admin gate not passed. Re-authenticate.'
-    )
+  if (session.role !== 'master_admin') {
+    throw new AdminAuthError('FORBIDDEN', 403, 'Master admin role required')
   }
 
-  // 3. Check 2FA is complete
-  const admin2FA = request.cookies.get('admin_2fa_ok')?.value === '1'
-  if (!admin2FA) {
-    throw new AdminAuthError(
-      'UNAUTHORIZED',
-      401,
-      '2FA verification required'
-    )
+  if (!session.twoFactorVerified) {
+    throw new AdminAuthError('UNAUTHORIZED', 401, '2FA verification required')
   }
 
-  // 4. Check session token exists
-  const sessionToken = request.cookies.get('viventa_session')?.value
-  if (!sessionToken) {
-    throw new AdminAuthError(
-      'UNAUTHORIZED',
-      401,
-      'Session token missing. Re-authenticate.'
-    )
-  }
-
-  // 5. Check email exists
-  const email = request.cookies.get('viventa_admin_email')?.value
+  const email = session.email
   if (!email) {
-    throw new AdminAuthError(
-      'UNAUTHORIZED',
-      401,
-      'Admin email missing from session'
-    )
+    throw new AdminAuthError('UNAUTHORIZED', 401, 'Admin email missing from session')
   }
 
-  // 6. In production, verify email is in allowlist
+  // In production, verify email is in allowlist
   const isDev = process.env.NODE_ENV !== 'production'
   const allowAny = process.env.ALLOW_ANY_MASTER_EMAIL === 'true'
 
@@ -116,11 +84,10 @@ export async function requireMasterAdmin(request: NextRequest): Promise<AdminCon
     }
   }
 
-  // 7. Get UID from cookie (or derive from email if needed)
-  const uid = request.cookies.get('viventa_uid')?.value || email
+  const sessionToken = request.cookies.get('__session')?.value || ''
 
   return {
-    uid,
+    uid: session.uid,
     email,
     role: 'master_admin',
     sessionToken
