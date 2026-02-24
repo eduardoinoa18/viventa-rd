@@ -231,43 +231,43 @@ export default function AdminPage() {
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Quick Actions</h2>
             <div className="flex gap-3 flex-wrap">
               <Link 
-                href="/admin/applications" 
+                href="/master/applications" 
                 className="px-6 py-3 bg-gradient-to-r from-[#00A676] to-[#008F64] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
                 <FiUserPlus /> Review Applications
               </Link>
               <Link 
-                href="/admin/properties/create" 
+                href="/master/listings/create" 
                 className="px-6 py-3 bg-gradient-to-r from-[#00A6A6] to-[#00C896] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
                 <FiHome /> Create Property
               </Link>
               <Link 
-                href="/admin/properties" 
+                href="/master/listings" 
                 className="px-6 py-3 bg-gradient-to-r from-[#0B2545] to-[#0a1f3a] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
                 <FiHome /> Review Listings
               </Link>
               <Link 
-                href="/admin/leads" 
+                href="/master/leads" 
                 className="px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
                 <FiActivity /> Manage Leads
               </Link>
               <Link 
-                href="/admin/people?invite=agent" 
+                href="/master/users?invite=agent" 
                 className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
                 <FiUsers /> Invite Agent
               </Link>
               <Link 
-                href="/admin/people?invite=broker" 
+                href="/master/users?invite=broker" 
                 className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
                 <FiUsers /> Invite Broker
               </Link>
               <Link 
-                href="/admin/settings" 
+                href="/master/settings" 
                 className="px-6 py-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
                 System Settings

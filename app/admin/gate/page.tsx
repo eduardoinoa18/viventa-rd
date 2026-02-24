@@ -21,7 +21,7 @@ export default function AdminGatePage() {
         setError(json.error || 'Invalid code')
         return
       }
-      window.location.href = '/admin/login'
+      window.location.href = '/login'
     } catch (e: any) {
       setError('Network error')
     } finally {

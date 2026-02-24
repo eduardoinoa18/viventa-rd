@@ -135,16 +135,16 @@ export default function EditPropertyPage() {
           setIsDirty(false)
         } else {
           toast.error('No se encontró la propiedad')
-          router.push('/admin/properties')
+          router.push('/master/listings')
         }
       } else {
         toast.error('No se pudo cargar la propiedad')
-        router.push('/admin/properties')
+        router.push('/master/listings')
       }
     } catch (e) {
       console.error('Failed to load property', e)
       toast.error('Error al cargar la propiedad')
-      router.push('/admin/properties')
+      router.push('/master/listings')
     } finally {
       setLoading(false)
     }
@@ -340,7 +340,7 @@ export default function EditPropertyPage() {
       setLastSaved(new Date())
       setOriginalForm(JSON.parse(JSON.stringify({ ...form, features })))
       setIsDirty(false)
-      router.push('/admin/properties')
+      router.push('/master/listings')
     } catch (e: any) {
       console.error('Failed to update listing:', e)
       toast.error(e?.message || 'Error al actualizar la propiedad')
@@ -376,7 +376,7 @@ export default function EditPropertyPage() {
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <Link href="/admin/properties" className="text-gray-600 hover:text-[#00A676]">
+                  <Link href="/master/listings" className="text-gray-600 hover:text-[#00A676]">
                     <FiArrowLeft size={24} />
                   </Link>
                   <h1 className="text-3xl font-bold text-[#0B2545]">Editar Propiedad</h1>
@@ -800,7 +800,7 @@ export default function EditPropertyPage() {
               {/* Actions */}
               <div className="flex items-center justify-between gap-4">
                 <Link
-                  href="/admin/properties"
+                  href="/master/listings"
                   className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
                 >
                   Cancelar

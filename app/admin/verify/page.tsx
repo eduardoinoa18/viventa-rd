@@ -32,7 +32,7 @@ function AdminVerifyForm() {
         setError(json.error || 'Invalid code')
         return
       }
-      router.push('/admin')
+      router.push('/master')
     } catch (e) {
       setError('Network error')
     } finally {

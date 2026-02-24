@@ -29,12 +29,12 @@ export default function AdminSidebar() {
   
   // Define navigation based on role
   const allLinks = [
-    { href: '/admin', label: 'Dashboard', icon: <FiGrid />, roles: ['master_admin', 'admin'] },
-    { href: '/admin/properties', label: userRole === 'agent' ? 'My Properties' : userRole === 'broker' ? 'Team Properties' : 'Properties', icon: <FiHome />, roles: ['master_admin', 'admin', 'agent', 'broker'] },
-    { href: '/admin/people', label: 'People', icon: <FiUsers />, roles: ['master_admin', 'admin', 'broker'] },
-    { href: '/admin/leads', label: userRole === 'agent' ? 'My Leads' : 'Leads', icon: <FiTarget />, roles: ['master_admin', 'admin', 'agent', 'broker'] },
-    { href: '/admin/applications', label: 'Applications', icon: <FiClipboard />, roles: ['master_admin', 'admin'] },
-    { href: '/admin/settings', label: 'Settings', icon: <FiSettings />, roles: ['master_admin'] },
+    { href: '/master', label: 'Dashboard', icon: <FiGrid />, roles: ['master_admin', 'admin'] },
+    { href: '/master/listings', label: userRole === 'agent' ? 'My Properties' : userRole === 'broker' ? 'Team Properties' : 'Properties', icon: <FiHome />, roles: ['master_admin', 'admin', 'agent', 'broker'] },
+    { href: '/master/users', label: 'People', icon: <FiUsers />, roles: ['master_admin', 'admin', 'broker'] },
+    { href: '/master/leads', label: userRole === 'agent' ? 'My Leads' : 'Leads', icon: <FiTarget />, roles: ['master_admin', 'admin', 'agent', 'broker'] },
+    { href: '/master/applications', label: 'Applications', icon: <FiClipboard />, roles: ['master_admin', 'admin'] },
+    { href: '/master/settings', label: 'Settings', icon: <FiSettings />, roles: ['master_admin'] },
   ]
   
   // Filter links based on user role
@@ -73,17 +73,17 @@ export default function AdminSidebar() {
           <div className="text-xs font-bold text-blue-900 mb-2 tracking-wide">QUICK ACTIONS</div>
           <div className="space-y-2">
             {['master_admin', 'admin', 'agent', 'broker'].includes(userRole) && (
-              <Link href="/admin/properties/create" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <Link href="/master/listings/create" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
                 <FiPlusSquare className="text-blue-600" /> <span>Create Property</span>
               </Link>
             )}
             {['master_admin', 'admin', 'broker'].includes(userRole) && (
-              <Link href="/admin/people" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <Link href="/master/users" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
                 <FiUsers className="text-blue-600" /> <span>Manage {userRole === 'broker' ? 'Team' : 'People'}</span>
               </Link>
             )}
             {['master_admin', 'admin', 'agent', 'broker'].includes(userRole) && (
-              <Link href="/admin/leads" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <Link href="/master/leads" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
                 <FiTarget className="text-blue-600" /> <span>Manage Leads</span>
               </Link>
             )}

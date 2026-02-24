@@ -360,7 +360,7 @@ export default function AdminPropertiesPage() {
                               </>
                             )}
                             <Link
-                              href={`/admin/properties/${l.id}/edit`}
+                              href={`/master/listings/${l.id}/edit`}
                               className="inline-flex items-center justify-center gap-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
                             >
                               <FiEdit /> Editar
@@ -448,7 +448,7 @@ export default function AdminPropertiesPage() {
                             )}
                             <div className="flex gap-2">
                               <Link
-                                href={`/admin/properties/${l.id}/edit`}
+                                href={`/master/listings/${l.id}/edit`}
                                 className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm whitespace-nowrap"
                               >
                                 <FiEdit /> Editar
@@ -491,7 +491,7 @@ export default function AdminPropertiesPage() {
                       Cerrar
                     </button>
                     <a
-                      href="/admin/properties/create"
+                      href="/master/listings/create"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-1.5 rounded-lg bg-[#00A676] text-white hover:bg-[#008F64] text-sm font-semibold"
@@ -500,7 +500,7 @@ export default function AdminPropertiesPage() {
                     </a>
                   </div>
                   <iframe
-                    src="/admin/properties/create"
+                    src="/master/listings/create"
                     title="Crear Propiedad"
                     className="w-full h-full"
                   />

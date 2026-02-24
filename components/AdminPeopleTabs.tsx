@@ -10,13 +10,13 @@ export default function AdminPeopleTabs() {
   const tabParam = searchParams?.get('tab') || 'users'
 
   const tabs = [
-    { name: 'Users', href: '/admin/people?tab=users', icon: FiUsers, key: 'users' },
-    { name: 'Agents', href: '/admin/people?tab=agents', icon: FiUserCheck, key: 'agents' },
-    { name: 'Brokers', href: '/admin/people?tab=brokers', icon: FiBriefcase, key: 'brokers' },
+    { name: 'Users', href: '/master/users?tab=users', icon: FiUsers, key: 'users' },
+    { name: 'Agents', href: '/master/users?tab=agents', icon: FiUserCheck, key: 'agents' },
+    { name: 'Brokers', href: '/master/users?tab=brokers', icon: FiBriefcase, key: 'brokers' },
   ]
 
   function isActive(tab: typeof tabs[0]) {
-    if (pathname !== '/admin/people') return false
+    if (pathname !== '/master/users') return false
     return tab.key === tabParam
   }
 

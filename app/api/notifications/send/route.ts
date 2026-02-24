@@ -171,7 +171,7 @@ export async function GET(req: NextRequest) {
     // Default URL mapping by type
     const defaultUrlByType = (type: string, role: string) => {
       const isAdmin = role === 'master_admin'
-      const base = isAdmin ? '/admin' : ''
+      const base = isAdmin ? '/master' : ''
       switch (type) {
         case 'new_message': return isAdmin ? `${base}/leads` : '/contact'
         case 'lead_inquiry': return isAdmin ? `${base}/leads` : '/contact'

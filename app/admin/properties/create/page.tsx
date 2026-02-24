@@ -213,7 +213,7 @@ export default function CreatePropertyPage() {
       setSaving(true)
       setTimeout(() => {
         toast.success('¡Propiedad creada exitosamente! (E2E)')
-        router.push('/admin/properties')
+        router.push('/master/listings')
       }, 300)
       return
     }
@@ -285,7 +285,7 @@ export default function CreatePropertyPage() {
       })
       
       // Redirect to properties list after 1 second
-      setTimeout(() => router.push('/admin/properties'), 1000)
+      setTimeout(() => router.push('/master/listings'), 1000)
     } catch (e: any) {
       console.error('Failed to create listing:', e)
       toast.error(e?.message || 'Error al crear la propiedad')
@@ -749,7 +749,7 @@ export default function CreatePropertyPage() {
                 <div className="flex gap-3 ml-auto">
                   <button
                     type="button"
-                    onClick={() => router.push('/admin/properties')}
+                    onClick={() => router.push('/master/listings')}
                     className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
                   >
                     Cancelar

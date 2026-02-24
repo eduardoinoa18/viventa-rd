@@ -125,7 +125,7 @@ export default function ActivityWidget() {
           Showing {stats.total} recent events
         </div>
         <Link 
-          href="/admin/activity"
+          href="/master/activity"
           className="text-sm text-[#00A676] hover:text-[#008F64] font-semibold inline-flex items-center gap-1 transition-colors"
         >
           View All Activity <FiArrowRight />

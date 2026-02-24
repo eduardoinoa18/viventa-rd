@@ -4,5 +4,5 @@
 import { redirect } from 'next/navigation'
 
 export default function PeopleBrokersPage() {
-  redirect('/admin/people?tab=brokers')
+  redirect('/master/users?tab=brokers')
 }
