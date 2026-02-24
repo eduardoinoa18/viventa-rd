@@ -56,6 +56,8 @@ export default function ListingTable({
         const uiStatus = normalizeListingStatus(listing)
         const statusMeta = getStatusMeta(uiStatus)
         const isPending = listing.status === 'pending'
+        const rawViewId = listing.listingId || listing.id
+        const viewHref = `/listing/${encodeURIComponent(String(rawViewId))}`
 
         if (viewMode === 'grid') {
           return (
@@ -138,7 +140,7 @@ export default function ListingTable({
                       <FiEdit /> Editar
                     </Link>
                     <a
-                      href={`/listing/${listing.id}`}
+                      href={viewHref}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={`inline-flex items-center justify-center gap-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm transition-colors ${isPending ? '' : 'flex-1'}`}
@@ -236,7 +238,7 @@ export default function ListingTable({
                       <FiEdit /> Editar
                     </Link>
                     <a
-                      href={`/listing/${listing.id}`}
+                      href={viewHref}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm whitespace-nowrap"

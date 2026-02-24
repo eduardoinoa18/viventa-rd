@@ -58,9 +58,11 @@ export default function HitCard({ hit }: any){
   const displayAmount = currency === 'USD' ? priceUSD : convertCurrency(priceUSD, 'USD', 'DOP')
   const priceLabel = formatCurrency(displayAmount, { currency, compact: true })
 
+  const listingHref = `/listing/${encodeURIComponent(String(hit.objectID))}`
+
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 overflow-hidden group">
-      <Link href={`/listing/${hit.objectID}`} className="block relative">
+      <Link href={listingHref} className="block relative">
         <div className="relative h-56 bg-gray-100 overflow-hidden">
           <img 
             src={hit.main_photo_url || '/placeholder.png'} 
@@ -95,7 +97,7 @@ export default function HitCard({ hit }: any){
       </Link>
       
       <div className="p-4">
-        <Link href={`/listing/${hit.objectID}`}>
+        <Link href={listingHref}>
           <h3 className="font-semibold text-lg text-[#0B2545] line-clamp-1 group-hover:text-[#00A6A6] transition-colors">
             {hit.title || 'Propiedad sin título'}
           </h3>
@@ -132,7 +134,7 @@ export default function HitCard({ hit }: any){
         
         <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
           <Link 
-            href={`/listing/${hit.objectID}`}
+            href={listingHref}
             className="flex-1 px-4 py-2 bg-[#00A6A6] hover:bg-[#008c8c] text-white text-center rounded-lg font-medium transition-colors duration-200"
           >
             Ver detalles

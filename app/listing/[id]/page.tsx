@@ -30,6 +30,12 @@ export default function ListingDetail(){
   const [currentSession, setCurrentSession] = useState<any>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
 
+  const normalizeImages = (data: any): string[] => {
+    const images = Array.isArray(data?.images) ? data.images.filter(Boolean) : []
+    if (images.length > 0) return images
+    return [data?.mainImage, data?.image, data?.main_photo_url].filter(Boolean)
+  }
+
   // Check session for agent-to-agent features
   useEffect(() => {
     let cancelled = false
@@ -63,7 +69,8 @@ export default function ListingDetail(){
 
         if (res.ok && json.ok && json.data) {
           const data = json.data
-          setListing({ ...data, id: data.id })
+          const normalized = { ...data, id: data.id, images: normalizeImages(data) }
+          setListing(normalized)
 
           if (db && data.id) {
             updateDoc(doc(db, 'properties', data.id), { views: increment(1) })
@@ -213,7 +220,7 @@ export default function ListingDetail(){
   
   const metaTitle = `${listing.title} - VIVENTA RD`;
   const propertyUrl = `https://viventa-rd.com/listing/${listing.id}`;
-  const mainImage = listing.images?.[0] || listing.mainImage || '/logo.png';
+  const mainImage = listing.images?.[0] || listing.mainImage || listing.image || listing.main_photo_url || '/logo.png';
 
   return (
     <>

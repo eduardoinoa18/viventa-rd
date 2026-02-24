@@ -112,6 +112,12 @@ export default function EditPropertyPage() {
     setFeatures((prev) => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id])
   }
 
+  const normalizeImages = (data: any): string[] => {
+    const images = Array.isArray(data?.images) ? data.images.filter(Boolean) : []
+    if (images.length > 0) return images
+    return [data?.mainImage, data?.image, data?.main_photo_url].filter(Boolean)
+  }
+
   useEffect(() => {
     if (!propertyId) return
     loadProperty()
@@ -124,10 +130,11 @@ export default function EditPropertyPage() {
       if (res.ok) {
         const json = await res.json()
         if (json.ok && json.data) {
-          setForm(json.data)
-          setOriginalForm(JSON.parse(JSON.stringify(json.data)))
-          setCurrency(json.data.currency || 'USD')
-          setFeatures(json.data.features || [])
+          const normalized = { ...json.data, images: normalizeImages(json.data) }
+          setForm(normalized)
+          setOriginalForm(JSON.parse(JSON.stringify(normalized)))
+          setCurrency(normalized.currency || 'USD')
+          setFeatures(normalized.features || [])
           setIsDirty(false)
         } else {
           toast.error('No se encontró la propiedad')

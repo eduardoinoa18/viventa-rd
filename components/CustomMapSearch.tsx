@@ -99,6 +99,12 @@ export default function CustomMapSearch({
         iconAnchor: [40, 30],
       })
 
+      const rawListingId = listing.listingId || listing.id
+      const hasListingId = Boolean(rawListingId)
+      const listingHref = hasListingId
+        ? `/listing/${encodeURIComponent(String(rawListingId))}`
+        : ''
+
       const marker = L.marker([latitude, longitude], { icon: customIcon })
         .addTo(mapRef.current!)
         .bindPopup(
@@ -122,8 +128,8 @@ export default function CustomMapSearch({
               📍 ${listing.city || ''}, ${listing.sector || ''}
             </p>
             ${
-              onMarkerClick
-                ? `<button onclick="window.location.href='/listing/${listing.id}'" style="
+              onMarkerClick && hasListingId
+                ? `<button onclick="window.location.href='${listingHref}'" style="
                   margin-top: 8px;
                   width: 100%;
                   padding: 6px;
@@ -141,9 +147,9 @@ export default function CustomMapSearch({
         `
         )
 
-      if (onMarkerClick) {
+      if (onMarkerClick && hasListingId) {
         marker.on('click', () => {
-          onMarkerClick(listing.id)
+          onMarkerClick(String(rawListingId))
         })
       }
 

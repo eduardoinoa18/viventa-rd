@@ -10,7 +10,9 @@ import { trackPropertyCardClick, getCurrentUserInfo } from '@/lib/analyticsServi
 export default function PropertyCard({ property }: { property: any }) {
   const [imgError, setImgError] = useState(false);
   
-  const propertyId = property.id || property.objectID || String(Math.random());
+  const rawListingId = property.listingId || property.id || property.objectID;
+  const listingId = rawListingId ? String(rawListingId) : '';
+  const listingHref = listingId ? `/listing/${encodeURIComponent(listingId)}` : '/search';
   const displayTitle = property.title || property.name || 'Propiedad';
   const displayPrice = property.price || property.price_usd || 0;
   const displayCurrency = (property.currency || 'USD') as 'USD' | 'DOP';
@@ -20,12 +22,13 @@ export default function PropertyCard({ property }: { property: any }) {
   const displayArea = property.area || property.sqft || 0;
 
   const handleClick = () => {
-    analytics.viewProperty(propertyId, displayTitle);
+    if (!listingId) return;
+    analytics.viewProperty(listingId, displayTitle);
     
     // Track property card click
     const { userId, userRole } = getCurrentUserInfo();
     trackPropertyCardClick(
-      propertyId,
+      listingId,
       undefined,
       'property_list',
       userId,
@@ -87,7 +90,7 @@ export default function PropertyCard({ property }: { property: any }) {
           )}
         </div>
         <Link 
-          href={`/listing/${propertyId}`} 
+          href={listingHref}
           onClick={handleClick}
           className="mt-auto w-full px-4 py-3 bg-gradient-to-r from-viventa-teal to-viventa-cyan text-white rounded-xl font-bold text-center hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
         >
