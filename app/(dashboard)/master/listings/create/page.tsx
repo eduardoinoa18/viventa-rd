@@ -28,6 +28,15 @@ export default function CreatePropertyPage() {
     propertyType: 'apartment',
     listingType: 'sale',
     images: [],
+    coverImage: '',
+    promoVideoUrl: '',
+    maintenanceFee: 0,
+    maintenanceFeeCurrency: 'USD',
+    maintenanceInfo: '',
+    inventoryMode: 'single',
+    totalUnits: 1,
+    availableUnits: 1,
+    soldUnits: 0,
     agentId: '',
     agentName: '',
     status: 'pending',
@@ -195,6 +204,15 @@ export default function CreatePropertyPage() {
     toast.success('Imagen eliminada')
   }
 
+  function setCoverImage(index: number) {
+    const current = [...(form.images || [])]
+    if (!current[index]) return
+    const [cover] = current.splice(index, 1)
+    const reordered = [cover, ...current]
+    setForm({ ...form, images: reordered, coverImage: cover })
+    toast.success('Imagen principal actualizada')
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     
@@ -203,6 +221,12 @@ export default function CreatePropertyPage() {
     if (!form.price || form.price <= 0) { toast.error('El precio debe ser mayor a 0'); setStep(1 as any); return }
     if (!form.location?.trim()) { toast.error('La ubicación es requerida'); setStep(2 as any); return }
     if (!form.publicRemarks?.trim() || form.publicRemarks.length < 50) { toast.error('Las notas públicas deben tener al menos 50 caracteres'); setStep(3 as any); return }
+    if (form.inventoryMode === 'project') {
+      const totalUnits = Number(form.totalUnits || 0)
+      const availableUnits = Number(form.availableUnits || 0)
+      if (totalUnits <= 0) { toast.error('Total de unidades debe ser mayor a 0'); setStep(6 as any); return }
+      if (availableUnits < 0 || availableUnits > totalUnits) { toast.error('Unidades disponibles inválidas'); setStep(6 as any); return }
+    }
     // Imágenes opcionales; si no hay, se mostrará placeholder en la UI
 
     if (isE2E) {
@@ -232,6 +256,15 @@ export default function CreatePropertyPage() {
         propertyType: form.propertyType,
         listingType: form.listingType,
         images: form.images,
+        coverImage: form.images?.[0] || '',
+        promoVideoUrl: form.promoVideoUrl?.trim() || '',
+        maintenanceFee: Number(form.maintenanceFee || 0),
+        maintenanceFeeCurrency: form.maintenanceFeeCurrency || 'USD',
+        maintenanceInfo: form.maintenanceInfo?.trim() || '',
+        inventoryMode: form.inventoryMode || 'single',
+        totalUnits: Number(form.totalUnits || 1),
+        availableUnits: Number(form.availableUnits || 1),
+        soldUnits: Number(form.soldUnits || 0),
         agentId: form.agentId?.trim() || '',
         agentName: form.agentName?.trim() || '',
         status: form.status,
@@ -270,6 +303,8 @@ export default function CreatePropertyPage() {
         price: 0, location: '', city: '', neighborhood: '',
         bedrooms: 1, bathrooms: 1, area: 0,
         propertyType: 'apartment', listingType: 'sale', images: [],
+        coverImage: '', promoVideoUrl: '', maintenanceFee: 0, maintenanceFeeCurrency: 'USD', maintenanceInfo: '',
+        inventoryMode: 'single', totalUnits: 1, availableUnits: 1, soldUnits: 0,
         agentId: '', agentName: '', status: 'pending', featured: false,
       })
       
@@ -656,6 +691,15 @@ export default function CreatePropertyPage() {
                           <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                             {i === 0 ? 'Principal' : `#${i + 1}`}
                           </div>
+                          {i !== 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setCoverImage(i)}
+                              className="absolute bottom-2 right-2 bg-white/90 text-[#0B2545] text-xs px-2 py-1 rounded hover:bg-white"
+                            >
+                              Hacer portada
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -714,6 +758,88 @@ export default function CreatePropertyPage() {
                       ⭐ Destacar propiedad en página principal
                     </label>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cuota de mantenimiento</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        className="col-span-2 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                        placeholder="0"
+                        value={form.maintenanceFee || 0}
+                        onChange={e=>setForm({...form, maintenanceFee: Number(e.target.value || 0)})}
+                      />
+                      <select
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                        value={form.maintenanceFeeCurrency || 'USD'}
+                        onChange={e=>setForm({...form, maintenanceFeeCurrency: e.target.value as 'USD' | 'DOP'})}
+                        aria-label="Moneda de mantenimiento"
+                      >
+                        <option value="USD">USD</option>
+                        <option value="DOP">DOP</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Información de mantenimiento</label>
+                    <textarea
+                      rows={2}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      placeholder="Incluye qué cubre: seguridad, áreas comunes, agua, etc."
+                      value={form.maintenanceInfo || ''}
+                      onChange={e=>setForm({...form, maintenanceInfo: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Video promocional (URL)</label>
+                    <input
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      value={form.promoVideoUrl || ''}
+                      onChange={e=>setForm({...form, promoVideoUrl: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Modalidad de inventario</label>
+                    <select
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      value={form.inventoryMode || 'single'}
+                      onChange={e=>setForm({...form, inventoryMode: e.target.value as 'single' | 'project'})}
+                      aria-label="Modalidad de inventario"
+                    >
+                      <option value="single">Unidad única</option>
+                      <option value="project">Proyecto con múltiples unidades</option>
+                    </select>
+                  </div>
+
+                  {form.inventoryMode === 'project' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Total de unidades</label>
+                        <input
+                          type="number"
+                          min={1}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          value={form.totalUnits || 1}
+                          onChange={e=>setForm({...form, totalUnits: Number(e.target.value || 1)})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Unidades disponibles</label>
+                        <input
+                          type="number"
+                          min={0}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          value={form.availableUnits || 0}
+                          onChange={e=>setForm({...form, availableUnits: Number(e.target.value || 0)})}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
               )}

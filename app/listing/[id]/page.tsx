@@ -36,6 +36,28 @@ export default function ListingDetail(){
     return [data?.mainImage, data?.image, data?.main_photo_url].filter(Boolean)
   }
 
+  const normalizeVideoUrl = (url?: string): string | null => {
+    if (!url) return null
+    try {
+      const parsed = new URL(url)
+      if (parsed.hostname.includes('youtube.com')) {
+        const videoId = parsed.searchParams.get('v')
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : null
+      }
+      if (parsed.hostname.includes('youtu.be')) {
+        const videoId = parsed.pathname.replace('/', '')
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : null
+      }
+      if (parsed.hostname.includes('vimeo.com')) {
+        const videoId = parsed.pathname.split('/').filter(Boolean)[0]
+        return videoId ? `https://player.vimeo.com/video/${videoId}` : null
+      }
+      return null
+    } catch {
+      return null
+    }
+  }
+
   // Check session for agent-to-agent features
   useEffect(() => {
     let cancelled = false
@@ -183,7 +205,7 @@ export default function ListingDetail(){
     bedrooms: listing.bedrooms,
     bathrooms: listing.bathrooms,
     area: listing.area,
-    images: listing.images || [],
+    images: [listing.coverImage, ...(listing.images || [])].filter(Boolean),
     agentName: listing.agentName
   }) : null
 
@@ -220,7 +242,8 @@ export default function ListingDetail(){
   
   const metaTitle = `${listing.title} - VIVENTA RD`;
   const propertyUrl = `https://viventa-rd.com/listing/${listing.id}`;
-  const mainImage = listing.images?.[0] || listing.mainImage || listing.image || listing.main_photo_url || '/logo.png';
+  const mainImage = listing.coverImage || listing.images?.[0] || listing.mainImage || listing.image || listing.main_photo_url || '/logo.png';
+  const promoVideoEmbedUrl = normalizeVideoUrl(listing.promoVideoUrl);
 
   return (
     <>
@@ -290,6 +313,21 @@ export default function ListingDetail(){
                   description={metaDescription}
                 />
               </div>
+
+              {promoVideoEmbedUrl && (
+                <div className="bg-white rounded-xl shadow-sm p-4">
+                  <h2 className="text-2xl font-bold text-[#0B2545] mb-4">Video Promocional</h2>
+                  <div className="relative w-full overflow-hidden rounded-lg" style={{ paddingTop: '56.25%' }}>
+                    <iframe
+                      src={promoVideoEmbedUrl}
+                      title={`Video promocional de ${listing.title}`}
+                      className="absolute inset-0 w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
               
               {/* Property Features */}
               <div className="bg-white rounded-lg shadow-sm p-6">
@@ -400,6 +438,27 @@ export default function ListingDetail(){
                     { currency }
                   )}
                 </div>
+
+                {Number(listing.maintenanceFee || 0) > 0 && (
+                  <div className="mb-4 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                    <div className="text-sm text-gray-500">Mantenimiento</div>
+                    <div className="font-semibold text-[#0B2545]">
+                      {formatCurrency(Number(listing.maintenanceFee || 0), { currency: listing.maintenanceFeeCurrency || 'USD' })}
+                    </div>
+                    {listing.maintenanceInfo && (
+                      <p className="text-xs text-gray-600 mt-1">{listing.maintenanceInfo}</p>
+                    )}
+                  </div>
+                )}
+
+                {listing.inventoryMode === 'project' && (
+                  <div className="mb-4 p-3 rounded-lg bg-[#0B2545]/5 border border-[#0B2545]/10">
+                    <div className="text-sm text-gray-500">Disponibilidad del proyecto</div>
+                    <div className="font-semibold text-[#0B2545]">
+                      {Number(listing.availableUnits || 0)} disponibles de {Number(listing.totalUnits || 0)} unidades
+                    </div>
+                  </div>
+                )}
                 
                 {/* Contact Actions */}
                 <div className="space-y-3">
@@ -495,6 +554,9 @@ export default function ListingDetail(){
                     <p>• Listado ID: <span className="font-mono text-gray-900">{listing.listingId || listing.id}</span></p>
                     <p>• Tipo: <span className="text-gray-900 capitalize">{listing.propertyType}</span></p>
                     <p>• Transacción: <span className="text-gray-900 capitalize">{listing.listingType === 'sale' ? 'Venta' : 'Alquiler'}</span></p>
+                    {listing.inventoryMode === 'project' && (
+                      <p>• Inventario: <span className="text-gray-900">{Number(listing.availableUnits || 0)}/{Number(listing.totalUnits || 0)} disponibles</span></p>
+                    )}
                     {listing.views > 0 && <p>• Vistas: <span className="text-gray-900">{listing.views.toLocaleString()}</span></p>}
                     {listing.createdAt && (
                       <p>• Publicado: <span className="text-gray-900">{new Date(listing.createdAt.seconds * 1000).toLocaleDateString('es-DO')}</span></p>

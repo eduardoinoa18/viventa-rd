@@ -76,18 +76,62 @@ export async function POST(req: NextRequest) {
   try {
     const adminDb = getAdminDb()
     const body = await req.json()
-    const { title, description, price, location, lat, lng, bedrooms, bathrooms, area, propertyType, listingType, images, agentId, agentName } = body
+    const {
+      title,
+      description,
+      price,
+      location,
+      lat,
+      lng,
+      bedrooms,
+      bathrooms,
+      area,
+      propertyType,
+      listingType,
+      images,
+      coverImage,
+      promoVideoUrl,
+      maintenanceFee,
+      maintenanceFeeCurrency,
+      maintenanceInfo,
+      inventoryMode,
+      totalUnits,
+      availableUnits,
+      soldUnits,
+      features,
+      publicRemarks,
+      professionalRemarks,
+      currency,
+      city,
+      neighborhood,
+      status,
+      featured,
+      agentId,
+      agentName,
+    } = body
 
     if (!title || !price || !location || !propertyType || !listingType || !agentId) {
       return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 })
     }
 
     if (adminDb) {
+      const totalUnitsNum = totalUnits ? Number(totalUnits) : 1
+      const availableUnitsNum = availableUnits ? Number(availableUnits) : 1
+      const inventoryModeValue = inventoryMode || 'single'
+      const computedSoldUnits = inventoryModeValue === 'project'
+        ? Math.max(totalUnitsNum - availableUnitsNum, 0)
+        : Number(soldUnits || 0)
+
       const propertyDoc = {
         title,
         description: description || '',
+        publicRemarks: publicRemarks || '',
+        professionalRemarks: professionalRemarks || '',
         price: parseFloat(price),
+        currency: currency || 'USD',
         location,
+        city: city || '',
+        neighborhood: neighborhood || '',
         lat: lat || null,
         lng: lng || null,
         bedrooms: parseInt(bedrooms) || 0,
@@ -96,10 +140,20 @@ export async function POST(req: NextRequest) {
         propertyType,
         listingType,
         images: images || [],
+        coverImage: coverImage || (Array.isArray(images) && images.length > 0 ? images[0] : ''),
+        promoVideoUrl: promoVideoUrl || '',
+        maintenanceFee: maintenanceFee ? Number(maintenanceFee) : 0,
+        maintenanceFeeCurrency: maintenanceFeeCurrency || 'USD',
+        maintenanceInfo: maintenanceInfo || '',
+        inventoryMode: inventoryModeValue,
+        totalUnits: totalUnitsNum,
+        availableUnits: availableUnitsNum,
+        soldUnits: computedSoldUnits,
+        features: Array.isArray(features) ? features : [],
         agentId,
         agentName: agentName || '',
-        status: 'pending',
-        featured: false,
+        status: status || 'pending',
+        featured: Boolean(featured),
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -122,11 +176,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Firebase not configured' }, { status: 500 })
     }
 
+    const totalUnitsNum = totalUnits ? Number(totalUnits) : 1
+    const availableUnitsNum = availableUnits ? Number(availableUnits) : 1
+    const inventoryModeValue = inventoryMode || 'single'
+    const computedSoldUnits = inventoryModeValue === 'project'
+      ? Math.max(totalUnitsNum - availableUnitsNum, 0)
+      : Number(soldUnits || 0)
+
     const propertyDoc = {
       title,
       description: description || '',
+      publicRemarks: publicRemarks || '',
+      professionalRemarks: professionalRemarks || '',
       price: parseFloat(price),
+      currency: currency || 'USD',
       location,
+      city: city || '',
+      neighborhood: neighborhood || '',
       lat: lat || null,
       lng: lng || null,
       bedrooms: parseInt(bedrooms) || 0,
@@ -135,10 +201,20 @@ export async function POST(req: NextRequest) {
       propertyType, // apartment, house, condo, land, commercial
       listingType, // sale, rent
       images: images || [],
+      coverImage: coverImage || (Array.isArray(images) && images.length > 0 ? images[0] : ''),
+      promoVideoUrl: promoVideoUrl || '',
+      maintenanceFee: maintenanceFee ? Number(maintenanceFee) : 0,
+      maintenanceFeeCurrency: maintenanceFeeCurrency || 'USD',
+      maintenanceInfo: maintenanceInfo || '',
+      inventoryMode: inventoryModeValue,
+      totalUnits: totalUnitsNum,
+      availableUnits: availableUnitsNum,
+      soldUnits: computedSoldUnits,
+      features: Array.isArray(features) ? features : [],
       agentId,
       agentName: agentName || '',
-      status: 'pending', // pending, active, rejected, sold, draft
-      featured: false,
+      status: status || 'pending', // pending, active, rejected, sold, draft
+      featured: Boolean(featured),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }

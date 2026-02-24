@@ -23,6 +23,7 @@ import {
 
 export interface Property {
   id?: string
+  listingId?: string
   title: string
   description: string
   publicRemarks?: string // Public-facing description for buyers/renters
@@ -39,6 +40,15 @@ export interface Property {
   propertyType: 'apartment' | 'house' | 'condo' | 'land' | 'commercial'
   listingType: 'sale' | 'rent'
   images: string[]
+  coverImage?: string
+  promoVideoUrl?: string
+  maintenanceFee?: number
+  maintenanceFeeCurrency?: 'USD' | 'DOP'
+  maintenanceInfo?: string
+  inventoryMode?: 'single' | 'project'
+  totalUnits?: number
+  availableUnits?: number
+  soldUnits?: number
   agentId: string
   agentName: string
   status: 'active' | 'pending' | 'sold' | 'draft'

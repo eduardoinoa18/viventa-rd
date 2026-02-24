@@ -43,6 +43,16 @@ export interface Listing {
 
   features: string[];
   images: string[];
+  coverImage?: string;
+  promoVideoUrl?: string;
+  maintenanceFee?: number;
+  maintenanceFeeCurrency?: 'DOP' | 'USD';
+  maintenanceInfo?: string;
+
+  inventoryMode?: 'single' | 'project';
+  totalUnits?: number;
+  availableUnits?: number;
+  soldUnits?: number;
 
   status: ListingStatus;
 

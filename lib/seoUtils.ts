@@ -14,6 +14,8 @@ export interface PropertySEO {
   bathrooms?: number
   area?: number
   images?: string[]
+  coverImage?: string
+  promoVideoUrl?: string
   agentName?: string
 }
 
@@ -30,8 +32,9 @@ export function generatePropertySchema(property: PropertySEO) {
   }
 
   // Add images if available
-  if (property.images && property.images.length > 0) {
-    baseSchema.image = property.images
+  const allImages = [property.coverImage, ...(property.images || [])].filter(Boolean) as string[]
+  if (allImages.length > 0) {
+    baseSchema.image = allImages
   }
 
   // Offer details (price, availability)
@@ -72,6 +75,16 @@ export function generatePropertySchema(property: PropertySEO) {
     baseSchema.seller = {
       '@type': 'RealEstateAgent',
       name: property.agentName,
+    }
+  }
+
+  if (property.promoVideoUrl) {
+    baseSchema.video = {
+      '@type': 'VideoObject',
+      name: `${property.title} - Video`,
+      description: property.description,
+      contentUrl: property.promoVideoUrl,
+      uploadDate: new Date().toISOString(),
     }
   }
 

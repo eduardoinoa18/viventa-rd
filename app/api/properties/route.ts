@@ -11,6 +11,7 @@ type ListingType = 'sale' | 'rent'
 
 interface PropertyPayload {
   id?: string
+  listingId?: string
   title?: string
   description?: string
   price?: number
@@ -29,6 +30,15 @@ interface PropertyPayload {
   agentName?: string
   agentEmail?: string
   images?: string[]
+  coverImage?: string
+  promoVideoUrl?: string
+  maintenanceFee?: number
+  maintenanceFeeCurrency?: 'USD' | 'DOP'
+  maintenanceInfo?: string
+  inventoryMode?: 'single' | 'project'
+  totalUnits?: number
+  availableUnits?: number
+  soldUnits?: number
 }
 
 function validatePayload(action: string, data: PropertyPayload) {
@@ -56,6 +66,18 @@ function validatePayload(action: string, data: PropertyPayload) {
   }
   if (data.area !== undefined && Number.isNaN(Number(data.area))) {
     errors.push('area must be a number')
+  }
+  if (data.maintenanceFee !== undefined && Number.isNaN(Number(data.maintenanceFee))) {
+    errors.push('maintenanceFee must be a number')
+  }
+  if (data.totalUnits !== undefined && Number.isNaN(Number(data.totalUnits))) {
+    errors.push('totalUnits must be a number')
+  }
+  if (data.availableUnits !== undefined && Number.isNaN(Number(data.availableUnits))) {
+    errors.push('availableUnits must be a number')
+  }
+  if (data.soldUnits !== undefined && Number.isNaN(Number(data.soldUnits))) {
+    errors.push('soldUnits must be a number')
   }
   return { ok: errors.length === 0, errors }
 }
@@ -146,6 +168,15 @@ export async function POST(req: Request) {
       if (typeof createData.bedrooms === 'string') createData.bedrooms = Number(createData.bedrooms)
       if (typeof createData.bathrooms === 'string') createData.bathrooms = Number(createData.bathrooms)
       if (typeof createData.area === 'string') createData.area = Number(createData.area)
+      if (typeof createData.maintenanceFee === 'string') createData.maintenanceFee = Number(createData.maintenanceFee)
+      if (typeof createData.totalUnits === 'string') createData.totalUnits = Number(createData.totalUnits)
+      if (typeof createData.availableUnits === 'string') createData.availableUnits = Number(createData.availableUnits)
+      if (typeof createData.soldUnits === 'string') createData.soldUnits = Number(createData.soldUnits)
+      if (createData.inventoryMode === 'project') {
+        const totalUnits = Number(createData.totalUnits || 0)
+        const availableUnits = Number(createData.availableUnits || 0)
+        createData.soldUnits = Math.max(totalUnits - availableUnits, 0)
+      }
       // Generate listingId via yearly counter in a transaction
       const { listingId, id } = await db.runTransaction(async (tx) => {
         const year = new Date().getFullYear().toString()
@@ -210,6 +241,15 @@ export async function POST(req: Request) {
       if (typeof updateData.bedrooms === 'string') updateData.bedrooms = Number(updateData.bedrooms)
       if (typeof updateData.bathrooms === 'string') updateData.bathrooms = Number(updateData.bathrooms)
       if (typeof updateData.area === 'string') updateData.area = Number(updateData.area)
+      if (typeof updateData.maintenanceFee === 'string') updateData.maintenanceFee = Number(updateData.maintenanceFee)
+      if (typeof updateData.totalUnits === 'string') updateData.totalUnits = Number(updateData.totalUnits)
+      if (typeof updateData.availableUnits === 'string') updateData.availableUnits = Number(updateData.availableUnits)
+      if (typeof updateData.soldUnits === 'string') updateData.soldUnits = Number(updateData.soldUnits)
+      if (updateData.inventoryMode === 'project') {
+        const totalUnits = Number(updateData.totalUnits || 0)
+        const availableUnits = Number(updateData.availableUnits || 0)
+        updateData.soldUnits = Math.max(totalUnits - availableUnits, 0)
+      }
       await db.collection('properties').doc(id).set({
         ...updateData,
         updatedAt: FieldValue.serverTimestamp(),
