@@ -6,8 +6,6 @@ import toast from 'react-hot-toast'
 import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock, FiArrowLeft, FiAlertCircle } from 'react-icons/fi'
 import { uploadMultipleImages, validateImageFiles, generatePropertyImagePath } from '@/lib/storageService'
 import { getSession } from '@/lib/authSession'
-import { auth } from '@/lib/firebaseClient'
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'
 import Link from 'next/link'
 
 export default function EditPropertyPage() {
@@ -24,7 +22,6 @@ export default function EditPropertyPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [progressByIndex, setProgressByIndex] = useState<number[]>([])
-  const [adminUid, setAdminUid] = useState<string>('')
   const [currency, setCurrency] = useState<'USD' | 'DOP'>('USD')
   const exchangeRate = 58.5
   const [features, setFeatures] = useState<string[]>([])
@@ -115,17 +112,6 @@ export default function EditPropertyPage() {
   function toggleFeature(id: string) {
     setFeatures((prev) => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id])
   }
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth as any, async (_user: any) => {
-      if (!_user) {
-        try { await signInAnonymously(auth as any) } catch (e) { console.warn('Anonymous sign-in failed', e) }
-      }
-    })
-    const s = getSession()
-    if (s?.uid) setAdminUid(s.uid)
-    return () => { try { unsub() } catch {} }
-  }, [])
 
   useEffect(() => {
     if (!propertyId) return
@@ -274,12 +260,9 @@ export default function EditPropertyPage() {
       toast.error('Selecciona una o más imágenes')
       return
     }
-    if (!adminUid) {
-      toast.error('No se encontró sesión del administrador. Vuelve a iniciar sesión.')
-      return
-    }
     try {
       setUploading(true)
+      const adminUid = getSession()?.uid || 'unknown'
       const folder = generatePropertyImagePath(adminUid)
       const urls = await uploadMultipleImages(selectedFiles, folder, (index, p) => {
         setProgressByIndex((prev) => {

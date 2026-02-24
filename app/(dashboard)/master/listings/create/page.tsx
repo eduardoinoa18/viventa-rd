@@ -6,8 +6,6 @@ import toast from 'react-hot-toast'
 import { type Property } from '@/lib/firestoreService'
 import { uploadMultipleImages, validateImageFiles, generatePropertyImagePath } from '@/lib/storageService'
 import { getSession } from '@/lib/authSession'
-import { auth } from '@/lib/firebaseClient'
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'
 import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock } from 'react-icons/fi'
 // Removed direct Firestore counters usage; server API now generates listingId
 
@@ -40,7 +38,6 @@ export default function CreatePropertyPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [progressByIndex, setProgressByIndex] = useState<number[]>([])
-  const [adminUid, setAdminUid] = useState<string>('')
   const [currency, setCurrency] = useState<'USD' | 'DOP'>('USD')
   const exchangeRate = 58.5
   const [features, setFeatures] = useState<string[]>([])
@@ -133,19 +130,6 @@ export default function CreatePropertyPage() {
 
   // listingId generation handled by server API
 
-  // Ensure Firebase Auth is present (anonymous is fine) for Storage writes
-  useEffect(() => {
-    if (isE2E) return
-    const unsub = onAuthStateChanged(auth as any, async (_user: any) => {
-      if (!_user) {
-        try { await signInAnonymously(auth as any) } catch (e) { console.warn('Anonymous sign-in failed', e) }
-      }
-    })
-    const s = getSession()
-    if (s?.uid) setAdminUid(s.uid)
-    return () => { try { unsub() } catch {} }
-  }, [])
-
   function onFileSelect(files: FileList | null) {
     const arr = Array.from(files || [])
     if (arr.length === 0) return
@@ -182,12 +166,9 @@ export default function CreatePropertyPage() {
       toast.error('Selecciona una o más imágenes')
       return
     }
-    if (!adminUid) {
-      toast.error('No se encontró sesión del administrador. Vuelve a iniciar sesión.')
-      return
-    }
     try {
       setUploading(true)
+      const adminUid = getSession()?.uid || 'unknown'
       const folder = generatePropertyImagePath(adminUid)
       const urls = await uploadMultipleImages(selectedFiles, folder, (index, p) => {
         setProgressByIndex((prev) => {
