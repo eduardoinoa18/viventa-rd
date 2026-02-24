@@ -28,6 +28,7 @@ export default function ListingDetail(){
   const [currency, setCurrency] = useState<Currency>('USD')
   const [showInquiryForm, setShowInquiryForm] = useState(false)
   const [currentSession, setCurrentSession] = useState<any>(null)
+  const [sessionLoading, setSessionLoading] = useState(true)
 
   // Check session for agent-to-agent features
   useEffect(() => {
@@ -40,6 +41,8 @@ export default function ListingDetail(){
         setCurrentSession(res.ok ? json.session : null)
       } catch {
         if (!cancelled) setCurrentSession(null)
+      } finally {
+        if (!cancelled) setSessionLoading(false)
       }
     }
     loadSession()
@@ -105,7 +108,8 @@ export default function ListingDetail(){
     }
   }, [])
   
-  if(loading) {
+  // Show loading while either listing or session is still loading
+  if(loading || sessionLoading) {
     return (
       <>
         <Header />
@@ -142,7 +146,10 @@ export default function ListingDetail(){
     currentSession.uid === listing.ownerId
   )
   
-  if (listing && listing.status && listing.status !== 'active' && !isOwnerOrAdmin) {
+  // Allow viewing if: listing is active OR user is owner/admin
+  const canView = !listing.status || listing.status === 'active' || isOwnerOrAdmin
+  
+  if (!canView) {
     return (
       <>
         <Header />
