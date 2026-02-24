@@ -27,11 +27,6 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/search', req.url), 308)
   }
 
-  // ========== REDIRECT ALL OLD ADMIN ROUTES TO MASTER ==========
-  if (pathname.startsWith('/admin')) {
-    return NextResponse.redirect(new URL('/master', req.url), 308)
-  }
-
   // ========== PUBLIC ROUTES (NEVER BLOCK) ==========
   const publicRoutes = [
     '/', '/search', '/ciudad', '/listing', '/agents', '/brokers',
