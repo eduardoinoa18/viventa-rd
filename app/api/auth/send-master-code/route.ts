@@ -35,9 +35,6 @@ function checkRateLimit(email: string): { allowed: boolean; retryAfter?: number 
 export async function POST(request: Request) {
   try {
     const { email, uid } = await request.json()
-    const cookieHeader = request.headers.get('cookie') || ''
-    const pwOk = cookieHeader.match(/(?:^|;\s*)admin_pw_ok=([^;]+)/)?.[1] || ''
-    const pwEmail = cookieHeader.match(/(?:^|;\s*)admin_pw_email=([^;]+)/)?.[1] || ''
 
     // Build allowed email list: prefer MASTER_ADMIN_EMAILS (comma-separated), fallback to MASTER_ADMIN_EMAIL
     const rawList = (process.env.MASTER_ADMIN_EMAILS || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com')
@@ -71,10 +68,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })
     }
 
-    // NEW FLOW: If uid is provided (from unified login), skip password cookie check
-    // LEGACY FLOW: If no uid, require password cookies (old gate system)
-    if (!uid && (pwOk !== '1' || (pwEmail && pwEmail.toLowerCase() !== incoming))) {
-      return NextResponse.json({ ok: false, error: 'Password verification required' }, { status: 401 })
+    // Unified login always sends uid. If it's missing, fall back to allowlist-only
+    // to avoid blocking valid master-admin logins in production.
+    if (!uid && isDev) {
+      console.warn('[send-master-code] Missing uid; proceeding with allowlist-only check')
     }
 
     // Rate limiting (only in production)
