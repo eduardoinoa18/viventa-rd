@@ -11,12 +11,9 @@
     "check-config": "node scripts/check-config.js",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-<<<<<<< HEAD
-    "ai:preflight": "bash scripts/ai-preflight.sh"
-=======
+    "ai:preflight": "bash scripts/ai-preflight.sh",
     "db:cleanup": "cd functions && npx ts-node ../scripts/cleanup-database.ts",
     "db:wipe": "cd functions && npx ts-node ../scripts/wipe-database.ts"
->>>>>>> origin/copilot/implement-project-review-plan
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
