@@ -1,17 +1,8 @@
 'use client'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { getSession } from '../lib/authSession'
 
 export default function Footer() {
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [role, setRole] = useState<string>('user')
   const buildSha = (process.env.NEXT_PUBLIC_BUILD_SHA || 'local').slice(0, 7)
-
-  useEffect(() => {
-    const s = getSession()
-    if (s) { setLoggedIn(true); setRole(s.role) }
-  }, [])
 
   const publicLinks = [
     { href: '/', label: 'Inicio' },
@@ -42,16 +33,6 @@ export default function Footer() {
             <div className="text-[11px] text-gray-500 mt-1">Build {buildSha}</div>
           </div>
         </div>
-        {/* Master Admin link - subtle in corner */}
-        {!loggedIn && (
-          <Link
-            href="/login"
-            aria-label="Admin Portal Login"
-            className="hidden md:inline-block absolute bottom-1 right-2 text-[11px] text-gray-400 hover:text-gray-700 opacity-60 hover:opacity-100 transition-opacity"
-          >
-            Admin Portal
-          </Link>
-        )}
       </div>
     </footer>
   )

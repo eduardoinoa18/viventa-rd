@@ -20,6 +20,37 @@ const authErrorMessages: Record<string, string> = {
   TOO_MANY_ATTEMPTS_TRY_LATER: 'Demasiados intentos. Intenta más tarde',
 }
 
+function isMasterAdminEmail(email: string): boolean {
+  const configured = (process.env.MASTER_ADMIN_EMAILS || process.env.MASTER_ADMIN_EMAIL || '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+
+  if (configured.length === 0) return false
+  return configured.includes(email)
+}
+
+function matchesMasterAdminPassword(email: string, password: string): boolean {
+  const masterPassword = String(process.env.MASTER_ADMIN_PASSWORD || '')
+  if (!masterPassword) return false
+  if (!isMasterAdminEmail(email)) return false
+  return password === masterPassword
+}
+
+async function getOrCreateMasterAdminUid(adminAuth: NonNullable<ReturnType<typeof getAdminAuth>>, email: string): Promise<string> {
+  try {
+    const user = await adminAuth.getUserByEmail(email)
+    return user.uid
+  } catch {
+    const created = await adminAuth.createUser({
+      email,
+      emailVerified: true,
+      displayName: 'Master Admin',
+    })
+    return created.uid
+  }
+}
+
 async function signInWithPassword(apiKey: string, email: string, password: string) {
   const res = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
@@ -81,9 +112,30 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 1. Verify credentials using Firebase Auth REST API
-    const signInData = await signInWithPassword(apiKey, email, password)
-    const uid = signInData.localId
+    const adminAuth = getAdminAuth()
+    if (!adminAuth) {
+      console.error('[LOGIN] Admin Auth not initialized')
+      return NextResponse.json(
+        { ok: false, error: 'Error de configuración del servidor' },
+        { status: 500 }
+      )
+    }
+
+    // 1. Verify credentials (Firebase Auth first, legacy master-admin fallback second)
+    let uid = ''
+    let usedMasterFallback = false
+    try {
+      const signInData = await signInWithPassword(apiKey, email, password)
+      uid = signInData.localId
+    } catch (signInError: any) {
+      const isInvalidCredentialError = signInError?.code === 'EMAIL_NOT_FOUND' || signInError?.code === 'INVALID_PASSWORD'
+      if (!isInvalidCredentialError || !matchesMasterAdminPassword(email, password)) {
+        throw signInError
+      }
+
+      usedMasterFallback = true
+      uid = await getOrCreateMasterAdminUid(adminAuth, email)
+    }
 
     // 2. Fetch role from Firestore (SOURCE OF TRUTH)
     const adminDb = getAdminDb()
@@ -107,26 +159,26 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    let role = 'buyer'
+    let role = usedMasterFallback ? 'master_admin' : 'buyer'
     if (userDoc.exists) {
-      role = (userDoc.data()?.role as string) || 'buyer'
+      role = (userDoc.data()?.role as string) || role
+      if (usedMasterFallback && role !== 'master_admin') {
+        role = 'master_admin'
+        await userDocRef.set(
+          {
+            role: 'master_admin',
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        )
+      }
     } else {
       await userDocRef.set({
         email,
-        role: 'buyer',
+        role,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       })
-    }
-
-    // 3. Set custom claims on Firebase Auth
-    const adminAuth = getAdminAuth()
-    if (!adminAuth) {
-      console.error('[LOGIN] Admin Auth not initialized')
-      return NextResponse.json(
-        { ok: false, error: 'Error de configuración del servidor' },
-        { status: 500 }
-      )
     }
 
     try {
