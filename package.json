@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "check-config": "node scripts/check-config.js",
     "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "ai:preflight": "bash scripts/ai-preflight.sh"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
