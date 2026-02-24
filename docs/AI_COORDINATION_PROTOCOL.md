@@ -10,9 +10,9 @@ This protocol prevents state drift when working with VS Code AI and Codex.
   3. commit exists locally.
 
 ## 2) Agent Roles
-- **VS Code AI**: UI work, small refactors, local polish.
-- **Codex**: backend restructuring, auth logic, API guardrails.
-- **You/Git maintainer**: final authority for commit/push/merge.
+- **You (Release Manager)**: control branch/SHA/deploy decisions.
+- **VS Code AI**: execution engine (apply changes, run tests, commit, push).
+- **Codex**: patch generator/reviewer for backend structure and guardrails.
 
 ## 3) Single Writer Rule
 Only one agent/system may perform write operations to Git at a time:
@@ -20,9 +20,9 @@ Only one agent/system may perform write operations to Git at a time:
 - push
 - merge
 
-Other agents should operate in suggestion/patch mode.
+> Operational default: Codex runs in patch/suggestion mode; VS Code (or human operator) is the writer.
 
-## 4) Pre-Work Sync Checklist
+## 4) Mandatory Pre-Work Sync Checklist
 Before asking any agent to generate changes, run:
 
 ```bash
@@ -31,12 +31,21 @@ git status
 git log --oneline -n 3
 ```
 
+Then run strict preflight:
+
+```bash
+npm run ai:preflight -- <expected-short-sha>
+```
+
 Confirm:
 - current branch is correct,
-- HEAD matches expected remote state,
+- HEAD matches expected remote/local source-of-truth SHA,
 - no uncommitted changes.
 
-## 5) Commit Base Fingerprint
+## 5) Codex SHA-Lock Prompt
+Use `docs/CODEX_SHA_LOCK_TEMPLATE.md` as the required prompt prefix for Codex patch requests.
+
+## 6) Commit Base Fingerprint
 Each meaningful backend commit should include a base fingerprint footer:
 
 ```text
@@ -49,18 +58,18 @@ Example:
 ```text
 feat(admin-api): migrate to Firebase Admin SDK only
 
-commit-base: 2f1366b
+commit-base: 6d93f78
 feature-tag: admin-api-auth
 ```
 
-## 6) PR Hygiene
+## 7) PR Hygiene
 Each PR should include:
 - branch name,
 - base commit SHA used for development,
 - exact validation commands run,
 - known environment limitations (if any).
 
-## 7) Drift Recovery Procedure
+## 8) Drift Recovery Procedure
 If drift is suspected:
 1. stop new AI writes,
 2. inspect divergence with `git log --graph --oneline --decorate -n 20`,
