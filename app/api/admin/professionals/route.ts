@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
 import { logActivity } from '@/lib/activityLogger'
+import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
+import { adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
+import { logAdminAction } from '@/lib/logAdminAction'
 
 // Generate a unique professional code
 function generateProfessionalCode(role: string): string {
@@ -14,6 +17,7 @@ function generateProfessionalCode(role: string): string {
 // POST - Create a new professional (agent or broker)
 export async function POST(request: NextRequest) {
   try {
+    const admin = await requireMasterAdmin(request)
     const data = await request.json()
     const {
       name,
@@ -232,6 +236,7 @@ export async function POST(request: NextRequest) {
 // PATCH - Approve a professional and send credentials
 export async function PATCH(request: NextRequest) {
   try {
+    const admin = await requireMasterAdmin(request)
     const { uid } = await request.json()
 
     if (!uid) {

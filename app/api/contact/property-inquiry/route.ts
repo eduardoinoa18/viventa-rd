@@ -13,18 +13,16 @@ export async function POST(request: Request) {
     const rl = rateLimit(keyFromRequest(request), 15, 60 * 60 * 1000)
     if (!rl.allowed) return NextResponse.json({ ok: false, error: 'Rate limit exceeded' }, { status: 429 })
     const data = await request.json()
-    const { 
-      name, 
-      email, 
-      phone, 
-      message, 
+    const {
+      name,
+      email,
+      phone,
+      message,
       visitDate,
       preferredContact,
       propertyId,
       propertyTitle,
-      agentName,
-      agentEmail,
-      source 
+      source
     } = data
 
     // Validation
@@ -41,6 +39,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'Firebase Admin not configured' }, { status: 500 })
     }
 
+    const propertySnap = await adminDb.collection('properties').doc(propertyId).get()
+    if (!propertySnap.exists) {
+      return NextResponse.json({ ok: false, error: 'Property not found' }, { status: 404 })
+    }
+    const propertyData = propertySnap.data() as any
+    const resolvedTitle = propertyData?.title || propertyTitle || 'Propiedad'
+    const resolvedAgentId = propertyData?.agentId
+    const resolvedAgentName = propertyData?.agentName || 'VIVENTA'
+    const resolvedAgentEmail = propertyData?.agentEmail || ''
+
+    if (!resolvedAgentId) {
+      return NextResponse.json({ ok: false, error: 'Property missing agent' }, { status: 400 })
+    }
+
     const inquiryRef = await adminDb.collection('property_inquiries').add({
       name,
       email,
@@ -49,9 +61,10 @@ export async function POST(request: Request) {
       visitDate: visitDate || null,
       preferredContact: preferredContact || 'email',
       propertyId,
-      propertyTitle,
-      agentName: agentName || 'VIVENTA',
-      agentEmail: agentEmail || '',
+      propertyTitle: resolvedTitle,
+      agentId: resolvedAgentId,
+      agentName: resolvedAgentName,
+      agentEmail: resolvedAgentEmail,
       source: source || 'property-page',
       status: 'new',
       createdAt: FieldValue.serverTimestamp(),
@@ -68,7 +81,7 @@ export async function POST(request: Request) {
     const notifyEmails = Array.from(new Set([
       masterEmail, 
       ...adminList,
-      ...(agentEmail ? [agentEmail] : [])
+      ...(resolvedAgentEmail ? [resolvedAgentEmail] : [])
     ]))
 
     try {
@@ -81,7 +94,7 @@ export async function POST(request: Request) {
             <div style="padding: 30px; background: #f9f9f9;">
               <div style="background: white; border-left: 4px solid #00A676; padding: 20px; margin-bottom: 20px;">
                 <h2 style="color: #0B2545; margin-top: 0;">Propiedad Consultada</h2>
-                <p style="font-size: 16px; color: #333; font-weight: 600;">${propertyTitle}</p>
+                <p style="font-size: 16px; color: #333; font-weight: 600;">${resolvedTitle}</p>
                 <p style="font-size: 12px; color: #666; margin: 4px 0 0 0;">ID: ${propertyId}</p>
               </div>
               <div style="background: white; border-left: 4px solid #004AAD; padding: 20px; margin-bottom: 20px;">
@@ -141,9 +154,9 @@ export async function POST(request: Request) {
       }
 
       // Auto-reply to the client with Caribbean-styled template
-      await sendInquiryConfirmation(email, name, propertyTitle)
+      await sendInquiryConfirmation(email, name, resolvedTitle)
       
-      logger.info('Property inquiry submitted', { email, name, propertyId, propertyTitle })
+      logger.info('Property inquiry submitted', { email, name, propertyId, propertyTitle: resolvedTitle })
     } catch (emailError) {
       logger.error('Failed to send notification email', emailError)
       // Don't fail the request if email fails
@@ -156,7 +169,7 @@ export async function POST(request: Request) {
         title: 'Nueva consulta de propiedad',
         body: `${name} consultó: ${propertyTitle}`,
         icon: '/icons/icon-192x192.png',
-        url: `/admin/chat?tab=inquiries&id=${encodeURIComponent(inquiryRef.id)}`,
+        url: `/admin/leads?source=property_inquiry&id=${encodeURIComponent(inquiryRef.id)}`,
         refId: inquiryRef.id,
         propertyId,
         createdAt: FieldValue.serverTimestamp(),

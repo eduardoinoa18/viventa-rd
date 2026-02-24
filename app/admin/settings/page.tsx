@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import ProtectedClient from '../../auth/ProtectedClient'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
-import { FiSettings, FiServer, FiRefreshCw, FiMail, FiShield, FiLink, FiBell, FiZap, FiGlobe, FiDollarSign, FiImage } from 'react-icons/fi'
+import { FiSettings, FiServer, FiRefreshCw, FiMail, FiShield, FiLink, FiBell, FiZap, FiGlobe, FiDollarSign, FiImage, FiDatabase } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import Button from '../../../components/ui/Button'
 import Card from '../../../components/ui/Card'
+
 import FormField from '../../../components/ui/FormField'
 import TextInput from '../../../components/ui/TextInput'
 import Select from '../../../components/ui/Select'
@@ -45,9 +46,6 @@ type SettingsData = {
   // Integrations
   stripePublishableKey: string
   stripeSecretKey: string
-  algoliaAppId: string
-  algoliaApiKey: string
-  algoliaIndex: string
   firebaseProjectId: string
   googleAnalyticsId: string
   facebookPixelId: string
@@ -78,7 +76,7 @@ type SettingsData = {
 }
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<'general' | 'email' | 'security' | 'integrations' | 'notifications' | 'gamification' | 'advanced' | 'status'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'security' | 'notifications' | 'advanced' | 'database' | 'status'>('general')
   const [settings, setSettings] = useState<SettingsData>({
     siteTitle: 'VIVENTA',
     siteDescription: 'Tu Espacio, Tu Futuro',
@@ -104,9 +102,6 @@ export default function AdminSettingsPage() {
     allowedDomains: '',
     stripePublishableKey: '',
     stripeSecretKey: '',
-    algoliaAppId: '',
-    algoliaApiKey: '',
-    algoliaIndex: 'properties',
     firebaseProjectId: '',
     googleAnalyticsId: '',
     facebookPixelId: '',
@@ -132,6 +127,17 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(false)
   const [diag, setDiag] = useState<any>(null)
   const [diagError, setDiagError] = useState<string>('')
+  const [cleanupEmail, setCleanupEmail] = useState('')
+  const [cleanupLoading, setCleanupLoading] = useState(false)
+  const [cleanupSummary, setCleanupSummary] = useState<any>(null)
+  const [firebaseCleanupInput, setFirebaseCleanupInput] = useState({
+    confirmation: '',
+    collections: '',
+    deleteAuth: false,
+    adminEmail: ''
+  })
+  const [firebaseCleanupLoading, setFirebaseCleanupLoading] = useState(false)
+  const [firebaseCleanupSummary, setFirebaseCleanupSummary] = useState<any>(null)
 
   useEffect(() => {
     loadSettings()
@@ -190,18 +196,81 @@ export default function AdminSettingsPage() {
     }
   }
 
+  async function runCleanupTestData() {
+    if (!cleanupEmail.trim()) {
+      toast.error('Confirm email is required')
+      return
+    }
+    if (!confirm('This will permanently delete test data. Continue?')) return
+    setCleanupLoading(true)
+    setCleanupSummary(null)
+    try {
+      const res = await fetch('/api/admin/cleanup-test-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmEmail: cleanupEmail.trim() })
+      })
+      const json = await res.json()
+      if (res.ok && json.success) {
+        setCleanupSummary(json.results || null)
+        toast.success(json.message || 'Cleanup completed')
+      } else {
+        toast.error(json.error || 'Cleanup failed')
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Cleanup failed')
+    } finally {
+      setCleanupLoading(false)
+    }
+  }
+
+  async function runFirebaseCleanup() {
+    if (!firebaseCleanupInput.confirmation.trim()) {
+      toast.error('Confirmation is required')
+      return
+    }
+    if (!confirm('This will permanently delete data. Continue?')) return
+    setFirebaseCleanupLoading(true)
+    setFirebaseCleanupSummary(null)
+    try {
+      const collections = firebaseCleanupInput.collections
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+      const res = await fetch('/api/admin/firebase/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmation: firebaseCleanupInput.confirmation.trim(),
+          collections: collections.length ? collections : undefined,
+          deleteAuth: firebaseCleanupInput.deleteAuth,
+          adminEmail: firebaseCleanupInput.adminEmail.trim() || cleanupEmail.trim()
+        })
+      })
+      const json = await res.json()
+      if (res.ok && json.ok) {
+        setFirebaseCleanupSummary(json.results || null)
+        toast.success(json.message || 'Firebase cleanup completed')
+      } else {
+        toast.error(json.error || 'Firebase cleanup failed')
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Firebase cleanup failed')
+    } finally {
+      setFirebaseCleanupLoading(false)
+    }
+  }
+
   function updateSetting(key: keyof SettingsData, value: any) {
     setSettings(prev => ({ ...prev, [key]: value }))
   }
 
   const tabs = [
     { id: 'general', label: 'General', icon: <FiGlobe /> },
-    { id: 'email', label: 'Email', icon: <FiMail /> },
     { id: 'security', label: 'Security', icon: <FiShield /> },
-    { id: 'integrations', label: 'Integrations', icon: <FiLink /> },
     { id: 'notifications', label: 'Notifications', icon: <FiBell /> },
-    { id: 'gamification', label: 'Gamification', icon: <FiZap /> },
     { id: 'advanced', label: 'Advanced', icon: <FiZap /> },
+    { id: 'database', label: 'Database Tools', icon: <FiDatabase /> },
     { id: 'status', label: 'System Status', icon: <FiServer /> },
   ]
 
@@ -218,7 +287,7 @@ export default function AdminSettingsPage() {
               </h1>
               <p className="text-gray-600 mt-1">Configure your platform settings and integrations</p>
             </div>
-            {activeTab !== 'status' && (
+            {activeTab !== 'status' && activeTab !== 'database' && (
               <Button onClick={saveSettings} isLoading={loading} disabled={loading} size="lg">
                 Save Changes
               </Button>
@@ -391,8 +460,8 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
-            {/* Email Settings */}
-            {activeTab === 'email' && (
+            {/* Email Settings - REMOVED (not used) */}
+            {false && (
               <div className="space-y-6">
                 <Card title="Email Provider" description="Configure your email service provider">
                   <FormField id="email-provider" label="Email Service">
@@ -544,8 +613,8 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
-            {/* Integrations */}
-            {activeTab === 'integrations' && (
+            {/* Integrations - REMOVED (Stripe/GA/Facebook not used) */}
+            {false && (
               <div className="space-y-6">
                 <Card 
                   title={
@@ -572,35 +641,6 @@ export default function AdminSettingsPage() {
                         value={settings.stripeSecretKey}
                         onChange={(e) => updateSetting('stripeSecretKey', e.target.value)}
                         placeholder="sk_test_..."
-                      />
-                    </FormField>
-                  </div>
-                </Card>
-
-                <Card title="Algolia Search" description="Configure Algolia search integration (optional)">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField id="algolia-app-id" label="App ID">
-                      <TextInput
-                        id="algolia-app-id"
-                        type="text"
-                        value={settings.algoliaAppId}
-                        onChange={(e) => updateSetting('algoliaAppId', e.target.value)}
-                      />
-                    </FormField>
-                    <FormField id="algolia-api-key" label="API Key">
-                      <TextInput
-                        id="algolia-api-key"
-                        type="password"
-                        value={settings.algoliaApiKey}
-                        onChange={(e) => updateSetting('algoliaApiKey', e.target.value)}
-                      />
-                    </FormField>
-                    <FormField id="algolia-index" label="Index Name">
-                      <TextInput
-                        id="algolia-index"
-                        type="text"
-                        value={settings.algoliaIndex}
-                        onChange={(e) => updateSetting('algoliaIndex', e.target.value)}
                       />
                     </FormField>
                   </div>
@@ -691,8 +731,8 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
-            {/* Gamification */}
-            {activeTab === 'gamification' && (
+            {/* Gamification - REMOVED (no content) */}
+            {false && (
               <div className="space-y-6">
                 {/* Coming Soon Banner */}
                 <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-8 text-white text-center shadow-lg">
@@ -963,6 +1003,121 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
+            {/* Database Tab - Firebase Cleanup */}
+            {activeTab === 'database' && (
+              <div className="space-y-6">
+                <Card
+                  title="Test Data Cleanup"
+                  description="Delete seeded test data while keeping the master admin account. Use with extreme caution."
+                >
+                  <div className="space-y-4">
+                    <FormField id="cleanup-email" label="Confirm master admin email">
+                      <TextInput
+                        id="cleanup-email"
+                        type="email"
+                        value={cleanupEmail}
+                        onChange={(e) => setCleanupEmail(e.target.value)}
+                        placeholder="admin@viventa.com"
+                      />
+                    </FormField>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={runCleanupTestData}
+                        disabled={cleanupLoading}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-60"
+                      >
+                        {cleanupLoading ? 'Running cleanup...' : 'Run Test Data Cleanup'}
+                      </button>
+                      <div className="text-sm text-gray-500">Deletes users, properties, leads, messages, and waitlist data.</div>
+                    </div>
+                    {cleanupSummary && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700">
+                        <div className="font-semibold text-gray-900 mb-2">Cleanup summary</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(cleanupSummary).map(([key, value]) => (
+                            <div key={key} className="flex items-center justify-between gap-2">
+                              <span className="text-gray-600">{key}</span>
+                              <span className="font-semibold text-gray-900">{String(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+
+                <Card
+                  title="Firebase Cleanup (Advanced)"
+                  description="Bulk delete collections and optionally remove auth users. Requires an explicit confirmation phrase."
+                >
+                  <div className="space-y-4">
+                    <FormField id="firebase-confirm" label="Confirmation phrase">
+                      <TextInput
+                        id="firebase-confirm"
+                        type="text"
+                        value={firebaseCleanupInput.confirmation}
+                        onChange={(e) => setFirebaseCleanupInput(prev => ({ ...prev, confirmation: e.target.value }))}
+                        placeholder="DELETE_ALL_TEST_DATA_PERMANENTLY"
+                      />
+                    </FormField>
+                    <FormField id="firebase-collections" label="Collections (comma separated)">
+                      <TextInput
+                        id="firebase-collections"
+                        type="text"
+                        value={firebaseCleanupInput.collections}
+                        onChange={(e) => setFirebaseCleanupInput(prev => ({ ...prev, collections: e.target.value }))}
+                        placeholder="users, properties, applications"
+                      />
+                    </FormField>
+                    <FormField id="firebase-admin-email" label="Admin email for logging">
+                      <TextInput
+                        id="firebase-admin-email"
+                        type="email"
+                        value={firebaseCleanupInput.adminEmail}
+                        onChange={(e) => setFirebaseCleanupInput(prev => ({ ...prev, adminEmail: e.target.value }))}
+                        placeholder="admin@viventa.com"
+                      />
+                    </FormField>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="firebase-delete-auth"
+                        type="checkbox"
+                        checked={firebaseCleanupInput.deleteAuth}
+                        onChange={(e) => setFirebaseCleanupInput(prev => ({ ...prev, deleteAuth: e.target.checked }))}
+                        className="h-4 w-4"
+                      />
+                      <label htmlFor="firebase-delete-auth" className="text-sm text-gray-700">
+                        Also delete Firebase Auth users (excluding admin emails)
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={runFirebaseCleanup}
+                        disabled={firebaseCleanupLoading}
+                        className="px-4 py-2 bg-red-700 text-white rounded-lg font-semibold hover:bg-red-800 disabled:opacity-60"
+                      >
+                        {firebaseCleanupLoading ? 'Running cleanup...' : 'Run Firebase Cleanup'}
+                      </button>
+                      <div className="text-sm text-gray-500">Rate-limited to once per hour.</div>
+                    </div>
+                    {firebaseCleanupSummary && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700">
+                        <div className="font-semibold text-gray-900 mb-2">Cleanup summary</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(firebaseCleanupSummary).map(([key, value]) => (
+                            <div key={key} className="flex items-center justify-between gap-2">
+                              <span className="text-gray-600">{key}</span>
+                              <span className="font-semibold text-gray-900">{String(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </div>
+            )}
+
             {/* System Status Tab (keep existing) */}
             {activeTab === 'status' && (
               <>
@@ -993,11 +1148,6 @@ export default function AdminSettingsPage() {
                           {label:'Project ID', ok: diag.firebase.projectId},
                           {label:'App ID', ok: diag.firebase.appId},
                         ]} />
-                        <Section title="Algolia" items={[
-                          {label:'App ID', ok: diag.algolia.appId},
-                          {label:'Search Key', ok: diag.algolia.searchKey},
-                          {label:'Index', ok: diag.algolia.index},
-                        ]} tip={!diag.algolia.appId || !diag.algolia.searchKey ? 'Set NEXT_PUBLIC_ALGOLIA_* to enable search' : undefined} />
                         <Section title="Email" items={[
                           {label:'SendGrid', ok: diag.email.sendgrid},
                           {label:'SMTP', ok: diag.email.smtp},

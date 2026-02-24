@@ -1,10 +1,12 @@
 // app/admin/leads/page.tsx
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 import ProtectedClient from '../../auth/ProtectedClient'
 import AdminSidebar from '../../../components/AdminSidebar'
 import AdminTopbar from '../../../components/AdminTopbar'
 import { FiTarget, FiInfo } from 'react-icons/fi'
 import { useEffect, useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
 
 export default function AdminLeadsPage() {
   const [loading, setLoading] = useState(true)
@@ -22,6 +24,7 @@ export default function AdminLeadsPage() {
       // Fetch leads from API (server-side with Admin SDK)
       const res = await fetch('/api/admin/leads?limit=100')
       if (!res.ok) {
+        toast.error('Failed to load leads')
         throw new Error('Failed to fetch leads')
       }
       
@@ -38,6 +41,7 @@ export default function AdminLeadsPage() {
       }
     } catch (e) {
       console.error('Failed to load leads:', e)
+      toast.error('Could not load leads. Please try again.')
       setLeads([])
     } finally {
       setLoading(false)
@@ -82,16 +86,18 @@ export default function AdminLeadsPage() {
       
       // reflect locally
       const profile = candidates.find(c => c.id === selectedAssignee)
+      const assigneeName = profile?.name || profile?.company || 'agent'
       setLeads(prev => prev.map(l => l.id === assigning ? {
         ...l,
         status: 'assigned',
-        assignedTo: { uid: profile?.id, name: profile?.name || profile?.company || '—', role: profile?.role, email: profile?.email },
+        assignedTo: { uid: profile?.id, name: assigneeName, role: profile?.role, email: profile?.email },
         assignedAt: new Date()
       } : l))
       setAssigning(null)
       setSelectedAssignee('')
+      toast.success(`✅ Lead assigned to ${assigneeName}`)
     } catch (e) {
-      alert('No se pudo asignar el lead')
+      toast.error('Failed to assign lead. Please try again.')
     }
   }
 

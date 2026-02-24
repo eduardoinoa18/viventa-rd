@@ -1,5 +1,6 @@
 // app/auth/invite/[token]/page.tsx
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { FiCheck, FiX, FiLoader, FiMail, FiUser, FiBriefcase } from 'react-icons/fi'

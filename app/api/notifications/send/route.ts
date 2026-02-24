@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
     const broadcastAudiences = new Set<string>(['all'])
     if (role) {
       broadcastAudiences.add(role)
-      if (role === 'admin' || role === 'master_admin') {
+      if (role === 'master_admin') {
         broadcastAudiences.add('admin')
         broadcastAudiences.add('master_admin')
       }
@@ -168,8 +168,28 @@ export async function GET(req: NextRequest) {
       broadcast = broadcast.filter((n: any) => !n.read)
     }
 
-    // Merge and sort by createdAt desc
+    // Default URL mapping by type
+    const defaultUrlByType = (type: string, role: string) => {
+      const isAdmin = role === 'master_admin'
+      const base = isAdmin ? '/admin' : ''
+      switch (type) {
+        case 'new_message': return isAdmin ? `${base}/leads` : '/contact'
+        case 'lead_inquiry': return isAdmin ? `${base}/leads` : '/contact'
+        case 'application_approved': return isAdmin ? `${base}/applications` : '/contact'
+        case 'application_rejected': return isAdmin ? `${base}/applications` : '/contact'
+        case 'new_property': return isAdmin ? `${base}/properties` : '/search'
+        case 'price_alert': return '/search'
+        case 'saved_search': return '/search'
+        default: return isAdmin ? `${base}` : '/search'
+      }
+    }
+
+    // Merge, add default url when missing, and sort by createdAt desc
     const merged = [...personal, ...broadcast]
+      .map((n: any) => ({
+        ...n,
+        url: n.url || defaultUrlByType(n.type, role)
+      }))
       .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
       .slice(0, 50)
 
@@ -215,7 +235,7 @@ export async function PATCH(req: NextRequest) {
           .get(),
         adminDb
           .collection('notifications')
-          .where('audience', 'array-contains-any', [role, 'all', role === 'admin' ? 'admin' : null].filter(Boolean))
+          .where('audience', 'array-contains-any', [role, 'all', role === 'master_admin' ? 'master_admin' : null].filter(Boolean))
           .get()
       ])
 

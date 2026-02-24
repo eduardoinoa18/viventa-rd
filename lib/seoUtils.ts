@@ -19,32 +19,63 @@ export interface PropertySEO {
 
 /**
  * Generate structured data for property listing (JSON-LD)
+ * Updated for real estate specificity
  */
 export function generatePropertySchema(property: PropertySEO) {
-  return {
+  const baseSchema: any = {
     '@context': 'https://schema.org',
-    '@type': 'Product',
+    '@type': 'Residence',
     name: property.title,
     description: property.description,
-    image: property.images || [],
-    offers: {
-      '@type': 'Offer',
-      price: property.price,
-      priceCurrency: property.currency || 'USD',
-      availability: 'https://schema.org/InStock',
-    },
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: property.location,
-      addressCountry: 'DO',
-    },
-    ...(property.agentName && {
-      seller: {
-        '@type': 'Person',
-        name: property.agentName,
-      },
-    }),
   }
+
+  // Add images if available
+  if (property.images && property.images.length > 0) {
+    baseSchema.image = property.images
+  }
+
+  // Offer details (price, availability)
+  baseSchema.offers = {
+    '@type': 'Offer',
+    price: property.price,
+    priceCurrency: property.currency || 'USD',
+    availability: 'https://schema.org/InStock',
+    url: typeof window !== 'undefined' ? window.location.href : undefined,
+  }
+
+  // Address
+  baseSchema.address = {
+    '@type': 'PostalAddress',
+    addressLocality: property.location,
+    addressCountry: 'DO',
+  }
+
+  // Property features
+  if (property.bedrooms) {
+    baseSchema.numberOfRooms = property.bedrooms
+  }
+
+  if (property.bathrooms) {
+    baseSchema.numberOfBathroomsTotal = property.bathrooms
+  }
+
+  if (property.area) {
+    baseSchema.floorSize = {
+      '@type': 'QuantitativeValue',
+      value: property.area,
+      unitCode: 'MTK', // Square meters
+    }
+  }
+
+  // Seller information
+  if (property.agentName) {
+    baseSchema.seller = {
+      '@type': 'RealEstateAgent',
+      name: property.agentName,
+    }
+  }
+
+  return baseSchema
 }
 
 /**

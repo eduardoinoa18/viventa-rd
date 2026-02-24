@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     const statsSnap = await getDoc(statsRef)
 
     let points = 0
-    let updates: any = {}
+    const updates: Record<string, unknown> = {}
 
     switch (action) {
       case 'property_view':

@@ -13,50 +13,14 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from './firebaseClient';
-
-// Listing type definition
-export interface Listing {
-  id: string;
-  title: string;
-  description?: string;
-  price: number;
-  currency?: 'USD' | 'DOP';
-  area: number;
-  bedrooms: number;
-  bathrooms: number;
-  propertyType?: string;
-  listingType?: 'sale' | 'rent';
-  status?: string;
-  images?: string[];
-  agentName?: string;
-  agentPhone?: string;
-  // Location can be stored either as a string fields (city/neighborhood) or nested object
-  location?: {
-    address?: string;
-    city?: string;
-    neighborhood?: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-  };
-  city?: string;
-  neighborhood?: string;
-  lat?: number;
-  lng?: number;
-  amenities?: string[];
-  featured?: boolean;
-  views?: number;
-  createdAt: any;
-  updatedAt?: any;
-}
+import type { Listing, ListingType, PropertyType } from '@/types/listing';
 
 export interface SearchFilters {
   query?: string; // Text search (title, description, location)
   city?: string;
   neighborhood?: string;
-  propertyType?: string;
-  listingType?: 'sale' | 'rent';
+  propertyType?: PropertyType;
+  listingType?: ListingType;
   minPrice?: number;
   maxPrice?: number;
   bedrooms?: number;
@@ -116,16 +80,12 @@ function calculateRelevance(searchQuery: string, listing: Listing): number {
   const query = searchQuery.toLowerCase().trim();
   const tokens = query.split(/\s+/);
 
-  // Include both nested and top-level location fields in search
+  // Include location fields in search
   const searchableText = [
     listing.title,
     listing.description,
-    typeof listing.location === 'string' ? listing.location : listing.location?.address,
-    listing.location?.city,
-    listing.location?.neighborhood,
     listing.city,
-    listing.neighborhood,
-    listing.agentName,
+    listing.sector,
   ]
     .filter(Boolean)
     .join(' ')
@@ -167,17 +127,6 @@ function buildFirestoreQuery(filters: SearchFilters) {
   // Always filter for active listings
   constraints.push(where('status', '==', 'active'));
 
-  // Apply exact match filters
-  if (filters.city) {
-    // Our properties store city at the top level
-    constraints.push(where('city', '==', filters.city));
-  }
-
-  if (filters.neighborhood) {
-    // Our properties store neighborhood at the top level
-    constraints.push(where('neighborhood', '==', filters.neighborhood));
-  }
-
   if (filters.propertyType) {
     constraints.push(where('propertyType', '==', filters.propertyType));
   }
@@ -215,6 +164,35 @@ function applyClientFilters(
   filters: SearchFilters
 ): Listing[] {
   return listings.filter((listing) => {
+    // Location filters
+    const city = listing.city;
+    const sector = listing.sector;
+
+    if (filters.city && city && city !== filters.city) {
+      return false;
+    }
+
+    if (filters.neighborhood && sector && sector !== filters.neighborhood) {
+      return false;
+    }
+
+    // Listing type filters (fallback to default)
+    if (filters.propertyType && listing.propertyType && listing.propertyType !== filters.propertyType) {
+      return false;
+    }
+
+    if (filters.listingType && listing.listingType && listing.listingType !== filters.listingType) {
+      return false;
+    }
+
+    if (filters.bedrooms && typeof listing.bedrooms === 'number' && listing.bedrooms < filters.bedrooms) {
+      return false;
+    }
+
+    if (filters.bathrooms && typeof listing.bathrooms === 'number' && listing.bathrooms < filters.bathrooms) {
+      return false;
+    }
+
     // Price range
     if (filters.minPrice && listing.price < filters.minPrice) {
       return false;
@@ -268,8 +246,8 @@ export async function searchListings(
 
       // Calculate geo-distance
       if (filters.lat && filters.lng) {
-        const targetLat = listing.lat ?? listing.location?.coordinates?.latitude;
-        const targetLng = listing.lng ?? listing.location?.coordinates?.longitude;
+        const targetLat = listing.latitude;
+        const targetLng = listing.longitude;
         if (typeof targetLat === 'number' && typeof targetLng === 'number') {
           result.distance = calculateDistance(
             filters.lat,
@@ -353,14 +331,8 @@ export async function getFacetValues(): Promise<{
     const propertyTypes = new Set<string>();
 
     listings.forEach((listing) => {
-      // Prefer top-level fields; fall back to nested structure if present
       if (listing.city) cities.add(listing.city);
-      else if (listing.location?.city) cities.add(listing.location.city);
-
-      if (listing.neighborhood) neighborhoods.add(listing.neighborhood);
-      else if (listing.location?.neighborhood)
-        neighborhoods.add(listing.location.neighborhood);
-
+      if (listing.sector) neighborhoods.add(listing.sector);
       if (listing.propertyType) propertyTypes.add(listing.propertyType);
     });
 

@@ -3,6 +3,8 @@
 export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { verificationCodes } from '@/lib/verificationStore'
+import sgMail from '@sendgrid/mail'
+import nodemailer from 'nodemailer'
 
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -32,7 +34,10 @@ function checkRateLimit(email: string): { allowed: boolean; retryAfter?: number 
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json()
+    const { email, uid } = await request.json()
+    const cookieHeader = request.headers.get('cookie') || ''
+    const pwOk = cookieHeader.match(/(?:^|;\s*)admin_pw_ok=([^;]+)/)?.[1] || ''
+    const pwEmail = cookieHeader.match(/(?:^|;\s*)admin_pw_email=([^;]+)/)?.[1] || ''
 
     // Build allowed email list: prefer MASTER_ADMIN_EMAILS (comma-separated), fallback to MASTER_ADMIN_EMAIL
     const rawList = (process.env.MASTER_ADMIN_EMAILS || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com')
@@ -52,8 +57,9 @@ export async function POST(request: Request) {
     
     // Security: Don't log sensitive data in production
     if (isDev) {
-      console.log('═══ Master Admin Login Attempt ═══')
+      console.log('═══ Master Admin 2FA Code Request ═══')
       console.log('Email:', incoming)
+      console.log('UID provided:', !!uid)
       console.log('Allowlist:', Array.from(allowedEmails))
       console.log('Dev mode:', isDev)
       console.log('Allow any:', allowAny)
@@ -63,6 +69,12 @@ export async function POST(request: Request) {
     if (!isAllowed) {
       // Security: Use generic error message to prevent email enumeration
       return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })
+    }
+
+    // NEW FLOW: If uid is provided (from unified login), skip password cookie check
+    // LEGACY FLOW: If no uid, require password cookies (old gate system)
+    if (!uid && (pwOk !== '1' || (pwEmail && pwEmail.toLowerCase() !== incoming))) {
+      return NextResponse.json({ ok: false, error: 'Password verification required' }, { status: 401 })
     }
 
     // Rate limiting (only in production)
@@ -91,7 +103,8 @@ export async function POST(request: Request) {
 
     // If sending fails in development, still allow sign-in by surfacing the code
     if (!emailSent) {
-      const allowDevResponse = isDev || isLocalHost || process.env.ALLOW_DEV_2FA_RESPONSE === 'true'
+      const isPreview = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production'
+      const allowDevResponse = isDev || isLocalHost || isPreview || process.env.ALLOW_DEV_2FA_RESPONSE === 'true'
       if (allowDevResponse) {
         console.log('⚠️  Email failed but DEV mode - returning code in response')
         return NextResponse.json({ 
@@ -116,7 +129,8 @@ export async function POST(request: Request) {
       expiresIn: 600 // seconds
     }
     // Helpful for development and staging
-    if (isDev || isLocalHost || process.env.ALLOW_DEV_2FA_RESPONSE === 'true') {
+    const isPreview = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production'
+    if (isDev || isLocalHost || isPreview || process.env.ALLOW_DEV_2FA_RESPONSE === 'true') {
       response.devCode = code
       console.log('🔐 DEV CODE:', code)
     }
@@ -140,7 +154,6 @@ async function sendVerificationEmail(email: string, code: string): Promise<boole
     // Option 1: Using SendGrid (recommended for production)
     if (process.env.SENDGRID_API_KEY) {
       console.log('📧 Using SendGrid...')
-      const sgMail = require('@sendgrid/mail')
       sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
       const msg = {
@@ -188,8 +201,6 @@ async function sendVerificationEmail(email: string, code: string): Promise<boole
         pass: process.env.SMTP_PASS ? '***' : 'missing',
       })
 
-      const nodemailer = require('nodemailer')
-      
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || '587'),

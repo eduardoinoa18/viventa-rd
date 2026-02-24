@@ -81,9 +81,9 @@ export default function PasswordSetupPage() {
 
       toast.success('¡Contraseña configurada exitosamente!')
       
-      // Redirect to professional login
+      // Redirect to login
       setTimeout(() => {
-        router.push('/profesionales?setup=success')
+        router.push('/login?setup=success')
       }, 1500)
     } catch (error: any) {
       toast.error(error.message || 'Error al configurar contraseña')
@@ -116,7 +116,7 @@ export default function PasswordSetupPage() {
             Por favor, contacta a soporte para recibir un nuevo enlace.
           </p>
           <a
-            href="/profesionales"
+            href="/login"
             className="inline-block px-6 py-3 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008c5f] transition"
           >
             Ir a Inicio de Sesión

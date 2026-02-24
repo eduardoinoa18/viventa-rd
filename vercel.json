@@ -49,11 +49,5 @@
       "source": "/(.*)",
       "destination": "/"
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/admin/analytics/aggregate",
-      "schedule": "0 1 * * *"
-    }
   ]
 }

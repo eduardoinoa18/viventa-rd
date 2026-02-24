@@ -324,7 +324,7 @@ function ApplicationCard({ app, selected, onToggleSelect, onApprove, onReject, o
               )}
               {app.linkedUid && (
                 <a
-                  href={`/admin/users`}
+                  href={`/admin/people?tab=users`}
                   onClick={(e) => {
                     e.stopPropagation()
                     // In a real implementation, you'd navigate to the user detail or filter by this uid

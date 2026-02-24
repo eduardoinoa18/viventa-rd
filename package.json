@@ -11,17 +11,23 @@
     "check-config": "node scripts/check-config.js",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
+<<<<<<< HEAD
     "ai:preflight": "bash scripts/ai-preflight.sh"
+=======
+    "db:cleanup": "cd functions && npx ts-node ../scripts/cleanup-database.ts",
+    "db:wipe": "cd functions && npx ts-node ../scripts/wipe-database.ts"
+>>>>>>> origin/copilot/implement-project-review-plan
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
     "@sendgrid/mail": "^8.1.6",
+    "dotenv": "^17.3.1",
     "firebase": "^12.4.0",
     "firebase-admin": "^12.7.0",
     "idb": "^8.0.3",
     "leaflet": "^1.9.4",
     "mapbox-gl": "^3.15.0",
-    "next": "14.2.5",
+    "next": "^14.2.33",
     "next-pwa": "^5.6.0",
     "nodemailer": "^7.0.10",
     "react": "18.3.1",
@@ -31,7 +37,6 @@
     "react-leaflet": "^5.0.0",
     "react-map-gl": "^7.1.5",
     "recharts": "^3.3.0",
-    "resend": "^6.4.1",
     "stripe": "^17.3.1",
     "workbox-window": "^7.3.0"
   },
@@ -44,6 +49,7 @@
     "@types/react-dom": "^18.3.5",
     "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.20",
+    "baseline-browser-mapping": "^2.9.19",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.5",
     "postcss": "^8.4.47",

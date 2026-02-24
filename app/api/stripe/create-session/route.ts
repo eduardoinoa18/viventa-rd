@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebaseClient'
 import { doc, getDoc } from 'firebase/firestore'
+import Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Initialize Stripe
-    const stripe = require('stripe')(stripeSecretKey)
+    const stripe = new Stripe(stripeSecretKey)
 
     // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
@@ -47,8 +48,8 @@ export async function POST(req: NextRequest) {
         plan,
         ...metadata,
       },
-      success_url: successUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard?payment=success`,
-      cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/professionals?payment=canceled`,
+      success_url: successUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/search?payment=success`,
+      cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/search?payment=canceled`,
       allow_promotion_codes: true,
       billing_address_collection: 'required',
       // Apple Pay and Google Pay are automatically offered by Stripe Checkout where supported

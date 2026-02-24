@@ -5,7 +5,7 @@ import LocaleSwitcher from './LocaleSwitcher'
 import NotificationCenter from './NotificationCenter'
 import { useEffect, useState } from 'react'
 import { getSession, clearSession } from '../lib/authSession'
-import { FiMenu, FiX, FiLogOut, FiUser, FiSettings, FiHelpCircle } from 'react-icons/fi'
+import { FiMenu, FiX, FiLogOut, FiUser, FiHelpCircle } from 'react-icons/fi'
 
 export default function Header() {
   const pathname = usePathname()
@@ -43,12 +43,12 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <LocaleSwitcher />
           {/* Back to Admin button for admins on user-facing pages */}
-          {session && (session.role === 'admin' || session.role === 'master_admin') && !pathname?.startsWith('/admin') && (
+          {session && session.role === 'master_admin' && !pathname?.startsWith('/master') && (
             <Link 
-              href="/admin" 
+              href="/master" 
               className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm bg-viventa-navy text-white rounded-lg font-medium hover:bg-viventa-ocean transition-all"
             >
-              <span>Admin Panel</span>
+              <span>Master Panel</span>
             </Link>
           )}
             <Link href="/login" className="px-4 py-2 min-h-[44px] hidden sm:flex items-center justify-center text-sm border-2 border-viventa-ocean text-viventa-ocean rounded-lg font-bold hover:bg-viventa-ocean hover:text-white transition-all active:scale-95">Login</Link>
@@ -75,27 +75,28 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Link href="/search" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Explorar</Link>
+              <Link href="/" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Inicio</Link>
+              <Link href="/search" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Buscar</Link>
               <Link href="/agents" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Agentes</Link>
-              <Link href="/favorites" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Favoritos</Link>
-              <Link href="/social" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Social</Link>
+              <Link href="/brokers" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Brokerages</Link>
+              <Link href="/contact" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Contacto</Link>
             </>
           )}
         </nav>
         <div className="flex items-center gap-3">
           <LocaleSwitcher />
           {/* Back to Admin button for admins on user-facing pages */}
-          {session && (session.role === 'admin' || session.role === 'master_admin') && !pathname?.startsWith('/admin') && (
+          {session && session.role === 'master_admin' && !pathname?.startsWith('/master') && (
             <Link 
-              href="/admin" 
+              href="/master" 
               className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm bg-viventa-navy text-white rounded-lg font-medium hover:bg-viventa-ocean transition-all"
             >
-              <span>Admin Panel</span>
+              <span>Master Panel</span>
             </Link>
           )}
           {session ? (
             <>
-              {session.uid && (session.role === 'admin' || session.role === 'master_admin') && <NotificationCenter userId={session.uid} />}
+              {session.uid && session.role === 'master_admin' && <NotificationCenter userId={session.uid} />}
               {/* Online indicator (client-side presence) */}
               <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full bg-green-50 border border-green-200">
                 <span className="relative flex h-2.5 w-2.5">
@@ -114,14 +115,6 @@ export default function Header() {
               </button>
               {/* Desktop user menu */}
               <div className="hidden md:flex items-center gap-2">
-                <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm border-2 border-viventa-ocean text-viventa-ocean rounded-lg font-semibold hover:bg-viventa-ocean hover:text-white transition-all">
-                  <FiUser className="text-lg" />
-                  <span>Perfil</span>
-                </Link>
-                <Link href="/dashboard/settings" className="flex items-center gap-2 px-4 py-2 text-sm border-2 border-viventa-teal text-viventa-teal rounded-lg font-semibold hover:bg-viventa-teal hover:text-white transition-all">
-                  <FiSettings className="text-lg" />
-                  <span>Configuración</span>
-                </Link>
                 <button
                   onClick={logout}
                   className="flex items-center gap-2 px-4 py-2 text-sm bg-viventa-sunset text-white rounded-lg font-semibold hover:bg-viventa-sunset-light transition-all"
@@ -182,29 +175,6 @@ export default function Header() {
               Brokerages
             </Link>
             <Link
-              href="/profesionales"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-4 py-3 rounded-lg hover:bg-viventa-sand transition-colors font-medium text-viventa-navy"
-            >
-              Profesionales (Agentes/Brokers)
-            </Link>
-            <div className="grid grid-cols-2 gap-2">
-              <Link
-                href="/agent/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 text-center rounded-lg border-2 border-viventa-ocean text-viventa-ocean font-semibold hover:bg-viventa-ocean hover:text-white transition-all"
-              >
-                Portal Agente
-              </Link>
-              <Link
-                href="/broker/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 text-center rounded-lg border-2 border-viventa-teal text-viventa-teal font-semibold hover:bg-viventa-teal hover:text-white transition-all"
-              >
-                Portal Broker
-              </Link>
-            </div>
-            <Link
               href="/contact"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-4 py-3 rounded-lg hover:bg-viventa-sand transition-colors font-medium text-viventa-navy"
@@ -237,20 +207,12 @@ export default function Header() {
         <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
           <div className="max-w-7xl mx-auto px-4 py-3 space-y-2">
             <Link
-              href="/dashboard"
+              href="/search"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-viventa-sand transition-colors"
             >
               <FiUser className="text-xl text-viventa-ocean" />
-              <span className="font-medium text-viventa-navy">Mi Perfil</span>
-            </Link>
-            <Link
-              href="/dashboard/settings"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-viventa-sand transition-colors"
-            >
-              <FiSettings className="text-xl text-viventa-ocean" />
-              <span className="font-medium text-viventa-navy">Configuración</span>
+              <span className="font-medium text-viventa-navy">Explorar propiedades</span>
             </Link>
             <Link
               href="/contact"

@@ -29,11 +29,9 @@ export async function POST(req: NextRequest) {
 
     const res = NextResponse.json({ ok: true, user: { email } })
 
-    // Set session cookies for middleware and client
-    const sessionToken = `ma_${Math.random().toString(36).slice(2)}`
-    res.cookies.set('viventa_role', 'master_admin', { path: '/', httpOnly: true, sameSite: 'lax' })
-    res.cookies.set('viventa_uid', 'master_admin', { path: '/', httpOnly: true, sameSite: 'lax' })
-    res.cookies.set('viventa_session', sessionToken, { path: '/', httpOnly: true, sameSite: 'lax' })
+    // Short-lived password verification cookie (2FA pending)
+    res.cookies.set('admin_pw_ok', '1', { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 10 })
+    res.cookies.set('admin_pw_email', email, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 10 })
 
     return res
   } catch (e) {

@@ -4,7 +4,6 @@ import ProtectedClient from '../auth/ProtectedClient'
 import AdminWidget from '../../components/AdminWidget'
 import AdminSidebar from '../../components/AdminSidebar'
 import AdminTopbar from '../../components/AdminTopbar'
-import ActivityWidget from '../../components/ActivityWidget'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { FiUsers, FiHome, FiDollarSign, FiClock, FiUserPlus, FiCreditCard, FiActivity } from 'react-icons/fi'
@@ -75,8 +74,6 @@ export default function AdminPage() {
       })
       .catch(() => {})
   }, [timeWindow])
-
-  const [showActivity, setShowActivity] = useState(false)
 
   return (
     <ProtectedClient allowed={['master_admin','admin']}>
@@ -229,41 +226,6 @@ export default function AdminPage() {
             </div>
           </section>
 
-          {/* Collapsible Activity Feed */}
-          <section className="mb-8">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <button
-                onClick={() => setShowActivity(!showActivity)}
-                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                  <FiActivity className="text-[#00A676]" />
-                  Recent Activity
-                </h2>
-                <svg
-                  className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${showActivity ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              {showActivity && (
-                <div className="p-5 border-t border-gray-200 animate-fadeIn">
-                  <ActivityWidget />
-                </div>
-              )}
-              
-              {!showActivity && (
-                <div className="px-5 pb-4 text-sm text-gray-500">
-                  Click to view recent platform activity and events
-                </div>
-              )}
-            </div>
-          </section>
-
           {/* Quick Actions */}
           <section>
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Quick Actions</h2>
@@ -278,13 +240,7 @@ export default function AdminPage() {
                 href="/admin/properties/create" 
                 className="px-6 py-3 bg-gradient-to-r from-[#00A6A6] to-[#00C896] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
               >
-                <FiHome /> Create Listing
-              </Link>
-              <Link 
-                href="/admin/users" 
-                className="px-6 py-3 bg-gradient-to-r from-[#3BAFDA] to-[#2A9FC7] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
-              >
-                <FiUsers /> Manage Users
+                <FiHome /> Create Property
               </Link>
               <Link 
                 href="/admin/properties" 

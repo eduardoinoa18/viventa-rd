@@ -1,5 +1,6 @@
 // components/CreateProfessionalModal.tsx
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 import { useState } from 'react'
 import { FiX, FiUser, FiBriefcase, FiGlobe, FiAward, FiMapPin, FiPhone, FiMail } from 'react-icons/fi'
 

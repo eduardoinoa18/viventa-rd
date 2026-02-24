@@ -1,0 +1,10 @@
+# These owners will be the default owners for everything in the repo.
+*       @eduardoinoa18
+
+# Critical app paths
+/app/**            @eduardoinoa18
+/components/**     @eduardoinoa18
+/lib/**            @eduardoinoa18
+/functions/**      @eduardoinoa18
+/firebase/**       @eduardoinoa18
+/public/**         @eduardoinoa18

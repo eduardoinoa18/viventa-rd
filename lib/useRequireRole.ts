@@ -1,24 +1,19 @@
-﻿"use client"
+"use client"
 import { useEffect, useState } from 'react'
 import { auth, db } from './firebaseClient'
 import { doc, getDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
+import AdminCodeModal from '../components/AdminCodeModal'
+import type { UserRole } from '@/types/user'
 
-export type Role = 'client' | 'agent' | 'admin' | 'brokerage_admin' | 'master_admin'
-
-interface UserData {
-  role: Role;
-  [key: string]: unknown;
-}
-
-export function useRequireRole(allowed: Role[] = ['agent','admin','brokerage_admin','master_admin']) {
+export function useRequireRole(allowed: UserRole[] = ['agent','broker','master_admin']) {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [ok, setOk] = useState(false)
   const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
-    const unsub = auth?.onAuthStateChanged(async (u: { uid: string; getIdTokenResult: () => Promise<{ claims: Record<string, unknown> }> } | null) => {
+    const unsub = auth?.onAuthStateChanged(async (u: any) => {
       if (!u) {
         setOk(false)
         setLoading(false)
@@ -27,11 +22,11 @@ export function useRequireRole(allowed: Role[] = ['agent','admin','brokerage_adm
       }
       const ref = doc(db, 'users', u.uid)
       const snap = await getDoc(ref)
-      const userData = snap.exists() ? snap.data() as UserData : { role: 'client' as Role }
-      const role = userData.role
+      const role = (snap.exists() ? (snap.data() as any).role : 'buyer') as UserRole
       const allowedOk = allowed.includes(role)
+      // Check custom claims for admin_verified_until
       const claims = (await auth.currentUser?.getIdTokenResult())?.claims || {}
-      if ((role === 'admin' || role === 'master_admin') && allowedOk) {
+      if (role === 'master_admin' && allowedOk) {
         const now = Date.now()
         const verifiedUntil = claims.admin_verified_until as number | undefined
         if (!verifiedUntil || verifiedUntil < now) {

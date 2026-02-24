@@ -45,21 +45,4 @@ if (allPresent) {
   console.log('For Vercel deployment, add these to: https://vercel.com/your-project/settings/environment-variables\n');
 }
 
-// Check optional vars
-const optionalVars = [
-  'NEXT_PUBLIC_ALGOLIA_APP_ID',
-  'NEXT_PUBLIC_ALGOLIA_SEARCH_KEY',
-];
-
-let hasOptional = false;
-optionalVars.forEach((varName) => {
-  if (process.env[varName]) {
-    hasOptional = true;
-  }
-});
-
-if (hasOptional) {
-  console.log('ℹ️  Optional: Algolia search is configured\n');
-} else {
-  console.log('ℹ️  Optional: Algolia search not configured (property search will use basic filtering)\n');
-}
+console.log('ℹ️  Search runs on Firestore filters (no Algolia needed)\n');

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { formatCurrency, type Currency } from '@/lib/currency'
-import type { Listing } from '@/lib/customSearchService'
+import type { Listing } from '@/types/listing'
 
 // Fix for default marker icon in Leaflet with Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -62,8 +62,8 @@ export default function CustomMapSearch({
     // Add new markers
     const validListings = listings.filter(
       (listing) =>
-        listing.location?.coordinates?.latitude &&
-        listing.location?.coordinates?.longitude
+        listing.latitude &&
+        listing.longitude
     )
 
     if (validListings.length === 0) {
@@ -73,7 +73,7 @@ export default function CustomMapSearch({
     }
 
     validListings.forEach((listing) => {
-      const { latitude, longitude } = listing.location!.coordinates!
+      const { latitude, longitude } = listing
 
       // Create custom icon for property type
       const iconHtml = `
@@ -119,7 +119,7 @@ export default function CustomMapSearch({
               ${listing.bedrooms || 0} hab • ${listing.bathrooms || 0} baños • ${listing.area || 0} m²
             </p>
             <p style="margin: 4px 0; font-size: 12px; color: #666;">
-              📍 ${listing.location?.city || ''}, ${listing.location?.neighborhood || ''}
+              📍 ${listing.city || ''}, ${listing.sector || ''}
             </p>
             ${
               onMarkerClick
@@ -154,8 +154,8 @@ export default function CustomMapSearch({
     if (validListings.length > 0) {
       const bounds = L.latLngBounds(
         validListings.map((listing) => [
-          listing.location!.coordinates!.latitude,
-          listing.location!.coordinates!.longitude,
+          listing.latitude,
+          listing.longitude,
         ])
       )
       mapRef.current.fitBounds(bounds, { padding: [50, 50] })

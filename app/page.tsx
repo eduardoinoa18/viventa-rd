@@ -1,4 +1,5 @@
 "use client"
+/* eslint-disable react/no-unescaped-entities */
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -8,7 +9,7 @@ import AgentCard from '../components/AgentCard';
 import StructuredData from '../components/StructuredData';
 import RegistrationPrompt from '../components/RegistrationPrompt';
 import { useState, useEffect } from 'react';
-import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock, FiTrendingUp, FiStar } from 'react-icons/fi'
+import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock, FiTrendingUp, FiStar, FiMail } from 'react-icons/fi'
 
 type Property = {
   id: string;
@@ -18,14 +19,12 @@ type Property = {
   currency?: string;
   propertyType?: string;
   city?: string;
-  neighborhood?: string;
+  sector?: string;
   bedrooms?: number;
   bathrooms?: number;
   area?: number;
   images?: string[];
-  location?: string;
   agentId?: string;
-  agentName?: string;
 };
 
 type Agent = {
@@ -68,14 +67,12 @@ export default function HomePage() {
           currency: p.currency || 'USD',
           propertyType: p.propertyType || p.type,
           city: p.city,
-          neighborhood: p.neighborhood,
+          sector: p.sector,
           bedrooms: p.bedrooms,
           bathrooms: p.bathrooms,
           area: p.area,
           images: p.images || [],
-          location: p.location,
           agentId: p.agentId,
-          agentName: p.agentName,
         }))
         setProperties(list)
       })
@@ -86,7 +83,7 @@ export default function HomePage() {
   // Load agents (prefer verified, but fallback to active; prefer agents with active listings; must be approved)
   useEffect(() => {
     setLoadingAgents(true)
-    fetch('/api/admin/users?role=agent')
+    fetch('/api/agents?limit=200')
       .then(r => r.json())
       .then(data => {
         const all: any[] = data?.data || []
@@ -127,8 +124,7 @@ export default function HomePage() {
     const matchesLocation = filters.location
       ? (
           (p.city || '').toLowerCase().includes(filters.location.toLowerCase()) ||
-          (p.neighborhood || '').toLowerCase().includes(filters.location.toLowerCase()) ||
-          (p.location || '').toLowerCase().includes(filters.location.toLowerCase())
+          (p.sector || '').toLowerCase().includes(filters.location.toLowerCase())
         )
       : true;
     return matchesType && matchesMin && matchesMax && matchesLocation;
@@ -206,15 +202,12 @@ export default function HomePage() {
                 <span>Nuestros Agentes</span>
               </a>
               <a 
-                href="/social" 
+                href="/contact" 
                 className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold rounded-lg border-2 border-white/30 transition-all duration-300 inline-flex items-center justify-center gap-2 text-sm sm:text-base min-h-[48px]"
-                aria-label="Social (Próximamente)"
+                aria-label="Contactar"
               >
-                <span className="relative flex-shrink-0">
-                  <span className="absolute -top-2 -right-3 text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">Pronto</span>
-                  <FiTrendingUp className="text-lg sm:text-xl" />
-                </span>
-                <span>Social</span>
+                <FiMail className="text-lg sm:text-xl" />
+                <span>Contactar</span>
               </a>
             </div>
           </div>
@@ -457,8 +450,8 @@ export default function HomePage() {
             
             <div className="text-center mt-10">
               <h3 className="text-xl font-semibold text-white mb-2">¿Eres agente, bróker o desarrollador?</h3>
-              <p className="text-viventa-sand/90 mb-4">Únete a VIVENTA Pro y potencia tu negocio inmobiliario.</p>
-              <a href="/profesionales" className="inline-block px-8 py-3 bg-white text-viventa-ocean font-bold rounded-xl shadow-lg hover:scale-105 transition-all">Descubre VIVENTA para Profesionales</a>
+              <p className="text-viventa-sand/90 mb-4">Hablemos sobre tu proyecto y la mejor forma de colaborar.</p>
+              <a href="/contact" className="inline-block px-8 py-3 bg-white text-viventa-ocean font-bold rounded-xl shadow-lg hover:scale-105 transition-all">Contactar al equipo</a>
             </div>
           </div>
         </section>

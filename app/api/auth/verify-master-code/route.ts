@@ -9,6 +9,24 @@ export async function POST(request: Request) {
   try {
   const { email, code, remember } = await request.json()
 
+    const incoming = String(email || '').trim().toLowerCase()
+    const cookies = request.headers.get('cookie') || ''
+    const pwOk = cookies.match(/(?:^|;\s*)admin_pw_ok=([^;]+)/)?.[1] || ''
+    const pwEmail = cookies.match(/(?:^|;\s*)admin_pw_email=([^;]+)/)?.[1] || ''
+    if (pwOk !== '1' || (pwEmail && pwEmail.toLowerCase() !== incoming)) {
+      return NextResponse.json({ ok: false, error: 'Password verification required' }, { status: 401 })
+    }
+    const allowAny = process.env.ALLOW_ANY_MASTER_EMAIL === 'true'
+    const isDev = process.env.NODE_ENV !== 'production'
+    const allowed = (process.env.MASTER_ADMIN_EMAILS || process.env.MASTER_ADMIN_EMAIL || '')
+      .split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(Boolean)
+    const allowedSet = new Set(allowed)
+    if (!incoming || (!allowAny && allowedSet.size > 0 && !allowedSet.has(incoming) && !isDev)) {
+      return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })
+    }
+
     // Security: Don't log sensitive data in production
     if (process.env.NODE_ENV === 'development') {
       console.log('Verification attempt for:', email)
@@ -80,8 +98,15 @@ export async function POST(request: Request) {
       }
     })
 
+    // Issue admin session cookies only after 2FA
+    res.cookies.set('viventa_role', 'master_admin', { path: '/', httpOnly: true, sameSite: 'lax' })
+    res.cookies.set('viventa_uid', 'master_admin', { path: '/', httpOnly: true, sameSite: 'lax' })
+    res.cookies.set('viventa_session', sessionToken, { path: '/', httpOnly: true, sameSite: 'lax' })
     // Set short-lived 2FA cookie (30 minutes)
     res.cookies.set('admin_2fa_ok', '1', { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 30 })
+    res.cookies.set('viventa_admin_email', incoming, { path: '/', httpOnly: true, sameSite: 'lax' })
+    res.cookies.set('admin_pw_ok', '', { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 0 })
+    res.cookies.set('admin_pw_email', '', { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 0 })
 
     // Optionally set a trusted-device cookie for 30 days
     if (remember === true) {
@@ -126,7 +151,10 @@ function b64url(input: Buffer | string) {
 }
 
 async function createTrustedToken(payload: Record<string, any>): Promise<string> {
-  const secret = process.env.TRUSTED_DEVICE_SECRET || 'dev-secret-change-me'
+  const secret = process.env.TRUSTED_DEVICE_SECRET;
+  if (!secret) {
+    throw new Error('TRUSTED_DEVICE_SECRET environment variable must be set to use trusted device feature');
+  }
   const header = { alg: 'HS256', typ: 'TJ' } // Tiny-JWT style header
   const encHeader = b64url(JSON.stringify(header))
   const encPayload = b64url(JSON.stringify(payload))

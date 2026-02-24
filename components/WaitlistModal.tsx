@@ -11,7 +11,7 @@ interface WaitlistModalProps {
 }
 
 export default function WaitlistModal({ isOpen, onClose, trigger }: WaitlistModalProps) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'user' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'buyer' })
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {

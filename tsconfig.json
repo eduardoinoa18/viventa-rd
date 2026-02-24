@@ -40,6 +40,7 @@
     "node_modules",
     "functions/**",
     "tests/**",
+    "scripts/**",
     "playwright.config.ts",
     "components/_algolia_backup/**",
     "components/algolia/**",
