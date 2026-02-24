@@ -4,8 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock, FiArrowLeft, FiAlertCircle } from 'react-icons/fi'
-import { uploadMultipleImages, validateImageFiles, generatePropertyImagePath } from '@/lib/storageService'
-import { getSession } from '@/lib/authSession'
+import { uploadMultipleImages, validateImageFiles } from '@/lib/storageService'
 import Link from 'next/link'
 
 export default function EditPropertyPage() {
@@ -262,8 +261,8 @@ export default function EditPropertyPage() {
     }
     try {
       setUploading(true)
-      const adminUid = getSession()?.uid || 'unknown'
-      const folder = generatePropertyImagePath(adminUid)
+      // Server-side API handles UID from session cookie - no need to pass it from client
+      const folder = `listing_images/temp_${Date.now()}`
       const urls = await uploadMultipleImages(selectedFiles, folder, (index, p) => {
         setProgressByIndex((prev) => {
           const next = [...prev]

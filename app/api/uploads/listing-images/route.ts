@@ -6,6 +6,15 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 
 export const runtime = 'nodejs'
 
+// Configure body parser to accept larger payloads
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+}
+
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024
 const MAX_FILES = 10

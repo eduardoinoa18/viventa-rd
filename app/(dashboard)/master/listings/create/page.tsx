@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { type Property } from '@/lib/firestoreService'
-import { uploadMultipleImages, validateImageFiles, generatePropertyImagePath } from '@/lib/storageService'
-import { getSession } from '@/lib/authSession'
+import { uploadMultipleImages, validateImageFiles } from '@/lib/storageService'
 import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock } from 'react-icons/fi'
 // Removed direct Firestore counters usage; server API now generates listingId
 
@@ -168,8 +167,8 @@ export default function CreatePropertyPage() {
     }
     try {
       setUploading(true)
-      const adminUid = getSession()?.uid || 'unknown'
-      const folder = generatePropertyImagePath(adminUid)
+      // Server-side API handles UID from session cookie - no need to pass it from client
+      const folder = `listing_images/temp_${Date.now()}`
       const urls = await uploadMultipleImages(selectedFiles, folder, (index, p) => {
         setProgressByIndex((prev) => {
           const next = [...prev]

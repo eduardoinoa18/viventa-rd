@@ -21,24 +21,65 @@ export async function GET(req: NextRequest) {
     const limitParam = Number(searchParams.get('limit') || '200')
     const safeLimit = Math.min(Math.max(limitParam, 1), 500)
 
-    const snap = await db
-      .collection('messages')
-      .where('conversationId', '==', conversationId)
-      .orderBy('createdAt', 'asc')
-      .limit(safeLimit)
-      .get()
+    try {
+      const snap = await db
+        .collection('messages')
+        .where('conversationId', '==', conversationId)
+        .orderBy('createdAt', 'asc')
+        .limit(safeLimit)
+        .get()
 
-    const messages = snap.docs.map((doc: any) => {
-      const data = doc.data() as any
-      const createdAt = data.createdAt?.toDate?.() || null
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: createdAt ? createdAt.toISOString() : null,
+      const messages = snap.docs.map((doc: any) => {
+        const data = doc.data() as any
+        const createdAt = data.createdAt?.toDate?.() || null
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: createdAt ? createdAt.toISOString() : null,
+        }
+      })
+
+      return NextResponse.json({ ok: true, messages })
+    } catch (error: any) {
+      // If orderBy fails (missing index), fall back to query without ordering
+      console.error('[INBOX] Query with orderBy failed:', error.message)
+      console.log('[INBOX] Attempting fallback query without orderBy...')
+      
+      try {
+        const snap = await db
+          .collection('messages')
+          .where('conversationId', '==', conversationId)
+          .limit(safeLimit)
+          .get()
+
+        const messages = snap.docs.map((doc: any) => {
+          const data = doc.data() as any
+          const createdAt = data.createdAt?.toDate?.() || null
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: createdAt ? createdAt.toISOString() : null,
+          }
+        })
+
+        // Sort in JavaScript if we couldn't use Firestore orderBy
+        messages.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime()
+          const dateB = new Date(b.createdAt || 0).getTime()
+          return dateA - dateB
+        })
+
+        console.log(`[INBOX] Fallback successful: ${messages.length} messages retrieved`)
+        return NextResponse.json({ ok: true, messages })
+      } catch (fallbackError: any) {
+        console.error('[INBOX] Fallback query also failed:', fallbackError.message)
+        return NextResponse.json({ 
+          ok: false, 
+          error: 'Failed to fetch messages',
+          details: fallbackError.message 
+        }, { status: 500 })
       }
-    })
-
-    return NextResponse.json({ ok: true, messages })
+    }
   })
 }
 
