@@ -234,24 +234,17 @@ export default function CreatePropertyPage() {
         images: form.images,
         agentId: form.agentId?.trim() || '',
         agentName: form.agentName?.trim() || '',
-        agentEmail: form.agentId ? undefined : getSession()?.email, // attempt to include email if available
         status: form.status,
         featured: Boolean(form.featured),
         features,
       }
-      // Determine endpoint based on role (admins vs professionals)
-      const session = getSession()
-      const role = session?.role
-      const isAdmin = role === 'master_admin'
-      const endpoint = isAdmin ? '/api/admin/properties' : '/api/properties'
-      const body = isAdmin
-        ? JSON.stringify({ ...payload })
-        : JSON.stringify({ action: 'create', ...payload })
+      // Master admin always uses admin API endpoint
+      const endpoint = '/api/admin/properties'
 
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body,
+        body: JSON.stringify(payload),
       })
       if (!res.ok) {
         if (res.status === 403) {

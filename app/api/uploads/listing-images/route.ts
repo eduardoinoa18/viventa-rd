@@ -5,18 +5,11 @@ import { getServerSession } from '@/lib/auth/session'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 
 export const runtime = 'nodejs'
-
-// Configure body parser to accept larger payloads
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-}
+// Increase body size limit for image uploads (default is ~4.5MB)
+export const maxDuration = 60 // 60 seconds max
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024
+const MAX_FILE_SIZE_BYTES = 4 * 1024 * 1024 // Reduced to 4MB to stay within Next.js limits
 const MAX_FILES = 10
 
 function getBucketName(): string {

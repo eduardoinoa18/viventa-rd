@@ -140,7 +140,7 @@ export async function deleteMultipleImages(imageUrls: string[]): Promise<void> {
  * Validate image file
  */
 export function validateImageFile(file: File): { valid: boolean; error?: string } {
-  const maxSize = 5 * 1024 * 1024 // 5MB
+  const maxSize = 4 * 1024 * 1024 // 4MB (Next.js body limit constraint)
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
   if (!allowedTypes.includes(file.type)) {
@@ -153,7 +153,7 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
   if (file.size > maxSize) {
     return {
       valid: false,
-      error: 'File too large. Maximum size is 5MB.'
+      error: 'File too large. Maximum size is 4MB.'
     }
   }
 
