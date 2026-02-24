@@ -267,7 +267,7 @@ export default function AdminUsersPage() {
             <div className="flex items-start gap-3">
               <div className="text-blue-600 mt-0.5">ℹ️</div>
               <div>
-                <p className="text-sm text-blue-900 font-medium">Esta página muestra únicamente usuarios regulares (role: 'user')</p>
+                <p className="text-sm text-blue-900 font-medium">Esta página muestra únicamente usuarios regulares (role: &apos;user&apos;)</p>
                 <p className="text-xs text-blue-800 mt-1">
                   Los <strong>Agentes</strong> y <strong>Brokers</strong> se gestionan en sus respectivas pestañas con credenciales y permisos especiales.
                 </p>
@@ -315,7 +315,7 @@ export default function AdminUsersPage() {
                 <input className="px-3 py-2 border rounded" placeholder="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
                 <input type="hidden" value="user" />
                 <p className="md:col-span-2 text-sm text-gray-600 bg-gray-50 p-3 rounded">
-                  <strong>Nota:</strong> Usuarios creados aquí tendrán role='user'. Para crear Agentes o Brokers, usa sus respectivas páginas.
+                  <strong>Nota:</strong> Usuarios creados aquí tendrán role=&apos;user&apos;. Para crear Agentes o Brokers, usa sus respectivas páginas.
                 </p>
                 <div className="md:col-span-2 flex gap-2">
                   <button type="submit" className="px-4 py-2 bg-[#0B2545] text-white rounded hover:bg-[#0B2545]/90">{editingId ? 'Update' : 'Create'}</button>

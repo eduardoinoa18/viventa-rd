@@ -46,6 +46,12 @@ const withPWA = require('next-pwa')({
 
 module.exports = withPWA({
 	reactStrictMode: true,
+	env: {
+		NEXT_PUBLIC_BUILD_SHA:
+			process.env.NEXT_PUBLIC_BUILD_SHA ||
+			process.env.VERCEL_GIT_COMMIT_SHA ||
+			'local',
+	},
 	images: {
 		formats: ['image/avif', 'image/webp'],
 		deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
@@ -60,12 +66,12 @@ module.exports = withPWA({
 	async headers() {
 		const csp = [
 			"default-src 'self'",
-			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://cdn.jsdelivr.net",
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://cdn.jsdelivr.net https://vercel.live",
 			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 			"img-src 'self' data: blob: https://*",
-			"connect-src 'self' https://* wss://*",
+			"connect-src 'self' https://* wss://* https://vercel.live",
 			"font-src 'self' https://fonts.gstatic.com data:",
-			"frame-src https://js.stripe.com https://hooks.stripe.com",
+			"frame-src https://js.stripe.com https://hooks.stripe.com https://vercel.live",
 			"manifest-src 'self'",
 		].join('; ')
 		return [

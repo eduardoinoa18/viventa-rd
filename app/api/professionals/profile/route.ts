@@ -8,7 +8,7 @@ function getAuthInfo(req: NextRequest) {
 }
 
 function canEdit(role?: string) {
-  return role === 'agent' || role === 'broker' || role === 'admin' || role === 'master_admin'
+  return role === 'agent' || role === 'broker' || role === 'master_admin'
 }
 
 // Allowed profile fields to update

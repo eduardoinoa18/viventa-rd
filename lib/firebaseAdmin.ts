@@ -52,13 +52,17 @@ export function getAdminDb(): Firestore | null {
   try {
     if (adminDb) return adminDb
     const cred = buildCertFromEnv()
-    if (!cred) return null
+    if (!cred) {
+      console.error('[ADMIN] Firebase Admin credentials not found in environment')
+      return null
+    }
     if (!getApps().length) {
       adminApp = initializeApp({ credential: cert(cred) })
     }
     adminDb = getAdminFirestore()
     return adminDb
-  } catch {
+  } catch (error: any) {
+    console.error('[ADMIN] Failed to initialize Admin Firestore:', error?.message)
     return null
   }
 }
@@ -67,13 +71,17 @@ export function getAdminAuth(): Auth | null {
   try {
     if (adminAuth) return adminAuth
     const cred = buildCertFromEnv()
-    if (!cred) return null
+    if (!cred) {
+      console.error('[ADMIN] Firebase Admin credentials not found in environment')
+      return null
+    }
     if (!getApps().length) {
       adminApp = initializeApp({ credential: cert(cred) })
     }
     adminAuth = getAdminAuthImpl()
     return adminAuth
-  } catch {
+  } catch (error: any) {
+    console.error('[ADMIN] Failed to initialize Admin Auth:', error?.message)
     return null
   }
 }

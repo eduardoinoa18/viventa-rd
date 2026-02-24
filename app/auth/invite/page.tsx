@@ -34,7 +34,7 @@ function InviteForm() {
       const acceptInvite = httpsCallable(functions, 'acceptInvite')
       const res: any = await acceptInvite({ token: code, uid: u.uid, email: u.email })
       setStatus('Invitación aceptada. Estado: ' + res.status)
-      setTimeout(()=> router.replace('/agent'), 1200)
+      setTimeout(()=> router.replace('/search'), 1200)
     } catch (err: any) {
       setStatus(err.message || 'Error al aceptar invitación')
     }

@@ -63,7 +63,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error creating admin user:', error)
     
-    let errorMessage = 'Error al crear usuario'
+    const errorMessage = 'Error al crear usuario'
     // Additional error mapping can be added once Admin SDK is integrated
     
     return NextResponse.json({ ok: false, error: errorMessage }, { status: 500 })

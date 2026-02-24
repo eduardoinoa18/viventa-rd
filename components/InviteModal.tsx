@@ -1,5 +1,6 @@
 // components/InviteModal.tsx
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 import { useState } from 'react'
 import { FiX, FiMail, FiUser, FiBriefcase, FiSend, FiCopy, FiCheck } from 'react-icons/fi'
 import toast from 'react-hot-toast'
@@ -266,7 +267,7 @@ export default function InviteModal({ onClose, inviteType }: Props) {
                 </p>
                 <ul className="text-sm text-green-800 mt-2 space-y-1 ml-5 list-disc">
                   <li>An email invitation will be sent to the recipient</li>
-                  <li>They'll receive a unique link to complete their application</li>
+                  <li>They&apos;ll receive a unique link to complete their application</li>
                   <li>The invitation expires after 7 days</li>
                   <li>You can track invitation status in the system</li>
                 </ul>

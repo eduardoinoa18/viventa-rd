@@ -1,25 +1,23 @@
 // components/AdminPeopleTabs.tsx
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { FiUsers, FiUserCheck, FiBriefcase, FiTarget, FiFileText } from 'react-icons/fi'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { FiUsers, FiUserCheck, FiBriefcase } from 'react-icons/fi'
 
 export default function AdminPeopleTabs() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const tabParam = searchParams?.get('tab') || 'users'
 
   const tabs = [
-    { name: 'Users', href: '/admin/people', icon: FiUsers, exact: true },
-    { name: 'Agents', href: '/admin/people/agents', icon: FiUserCheck },
-    { name: 'Brokers', href: '/admin/people/brokers', icon: FiBriefcase },
-    { name: 'Leads', href: '/admin/people/leads', icon: FiTarget },
-    { name: 'Applications', href: '/admin/people/applications', icon: FiFileText },
+    { name: 'Users', href: '/admin/people?tab=users', icon: FiUsers, key: 'users' },
+    { name: 'Agents', href: '/admin/people?tab=agents', icon: FiUserCheck, key: 'agents' },
+    { name: 'Brokers', href: '/admin/people?tab=brokers', icon: FiBriefcase, key: 'brokers' },
   ]
 
   function isActive(tab: typeof tabs[0]) {
-    if (tab.exact) {
-      return pathname === tab.href
-    }
-    return pathname?.startsWith(tab.href)
+    if (pathname !== '/admin/people') return false
+    return tab.key === tabParam
   }
 
   return (

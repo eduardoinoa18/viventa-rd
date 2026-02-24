@@ -1,14 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { db, auth } from '../../../lib/firebaseClient'
-import { doc, getDoc, updateDoc, increment, query, where, collection, getDocs } from 'firebase/firestore'
+import { doc, updateDoc, increment } from 'firebase/firestore'
 import { useParams } from 'next/navigation'
 import Head from 'next/head'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
 import WhatsAppButton from '../../../components/WhatsAppButton'
-import FavoriteButton from '../../../components/FavoriteButton'
 import PropertyInquiryForm from '../../../components/PropertyInquiryForm'
 import StructuredData from '../../../components/StructuredData'
 import RegistrationPrompt from '../../../components/RegistrationPrompt'
@@ -18,15 +16,12 @@ import SimilarProperties from '../../../components/SimilarProperties'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaParking, FaBuilding, FaCalendar } from 'react-icons/fa'
-import { FiMessageSquare, FiUser } from 'react-icons/fi'
 import { usePageViewTracking } from '@/hooks/useAnalytics'
 import { trackListingView } from '@/lib/analyticsService'
 import { getSession } from '@/lib/authSession'
-import toast from 'react-hot-toast'
 
 export default function ListingDetail(){
   usePageViewTracking()
-  const router = useRouter()
   const params = useParams()
   const id = params?.id
   const [listing,setListing] = useState<any>(null)
@@ -34,7 +29,6 @@ export default function ListingDetail(){
   const [currency, setCurrency] = useState<Currency>('USD')
   const [showInquiryForm, setShowInquiryForm] = useState(false)
   const [currentSession, setCurrentSession] = useState<any>(null)
-  const [startingChat, setStartingChat] = useState(false)
 
   // Check session for agent-to-agent features
   useEffect(() => {
@@ -42,35 +36,49 @@ export default function ListingDetail(){
     setCurrentSession(sess)
   }, [])
   
-  useEffect(()=> {
-    if(!id) return
+  useEffect(() => {
+    if (!id) return
+    let isMounted = true
     setLoading(true)
-    getDoc(doc(db,'properties',id as string))
-      .then(async (snap: any)=> { 
-        if(snap.exists()) {
-          const data = snap.data()
-          setListing({...data, id: snap.id})
-          // Increment view count
-          updateDoc(doc(db,'properties',id as string), { views: increment(1) }).catch((err: any) => console.error('Error updating views:', err))
-          // Track listing view
-          const user = auth.currentUser
-          trackListingView(id as string, { title: data.title, price: data.price, city: data.city }, user?.uid, user?.uid ? 'user' : null)
-        } else {
-          // Fallback: lookup by listingId field
-          const q = query(collection(db, 'properties'), where('listingId', '==', id))
-          const qs = await getDocs(q)
-          if (!qs.empty) {
-            const d = qs.docs[0]
-            const data = d.data()
-            setListing({ ...data, id: d.id })
-            updateDoc(doc(db,'properties',d.id), { views: increment(1) }).catch((err: any) => console.error('Error updating views:', err))
-            const user = auth.currentUser
-            trackListingView(d.id, { title: data.title, price: data.price, city: data.city }, user?.uid, user?.uid ? 'user' : null)
+
+    fetch(`/api/properties/${id}`)
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}))
+        if (!isMounted) return
+
+        if (res.ok && json.ok && json.data) {
+          const data = json.data
+          setListing({ ...data, id: data.id })
+
+          if (db && data.id) {
+            updateDoc(doc(db, 'properties', data.id), { views: increment(1) })
+              .catch((err: any) => console.error('Error updating views:', err))
           }
+
+          const user = auth.currentUser
+          trackListingView(
+            data.id,
+            { title: data.title, price: data.price, city: data.city },
+            user?.uid,
+            user?.uid ? 'user' : null
+          )
+          return
         }
+
+        setListing(null)
       })
-      .finally(() => setLoading(false))
-  },[id])
+      .catch((err) => {
+        console.error('Listing fetch error:', err)
+        if (isMounted) setListing(null)
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [id])
 
   // Currency listener
   useEffect(() => {
@@ -117,7 +125,7 @@ export default function ListingDetail(){
 
   // Restrict visibility for non-active listings (allow admins and owners)
   const isOwnerOrAdmin = currentSession && (
-    currentSession.role === 'admin' || 
+    currentSession.role === 'master_admin' || 
     currentSession.role === 'master_admin' || 
     currentSession.uid === listing.agentId || 
     currentSession.uid === listing.ownerId
@@ -139,70 +147,14 @@ export default function ListingDetail(){
     )
   }
   
-  // Prepare property data for components
-  const favoriteData = {
-    id: listing.id,
-    title: listing.title,
-    price: listing.price || 0,
-    currency: listing.currency || 'USD',
-    location: `${listing.location?.city || listing.city || ''}, ${listing.location?.neighborhood || listing.neighborhood || ''}`,
-    bedrooms: listing.bedrooms,
-    bathrooms: listing.bathrooms,
-    area: listing.area,
-    images: listing.images || [],
-    agentName: listing.agentName,
-    agentPhone: listing.agentPhone
-  }
-
-  // Agent-to-agent chat
-  async function startAgentChat() {
-    if (!currentSession || currentSession.role !== 'agent') {
-      toast.error('Debes estar autenticado como agente')
-      router.push('/agent/login')
-      return
-    }
-
-    if (listing.agentId === currentSession.uid) {
-      toast.error('No puedes enviarte mensajes a ti mismo')
-      return
-    }
-
-    setStartingChat(true)
-    try {
-      const res = await fetch('/api/messages/agent-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          listingId: listing.id,
-          listingTitle: listing.title,
-          listingAgentId: listing.agentId,
-          listingAgentName: listing.agentName
-        })
-      })
-
-      const data = await res.json()
-      if (data.ok && data.conversationId) {
-        toast.success('Redirigiendo a mensajes...')
-        router.push(`/messages?cid=${data.conversationId}`)
-      } else {
-        toast.error(data.message || 'Error al iniciar conversación')
-      }
-    } catch (err) {
-      console.error('startAgentChat error:', err)
-      toast.error('Error al iniciar conversación')
-    } finally {
-      setStartingChat(false)
-    }
-  }
-
   // Generate structured data for SEO
   const propertySchema = listing ? generatePropertySchema({
     id: listing.id,
     title: listing.title,
-    description: listing.description || `${listing.title} en ${listing.location?.city || listing.city}`,
+    description: listing.description || `${listing.title} en ${listing.city}`,
     price: listing.price || 0,
     currency: listing.currency || 'USD',
-    location: `${listing.location?.city || listing.city || ''}${listing.location?.neighborhood || listing.neighborhood ? ', ' + (listing.location?.neighborhood || listing.neighborhood) : ''}`,
+    location: `${listing.city || ''}${listing.sector ? ', ' + listing.sector : ''}`,
     bedrooms: listing.bedrooms,
     bathrooms: listing.bathrooms,
     area: listing.area,
@@ -239,7 +191,7 @@ export default function ListingDetail(){
   // Generate meta description
   const metaDescription = listing.description 
     ? listing.description.substring(0, 155) + '...'
-    : `${listing.title} en ${listing.location?.city || listing.city}. ${listing.bedrooms} hab, ${listing.bathrooms} baños, ${listing.area}m². ${formatCurrency(listing.price || 0, { currency: listing.currency || 'USD' })}`;
+    : `${listing.title} en ${listing.city}. ${listing.bedrooms} hab, ${listing.bathrooms} baños, ${listing.area}m². ${formatCurrency(listing.price || 0, { currency: listing.currency || 'USD' })}`;
   
   const metaTitle = `${listing.title} - VIVENTA RD`;
   const propertyUrl = `https://viventa-rd.com/listing/${listing.id}`;
@@ -252,7 +204,7 @@ export default function ListingDetail(){
         <title>{metaTitle}</title>
         <meta name="title" content={metaTitle} />
         <meta name="description" content={metaDescription} />
-        <meta name="keywords" content={`${listing.propertyType}, ${listing.listingType}, ${listing.location?.city}, ${listing.location?.neighborhood}, propiedad, inmueble, República Dominicana, VIVENTA`} />
+        <meta name="keywords" content={`${listing.propertyType}, ${listing.listingType}, ${listing.city}, ${listing.sector}, propiedad, inmueble, República Dominicana, VIVENTA`} />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
@@ -287,12 +239,10 @@ export default function ListingDetail(){
                 <h1 className="text-4xl font-bold text-[#0B2545] mb-2">{listing.title}</h1>
                 <div className="flex items-center text-gray-600">
                   <FaMapMarkerAlt className="mr-2 text-[#FF6B35]" />
-                  <span>{listing.location?.city || listing.city || 'N/A'} • {listing.location?.neighborhood || listing.neighborhood || 'N/A'}</span>
+                  <span>{listing.city || 'N/A'} • {listing.sector || 'N/A'}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <FavoriteButton property={favoriteData} />
-              </div>
+              <div className="flex items-center gap-3" />
             </div>
           </div>
           
@@ -478,54 +428,6 @@ export default function ListingDetail(){
                 )}
               </div>
 
-              {/* Agent-to-Agent Contact (Only for other agents) */}
-              {currentSession?.role === 'agent' && listing.agentId && listing.agentId !== currentSession.uid && (
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 shadow-sm">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <FiMessageSquare className="text-white text-xl" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg text-blue-900 mb-2">Contacto entre Agentes</h3>
-                      <p className="text-sm text-blue-800 mb-4">
-                        <strong>Agente Listador:</strong> {listing.agentName || 'Agente VIVENTA'}
-                        {listing.representation && listing.representation !== 'independent' && (
-                          <>
-                            <br />
-                            <strong>
-                              {listing.representation === 'broker' ? 'Inmobiliaria:' : 'Constructor:'}
-                            </strong> {listing.brokerName || listing.builderName || 'Independiente'}
-                          </>
-                        )}
-                        <br />
-                        <strong>Listado:</strong> <span className="font-mono">{listing.listingId || listing.id}</span>
-                      </p>
-                      
-                      <button
-                        onClick={startAgentChat}
-                        disabled={startingChat}
-                        className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        {startingChat ? (
-                          <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            Iniciando...
-                          </>
-                        ) : (
-                          <>
-                            <FiMessageSquare />
-                            Contactar Agente
-                          </>
-                        )}
-                      </button>
-                      
-                      <p className="text-xs text-blue-700 mt-3">
-                        💡 Comunícate directamente a través de la plataforma para coordinar visitas, solicitar más información o discutir detalles de cooperación.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 

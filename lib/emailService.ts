@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer'
 import sgMail from '@sendgrid/mail'
-import { Resend } from 'resend'
 import { getAdminDb } from './firebaseAdmin'
 
 // Initialize SendGrid if API key is available
@@ -17,10 +16,10 @@ interface EmailOptions {
 }
 
 export async function sendEmail({ to, subject, html, from, replyTo }: EmailOptions): Promise<void> {
-  const fromEmail = from || process.env.RESEND_FROM || process.env.SMTP_FROM || process.env.SENDGRID_FROM_EMAIL || 'noreply@viventa.com'
+  const fromEmail = from || process.env.SMTP_FROM || process.env.SENDGRID_FROM_EMAIL || 'noreply@viventa.com'
   const db = getAdminDb()
   // Format with friendly sender name for better email client display
-  const logSent = async (provider: 'resend' | 'sendgrid' | 'smtp', extra?: Record<string, any>) => {
+  const logSent = async (provider: 'sendgrid' | 'smtp', extra?: Record<string, any>) => {
     try {
       // Write a lightweight analytics event
       if (db) {
@@ -57,25 +56,6 @@ export async function sendEmail({ to, subject, html, from, replyTo }: EmailOptio
     }
   }
   const fromFormatted = `VIVENTA <${fromEmail}>`
-
-  // Preferred: Resend
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY)
-      await resend.emails.send({
-        from: fromFormatted,
-        to,
-        subject,
-        html,
-        reply_to: replyTo,
-      } as any)
-      await logSent('resend')
-      console.log(`Email sent via Resend to ${to}`)
-      return
-    } catch (error) {
-      console.error('Resend error, falling back:', error)
-    }
-  }
 
   // Try SendGrid first
   if (process.env.SENDGRID_API_KEY) {

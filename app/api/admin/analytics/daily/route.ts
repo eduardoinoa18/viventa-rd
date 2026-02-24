@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 
+export const dynamic = 'force-dynamic'
+
 function getStartDate(range: '7d' | '30d' | '90d' | '1y'): string {
   const now = new Date()
   const base = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))

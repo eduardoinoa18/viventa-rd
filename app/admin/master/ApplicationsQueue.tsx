@@ -1,40 +1,87 @@
 import { useEffect, useState } from 'react'
 import { Dialog } from '@headlessui/react'
-import { db } from '../../../lib/firebaseClient'
-import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore'
-import { httpsCallable } from 'firebase/functions'
-import { functions } from '../../../lib/firebaseClient'
 import { useRequireRole } from '../../../lib/useRequireRole'
 import AdminCodeModal from '../../../components/AdminCodeModal'
 
+type ApplicationItem = {
+  id: string
+  status?: string
+  company?: string
+  type?: string
+  contact?: string
+  email?: string
+  agents?: string | number
+  notes?: string
+  brokerage_id?: string
+  agent_id?: string
+  inviteToken?: string
+  years?: string
+  markets?: string
+  license?: string
+  address?: string
+  currency?: string
+}
+
 export default function ApplicationsQueue() {
   const { loading, ok, showModal, setShowModal } = useRequireRole(['master_admin'])
-  const [items, setItems] = useState<any[]>([])
+  const [items, setItems] = useState<ApplicationItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState('pending')
-  const [selected, setSelected] = useState<any | null>(null)
+  const [selected, setSelected] = useState<ApplicationItem | null>(null)
+  
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'applications'), (snap: any) => {
-      setItems(snap.docs.map((d: any) => ({ id: d.id, ...d.data() })))
-    })
-    return () => unsub()
-  }, [])
+    if (!ok || showModal) return
+    void loadApplications(filter)
+  }, [ok, showModal, filter])
+
+  async function loadApplications(statusFilter: string) {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const params = new URLSearchParams()
+      if (statusFilter && statusFilter !== 'all') {
+        params.set('status', statusFilter)
+      }
+      const url = params.toString() ? `/api/admin/applications?${params}` : '/api/admin/applications'
+      const res = await fetch(url, { cache: 'no-store' })
+      const json = await res.json().catch(() => ({ ok: false }))
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || 'Failed to load applications')
+      }
+      setItems(Array.isArray(json.data) ? json.data : [])
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to load applications'
+      setError(message)
+      setItems([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   async function setStatus(id: string, status: 'approved' | 'rejected' | 'more_info') {
-    if (!functions) {
-      alert('Firebase Functions not available')
-      return
-    }
     try {
-      const fn = httpsCallable(functions, 'processApplication')
-      await fn({ appId: id, action: status === 'approved' ? 'approve' : status })
-    } catch (e: any) {
-      alert(e.message || 'Failed to process')
+      const res = await fetch('/api/admin/applications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      })
+      const json = await res.json().catch(() => ({ ok: false }))
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || 'Failed to update status')
+      }
+      await loadApplications(filter)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to process'
+      alert(message)
     }
   }
 
   if (loading) return <div>Loading...</div>
   if (showModal) return <AdminCodeModal onVerified={() => setShowModal(false)} />
   if (!ok) return <div>Access denied</div>
+  if (isLoading) return <div>Loading applications...</div>
+  if (error) return <div className="text-red-600">{error}</div>
 
   const filtered = items.filter(app => (filter === 'all' ? true : (app.status || 'pending') === filter))
 
@@ -81,7 +128,12 @@ export default function ApplicationsQueue() {
             <div className="mb-2 text-sm">Notes: {selected.notes}</div>
             {selected.brokerage_id && <div className="mb-2 text-xs text-blue-700">Brokerage ID: {selected.brokerage_id}</div>}
             {selected.agent_id && <div className="mb-2 text-xs text-blue-700">Agent ID: {selected.agent_id}</div>}
-            {/* TODO: Show invite token if available */}
+            {selected.inviteToken && (
+              <div className="mb-2 p-2 bg-green-50 border border-green-200 rounded">
+                <span className="text-xs font-semibold text-green-700">Invite Token:</span>
+                <code className="ml-2 text-xs text-green-800">{selected.inviteToken}</code>
+              </div>
+            )}
             <div className="mt-4">
               <strong>Audit History:</strong>
               <div className="text-xs text-gray-500">(Coming soon)</div>

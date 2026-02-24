@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { ActivityLogger } from '@/lib/activityLogger'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Send push notification to a user via FCM
  * POST /api/notifications/send
@@ -122,7 +124,7 @@ export async function GET(req: NextRequest) {
     const broadcastAudiences = new Set<string>(['all'])
     if (role) {
       broadcastAudiences.add(role)
-      if (role === 'admin' || role === 'master_admin') {
+      if (role === 'master_admin') {
         broadcastAudiences.add('admin')
         broadcastAudiences.add('master_admin')
       }
@@ -168,17 +170,17 @@ export async function GET(req: NextRequest) {
 
     // Default URL mapping by type
     const defaultUrlByType = (type: string, role: string) => {
-      const isAdmin = role === 'admin' || role === 'master_admin'
+      const isAdmin = role === 'master_admin'
       const base = isAdmin ? '/admin' : ''
       switch (type) {
-        case 'new_message': return '/messages'
-        case 'lead_inquiry': return `${base}/leads`
-        case 'application_approved': return `${base}/people`
-        case 'application_rejected': return `${base}/people`
-        case 'new_property': return isAdmin ? `${base}/properties` : '/agent/listings'
-        case 'price_alert': return '/favorites'
+        case 'new_message': return isAdmin ? `${base}/leads` : '/contact'
+        case 'lead_inquiry': return isAdmin ? `${base}/leads` : '/contact'
+        case 'application_approved': return isAdmin ? `${base}/applications` : '/contact'
+        case 'application_rejected': return isAdmin ? `${base}/applications` : '/contact'
+        case 'new_property': return isAdmin ? `${base}/properties` : '/search'
+        case 'price_alert': return '/search'
         case 'saved_search': return '/search'
-        default: return isAdmin ? `${base}/notifications` : '/notifications'
+        default: return isAdmin ? `${base}` : '/search'
       }
     }
 
@@ -233,7 +235,7 @@ export async function PATCH(req: NextRequest) {
           .get(),
         adminDb
           .collection('notifications')
-          .where('audience', 'array-contains-any', [role, 'all', role === 'admin' ? 'admin' : null].filter(Boolean))
+          .where('audience', 'array-contains-any', [role, 'all', role === 'master_admin' ? 'master_admin' : null].filter(Boolean))
           .get()
       ])
 

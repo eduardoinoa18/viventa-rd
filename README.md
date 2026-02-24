@@ -38,6 +38,19 @@ VIVENTA uses a **custom Firestore-based search** solution (no Algolia required):
 
 See **[VERCEL-DEPLOYMENT.md](./VERCEL-DEPLOYMENT.md)** for detailed steps.
 
+## Deployment Checklist
+
+Before every commit to production, use the **[VS-CODE-DEPLOYMENT-CHECKLIST.md](./docs/VS-CODE-DEPLOYMENT-CHECKLIST.md)** — a 60-second pre-flight, build, commit, push, and smoke-test flow.
+
+Key steps:
+```bash
+git fetch origin && git status
+npm run -s typecheck && npm run -s lint && npm run -s build
+git add . && git commit -m "feat/fix: description"
+git push origin copilot/implement-project-review-plan
+# Wait 2-3 min for Vercel → check footer build SHA
+```
+
 ## Testing
 
 ```bash
@@ -58,5 +71,92 @@ See **[TESTING.md](./TESTING.md)** for manual QA checklist and CI/CD setup.
 - **[VERCEL-DEPLOYMENT.md](./VERCEL-DEPLOYMENT.md)** - Production deployment guide
 - **[ADMIN-LOGIN-GUIDE.md](./ADMIN-LOGIN-GUIDE.md)** - Admin portal access
 - **[MASTER-ADMIN-SETUP.md](./MASTER-ADMIN-SETUP.md)** - Master admin configuration
+- **[docs/AI-COORDINATION-PROTOCOL.md](./docs/AI-COORDINATION-PROTOCOL.md)** - Drift-free multi-agent workflow and Git authority rules
 	- When a property is set to a non-active status or deleted, it will be removed from the index.
+
+## Phase-One Core MVP Scope (Dominican Republic)
+
+The following features define the non-negotiable MVP. Anything outside this list is Phase Two or later.
+
+### A. Property Listings (MLS-Style Core)
+
+Must support:
+- Property types: Apartment, House / Villa, Land (Solar), New Construction / Project (Pre-construction)
+- Transaction type: Sale, Rent
+- Core listing fields:
+   - Price (DOP + USD support)
+   - Province / City / Sector (DR geography first, no global abstraction)
+   - Bedrooms / Bathrooms
+   - Size (m2)
+   - Parking
+   - Furnished / Semi / Empty
+   - Description (Spanish primary, English optional)
+   - Image gallery (optimized + lazy loaded)
+   - Agent / Broker attribution
+   - Status: Active, Pending, Sold, Rented
+
+Explicitly excluded (Phase Two):
+- AI price prediction
+- Investment ROI calculators
+- Mortgage simulators
+- International tax logic
+
+### B. Agent / Broker Portal (Lean Version)
+
+Must support:
+- Secure authentication
+- Create / Edit / Archive listings
+- Upload photos
+- View leads generated from listings
+- Basic performance stats: Views per listing, Leads per listing
+
+Explicitly excluded (Phase Two):
+- CRM pipelines
+- Automated WhatsApp bots
+- Agent ranking algorithms
+- Commission tracking automation
+
+### C. Consumer Search and Discovery
+
+Must support:
+- Fast search by: Location (Province -> City -> Sector), price range, bedrooms, property type
+- Sorting: Price (low -> high, high -> low), Newest listings
+- Listing detail page with: Full gallery, Map location (approximate, not exact), Contact agent CTA
+
+Explicitly excluded (Phase Two):
+- AI recommendation engines
+- Saved searches and alerts
+- User accounts beyond basic lead capture
+
+### D. Lead Generation (Revenue Core)
+
+Must support:
+- Simple lead capture form: Name, Email, Phone / WhatsApp
+- Leads routed to: Listing agent, Admin dashboard (visibility)
+- Timestamped lead records
+
+Explicitly excluded (Phase Two):
+- Lead scoring
+- Automated follow-ups
+- Third-party CRM sync
+
+### E. Admin Dashboard (Minimal Control Layer)
+
+Must support:
+- View all listings
+- Approve / deactivate listings
+- View all agents
+- View lead activity (read-only)
+
+Explicitly excluded (Phase Two):
+- Advanced analytics
+- Billing automation
+- Multi-role permissions
+
+### F. Technical Constraints (Important)
+
+Mandates:
+- Optimize for: Speed, Simplicity, Maintainability
+- Prefer: Fewer tables, Clear schemas, Predictable API endpoints
+- Avoid: Premature abstractions, Over-engineering, Future-proofing that slows MVP
 

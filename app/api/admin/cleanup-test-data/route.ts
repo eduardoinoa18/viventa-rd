@@ -1,41 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
+import { adminSuccessResponse, adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
+import { logAdminAction } from '@/lib/logAdminAction'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
-/**
- * DANGER: This endpoint deletes ALL test data from Firebase
- * Preserves master admin credentials only
- * Use with extreme caution!
- */
 export async function POST(req: NextRequest) {
   try {
-    const role = req.cookies.get('viventa_role')?.value
-    const uid = req.cookies.get('viventa_uid')?.value
+    const admin = await requireMasterAdmin(req)
 
-    if (role !== 'master_admin') {
-      return NextResponse.json({ error: 'Unauthorized - Master admin only' }, { status: 401 })
+    if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DB_CLEANUP !== 'true') {
+      return adminErrorResponse('FORBIDDEN', undefined, 'Database cleanup disabled in production')
+    }
+
+    const body = await req.json()
+    const confirmEmail = (body?.confirmEmail || '').toString().trim().toLowerCase()
+    if (!confirmEmail) {
+      return adminErrorResponse('INVALID_REQUEST', undefined, 'Email confirmation required')
+    }
+
+    if (!admin.email || admin.email.toLowerCase() !== confirmEmail) {
+      return adminErrorResponse('FORBIDDEN', undefined, 'Email verification failed')
     }
 
     const db = getAdminDb()
     if (!db) {
-      return NextResponse.json({ error: 'Database unavailable' }, { status: 500 })
+      return adminErrorResponse('SERVICE_UNAVAILABLE', undefined, 'Database unavailable')
     }
 
-    const body = await req.json()
-    const { confirmEmail } = body
-
-    if (!confirmEmail) {
-      return NextResponse.json({ error: 'Email confirmation required' }, { status: 400 })
-    }
-
-    // Verify master admin email
-    const masterAdminDoc = await db.collection('users').doc(uid!).get()
-    if (!masterAdminDoc.exists || masterAdminDoc.data()?.email !== confirmEmail) {
-      return NextResponse.json({ error: 'Email verification failed' }, { status: 403 })
-    }
-
-    const results = {
+    const results: Record<string, number> = {
       users: 0,
       properties: 0,
       conversations: 0,
@@ -46,120 +41,132 @@ export async function POST(req: NextRequest) {
       notifications: 0
     }
 
-    // Delete all users EXCEPT master admin
+    // Delete all users EXCEPT master admin email
     const usersSnap = await db.collection('users').get()
-    const deleteUsersBatch = db.batch()
+    let userBatch = db.batch()
     let userBatchCount = 0
-    
     for (const doc of usersSnap.docs) {
-      if (doc.id !== uid) { // Preserve master admin
-        deleteUsersBatch.delete(doc.ref)
-        userBatchCount++
-        results.users++
-
-        if (userBatchCount >= 500) {
-          await deleteUsersBatch.commit()
-          userBatchCount = 0
-        }
+      const data = doc.data() as any
+      if (data?.email?.toLowerCase() === admin.email) continue
+      userBatch.delete(doc.ref)
+      userBatchCount++
+      results.users++
+      if (userBatchCount >= 500) {
+        await userBatch.commit()
+        userBatch = db.batch()
+        userBatchCount = 0
       }
     }
-    if (userBatchCount > 0) await deleteUsersBatch.commit()
+    if (userBatchCount > 0) await userBatch.commit()
 
     // Delete all properties
     const propertiesSnap = await db.collection('properties').get()
-    const deletePropsBatch = db.batch()
-    let propBatchCount = 0
-    
+    let propsBatch = db.batch()
+    let propsBatchCount = 0
     for (const doc of propertiesSnap.docs) {
-      deletePropsBatch.delete(doc.ref)
-      propBatchCount++
+      propsBatch.delete(doc.ref)
+      propsBatchCount++
       results.properties++
-
-      if (propBatchCount >= 500) {
-        await deletePropsBatch.commit()
-        propBatchCount = 0
+      if (propsBatchCount >= 500) {
+        await propsBatch.commit()
+        propsBatch = db.batch()
+        propsBatchCount = 0
       }
     }
-    if (propBatchCount > 0) await deletePropsBatch.commit()
+    if (propsBatchCount > 0) await propsBatch.commit()
 
-    // Delete conversations
+    // Delete conversations + messages subcollection
     const conversationsSnap = await db.collection('conversations').get()
     for (const doc of conversationsSnap.docs) {
-      // Delete messages subcollection first
       const messagesSnap = await doc.ref.collection('messages').get()
-      const messagesBatch = db.batch()
-      messagesSnap.docs.forEach(msgDoc => messagesBatch.delete(msgDoc.ref))
-      if (messagesSnap.size > 0) await messagesBatch.commit()
-      
+      if (messagesSnap.size > 0) {
+        const messagesBatch = db.batch()
+        messagesSnap.docs.forEach((msgDoc) => messagesBatch.delete(msgDoc.ref))
+        await messagesBatch.commit()
+      }
       await doc.ref.delete()
       results.conversations++
     }
 
     // Delete applications
     const applicationsSnap = await db.collection('applications').get()
-    const deleteAppsBatch = db.batch()
-    applicationsSnap.docs.forEach(doc => {
-      deleteAppsBatch.delete(doc.ref)
-      results.applications++
-    })
-    if (applicationsSnap.size > 0) await deleteAppsBatch.commit()
+    if (applicationsSnap.size > 0) {
+      const appsBatch = db.batch()
+      applicationsSnap.docs.forEach((doc) => {
+        appsBatch.delete(doc.ref)
+        results.applications++
+      })
+      await appsBatch.commit()
+    }
 
     // Delete contact submissions
     const contactsSnap = await db.collection('contact_submissions').get()
-    const deleteContactsBatch = db.batch()
-    contactsSnap.docs.forEach(doc => {
-      deleteContactsBatch.delete(doc.ref)
-      results.contacts++
-    })
-    if (contactsSnap.size > 0) await deleteContactsBatch.commit()
+    if (contactsSnap.size > 0) {
+      const contactsBatch = db.batch()
+      contactsSnap.docs.forEach((doc) => {
+        contactsBatch.delete(doc.ref)
+        results.contacts++
+      })
+      await contactsBatch.commit()
+    }
 
     // Delete property inquiries
     const inquiriesSnap = await db.collection('property_inquiries').get()
-    const deleteInquiriesBatch = db.batch()
-    inquiriesSnap.docs.forEach(doc => {
-      deleteInquiriesBatch.delete(doc.ref)
-      results.inquiries++
-    })
-    if (inquiriesSnap.size > 0) await deleteInquiriesBatch.commit()
+    if (inquiriesSnap.size > 0) {
+      const inquiriesBatch = db.batch()
+      inquiriesSnap.docs.forEach((doc) => {
+        inquiriesBatch.delete(doc.ref)
+        results.inquiries++
+      })
+      await inquiriesBatch.commit()
+    }
 
     // Delete waitlist
     const waitlistSocialSnap = await db.collection('waitlist_social').get()
     const waitlistPlatformSnap = await db.collection('waitlist_platform').get()
-    const deleteWaitlistBatch = db.batch()
-    
-    waitlistSocialSnap.docs.forEach(doc => {
-      deleteWaitlistBatch.delete(doc.ref)
-      results.waitlist++
-    })
-    waitlistPlatformSnap.docs.forEach(doc => {
-      deleteWaitlistBatch.delete(doc.ref)
-      results.waitlist++
-    })
-    if (results.waitlist > 0) await deleteWaitlistBatch.commit()
+    if (waitlistSocialSnap.size + waitlistPlatformSnap.size > 0) {
+      const waitlistBatch = db.batch()
+      waitlistSocialSnap.docs.forEach((doc) => {
+        waitlistBatch.delete(doc.ref)
+        results.waitlist++
+      })
+      waitlistPlatformSnap.docs.forEach((doc) => {
+        waitlistBatch.delete(doc.ref)
+        results.waitlist++
+      })
+      await waitlistBatch.commit()
+    }
 
-    // Delete notifications (except master admin's)
+    // Delete notifications (except master admin)
     const notificationsSnap = await db.collection('notifications').get()
-    const deleteNotificationsBatch = db.batch()
-    notificationsSnap.docs.forEach(doc => {
-      const data = doc.data()
-      if (data.userId !== uid && !data.audience?.includes('master_admin')) {
-        deleteNotificationsBatch.delete(doc.ref)
+    if (notificationsSnap.size > 0) {
+      const notificationsBatch = db.batch()
+      notificationsSnap.docs.forEach((doc) => {
+        const data = doc.data() as any
+        if (data?.userId === 'master_admin' || data?.email === admin.email) return
+        notificationsBatch.delete(doc.ref)
         results.notifications++
+      })
+      await notificationsBatch.commit()
+    }
+
+    // Log the cleanup action
+    await logAdminAction({
+      actor: admin.email,
+      action: 'cleanup_test_data',
+      target: 'database',
+      metadata: {
+        results,
+        confirmEmail,
+        userAgent: req.headers.get('user-agent') || null
       }
     })
-    if (results.notifications > 0) await deleteNotificationsBatch.commit()
 
-    return NextResponse.json({ 
-      success: true, 
+    return adminSuccessResponse({
       message: 'Test data cleaned successfully',
-      results 
+      results
     })
-
-  } catch (error: any) {
-    console.error('Cleanup error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to clean test data' },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleAdminError(error, 'cleanup-test-data')
   }
 }

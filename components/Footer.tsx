@@ -1,36 +1,18 @@
 'use client'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { getSession } from '../lib/authSession'
 
 export default function Footer() {
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [role, setRole] = useState<string>('user')
-
-  useEffect(() => {
-    const s = getSession()
-    if (s) { setLoggedIn(true); setRole(s.role) }
-  }, [])
-
-  const userLinks = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/favorites', label: 'Favoritos' },
-    { href: '/search', label: 'Buscar' },
-    { href: '/contact', label: 'Soporte' },
-  ]
+  const buildSha = (process.env.NEXT_PUBLIC_BUILD_SHA || 'local').slice(0, 7)
 
   const publicLinks = [
     { href: '/', label: 'Inicio' },
     { href: '/search', label: 'Buscar' },
     { href: '/agents', label: 'Agentes' },
-    { href: '/profesionales', label: 'Profesionales' },
+    { href: '/brokers', label: 'Brokerages' },
     { href: '/contact', label: 'Contacto' },
     { href: '/disclosures', label: 'Avisos Legales' },
-    { href: '/agent/login', label: 'Portal Agente' },
-    { href: '/broker/login', label: 'Portal Broker' },
   ]
-
-  const links = loggedIn ? userLinks : publicLinks
+  const links = publicLinks
 
   return (
     <footer className="bg-[#FAFAFA] border-t mt-12 pt-8 pb-4 text-sm text-gray-600">
@@ -48,18 +30,9 @@ export default function Footer() {
           </div>
           <div className="text-xs text-center md:text-right">
             <div>© VIVENTA 2025</div>
+            <div className="text-[11px] text-gray-500 mt-1">Build {buildSha}</div>
           </div>
         </div>
-        {/* Master Admin link - subtle in corner */}
-        {!loggedIn && (
-          <Link
-            href="/admin/login"
-            aria-label="Master Admin Login"
-            className="hidden md:inline-block absolute bottom-1 right-2 text-[11px] text-gray-400 hover:text-gray-700 opacity-60 hover:opacity-100 transition-opacity"
-          >
-            Master Admin
-          </Link>
-        )}
       </div>
     </footer>
   )

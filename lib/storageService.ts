@@ -3,7 +3,7 @@
  */
 
 import { storage } from './firebaseClient'
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject, UploadTaskSnapshot } from 'firebase/storage'
 
 export interface UploadProgress {
   progress: number
@@ -88,6 +88,35 @@ export async function uploadMultipleImages(
   folderPath: string,
   onProgressUpdate?: (index: number, progress: number) => void
 ): Promise<string[]> {
+  try {
+    const formData = new FormData()
+    formData.append('folderPath', folderPath)
+    files.forEach((file) => formData.append('files', file))
+
+    files.forEach((_, index) => {
+      if (onProgressUpdate) onProgressUpdate(index, 10)
+    })
+
+    const response = await fetch('/api/uploads/listing-images', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    })
+
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok || !payload?.ok || !Array.isArray(payload?.urls)) {
+      throw new Error(payload?.error || 'UPLOAD_API_FAILED')
+    }
+
+    files.forEach((_, index) => {
+      if (onProgressUpdate) onProgressUpdate(index, 100)
+    })
+
+    return payload.urls as string[]
+  } catch (apiError) {
+    console.warn('Upload API unavailable, falling back to client upload:', apiError)
+  }
+
   const uploadPromises = files.map((file, index) => {
     const timestamp = Date.now()
     const fileName = `${timestamp}_${index}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`

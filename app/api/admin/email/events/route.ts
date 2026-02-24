@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 
+export const dynamic = 'force-dynamic'
+
 function parseRange(range: string | null): number {
   switch (range) {
     case '7d': return 7 * 24 * 60 * 60 * 1000

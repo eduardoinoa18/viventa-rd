@@ -8,26 +8,7 @@ import Link from 'next/link'
 import { FiCheck, FiX, FiMapPin, FiDollarSign, FiEye, FiPlusSquare, FiEdit, FiTrash2, FiSearch, FiFilter, FiGrid, FiList } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { computeQualityScore } from '@/lib/searchUtils'
-
-type Listing = { 
-  id: string
-  title: string
-  location?: string
-  city?: string
-  price: number
-  status: string
-  agentName?: string
-  agent?: string
-  images?: string[]
-  bedrooms?: number
-  bathrooms?: number
-  area?: number
-  propertyType?: string
-  listingType?: string
-  createdAt?: any
-  publicRemarks?: string
-  professionalRemarks?: string
-}
+import type { Listing } from '@/types/listing'
 
 export default function AdminPropertiesPage() {
   const [listings, setListings] = useState<Listing[]>([])
@@ -44,9 +25,8 @@ export default function AdminPropertiesPage() {
     const query = searchQuery.toLowerCase()
     return listings.filter(l => 
       l.title?.toLowerCase().includes(query) ||
-      l.location?.toLowerCase().includes(query) ||
       l.city?.toLowerCase().includes(query) ||
-      l.agentName?.toLowerCase().includes(query)
+      l.sector?.toLowerCase().includes(query)
     )
   }, [listings, searchQuery])
   
@@ -340,10 +320,11 @@ export default function AdminPropertiesPage() {
                             <span className={`px-2 py-1 rounded-full text-xs font-bold shadow-lg ${
                               l.status === 'active' ? 'bg-green-500 text-white' :
                               l.status === 'pending' ? 'bg-yellow-500 text-white' :
+                              l.status === 'draft' ? 'bg-gray-500 text-white' :
                               l.status === 'sold' ? 'bg-blue-500 text-white' :
                               'bg-red-500 text-white'
                             }`}>
-                              {l.status === 'active' ? '✓ Activa' : l.status === 'pending' ? '⏳ Pendiente' : l.status === 'sold' ? '🏆 Vendida' : '❌ Rechazada'}
+                              {l.status === 'active' ? '✓ Activa' : l.status === 'pending' ? '⏳ Pendiente' : l.status === 'draft' ? '📝 Borrador' : l.status === 'sold' ? '🏆 Vendida' : '❌ Rechazada'}
                             </span>
                           </div>
                         </div>
@@ -351,7 +332,7 @@ export default function AdminPropertiesPage() {
                         <div className="p-4 flex-1 flex flex-col">
                           <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{l.title}</h3>
                           <div className="text-sm text-gray-600 space-y-1 mb-3">
-                            <div className="flex items-center gap-1"><FiMapPin className="text-gray-400" /> {l.city || l.location || 'N/A'}</div>
+                            <div className="flex items-center gap-1"><FiMapPin className="text-gray-400" /> {l.city || 'N/A'}{l.sector ? `, ${l.sector}` : ''}</div>
                             <div className="flex items-center gap-1"><FiDollarSign className="text-gray-400" /> <span className="font-bold text-[#00A676]">${l.price.toLocaleString()}</span></div>
                             {(l.bedrooms || l.bathrooms || l.area) && (
                               <div className="flex gap-3 text-xs">
@@ -434,7 +415,7 @@ export default function AdminPropertiesPage() {
                               </span>
                             </div>
                             <div className="text-gray-600 space-y-1 mb-3">
-                              <div className="flex items-center gap-2"><FiMapPin /> {l.location || l.city || 'N/A'}</div>
+                              <div className="flex items-center gap-2"><FiMapPin /> {l.city || 'N/A'}{l.sector ? `, ${l.sector}` : ''}</div>
                               <div className="flex items-center gap-2"><FiDollarSign /> <span className="font-bold text-[#00A676] text-lg">USD {l.price.toLocaleString()}</span></div>
                               {(l.bedrooms || l.bathrooms || l.area) && (
                                 <div className="flex gap-4 text-sm">
@@ -442,11 +423,6 @@ export default function AdminPropertiesPage() {
                                   {l.bathrooms && <span>🛁 {l.bathrooms} baños</span>}
                                   {l.area && <span>📐 {l.area} m²</span>}
                                   {l.propertyType && <span className="text-gray-500">• {l.propertyType}</span>}
-                                </div>
-                              )}
-                              {l.agentName && (
-                                <div className="text-sm text-gray-500">
-                                  Agente: <span className="text-blue-600 font-medium">{l.agentName}</span>
                                 </div>
                               )}
                             </div>

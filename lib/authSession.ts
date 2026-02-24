@@ -1,6 +1,8 @@
+import type { UserRole } from '@/types/user';
+
 export type UserSession = {
   uid: string;
-  role: 'admin' | 'master_admin' | 'agent' | 'broker' | 'user';
+  role: UserRole;
   email?: string;
   token?: string;
   profileComplete?: boolean;
@@ -31,6 +33,11 @@ export function saveSession(session: UserSession) {
       document.cookie = `viventa_phone=${encodeURIComponent(session.phone)}; path=/; max-age=${maxAge}; samesite=lax`;
     }
   } catch {}
+}
+
+export function saveSessionLocal(session: UserSession) {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(KEY, JSON.stringify(session));
 }
 
 export function getSession(): UserSession | null {
@@ -73,5 +80,6 @@ export function clearSession() {
     document.cookie = `viventa_uid=; ${expired}`;
     document.cookie = `viventa_name=; ${expired}`;
     document.cookie = `viventa_phone=; ${expired}`;
+    document.cookie = `viventa_admin_email=; ${expired}`;
   } catch {}
 }

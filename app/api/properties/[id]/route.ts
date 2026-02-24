@@ -1,7 +1,27 @@
 // app/api/properties/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { logger } from '@/lib/logger'
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+function normalizeTimestamp(value: any): string | null {
+  if (!value) return null
+  if (typeof value?.toDate === 'function') return value.toDate().toISOString()
+  if (value instanceof Date) return value.toISOString()
+  if (typeof value === 'string') return value
+  return null
+}
+
+function serializeProperty(id: string, data: any) {
+  return {
+    id,
+    ...data,
+    createdAt: normalizeTimestamp(data?.createdAt),
+    updatedAt: normalizeTimestamp(data?.updatedAt),
+  }
+}
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -16,14 +36,24 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     const snap = await db.collection('properties').doc(id).get()
-    if (!snap.exists) {
+    if (snap.exists) {
+      return NextResponse.json({ ok: true, data: serializeProperty(snap.id, snap.data()) })
+    }
+
+    const fallbackSnap = await db
+      .collection('properties')
+      .where('listingId', '==', id)
+      .limit(1)
+      .get()
+
+    if (fallbackSnap.empty) {
       return NextResponse.json({ ok: false, error: 'Property not found' }, { status: 404 })
     }
 
-    const data = snap.data()
-    return NextResponse.json({ ok: true, data: { id: snap.id, ...data } })
+    const fallbackDoc = fallbackSnap.docs[0]
+    return NextResponse.json({ ok: true, data: serializeProperty(fallbackDoc.id, fallbackDoc.data()) })
   } catch (error: any) {
-    console.error('Error fetching property:', error)
+    logger.error('Error fetching property', error)
     return NextResponse.json({ ok: false, error: error.message || 'Failed to fetch property' }, { status: 500 })
   }
 }

@@ -24,19 +24,19 @@ test('opens waitlist popup from homepage CTA', async ({ page }) => {
   await expect(page.getByText('Asegura tu Cupo VIP')).toBeVisible()
 })
 
-test('middleware redirects agent to portal when visiting /login', async ({ page, context, baseURL }) => {
+test('middleware redirects agent to search when visiting /login', async ({ page, context, baseURL }) => {
   // Set role cookie to simulate logged-in agent
   await context.addCookies([
     { name: 'viventa_role', value: 'agent', url: baseURL! },
   ])
   await page.goto('/login')
-  await expect(page).toHaveURL(/\/agent(\?.*)?$/)
+  await expect(page).toHaveURL(/\/search(\?.*)?$/)
 })
 
-test('middleware redirects broker to portal when visiting /login', async ({ page, context, baseURL }) => {
+test('middleware redirects broker to search when visiting /login', async ({ page, context, baseURL }) => {
   await context.addCookies([
     { name: 'viventa_role', value: 'broker', url: baseURL! },
   ])
   await page.goto('/login')
-  await expect(page).toHaveURL(/\/broker(\?.*)?$/)
+  await expect(page).toHaveURL(/\/search(\?.*)?$/)
 })

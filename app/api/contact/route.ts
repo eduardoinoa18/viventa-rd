@@ -14,11 +14,8 @@ export async function POST(request: NextRequest) {
 
     // Check if Firebase is configured
     if (!isFirebaseConfigured || !db) {
-      console.warn('Firebase not configured. Contact form data:', { name, email, type })
-      return NextResponse.json({ 
-        ok: true, 
-        message: 'Contact form submitted (Firebase not configured)' 
-      })
+      console.error('Firebase not configured; contact form submission blocked')
+      return NextResponse.json({ error: 'Firebase not configured' }, { status: 500 })
     }
 
     // Save to Firestore

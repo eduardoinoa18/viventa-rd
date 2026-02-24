@@ -1,5 +1,5 @@
 "use client"
-import { formatCurrency } from '@/lib/currency'
+import { formatCurrency, convertCurrency } from '@/lib/currency'
 import type { Currency } from '@/lib/currency'
 
 interface Props {
@@ -17,13 +17,7 @@ export default function SearchStatsBar({ items, currency }: Props) {
       const price = Number(p.price || p.price_usd || 0)
       const cur = (p.currency || 'USD') as Currency
       if (currency === cur) return price
-      // simple conversion using currency util on the client is ok; import deferred to avoid tree-shake issues
-      try {
-        const conv = require('@/lib/currency')
-        return conv.convertCurrency(price, cur, currency)
-      } catch {
-        return price
-      }
+      return convertCurrency(price, cur, currency)
     })
     .filter((n) => n > 0)
 
