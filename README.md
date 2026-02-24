@@ -38,6 +38,19 @@ VIVENTA uses a **custom Firestore-based search** solution (no Algolia required):
 
 See **[VERCEL-DEPLOYMENT.md](./VERCEL-DEPLOYMENT.md)** for detailed steps.
 
+## Deployment Checklist
+
+Before every commit to production, use the **[VS-CODE-DEPLOYMENT-CHECKLIST.md](./docs/VS-CODE-DEPLOYMENT-CHECKLIST.md)** — a 60-second pre-flight, build, commit, push, and smoke-test flow.
+
+Key steps:
+```bash
+git fetch origin && git status
+npm run -s typecheck && npm run -s lint && npm run -s build
+git add . && git commit -m "feat/fix: description"
+git push origin copilot/implement-project-review-plan
+# Wait 2-3 min for Vercel → check footer build SHA
+```
+
 ## Testing
 
 ```bash
