@@ -8,6 +8,9 @@ import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import StructuredData from '../components/StructuredData';
 import RegistrationPrompt from '../components/RegistrationPrompt';
+import HeroSection from '../components/HeroSection';
+import PlatformStatsWidget from '../components/PlatformStatsWidget';
+import FeaturedProperties from '../components/FeaturedProperties';
 import { useState, useEffect } from 'react';
 import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock, FiTrendingUp, FiStar, FiMail } from 'react-icons/fi'
 
@@ -53,10 +56,10 @@ export default function HomePage() {
       .catch(() => {})
   }, [])
 
-  // Load active properties
+  // Load active properties (ensure always showing at least some)
   useEffect(() => {
     setLoadingProps(true)
-    fetch('/api/properties')
+    fetch('/api/properties?limit=12')
       .then(r => r.json())
       .then(data => {
         const list: Property[] = (data.properties || []).map((p: any) => ({
@@ -174,155 +177,40 @@ export default function HomePage() {
       <StructuredData data={breadcrumbSchema} />
       <Header />
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative bg-gradient-to-br from-[#0B2545] via-[#134074] to-[#00A6A6] h-[500px] flex items-center justify-center overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#FF6B35] rounded-full blur-3xl"></div>
-          </div>
-          <div className="relative z-10 text-center text-white px-4 max-w-5xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Encuentra tu próximo hogar <br/>con <span className="text-[#00A6A6]">VIVENTA</span>
-            </h1>
-            <p className="text-xl md:text-2xl mb-10 text-gray-200">Tu espacio, tu futuro en República Dominicana</p>
-            
-            <div className="flex flex-col sm:flex-row flex-wrap gap-4 sm:gap-5 justify-center max-w-4xl mx-auto">
-              <a 
-                href="/search" 
-                className="px-6 sm:px-8 py-3 sm:py-4 bg-[#00A6A6] hover:bg-[#008c8c] text-white font-bold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center gap-2 text-sm sm:text-base min-h-[48px]"
-              >
-                <FiSearch className="text-lg sm:text-xl flex-shrink-0" /> 
-                <span>Buscar Propiedades</span>
-              </a>
-              <a 
-                href="/agents" 
-                className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold rounded-lg border-2 border-white/30 transition-all duration-300 inline-flex items-center justify-center gap-2 text-sm sm:text-base min-h-[48px]"
-              >
-                <FiUsers className="text-lg sm:text-xl flex-shrink-0" /> 
-                <span>Nuestros Agentes</span>
-              </a>
-              <a 
-                href="/contact" 
-                className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold rounded-lg border-2 border-white/30 transition-all duration-300 inline-flex items-center justify-center gap-2 text-sm sm:text-base min-h-[48px]"
-                aria-label="Contactar"
-              >
-                <FiMail className="text-lg sm:text-xl" />
-                <span>Contactar</span>
-              </a>
-            </div>
-          </div>
-        </section>
+        {/* New Authority Hero Section */}
+        <HeroSection />
 
-        {/* Map Search & Filters */}
+        {/* Platform Stats Widget */}
+        <PlatformStatsWidget />
+
+        {/* Featured Properties Section */}
+        <FeaturedProperties />
+
+        {/* Search CTA Section (simplified) */}
         <section className="max-w-7xl mx-auto py-12 px-4">
-          <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold text-[#0B2545] mb-2">Explora Propiedades</h2>
-            <p className="text-gray-600">Usa los filtros para encontrar tu propiedad ideal</p>
-          </div>
-          
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* LEFT — Filters */}
-            <div className="lg:w-1/3">
-              <div className="bg-white shadow-lg rounded-xl p-6 sticky top-20">
-                <h3 className="text-xl font-bold text-[#0B2545] mb-4 inline-flex items-center gap-2"><FiSearch /> Buscar propiedades</h3>
-                <input
-                  type="text"
-                  placeholder="Ubicación..."
-                  className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                  value={filters.location}
-                  onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-                  aria-label="Search by location"
-                />
-
-                <select
-                  className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                  value={filters.type}
-                  onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                  aria-label="Filter by property type"
-                >
-                  <option value="">Tipo de propiedad</option>
-                  <option value="Villa">Villa</option>
-                  <option value="Apartment">Apartamento</option>
-                  <option value="House">Casa</option>
-                </select>
-
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <input
-                    type="number"
-                    placeholder="Precio mín"
-                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                    value={filters.minPrice}
-                    onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Precio máx"
-                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-[#00A6A6] focus:border-transparent"
-                    value={filters.maxPrice}
-                    onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
-                  />
-                </div>
-
+          <div className="bg-gradient-to-br from-[#0B2545] to-[#00A6A6] rounded-3xl p-8 md:p-12 text-white shadow-2xl">
+            <div className="text-center max-w-3xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">¿Listo para encontrar tu propiedad ideal?</h2>
+              <p className="text-lg mb-6 text-gray-100">Explora miles de opciones verificadas en toda República Dominicana</p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <a 
-                  href="/search"
-                  className="w-full block text-center px-6 py-3 bg-[#00A6A6] hover:bg-[#008c8c] text-white font-bold rounded-lg transition-colors duration-200"
+                  href="/search" 
+                  className="px-8 py-4 bg-white text-[#0B2545] hover:bg-gray-100 font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center gap-2"
                 >
-                  Ver todas las propiedades
+                  <FiSearch className="text-xl" /> 
+                  <span>Buscar Propiedades</span>
                 </a>
-
-                {/* Trending Searches */}
-                {stats?.trendingSearches && stats.trendingSearches.length > 0 && (
-                  <div className="mt-6 pt-6 border-t border-gray-200">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                      <FiTrendingUp className="text-[#00A6A6]" /> Búsquedas Populares
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {stats.trendingSearches.slice(0, 5).map((term: string, i: number) => (
-                        <a
-                          key={i}
-                          href={`/search?q=${encodeURIComponent(term)}`}
-                          className="px-3 py-1 bg-gradient-to-r from-[#00A6A6]/10 to-[#0B2545]/10 hover:from-[#00A6A6]/20 hover:to-[#0B2545]/20 text-[#0B2545] text-sm rounded-full transition-colors"
-                        >
-                          {term}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <a 
+                  href="/agents" 
+                  className="px-8 py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 border-2 border-white/30 font-bold rounded-xl transition-all duration-300 inline-flex items-center justify-center gap-2"
+                >
+                  <FiUsers className="text-xl" /> 
+                  <span>Hablar con un Agente</span>
+                </a>
               </div>
-            </div>
-
-            {/* RIGHT — Properties */}
-            <div className="lg:w-2/3">
-              {/* Properties Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                {loadingProps && (
-                  <div className="col-span-2 text-center text-gray-500">Cargando propiedades...</div>
-                )}
-                {!loadingProps && filtered.map((p) => (
-                  <PropertyCard 
-                    key={p.id} 
-                    property={p}
-                  />
-                ))}
-              </div>
-              
-              {filtered.length === 0 && (
-                <div className="text-center py-12 bg-white rounded-lg shadow-sm mt-6">
-                  <p className="text-gray-600 mb-4">No se encontraron propiedades con esos filtros</p>
-                  <button 
-                    onClick={() => setFilters({ location: "", type: "", minPrice: "", maxPrice: "" })}
-                    className="px-6 py-2 bg-[#00A6A6] text-white rounded-lg hover:bg-[#008c8c] transition-colors"
-                  >
-                    Limpiar filtros
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </section>
-
-  {/* Featured Properties Section removed; showing dynamic grid above */}
 
         {/* Top Agents */}
         <section className="bg-gradient-to-br from-viventa-sand/30 to-white py-12 md:py-16">
