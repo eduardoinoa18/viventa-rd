@@ -1,10 +1,67 @@
 "use client";
+import { useState } from 'react'
 import Footer from '../../components/Footer'
 import Header from '../../components/Header'
 import Link from 'next/link'
-import { FiHome, FiTrendingUp, FiUsers, FiBarChart2, FiAward, FiCheck, FiZap, FiDollarSign, FiTarget, FiMapPin, FiEye, FiPhone } from 'react-icons/fi'
+import toast from 'react-hot-toast'
+import { FiHome, FiTrendingUp, FiUsers, FiBarChart2, FiAward, FiCheck, FiZap, FiDollarSign, FiTarget, FiMapPin, FiEye, FiPhone, FiSend } from 'react-icons/fi'
 
 export default function ConstructorasLanding() {
+  const [submitting, setSubmitting] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    city: '',
+    units: '',
+    timeline: '',
+    message: ''
+  })
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setSubmitting(true)
+
+    try {
+      const res = await fetch('/api/contact/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          type: 'developer',
+          role: 'developer',
+          company: formData.company,
+          interests: ['project-listing', 'inventory-management'],
+          message: `Ciudad: ${formData.city}\nUnidades: ${formData.units}\nTimeline: ${formData.timeline}\n\n${formData.message}`,
+          source: 'Constructoras Landing'
+        })
+      })
+
+      const data = await res.json()
+      if (!data.ok) throw new Error(data.error || 'Failed to send')
+
+      toast.success('Solicitud enviada. Te contactaremos en menos de 24 horas.')
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        company: '',
+        city: '',
+        units: '',
+        timeline: '',
+        message: ''
+      })
+    } catch (error) {
+      console.error('Developer lead error:', error)
+      toast.error('No pudimos enviar tu solicitud. Intenta de nuevo.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <div className="bg-[#FAFAFA] min-h-screen flex flex-col">
       <Header />
@@ -537,6 +594,160 @@ export default function ConstructorasLanding() {
         </section>
 
         {/* Final CTA */}
+        <section className="bg-white py-24 px-4">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-orange-600 font-semibold mb-4">
+                Developer Acquisition Layer
+              </p>
+              <h2 className="text-4xl md:text-5xl font-bold text-[#0B2545] mb-6">
+                Convierta su proyecto en un inventario inteligente
+              </h2>
+              <p className="text-lg text-gray-600 mb-6">
+                VIVENTA transforma su proyecto en un sistema vivo: unidades, estados, financiamiento y desempeño en un solo lugar.
+                Reciba leads calificados y exponga su inventario con transparencia total.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                    <FiTrendingUp />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-[#0B2545]">Exposicion premium</h3>
+                    <p className="text-gray-600">Seccion de proyectos destacados en la portada con inventario visible.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                    <FiBarChart2 />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-[#0B2545]">Transparencia de venta</h3>
+                    <p className="text-gray-600">Barra de disponibilidad y estados en tiempo real para generar confianza.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                    <FiZap />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-[#0B2545]">Ventas aceleradas</h3>
+                    <p className="text-gray-600">Promociones y financiamiento visibles que reducen la friccion de compra.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-50 to-white rounded-3xl border border-orange-200 shadow-xl p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-12 w-12 rounded-2xl bg-orange-600 text-white flex items-center justify-center">
+                  <FiSend className="text-xl" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-[#0B2545]">Solicitar acceso</h3>
+                  <p className="text-sm text-gray-600">Respuesta en menos de 24 horas</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre completo</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Nombre y apellido"
+                  />
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="correo@empresa.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Telefono</label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="809-000-0000"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Constructora / Empresa</label>
+                  <input
+                    type="text"
+                    value={formData.company}
+                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Nombre de la empresa"
+                  />
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Ciudad principal</label>
+                    <input
+                      type="text"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Santo Domingo"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Cantidad de unidades</label>
+                    <input
+                      type="number"
+                      value={formData.units}
+                      onChange={(e) => setFormData({ ...formData, units: e.target.value })}
+                      className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="120"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Timeline de entrega</label>
+                  <input
+                    type="text"
+                    value={formData.timeline}
+                    onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
+                    className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Q4 2026"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Mensaje adicional</label>
+                  <textarea
+                    rows={4}
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Cuéntanos sobre tu proyecto"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
+                >
+                  {submitting ? 'Enviando solicitud...' : 'Solicitar demo'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+
         <section className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-500 py-24 px-4">
           <div className="max-w-5xl mx-auto text-center text-white">
             <h2 className="text-4xl md:text-6xl font-bold mb-8">¿Listo para Vender Más Unidades?</h2>
