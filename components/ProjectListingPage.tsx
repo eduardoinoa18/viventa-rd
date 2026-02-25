@@ -83,6 +83,33 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
     }
   };
 
+  const parseDate = (value: any) => {
+    if (!value) return null;
+    if (typeof value?.toDate === 'function') return value.toDate();
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  const activeOffer = project.promotionalOffers?.find((offer) => {
+    if (offer.active === false) return false;
+    const validFrom = parseDate(offer.validFrom);
+    const validUntil = parseDate(offer.validUntil);
+    const now = Date.now();
+    const inWindow =
+      (!validFrom || validFrom.getTime() <= now) &&
+      (!validUntil || validUntil.getTime() >= now);
+    return inWindow;
+  });
+
+  const startingPriceUsd = project.smallestUnitPrice?.usd || 0;
+  const offerPercent = activeOffer?.discountPercent || 0;
+  const offerAmountUsd = activeOffer?.discountAmount?.usd || 0;
+  const offerDiscountUsd = offerPercent > 0
+    ? Math.round(startingPriceUsd * (offerPercent / 100))
+    : offerAmountUsd;
+  const discountedPriceUsd = Math.max(startingPriceUsd - offerDiscountUsd, 0);
+  const hasOfferPrice = startingPriceUsd > 0 && offerDiscountUsd > 0;
+
   const inventorySummary = project.units.reduce(
     (acc, unit) => {
       acc.total += 1;
@@ -153,9 +180,20 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
           </div>
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <p className="text-gray-600 text-sm">Starting From</p>
-            <p className="text-3xl font-bold text-gray-900">
-              ${((project.smallestUnitPrice?.usd || 0) / 1000).toFixed(1)}K
-            </p>
+            {hasOfferPrice ? (
+              <div className="space-y-1">
+                <p className="text-sm text-gray-500 line-through">
+                  ${startingPriceUsd.toLocaleString()}
+                </p>
+                <p className="text-2xl font-bold text-[#FF6B35]">
+                  ${discountedPriceUsd.toLocaleString()}
+                </p>
+              </div>
+            ) : (
+              <p className="text-3xl font-bold text-gray-900">
+                ${((project.smallestUnitPrice?.usd || 0) / 1000).toFixed(1)}K
+              </p>
+            )}
           </div>
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <p className="text-gray-600 text-sm">Views</p>
@@ -163,6 +201,77 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
           </div>
         </div>
       </div>
+
+      {/* Financing + Promotional Highlight */}
+      {(activeOffer || (project.financingOptions && project.financingOptions.length > 0)) && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {activeOffer && (
+              <div className="bg-gradient-to-br from-[#FF6B35]/10 to-white border border-[#FF6B35]/30 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-[#FF6B35] font-semibold">Oferta especial</p>
+                    <h3 className="text-2xl font-bold text-gray-900">{activeOffer.title}</h3>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#FF6B35] text-white">
+                    Promo activa
+                  </span>
+                </div>
+                <p className="text-gray-700 mb-4">{activeOffer.description}</p>
+                {hasOfferPrice && (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-sm text-gray-500 line-through">
+                      ${startingPriceUsd.toLocaleString()}
+                    </span>
+                    <span className="text-2xl font-bold text-[#FF6B35]">
+                      ${discountedPriceUsd.toLocaleString()}
+                    </span>
+                    <span className="text-sm font-semibold text-green-600">
+                      Ahorra ${offerDiscountUsd.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {project.financingOptions && project.financingOptions.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-viventa-ocean font-semibold">Financiamiento</p>
+                    <h3 className="text-2xl font-bold text-gray-900">Opciones principales</h3>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-viventa-ocean text-white">
+                    Flexible
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {project.financingOptions
+                    .filter((option) => option.active !== false)
+                    .sort((a, b) => (a.order || 0) - (b.order || 0))
+                    .slice(0, 3)
+                    .map((option) => (
+                      <div key={option.id} className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-900">{option.label}</p>
+                          <p className="text-xs text-gray-600">{option.description}</p>
+                        </div>
+                        <div className="text-right">
+                          {option.percent && (
+                            <p className="text-sm font-semibold text-gray-900">{option.percent}%</p>
+                          )}
+                          {option.months && (
+                            <p className="text-xs text-gray-500">{option.months} meses</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Inventory Transparency Bar */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
