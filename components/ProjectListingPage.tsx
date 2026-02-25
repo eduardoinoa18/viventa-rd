@@ -83,6 +83,28 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
     }
   };
 
+  const inventorySummary = project.units.reduce(
+    (acc, unit) => {
+      acc.total += 1;
+      if (unit.status === 'disponible') acc.disponible += 1;
+      if (unit.status === 'separado') acc.separado += 1;
+      if (unit.status === 'vendido') acc.vendido += 1;
+      return acc;
+    },
+    { total: 0, disponible: 0, separado: 0, vendido: 0 }
+  );
+
+  const inventoryTotal = inventorySummary.total || project.totalUnits || 0;
+  const soldPercent = inventoryTotal > 0
+    ? Math.round((inventorySummary.vendido / inventoryTotal) * 100)
+    : 0;
+  const availablePercent = inventoryTotal > 0
+    ? Math.round((inventorySummary.disponible / inventoryTotal) * 100)
+    : 0;
+  const separatedPercent = inventoryTotal > 0
+    ? Math.round((inventorySummary.separado / inventoryTotal) * 100)
+    : 0;
+
   return (
     <main className="bg-gray-50 min-h-screen">
       {/* Hero Section */}
@@ -138,6 +160,50 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <p className="text-gray-600 text-sm">Views</p>
             <p className="text-3xl font-bold text-blue-600">{project.stats?.viewsLastWeek || 0}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Inventory Transparency Bar */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900">Disponibilidad</h2>
+            <span className="text-sm font-semibold text-gray-700">
+              {soldPercent}% vendido
+            </span>
+          </div>
+
+          <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full flex">
+              <div
+                className="bg-green-500"
+                style={{ width: `${availablePercent}%` }}
+              ></div>
+              <div
+                className="bg-blue-500"
+                style={{ width: `${separatedPercent}%` }}
+              ></div>
+              <div
+                className="bg-gray-700"
+                style={{ width: `${soldPercent}%` }}
+              ></div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 text-sm text-gray-700">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-green-500"></span>
+              <span>{inventorySummary.disponible} disponibles</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+              <span>{inventorySummary.separado} separados</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-gray-700"></span>
+              <span>{inventorySummary.vendido} vendidos</span>
+            </div>
           </div>
         </div>
       </div>

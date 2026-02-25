@@ -11,6 +11,7 @@ import RegistrationPrompt from '../components/RegistrationPrompt';
 import HeroSection from '../components/HeroSection';
 import PlatformStatsWidget from '../components/PlatformStatsWidget';
 import FeaturedProperties from '../components/FeaturedProperties';
+import FeaturedProjects from '../components/FeaturedProjects';
 import { useState, useEffect } from 'react';
 import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock, FiTrendingUp, FiStar, FiMail } from 'react-icons/fi'
 
@@ -185,6 +186,9 @@ export default function HomePage() {
 
         {/* Featured Properties Section */}
         <FeaturedProperties />
+
+        {/* Featured Projects Section */}
+        <FeaturedProjects />
 
         {/* Search CTA Section (simplified) */}
         <section className="max-w-7xl mx-auto py-12 px-4">
