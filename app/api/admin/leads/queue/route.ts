@@ -62,8 +62,7 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json({
         ok: true,
-        data: leads,
-        stats,
+        data: { leads, stats },
       })
     } catch (orderError: any) {
       // Fallback if ordering fails
@@ -72,7 +71,16 @@ export async function GET(req: NextRequest) {
         .map((doc: any) => ({ id: doc.id, ...doc.data() }))
         .slice(0, limit)
 
-      return NextResponse.json({ ok: true, data: leads })
+      const stats = {
+        total: leads.length,
+        unassigned: leads.filter((l: any) => l.status === 'unassigned').length,
+        assigned: leads.filter((l: any) => l.status === 'assigned').length,
+        contacted: leads.filter((l: any) => l.status === 'contacted').length,
+        won: leads.filter((l: any) => l.status === 'won').length,
+        lost: leads.filter((l: any) => l.status === 'lost').length,
+      }
+
+      return NextResponse.json({ ok: true, data: { leads, stats } })
     }
   } catch (error: any) {
     if (error instanceof AdminAuthError) {
@@ -190,6 +198,51 @@ export async function PATCH(req: NextRequest) {
     console.error('[admin/leads/queue PATCH] Error:', error?.message)
     return NextResponse.json(
       { ok: false, error: 'Failed to update lead' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/admin/leads/queue - Delete a lead
+export async function DELETE(req: NextRequest) {
+  try {
+    await requireMasterAdmin(req)
+
+    const adminDb = getAdminDb()
+    if (!adminDb) {
+      return NextResponse.json(
+        { ok: false, error: 'Admin SDK not configured' },
+        { status: 503 }
+      )
+    }
+
+    const body = await req.json()
+    const { leadId } = body
+
+    if (!leadId) {
+      return NextResponse.json(
+        { ok: false, error: 'leadId is required' },
+        { status: 400 }
+      )
+    }
+
+    await adminDb.collection('leads').doc(leadId).delete()
+
+    return NextResponse.json({
+      ok: true,
+      message: 'Lead deleted successfully',
+    })
+  } catch (error: any) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { ok: false, error: error.message, code: error.code },
+        { status: error.status }
+      )
+    }
+
+    console.error('[admin/leads/queue DELETE] Error:', error?.message)
+    return NextResponse.json(
+      { ok: false, error: 'Failed to delete lead' },
       { status: 500 }
     )
   }
