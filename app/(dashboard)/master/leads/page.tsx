@@ -1,308 +1,409 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
-import { FiTarget, FiInfo } from 'react-icons/fi'
+
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { FiX } from 'react-icons/fi'
 
-export default function MasterLeadsPage() {
+interface LeadRecord {
+  id: string
+  buyerName: string
+  buyerEmail: string
+  buyerPhone?: string
+  type: 'request-info' | 'call' | 'whatsapp' | 'showing'
+  source: string
+  sourceId?: string
+  status: 'unassigned' | 'assigned' | 'contacted' | 'won' | 'lost'
+  assignedTo?: string
+  inboxConversationId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+interface LeadStats {
+  total: number
+  unassigned: number
+  assigned: number
+  contacted: number
+  won: number
+  lost: number
+}
+
+export default function LeadsPage() {
+  const router = useRouter()
+  const [leads, setLeads] = useState<LeadRecord[]>([])
+  const [stats, setStats] = useState<LeadStats>({
+    total: 0,
+    unassigned: 0,
+    assigned: 0,
+    contacted: 0,
+    won: 0,
+    lost: 0,
+  })
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [leads, setLeads] = useState<any[]>([])
-  const [assigning, setAssigning] = useState<string | null>(null)
-  const [candidates, setCandidates] = useState<any[]>([])
-  const [selectedAssignee, setSelectedAssignee] = useState<string>('')
-  const [loadingCandidates, setLoadingCandidates] = useState(false)
-  const [filter, setFilter] = useState<'all'|'unassigned'|'assigned'>('all')
+  const [selectedStatus, setSelectedStatus] = useState<string | null>('unassigned')
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null)
+  const [agents, setAgents] = useState<Array<{ id: string; name: string; company?: string }>>([])
+  const [agentsLoading, setAgentsLoading] = useState(false)
+  const [assignNote, setAssignNote] = useState('')
 
-  const getUiErrorMessage = (status?: number) => {
-    if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente para gestionar leads.'
-    if (status === 403) return 'No tienes permisos para acceder al módulo de leads.'
-    return 'No se pudieron cargar los leads.'
-  }
-
-  async function loadLeads() {
+  // Fetch leads and stats
+  const fetchLeads = useCallback(async () => {
     try {
       setLoading(true)
-      setError(null)
-      
-      // Fetch leads from API (server-side with Admin SDK)
-      const res = await fetch('/api/admin/leads?limit=100')
-      if (!res.ok) {
-        const message = getUiErrorMessage(res.status)
-        toast.error(message)
-        throw new Error(message)
-      }
-      
+      const url = selectedStatus
+        ? `/api/admin/leads/queue?status=${encodeURIComponent(selectedStatus)}&limit=100`
+        : '/api/admin/leads/queue?limit=100'
+
+      const res = await fetch(url)
       const data = await res.json()
-      if (data.ok && data.leads) {
-        // Parse date strings back to Date objects for display
-        const parsedLeads = data.leads.map((lead: any) => ({
-          ...lead,
-          createdAt: lead.createdAt ? new Date(lead.createdAt) : new Date()
-        }))
-        setLeads(parsedLeads)
+
+      if (data.ok) {
+        setLeads(data.data.leads || [])
+        setStats(data.data.stats || {})
       } else {
-        setLeads([])
+        toast.error(data.error || 'Failed to fetch leads')
       }
-    } catch (e) {
-      console.error('Failed to load leads:', e)
-      setError(e instanceof Error ? e.message : getUiErrorMessage())
-      setLeads([])
+    } catch (err) {
+      console.error('Error fetching leads:', err)
+      toast.error('Error fetching leads')
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedStatus])
 
-  useEffect(() => { loadLeads() }, [])
-
-  async function openAssign(leadId: string) {
-    setAssigning(leadId)
-    setSelectedAssignee('')
-    setLoadingCandidates(true)
+  // Fetch agents for assignment
+  const fetchAgents = useCallback(async () => {
     try {
-      // Fetch agents and brokers
-      const [agentsRes, brokersRes] = await Promise.all([
-        fetch('/api/admin/users?role=agent').then(r => r.json()).catch(() => ({ ok: false })),
-        fetch('/api/admin/users?role=broker').then(r => r.json()).catch(() => ({ ok: false })),
-      ])
-      const a = agentsRes?.ok ? agentsRes.data : []
-      const b = brokersRes?.ok ? brokersRes.data : []
-      // sort by status and name
-      const all = [...a, ...b].sort((x: any, y: any) => String(x.name||'').localeCompare(String(y.name||'')))
-      setCandidates(all)
+      setAgentsLoading(true)
+      const res = await fetch('/api/admin/users?role=agent&limit=200')
+      const data = await res.json()
+
+      if (data.ok && Array.isArray(data.data)) {
+        setAgents(data.data)
+      } else {
+        toast.error('Failed to load agents')
+      }
+    } catch (err) {
+      console.error('Error fetching agents:', err)
+      toast.error('Error loading agents')
     } finally {
-      setLoadingCandidates(false)
+      setAgentsLoading(false)
+    }
+  }, [])
+
+  // Initial load
+  useEffect(() => {
+    fetchLeads()
+  }, [selectedStatus, fetchLeads])
+
+  // Handle assign
+  const handleAssign = async (agentId: string) => {
+    if (!selectedLeadId) return
+
+    try {
+      const res = await fetch('/api/admin/leads/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: selectedLeadId,
+          agentId,
+          note: assignNote || undefined,
+        }),
+      })
+
+      const data = await res.json()
+      if (data.ok) {
+        toast.success('Lead assigned successfully')
+        setShowAssignModal(false)
+        setSelectedLeadId(null)
+        setAssignNote('')
+        fetchLeads()
+      } else {
+        toast.error(data.error || 'Failed to assign lead')
+      }
+    } catch (err) {
+      console.error('Error assigning lead:', err)
+      toast.error('Error assigning lead')
     }
   }
 
-  async function assign() {
-    if (!assigning || !selectedAssignee) return
+  // Handle status update
+  const handleStatusChange = async (leadId: string, newStatus: string) => {
     try {
-      // Find the lead and its source
-      const lead = leads.find(l => l.id === assigning)
-      if (!lead) return
-      
-      const res = await fetch('/api/admin/leads', {
+      const res = await fetch('/api/admin/leads/queue', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId: assigning, source: lead.source, assignedTo: selectedAssignee })
+        body: JSON.stringify({
+          leadId,
+          status: newStatus,
+        }),
       })
-      if (!res.ok) throw new Error('Failed to assign lead')
-      
-      // reflect locally
-      const profile = candidates.find(c => c.id === selectedAssignee)
-      const assigneeName = profile?.name || profile?.company || 'agent'
-      setLeads(prev => prev.map(l => l.id === assigning ? {
-        ...l,
-        status: 'assigned',
-        assignedTo: { uid: profile?.id, name: assigneeName, role: profile?.role, email: profile?.email },
-        assignedAt: new Date()
-      } : l))
-      setAssigning(null)
-      setSelectedAssignee('')
-      toast.success(`✅ Lead assigned to ${assigneeName}`)
-    } catch (e) {
-      toast.error('Failed to assign lead. Please try again.')
+
+      const data = await res.json()
+      if (data.ok) {
+        toast.success('Lead status updated')
+        fetchLeads()
+      } else {
+        toast.error(data.error || 'Failed to update status')
+      }
+    } catch (err) {
+      console.error('Error updating status:', err)
+      toast.error('Error updating status')
     }
   }
 
-  const visibleLeads = leads.filter(l => {
-    if (filter === 'all') return true
-    const isAssigned = l.status === 'assigned' && !!l.assignedTo
-    return filter === 'assigned' ? isAssigned : !isAssigned
-  })
+  // Delete lead
+  const handleDeleteLead = async (leadId: string) => {
+    if (!confirm('Are you sure you want to delete this lead?')) return
 
-  const kpis = useMemo(() => {
-    const now = Date.now()
-    const ms24h = 24 * 60 * 60 * 1000
-    const toMillis = (ts: any) => ts?.toDate?.()?.getTime?.() ?? (typeof ts === 'number' ? ts : undefined)
-    const new24 = leads.filter(l => {
-      const c = toMillis(l.createdAt)
-      return !!c && (now - c) <= ms24h
-    }).length
-    const unassigned = leads.filter(l => !(l.status === 'assigned' && l.assignedTo)).length
-    const assignedWithTimes = leads
-      .map(l => ({ c: toMillis(l.createdAt), a: toMillis(l.assignedAt) }))
-      .filter(x => x.c && x.a)
-    const avgMs = assignedWithTimes.length
-      ? Math.round(assignedWithTimes.reduce((sum, x) => sum + (x.a! - x.c!), 0) / assignedWithTimes.length)
-      : null
-    const avgHours = avgMs != null ? (avgMs / (60 * 60 * 1000)) : null
-    return { new24, unassigned, avgHours }
-  }, [leads])
+    try {
+      const res = await fetch(`/api/admin/leads/queue`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId }),
+      })
+
+      const data = await res.json()
+      if (data.ok) {
+        toast.success('Lead deleted')
+        fetchLeads()
+      } else {
+        toast.error(data.error || 'Failed to delete lead')
+      }
+    } catch (err) {
+      console.error('Error deleting lead:', err)
+      toast.error('Error deleting lead')
+    }
+  }
+
+  // Open assign modal
+  const openAssignModal = (leadId: string) => {
+    setSelectedLeadId(leadId)
+    fetchAgents()
+    setShowAssignModal(true)
+  }
+
+  const statusColors: Record<string, string> = {
+    unassigned: 'bg-yellow-100 text-yellow-800',
+    assigned: 'bg-blue-100 text-blue-800',
+    contacted: 'bg-purple-100 text-purple-800',
+    won: 'bg-green-100 text-green-800',
+    lost: 'bg-red-100 text-red-800',
+  }
+
+  const typeIcons: Record<string, string> = {
+    'request-info': '📋',
+    call: '☎️',
+    whatsapp: '💬',
+    showing: '🏠',
+  }
 
   return (
-    <main className="flex-1 p-6 bg-gray-50">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-[#0B2545] inline-flex items-center gap-3">
-            <FiTarget /> Leads
-          </h1>
+    <div className="space-y-6 p-6 max-w-7xl">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Lead Queue Management</h1>
+        <button
+          onClick={() => fetchLeads()}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
+          Refresh
+        </button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div
+          className="bg-white p-4 rounded-lg border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setSelectedStatus(null)}
+        >
+          <div className="text-sm text-gray-600">Total Leads</div>
+          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
         </div>
 
-        <div className="bg-white rounded-xl shadow border border-gray-200 p-6">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-full bg-blue-50 text-blue-600"><FiInfo /></div>
-            <div>
-              <h2 className="text-xl font-semibold text-[#0B2545] mb-1">Gestión de Leads Consolidada</h2>
-              <p className="text-gray-600 mb-4">
-                Aquí aparecen <strong>todos los leads</strong> generados desde múltiples fuentes:
-              </p>
-              <ul className="list-disc pl-6 text-gray-700 space-y-1">
-                <li><strong>Consultas de Propiedades:</strong> Usuarios interesados en propiedades específicas</li>
-                <li><strong>Formulario de Contacto:</strong> Solicitudes generales de información y ayuda</li>
-                <li><strong>Waitlist Social:</strong> Usuarios interesados en la red social (fase beta)</li>
-              </ul>
-              <p className="text-gray-600 mt-4">
-                💡 <strong>Próximos pasos:</strong> Asigna leads manualmente a agentes activos o usa el botón &quot;Auto-asignar&quot; para distribución inteligente.
-              </p>
-            </div>
+        {[
+          { key: 'unassigned', label: 'Unassigned', color: 'yellow' },
+          { key: 'assigned', label: 'Assigned', color: 'blue' },
+          { key: 'contacted', label: 'Contacted', color: 'purple' },
+          { key: 'won', label: 'Won', color: 'green' },
+          { key: 'lost', label: 'Lost', color: 'red' },
+        ].map((stat) => (
+          <div
+            key={stat.key}
+            className={`bg-white p-4 rounded-lg border border-gray-200 cursor-pointer hover:shadow-md transition-shadow ${
+              selectedStatus === stat.key ? `ring-2 ring-${stat.color}-500` : ''
+            }`}
+            onClick={() => setSelectedStatus(stat.key)}
+          >
+            <div className="text-sm text-gray-600">{stat.label}</div>
+            <div className="text-2xl font-bold text-gray-900">{stats[stat.key as keyof LeadStats]}</div>
           </div>
+        ))}
+      </div>
 
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg border bg-gray-50">
-              <div className="text-sm text-gray-500">Leads nuevos (24h)</div>
-              <div className="text-2xl font-bold text-[#0B2545]">{kpis.new24}</div>
-            </div>
-            <div className="p-4 rounded-lg border bg-gray-50">
-              <div className="text-sm text-gray-500">En espera de asignación</div>
-              <div className="text-2xl font-bold text-[#0B2545]">{kpis.unassigned}</div>
-            </div>
-            <div className="p-4 rounded-lg border bg-gray-50">
-              <div className="text-sm text-gray-500">Tiempo respuesta prom.</div>
-              <div className="text-2xl font-bold text-[#0B2545]">{kpis.avgHours == null ? '—' : `${kpis.avgHours.toFixed(1)}h`}</div>
-            </div>
-          </div>
-
-          {/* Leads list */}
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold text-[#0B2545] mb-3">Consultas recientes</h3>
-            <div className="rounded-lg border overflow-hidden bg-white">
-              {error && !loading && (
-                <div className="p-4 border-b border-red-100 bg-red-50 text-sm text-red-700">
-                  {error}
-                </div>
+      {/* Leads Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Lead Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Contact
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Source
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    Loading leads...
+                  </td>
+                </tr>
+              ) : leads.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    No leads found
+                  </td>
+                </tr>
+              ) : (
+                leads.map((lead) => (
+                  <tr key={lead.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{lead.buyerName}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-xs text-gray-600">
+                        <div>{lead.buyerEmail}</div>
+                        {lead.buyerPhone && <div>{lead.buyerPhone}</div>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-lg" title={lead.type}>
+                        {typeIcons[lead.type] || lead.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-xs text-gray-600">{lead.source}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <select
+                        value={lead.status}
+                        onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                        className={`text-xs font-medium px-3 py-1 rounded-full cursor-pointer border-none ${
+                          statusColors[lead.status] || 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        <option value="unassigned">Unassigned</option>
+                        <option value="assigned">Assigned</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="won">Won</option>
+                        <option value="lost">Lost</option>
+                      </select>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
+                      {lead.status === 'unassigned' && (
+                        <button
+                          onClick={() => openAssignModal(lead.id)}
+                          className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+                        >
+                          Assign
+                        </button>
+                      )}
+                      {lead.inboxConversationId && (
+                        <button
+                          onClick={() => router.push(`/master/inbox?conv=${lead.inboxConversationId}`)}
+                          className="inline-flex items-center px-3 py-1 text-xs font-medium text-green-600 bg-green-50 rounded-md hover:bg-green-100"
+                        >
+                          Chat
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteLead(lead.id)}
+                        className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
-              <div className="flex items-center justify-between p-3 border-b bg-gray-50">
-                <div className="flex items-center gap-2 text-sm">
-                  <button onClick={()=>setFilter('all')} className={`px-3 py-1.5 rounded ${filter==='all'?'bg-[#00A6A6] text-white':'text-gray-700 hover:bg-gray-100'}`}>Todas</button>
-                  <button onClick={()=>setFilter('unassigned')} className={`px-3 py-1.5 rounded ${filter==='unassigned'?'bg-[#00A6A6] text-white':'text-gray-700 hover:bg-gray-100'}`}>Sin asignar</button>
-                  <button onClick={()=>setFilter('assigned')} className={`px-3 py-1.5 rounded ${filter==='assigned'?'bg-[#00A6A6] text-white':'text-gray-700 hover:bg-gray-100'}`}>Asignadas</button>
-                </div>
-                <div>
-                  <button onClick={loadLeads} className="px-3 py-1.5 rounded border text-[#0B2545] border-gray-300 hover:bg-gray-100">Actualizar</button>
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="text-left p-3 whitespace-nowrap">Source</th>
-                      <th className="text-left p-3 whitespace-nowrap">Cliente</th>
-                      <th className="text-left p-3 whitespace-nowrap">Detalles</th>
-                      <th className="text-left p-3 whitespace-nowrap">Fecha</th>
-                      <th className="text-left p-3 whitespace-nowrap">Estado</th>
-                      <th className="text-left p-3 whitespace-nowrap">Asignación</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {loading ? (
-                      <tr><td colSpan={6} className="p-4 text-center text-gray-500">Cargando leads...</td></tr>
-                    ) : visibleLeads.length === 0 ? (
-                      <tr><td colSpan={6} className="p-6 text-center text-gray-500">No hay leads en esta vista</td></tr>
-                    ) : (
-                      visibleLeads.map((l) => (
-                        <tr key={l.id}>
-                          <td className="p-3">
-                            <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                              l.source === 'property_inquiry' ? 'bg-green-100 text-green-800' :
-                              l.source === 'contact_form' ? 'bg-blue-100 text-blue-800' :
-                              'bg-purple-100 text-purple-800'
-                            }`}>
-                              {l.source === 'property_inquiry' ? '🏠 Propiedad' :
-                               l.source === 'contact_form' ? '📧 Contacto' :
-                               '👥 Waitlist'}
-                            </span>
-                          </td>
-                          <td className="p-3">
-                            <div className="font-medium text-[#0B2545]">{l.name}</div>
-                            <div className="text-gray-500 text-sm">{l.email}</div>
-                            <div className="text-gray-500 text-xs">{l.phone}</div>
-                          </td>
-                          <td className="p-3">
-                            {l.source === 'property_inquiry' ? (
-                              <>
-                                <div className="font-medium text-sm">{l.propertyTitle || 'Property'}</div>
-                                <div className="text-gray-500 text-xs">Contacto: {l.preferredContact || 'email'}</div>
-                              </>
-                            ) : (
-                              <div className="text-sm text-gray-600 line-clamp-2">{l.message?.substring(0, 100) || 'Sin mensaje'}</div>
-                            )}
-                          </td>
-                          <td className="p-3 text-sm whitespace-nowrap">{l.createdAt?.toLocaleString?.('es-DO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) || '—'}</td>
-                          <td className="p-3">
-                            <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-xs whitespace-nowrap">{l.status || 'new'}</span>
-                          </td>
-                          <td className="p-3">
-                            {l.status === 'assigned' && l.assignedTo ? (
-                              <span className="px-2 py-1 rounded bg-green-100 text-green-800 text-xs whitespace-nowrap">
-                                {l.assignedTo.name} ({l.assignedTo.role})
-                              </span>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <button onClick={() => openAssign(l.id)} className="px-3 py-1.5 rounded border text-[#0B2545] border-gray-300 hover:bg-gray-50 text-xs whitespace-nowrap">Asignar</button>
-                                <button onClick={async ()=>{
-                                  try{
-                                    const res = await fetch('/api/admin/leads/auto-assign',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ leadId: l.id })})
-                                    const j = await res.json()
-                                    if(!res.ok || !j.ok) throw new Error(j.error||'fail')
-                                    setLeads(prev => prev.map(x => x.id===l.id ? { ...x, status:'assigned', assignedTo: j.assignee } : x))
-                                    toast.success(`✅ Auto-asignado a ${j.assignee?.name || 'agent'}`)
-                                  }catch(e){
-                                    toast.error('No se pudo auto-asignar')
-                                  }
-                                }} className="px-3 py-1.5 rounded border text-[#0B2545] border-gray-300 hover:bg-gray-50 text-xs whitespace-nowrap">Auto</button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          {/* Assign modal */}
-          {assigning && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
-                <div className="text-xl font-bold text-[#0B2545] mb-4">Asignar Lead</div>
-                <div className="mb-3 text-sm text-gray-600">Selecciona un agente o bróker para este lead.</div>
-                <div className="mb-4">
-                  {loadingCandidates ? (
-                    <div className="text-gray-500">Cargando candidatos...</div>
-                  ) : candidates.length === 0 ? (
-                    <div className="text-gray-500">No hay candidatos disponibles</div>
-                  ) : (
-                    <select value={selectedAssignee} onChange={e=>setSelectedAssignee(e.target.value)} className="w-full px-3 py-2 border rounded" aria-label="Select professional to assign lead">
-                      <option value="">Selecciona profesional</option>
-                      {candidates.map(c => (
-                        <option key={c.id} value={c.id}>{c.role === 'broker' ? 'Broker' : 'Agente'} — {c.name || c.company} {c.status !== 'active' ? '(pendiente)' : ''}</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => setAssigning(null)} className="px-4 py-2 border rounded hover:bg-gray-50">Cancelar</button>
-                  <button onClick={assign} disabled={!selectedAssignee} className="px-4 py-2 bg-[#00A676] text-white rounded disabled:opacity-50 hover:bg-[#008f63] transition-colors">Asignar</button>
-                </div>
-              </div>
-            </div>
-          )}
-
+            </tbody>
+          </table>
         </div>
       </div>
-    </main>
+
+      {/* Assign Modal */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Assign Lead to Agent</h2>
+              <button
+                onClick={() => {
+                  setShowAssignModal(false)
+                  setSelectedLeadId(null)
+                  setAssignNote('')
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Agent</label>
+                {agentsLoading ? (
+                  <div className="text-sm text-gray-500">Loading agents...</div>
+                ) : agents.length === 0 ? (
+                  <div className="text-sm text-red-600">No agents available</div>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {agents.map((agent) => (
+                      <button
+                        key={agent.id}
+                        onClick={() => handleAssign(agent.id)}
+                        className="w-full text-left px-4 py-2 hover:bg-blue-50 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors"
+                      >
+                        <div className="font-medium text-gray-900">{agent.name}</div>
+                        {agent.company && <div className="text-xs text-gray-600">{agent.company}</div>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Optional Note</label>
+                <textarea
+                  value={assignNote}
+                  onChange={(e) => setAssignNote(e.target.value)}
+                  placeholder="Add internal notes about this assignment..."
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
