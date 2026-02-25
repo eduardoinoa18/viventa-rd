@@ -231,6 +231,7 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
                 name="purpose"
                 value={formData.purpose}
                 onChange={handleChange}
+                aria-label="Select property purpose"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="Residential">Residential</option>

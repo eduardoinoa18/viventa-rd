@@ -122,6 +122,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
               name="name"
               value={formData.name}
               onChange={handleChange}
+              placeholder="Full name"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -135,6 +136,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
               name="email"
               value={formData.email}
               onChange={handleChange}
+              placeholder="user@example.com"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -163,6 +165,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
                 name="company"
                 value={formData.company}
                 onChange={handleChange}
+                placeholder={user.role === 'agent' ? 'Broker name' : 'Company name'}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
