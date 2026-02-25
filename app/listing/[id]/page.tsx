@@ -13,6 +13,9 @@ import RegistrationPrompt from '../../../components/RegistrationPrompt'
 import ImageGalleryCarousel from '../../../components/ImageGalleryCarousel'
 import ShareButtons from '../../../components/ShareButtons'
 import SimilarProperties from '../../../components/SimilarProperties'
+import InvestmentInsightPanel from '../../../components/InvestmentInsightPanel'
+import MortgageCalculator from '../../../components/MortgageCalculator'
+import WhatsAppFloatingCTA from '../../../components/WhatsAppFloatingCTA'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaParking, FaBuilding, FaCalendar } from 'react-icons/fa'
@@ -293,6 +296,9 @@ export default function ListingDetail(){
               <div className="flex items-center gap-3" />
             </div>
           </div>
+
+          {/* Investment Insight Panel - Above the fold */}
+          <InvestmentInsightPanel listing={listing} className="mb-6" />
           
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Main Content */}
@@ -424,10 +430,36 @@ export default function ListingDetail(){
                   {listing.description || 'Sin descripción disponible'}
                 </p>
               </div>
+
+              {/* Mortgage Calculator */}
+              <MortgageCalculator 
+                defaultPrice={Number(listing.price || 0)}
+                currency={listing.currency || 'USD'}
+              />
             </div>
             
             {/* Sidebar */}
             <div className="space-y-4">
+              {/* WhatsApp Floating CTA - Desktop Sidebar */}
+              <WhatsAppFloatingCTA 
+                agent={{
+                  id: listing.agentId || '',
+                  name: listing.agentName || 'Agente VIVENTA',
+                  phone: listing.agentPhone || '+18095551234',
+                  email: listing.agentEmail || '',
+                  photo: listing.agentPhoto || '',
+                  verificationTier: listing.agentVerificationTier || undefined,
+                  avgResponseTime: listing.agentResponseTime || undefined
+                }}
+                listing={{
+                  id: listing.id,
+                  title: listing.title,
+                  address: `${listing.city || ''}, ${listing.sector || ''}`,
+                  price: Number(listing.price || 0),
+                  currency: listing.currency || 'USD'
+                }}
+              />
+
               {/* Price Card */}
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-20">
                 <div className="text-4xl font-bold text-[#FF6B35] mb-6">
@@ -625,6 +657,28 @@ export default function ListingDetail(){
               </p>
             </div>
           </div>
+        </div>
+
+        {/* WhatsApp Floating CTA - Mobile */}
+        <div className="lg:hidden">
+          <WhatsAppFloatingCTA 
+            agent={{
+              id: listing.agentId || '',
+              name: listing.agentName || 'Agente VIVENTA',
+              phone: listing.agentPhone || '+18095551234',
+              email: listing.agentEmail || '',
+              photo: listing.agentPhoto || '',
+              verificationTier: listing.agentVerificationTier || undefined,
+              avgResponseTime: listing.agentResponseTime || undefined
+            }}
+            listing={{
+              id: listing.id,
+              title: listing.title,
+              address: `${listing.city || ''}, ${listing.sector || ''}`,
+              price: Number(listing.price || 0),
+              currency: listing.currency || 'USD'
+            }}
+          />
         </div>
 
         {/* Similar Properties */}
