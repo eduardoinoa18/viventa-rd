@@ -3,6 +3,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiSearch, FiFilter, FiMail, FiPhone } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import CreateBrokerModal from '@/components/admin/CreateBrokerModal'
+import CreateAgentModal from '@/components/admin/CreateAgentModal'
+import CreateConstructoraModal from '@/components/admin/CreateConstructoraModal'
+import CreateBuyerModal from '@/components/admin/CreateBuyerModal'
+import EditUserModal from '@/components/admin/EditUserModal'
 
 type User = {
   id: string
@@ -29,6 +34,14 @@ export default function MasterUsersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+
+  // Modal states
+  const [showBrokerModal, setShowBrokerModal] = useState(false)
+  const [showAgentModal, setShowAgentModal] = useState(false)
+  const [showConstructoraModal, setShowConstructoraModal] = useState(false)
+  const [showBuyerModal, setShowBuyerModal] = useState(false)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   // Stats
   const stats = useMemo(() => ({
@@ -196,8 +209,42 @@ export default function MasterUsersPage() {
       <div className="max-w-7xl mx-auto p-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">User Management</h1>
-          <p className="text-gray-600">Manage all users across the platform</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">User Management</h1>
+              <p className="text-gray-600">Manage all users across the platform</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowBrokerModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <FiUserPlus className="w-4 h-4" />
+                Broker
+              </button>
+              <button
+                onClick={() => setShowAgentModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <FiUserPlus className="w-4 h-4" />
+                Agent
+              </button>
+              <button
+                onClick={() => setShowConstructoraModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors"
+              >
+                <FiUserPlus className="w-4 h-4" />
+                Constructora
+              </button>
+              <button
+                onClick={() => setShowBuyerModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <FiUserPlus className="w-4 h-4" />
+                Buyer
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -363,6 +410,17 @@ export default function MasterUsersPage() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex gap-2 justify-end">
                             <button
+                              onClick={() => {
+                                setEditingUser(user)
+                                setShowEditModal(true)
+                              }}
+                              className="inline-flex items-center gap-2 px-3 py-2 text-blue-700 bg-blue-50 hover:bg-blue-100 text-sm font-medium rounded-lg transition-colors"
+                              title="Edit user"
+                            >
+                              <FiEdit className="w-4 h-4" />
+                              Edit
+                            </button>
+                            <button
                               onClick={() => toggleStatus(user.uid || user.id, isDisabled)}
                               className={`inline-flex items-center gap-2 px-3 py-2 text-white text-sm font-medium rounded-lg transition-colors ${
                                 isDisabled
@@ -393,6 +451,37 @@ export default function MasterUsersPage() {
           )}
         </div>
       </div>
+
+      {/* Role Creation Modals */}
+      <CreateBrokerModal
+        isOpen={showBrokerModal}
+        onClose={() => setShowBrokerModal(false)}
+        onSuccess={() => loadUsers()}
+      />
+      <CreateAgentModal
+        isOpen={showAgentModal}
+        onClose={() => setShowAgentModal(false)}
+        onSuccess={() => loadUsers()}
+      />
+      <CreateConstructoraModal
+        isOpen={showConstructoraModal}
+        onClose={() => setShowConstructoraModal(false)}
+        onSuccess={() => loadUsers()}
+      />
+      <CreateBuyerModal
+        isOpen={showBuyerModal}
+        onClose={() => setShowBuyerModal(false)}
+        onSuccess={() => loadUsers()}
+      />
+      <EditUserModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false)
+          setEditingUser(null)
+        }}
+        onSuccess={() => loadUsers()}
+        user={editingUser}
+      />
     </div>
   )
 }
