@@ -1,82 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
-import { ActivityLogger } from '@/lib/activityLogger'
+import { Timestamp } from 'firebase-admin/firestore'
 
-export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
-    const { leadId, assigneeId } = await req.json()
-    if (!leadId || !assigneeId) {
-      return NextResponse.json({ ok: false, error: 'leadId and assigneeId are required' }, { status: 400 })
+    const { leadId, agentId, note } = await req.json()
+    if (!leadId || !agentId) {
+      return NextResponse.json(
+        { ok: false, error: 'leadId and agentId are required' },
+        { status: 400 }
+      )
     }
 
     const adminDb = getAdminDb()
-    if (!adminDb) return NextResponse.json({ ok: false, error: 'Admin not configured' }, { status: 500 })
-
-    // Load assignee profile
-    const assigneeDoc = await adminDb.collection('users').doc(assigneeId).get()
-    if (!assigneeDoc.exists) {
-      return NextResponse.json({ ok: false, error: 'Assignee not found' }, { status: 404 })
-    }
-    const assignee = assigneeDoc.data() as any
-
-    // Try all lead sources
-    const sources = ['property_inquiries', 'contact_submissions', 'waitlist_social']
-    let leadRef: any = null
-    let leadSnap: any = null
-    let foundSource = ''
-
-    for (const src of sources) {
-      const ref = adminDb.collection(src).doc(leadId)
-      const snap = await ref.get()
-      if (snap.exists) {
-        leadRef = ref
-        leadSnap = snap
-        foundSource = src
-        break
-      }
+    if (!adminDb) {
+      return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
     }
 
-    if (!leadRef || !leadSnap?.exists) {
-      return NextResponse.json({ ok: false, error: 'Lead not found in any source' }, { status: 404 })
+    // 1. Get lead from centralized leads collection
+    const leadRef = adminDb.collection('leads').doc(leadId)
+    const leadSnap = await leadRef.get()
+    if (!leadSnap.exists) {
+      return NextResponse.json({ ok: false, error: 'Lead not found' }, { status: 404 })
     }
+    const lead = leadSnap.data() as any
 
-    const update: any = {
-      status: 'assigned',
-      assignedTo: {
-        uid: assigneeId,
-        name: assignee.name || assignee.company || 'Sin nombre',
-        role: assignee.role || 'agent',
-        email: assignee.email || '',
-      },
-      assignedAt: new Date(),
-      updatedAt: new Date(),
+    // 2. Get agent profile
+    const agentSnap = await adminDb.collection('users').doc(agentId).get()
+    if (!agentSnap.exists) {
+      return NextResponse.json({ ok: false, error: 'Agent not found' }, { status: 404 })
     }
+    const agent = agentSnap.data() as any
 
-    await leadRef.set(update, { merge: true })
+    // 3. Create conversation document with both participants
+    const conversationRef = adminDb.collection('conversations').doc()
+    const conversationId = conversationRef.id
 
-    // Log activity
-    try {
-      const leadData = leadSnap.data() as any
-      await ActivityLogger.log({
-        type: 'lead',
-        action: 'Lead Assigned',
-        metadata: {
-          leadId,
-          source: foundSource,
-          propertyId: leadData?.propertyId,
-          propertyTitle: leadData?.propertyTitle,
-          assigneeId,
-          assigneeName: update.assignedTo.name,
-          assigneeRole: update.assignedTo.role,
+    const now = Timestamp.now()
+    const systemMessage = `Lead "${lead.buyerName}" assigned to ${agent.name || agent.company || 'Agent'}${note ? `. Note: ${note}` : ''}`
+
+    await conversationRef.set({
+      participantIds: [agentId],
+      messages: [
+        {
+          id: crypto.randomUUID?.() || Math.random().toString(36).substr(2, 9),
+          senderType: 'system',
+          senderName: 'System',
+          text: systemMessage,
+          sentAt: now,
+          readBy: [],
         },
-      })
-    } catch (e) {}
+      ],
+      leadId: leadId,
+      leadSource: 'crm',
+      createdAt: now,
+      updatedAt: now,
+      lastMessage: systemMessage,
+      lastMessageAt: now,
+    })
 
-    return NextResponse.json({ ok: true })
+    // 4. Update lead with assignment and conversation ID
+    await leadRef.update({
+      status: 'assigned',
+      assignedTo: agentId,
+      assignedAt: now,
+      inboxConversationId: conversationId,
+      updatedAt: now,
+    })
+
+    return NextResponse.json({
+      ok: true,
+      data: {
+        leadId,
+        agentId,
+        conversationId,
+        assignedAt: now,
+      },
+    })
   } catch (e: any) {
     console.error('assign lead error', e)
-    return NextResponse.json({ ok: false, error: e.message || 'Internal error' }, { status: 500 })
+    return NextResponse.json(
+      { ok: false, error: e.message || 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
