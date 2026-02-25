@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FiArrowRight, FiTrendingUp } from 'react-icons/fi';
 import { Project } from '@/types/project';
-import { formatArea, formatCurrency } from '@/lib/currency';
+import { formatArea, formatCurrency, convertCurrency, type Currency } from '@/lib/currency';
+import useCurrency from '@/hooks/useCurrency';
 
 interface ProjectCard extends Project {
   hasPromotion?: boolean;
@@ -13,6 +14,7 @@ interface ProjectCard extends Project {
 export default function FeaturedProjects() {
   const [projects, setProjects] = useState<ProjectCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const preferredCurrency = useCurrency();
 
   useEffect(() => {
     loadProjects();
@@ -55,7 +57,12 @@ export default function FeaturedProjects() {
     const soldUnits = Math.max(totalUnits - availableUnits, 0);
     const soldPercent = totalUnits > 0 ? Math.round((soldUnits / totalUnits) * 100) : 0;
 
-    const startingPrice = project.smallestUnitPrice?.usd || 0;
+    const startingPriceUsd = project.smallestUnitPrice?.usd || 0;
+    const startingPriceDop = convertCurrency(startingPriceUsd, 'USD', 'DOP');
+    const primaryCurrency: Currency = preferredCurrency;
+    const secondaryCurrency: Currency = preferredCurrency === 'USD' ? 'DOP' : 'USD';
+    const primaryPrice = primaryCurrency === 'USD' ? startingPriceUsd : startingPriceDop;
+    const secondaryPrice = secondaryCurrency === 'USD' ? startingPriceUsd : startingPriceDop;
     const startingMeters = project.smallestUnitMeters || 0;
 
     return (
@@ -99,8 +106,13 @@ export default function FeaturedProjects() {
             <div className="bg-viventa-sand/30 rounded-lg p-3">
               <p className="text-gray-600 text-xs">Desde</p>
               <p className="font-bold text-viventa-navy">
-                {startingPrice > 0 ? formatCurrency(startingPrice, { currency: 'USD', compact: true }) : 'Consultar'}
+                {startingPriceUsd > 0 ? formatCurrency(primaryPrice, { currency: primaryCurrency, compact: true }) : 'Consultar'}
               </p>
+              {startingPriceUsd > 0 && (
+                <p className="text-[11px] text-gray-500">
+                  {formatCurrency(secondaryPrice, { currency: secondaryCurrency, compact: true })}
+                </p>
+              )}
             </div>
             <div className="bg-viventa-sand/30 rounded-lg p-3">
               <p className="text-gray-600 text-xs">Desde</p>

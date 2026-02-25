@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react';
 import ImagePlaceholder from './ImagePlaceholder';
-import { formatCurrency, formatFeatures, formatArea } from '@/lib/currency';
+import { formatCurrency, formatFeatures, formatArea, convertCurrency, type Currency } from '@/lib/currency';
+import useCurrency from '@/hooks/useCurrency';
 import { analytics } from '@/lib/analytics';
 import { trackPropertyCardClick, getCurrentUserInfo } from '@/lib/analyticsService';
 import { FiCheckCircle } from 'react-icons/fi';
@@ -17,6 +18,7 @@ export default function PropertyCard({ property }: { property: any }) {
   const displayTitle = property.title || property.name || 'Propiedad';
   const displayPrice = property.price || property.price_usd || 0;
   const displayCurrency = (property.currency || 'USD') as 'USD' | 'DOP';
+  const preferredCurrency = useCurrency();
   const displayLocation = property.city || '';
   const displayBedrooms = property.bedrooms || property.beds || 0;
   const displayBathrooms = property.bathrooms || property.baths || 0;
@@ -44,6 +46,12 @@ export default function PropertyCard({ property }: { property: any }) {
   const mainImage = property.coverImage || property.images?.[0] || property.image || property.mainImage;
   const displayCity = property.city || '';
   const displayNeighborhood = property.sector || '';
+  const priceUsd = displayCurrency === 'USD' ? displayPrice : convertCurrency(displayPrice, 'DOP', 'USD');
+  const priceDop = displayCurrency === 'DOP' ? displayPrice : convertCurrency(displayPrice, 'USD', 'DOP');
+  const primaryCurrency: Currency = preferredCurrency;
+  const secondaryCurrency: Currency = preferredCurrency === 'USD' ? 'DOP' : 'USD';
+  const primaryPrice = primaryCurrency === 'USD' ? priceUsd : priceDop;
+  const secondaryPrice = secondaryCurrency === 'USD' ? priceUsd : priceDop;
 
   return (
     <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col relative group">
@@ -95,8 +103,13 @@ export default function PropertyCard({ property }: { property: any }) {
       {/* Property Info */}
       <div className="p-5 flex flex-col flex-grow">
         {/* Price */}
-        <div className="font-bold text-2xl text-[#FF6B35] mb-2">
-          {formatCurrency(displayPrice, { currency: displayCurrency })}
+        <div className="mb-2">
+          <div className="font-bold text-2xl text-[#FF6B35]">
+            {formatCurrency(primaryPrice, { currency: primaryCurrency })}
+          </div>
+          <div className="text-xs text-gray-500">
+            {formatCurrency(secondaryPrice, { currency: secondaryCurrency })}
+          </div>
         </div>
 
         {/* Title */}

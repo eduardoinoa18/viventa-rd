@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import LocaleSwitcher from './LocaleSwitcher'
+import CurrencySwitcher from './CurrencySwitcher'
 import NotificationCenter from './NotificationCenter'
 import { useEffect, useState } from 'react'
 import { getSession, clearSession } from '../lib/authSession'
@@ -42,6 +43,7 @@ export default function Header() {
           </nav>
           <div className="flex items-center gap-3">
             <LocaleSwitcher />
+            <CurrencySwitcher />
           {/* Back to Admin button for admins on user-facing pages */}
           {session && session.role === 'master_admin' && !pathname?.startsWith('/master') && (
             <Link 
@@ -85,6 +87,7 @@ export default function Header() {
         </nav>
         <div className="flex items-center gap-3">
           <LocaleSwitcher />
+          <CurrencySwitcher />
           {/* Back to Admin button for admins on user-facing pages */}
           {session && session.role === 'master_admin' && !pathname?.startsWith('/master') && (
             <Link 

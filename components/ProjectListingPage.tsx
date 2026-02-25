@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ProjectDetail } from '@/types/project';
+import { convertCurrency, formatCurrency, type Currency } from '@/lib/currency';
+import useCurrency from '@/hooks/useCurrency';
 import UnitInventoryTable from '@/components/UnitInventoryTable';
 
 interface ProjectListingPageProps {
@@ -13,6 +15,7 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'units' | 'amenities' | 'financing'>('overview');
+  const preferredCurrency = useCurrency();
 
   useEffect(() => {
     fetchProject();
@@ -102,12 +105,18 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
   });
 
   const startingPriceUsd = project.smallestUnitPrice?.usd || 0;
+  const startingPriceDop = convertCurrency(startingPriceUsd, 'USD', 'DOP');
+  const primaryCurrency: Currency = preferredCurrency;
+  const secondaryCurrency: Currency = preferredCurrency === 'USD' ? 'DOP' : 'USD';
+  const primaryPrice = primaryCurrency === 'USD' ? startingPriceUsd : startingPriceDop;
+  const secondaryPrice = secondaryCurrency === 'USD' ? startingPriceUsd : startingPriceDop;
   const offerPercent = activeOffer?.discountPercent || 0;
   const offerAmountUsd = activeOffer?.discountAmount?.usd || 0;
   const offerDiscountUsd = offerPercent > 0
     ? Math.round(startingPriceUsd * (offerPercent / 100))
     : offerAmountUsd;
   const discountedPriceUsd = Math.max(startingPriceUsd - offerDiscountUsd, 0);
+  const discountedPriceDop = convertCurrency(discountedPriceUsd, 'USD', 'DOP');
   const hasOfferPrice = startingPriceUsd > 0 && offerDiscountUsd > 0;
 
   const inventorySummary = project.units.reduce(
@@ -183,16 +192,24 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
             {hasOfferPrice ? (
               <div className="space-y-1">
                 <p className="text-sm text-gray-500 line-through">
-                  ${startingPriceUsd.toLocaleString()}
+                  {formatCurrency(primaryPrice, { currency: primaryCurrency })}
                 </p>
                 <p className="text-2xl font-bold text-[#FF6B35]">
-                  ${discountedPriceUsd.toLocaleString()}
+                  {formatCurrency(primaryCurrency === 'USD' ? discountedPriceUsd : discountedPriceDop, { currency: primaryCurrency })}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {formatCurrency(secondaryCurrency === 'USD' ? discountedPriceUsd : discountedPriceDop, { currency: secondaryCurrency })}
                 </p>
               </div>
             ) : (
-              <p className="text-3xl font-bold text-gray-900">
-                ${((project.smallestUnitPrice?.usd || 0) / 1000).toFixed(1)}K
-              </p>
+              <div className="space-y-1">
+                <p className="text-3xl font-bold text-gray-900">
+                  {formatCurrency(primaryPrice, { currency: primaryCurrency, compact: true })}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {formatCurrency(secondaryPrice, { currency: secondaryCurrency, compact: true })}
+                </p>
+              </div>
             )}
           </div>
           <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -221,13 +238,13 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
                 {hasOfferPrice && (
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="text-sm text-gray-500 line-through">
-                      ${startingPriceUsd.toLocaleString()}
+                      {formatCurrency(primaryPrice, { currency: primaryCurrency })}
                     </span>
                     <span className="text-2xl font-bold text-[#FF6B35]">
-                      ${discountedPriceUsd.toLocaleString()}
+                      {formatCurrency(primaryCurrency === 'USD' ? discountedPriceUsd : discountedPriceDop, { currency: primaryCurrency })}
                     </span>
                     <span className="text-sm font-semibold text-green-600">
-                      Ahorra ${offerDiscountUsd.toLocaleString()}
+                      Ahorra {formatCurrency(primaryCurrency === 'USD' ? offerDiscountUsd : convertCurrency(offerDiscountUsd, 'USD', 'DOP'), { currency: primaryCurrency })}
                     </span>
                   </div>
                 )}

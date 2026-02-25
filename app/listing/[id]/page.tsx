@@ -196,6 +196,19 @@ export default function ListingDetail(){
       </>
     )
   }
+
+  const listingCurrency = (listing.currency || 'USD') as Currency
+  const listingPrice = Number(listing.price || 0)
+  const priceUsd = listingCurrency === 'USD'
+    ? listingPrice
+    : convertCurrency(listingPrice, 'DOP', 'USD')
+  const priceDop = listingCurrency === 'DOP'
+    ? listingPrice
+    : convertCurrency(listingPrice, 'USD', 'DOP')
+  const primaryCurrency: Currency = currency
+  const secondaryCurrency: Currency = currency === 'USD' ? 'DOP' : 'USD'
+  const primaryPrice = primaryCurrency === 'USD' ? priceUsd : priceDop
+  const secondaryPrice = secondaryCurrency === 'USD' ? priceUsd : priceDop
   
   // Generate structured data for SEO
   const propertySchema = listing ? generatePropertySchema({
@@ -462,13 +475,13 @@ export default function ListingDetail(){
 
               {/* Price Card */}
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-20">
-                <div className="text-4xl font-bold text-[#FF6B35] mb-6">
-                  {formatCurrency(
-                    currency === listing.currency 
-                      ? Number(listing.price || 0) 
-                      : convertCurrency(Number(listing.price || 0), listing.currency || 'USD', currency),
-                    { currency }
-                  )}
+                <div className="mb-6">
+                  <div className="text-4xl font-bold text-[#FF6B35]">
+                    {formatCurrency(primaryPrice, { currency: primaryCurrency })}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {formatCurrency(secondaryPrice, { currency: secondaryCurrency })}
+                  </div>
                 </div>
 
                 {Number(listing.maintenanceFee || 0) > 0 && (
