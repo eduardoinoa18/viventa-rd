@@ -114,16 +114,16 @@ export default function MortgageCalculator({
           </label>
           <input
             type="range"
-            min="10"
-            max="50"
+            min="5"
+            max="80"
             step="5"
             value={downPaymentPercent}
             onChange={(e) => setDownPaymentPercent(Number(e.target.value))}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#00A6A6]"
           />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>10%</span>
-            <span>50%</span>
+            <span>5%</span>
+            <span>80%</span>
           </div>
         </div>
         
@@ -134,16 +134,16 @@ export default function MortgageCalculator({
           </label>
           <input
             type="range"
-            min="5"
-            max="12"
+            min="2"
+            max="30"
             step="0.5"
             value={interestRate}
             onChange={(e) => setInterestRate(Number(e.target.value))}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#00A6A6]"
           />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>5%</span>
-            <span>12%</span>
+            <span>2%</span>
+            <span>30%</span>
           </div>
         </div>
         
@@ -152,8 +152,8 @@ export default function MortgageCalculator({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Plazo del préstamo
           </label>
-          <div className="grid grid-cols-5 gap-2">
-            {[10, 15, 20, 25, 30].map((years) => (
+          <div className="grid grid-cols-6 gap-2">
+            {[1, 5, 10, 15, 20, 30].map((years) => (
               <button
                 key={years}
                 onClick={() => setLoanTerm(years)}
