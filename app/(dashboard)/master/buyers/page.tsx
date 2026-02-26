@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { FiFilter, FiSearch, FiUsers } from 'react-icons/fi'
@@ -184,18 +185,19 @@ export default function MasterBuyersPage() {
                   <th className="px-5 py-3 text-left">Location</th>
                   <th className="px-5 py-3 text-left">Budget</th>
                   <th className="px-5 py-3 text-left">Criteria</th>
+                  <th className="px-5 py-3 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-8 text-center text-gray-500">
+                    <td colSpan={6} className="px-5 py-8 text-center text-gray-500">
                       Loading buyers...
                     </td>
                   </tr>
                 ) : filteredBuyers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-8 text-center text-gray-500">
+                    <td colSpan={6} className="px-5 py-8 text-center text-gray-500">
                       No buyers found.
                     </td>
                   </tr>
@@ -248,6 +250,14 @@ export default function MasterBuyersPage() {
                             <span className="text-gray-400">No criteria</span>
                           )}
                         </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <Link
+                          href={`/master/buyers/${buyer.id}`}
+                          className="inline-flex rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-[#0B2545] hover:bg-gray-100"
+                        >
+                          View Details
+                        </Link>
                       </td>
                     </tr>
                   ))
