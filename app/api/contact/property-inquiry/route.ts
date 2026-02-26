@@ -71,6 +71,29 @@ export async function POST(request: Request) {
       readBy: [],
     })
 
+    // Also push into centralized lead queue
+    try {
+      await adminDb.collection('leads').add({
+        type: preferredContact === 'whatsapp' ? 'whatsapp' : visitDate ? 'showing' : 'request-info',
+        source: 'property',
+        sourceId: propertyId,
+        buyerName: name,
+        buyerEmail: String(email).trim().toLowerCase(),
+        buyerPhone: phone || '',
+        message: message || '',
+        status: 'unassigned',
+        assignedTo: null,
+        inboxConversationId: null,
+        preferredContact: preferredContact || 'email',
+        visitDate: visitDate || null,
+        legacyInquiryId: inquiryRef.id,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+    } catch (leadQueueError) {
+      logger.error('Failed to sync property inquiry to centralized leads queue', leadQueueError)
+    }
+
     // Email notifications
     const masterEmail = process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com'
     const adminList = (process.env.ADMIN_NOTIFICATION_EMAILS || '')

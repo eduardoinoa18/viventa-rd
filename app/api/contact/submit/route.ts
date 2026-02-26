@@ -6,6 +6,8 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { sendEmail } from '@/lib/emailService'
 import { sendContactConfirmation } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
+import { getAdminDb } from '@/lib/firebaseAdmin'
+import { Timestamp } from 'firebase-admin/firestore'
 
 export async function POST(request: Request) {
   try {
@@ -40,6 +42,34 @@ export async function POST(request: Request) {
       createdAt: serverTimestamp(),
       readBy: [],
     })
+
+    // Also push into centralized lead queue
+    try {
+      const adminDb = getAdminDb()
+      if (adminDb) {
+        await adminDb.collection('leads').add({
+          type: 'request-info',
+          source: 'project',
+          sourceId: source || 'website',
+          buyerName: name,
+          buyerEmail: String(email).trim().toLowerCase(),
+          buyerPhone: phone || '',
+          message: message || '',
+          status: 'unassigned',
+          assignedTo: null,
+          inboxConversationId: null,
+          contactType: type || 'general',
+          role: role || null,
+          company: company || null,
+          interests: interests || [],
+          legacyContactSubmissionId: docRef.id,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        })
+      }
+    } catch (leadQueueError) {
+      logger.error('Failed to sync contact submission to centralized leads queue', leadQueueError)
+    }
 
     // Send email notification to admin(s)
     const masterEmail = process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com'

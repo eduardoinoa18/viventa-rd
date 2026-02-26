@@ -36,6 +36,28 @@ export async function POST(req: NextRequest) {
       readBy: []
     })
 
+    // Also push into centralized lead queue
+    try {
+      await adminDb.collection('leads').add({
+        type: 'request-info',
+        source: 'project',
+        sourceId: 'waitlist_social',
+        buyerName: name,
+        buyerEmail: String(email).trim().toLowerCase(),
+        buyerPhone: phone || '',
+        message: interest ? `Waitlist interest: ${interest}` : 'Waitlist signup',
+        status: 'unassigned',
+        assignedTo: null,
+        inboxConversationId: null,
+        interest: interest || null,
+        legacyWaitlistSource: 'waitlist_social',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      })
+    } catch (leadQueueError) {
+      console.error('Failed to sync waitlist entry to centralized leads queue:', leadQueueError)
+    }
+
     // Create admin notification
     await adminDb.collection('notifications').add({
       type: 'waitlist_submission',
