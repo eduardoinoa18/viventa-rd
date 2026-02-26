@@ -180,6 +180,9 @@ export async function POST(req: NextRequest) {
         token,
         expiresHours,
       })
+
+      await ActivityLogger.inviteSent(userId, normalizedEmail, role)
+
       await adminDb.collection('users').doc(userId).set({
         inviteId: inviteRef.id,
         inviteExpiresAt: expiresAt,

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { FiGrid, FiUsers, FiUser, FiHome, FiSettings, FiPlusSquare, FiClipboard, FiTarget, FiChevronLeft } from 'react-icons/fi'
+import { FiGrid, FiUsers, FiUser, FiHome, FiSettings, FiPlusSquare, FiClipboard, FiTarget, FiActivity, FiChevronLeft } from 'react-icons/fi'
 import { getSession } from '@/lib/authSession'
 
 export default function AdminSidebar() {
@@ -34,6 +34,7 @@ export default function AdminSidebar() {
     { href: '/master/users', label: 'People', icon: <FiUsers />, roles: ['master_admin', 'admin', 'broker'] },
     { href: '/master/leads', label: userRole === 'agent' ? 'My Leads' : 'Leads', icon: <FiTarget />, roles: ['master_admin', 'admin', 'agent', 'broker'] },
     { href: '/master/buyers', label: 'Buyers', icon: <FiUser />, roles: ['master_admin', 'admin', 'broker'] },
+    { href: '/master/activity', label: 'Activity', icon: <FiActivity />, roles: ['master_admin', 'admin'] },
     { href: '/master/applications', label: 'Applications', icon: <FiClipboard />, roles: ['master_admin', 'admin'] },
     { href: '/master/settings', label: 'Settings', icon: <FiSettings />, roles: ['master_admin'] },
   ]

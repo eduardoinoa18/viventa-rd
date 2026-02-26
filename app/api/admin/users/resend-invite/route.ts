@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireMasterAdmin, AdminAuthError } from '@/lib/requireMasterAdmin'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
+import { ActivityLogger } from '@/lib/activityLogger'
 import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
@@ -119,6 +120,8 @@ export async function POST(req: NextRequest) {
       token,
       expiresHours,
     })
+
+    await ActivityLogger.inviteSent(userId, user.email, user.role || 'user')
 
     return NextResponse.json({ ok: true, message: 'Invitation resent successfully' })
   } catch (error: any) {

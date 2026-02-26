@@ -109,6 +109,8 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    await ActivityLogger.inviteAccepted(userId, invite.email, invite.role || 'user')
+
     return NextResponse.json({
       ok: true,
       data: {
