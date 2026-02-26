@@ -1,248 +1,294 @@
-// app/auth/invite/[token]/page.tsx
 'use client'
-/* eslint-disable react/no-unescaped-entities */
-import { useEffect, useState } from 'react'
+
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { FiCheck, FiX, FiLoader, FiMail, FiUser, FiBriefcase } from 'react-icons/fi'
+import toast from 'react-hot-toast'
+import { FiCheck, FiLoader } from 'react-icons/fi'
 
-type InvitationType = 'agent' | 'broker' | 'user'
+type InviteRole = 'agent' | 'broker' | 'constructora' | 'buyer' | 'user' | 'admin'
 
-interface InvitationData {
+interface InviteData {
   email: string
   name: string
-  message: string
-  inviteType: InvitationType
-  status: string
+  role: InviteRole
   expiresAt: string
+  userProfile?: {
+    phone?: string
+    photoURL?: string
+    bio?: string
+    brokerageName?: string
+    companyInfo?: string
+    whatsapp?: string
+    licenseNumber?: string
+  }
 }
 
-export default function InviteAcceptPage() {
+export default function InviteOnboardingPage() {
   const params = useParams()
   const router = useRouter()
   const token = params?.token as string
 
   const [loading, setLoading] = useState(true)
-  const [invitation, setInvitation] = useState<InvitationData | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [invite, setInvite] = useState<InviteData | null>(null)
   const [error, setError] = useState('')
 
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+
+  const [phone, setPhone] = useState('')
+  const [photoURL, setPhotoURL] = useState('')
+  const [bio, setBio] = useState('')
+  const [brokerageName, setBrokerageName] = useState('')
+  const [companyInfo, setCompanyInfo] = useState('')
+  const [whatsapp, setWhatsapp] = useState('')
+  const [licenseNumber, setLicenseNumber] = useState('')
+  const [termsAccepted, setTermsAccepted] = useState(false)
+
   useEffect(() => {
-    if (token) {
-      verifyInvitation()
-    }
+    if (!token) return
+    verifyInvite()
   }, [token])
 
-  const verifyInvitation = async () => {
+  async function verifyInvite() {
     try {
-      const res = await fetch(`/api/invitations/verify`, {
+      setLoading(true)
+      const res = await fetch('/api/invitations/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
       })
 
       const data = await res.json()
-
-      if (!res.ok || !data.ok) {
-        setError(data.error || 'Invalid or expired invitation')
+      if (!res.ok || !data?.ok) {
+        setError(data?.error || 'Invalid invitation')
         return
       }
 
-      setInvitation(data.invitation)
-    } catch (err: any) {
-      console.error('Error verifying invitation:', err)
+      const invitation = data.invitation as InviteData
+      setInvite(invitation)
+      setPhone(invitation.userProfile?.phone || '')
+      setPhotoURL(invitation.userProfile?.photoURL || '')
+      setBio(invitation.userProfile?.bio || '')
+      setBrokerageName(invitation.userProfile?.brokerageName || '')
+      setCompanyInfo(invitation.userProfile?.companyInfo || '')
+      setWhatsapp(invitation.userProfile?.whatsapp || '')
+      setLicenseNumber(invitation.userProfile?.licenseNumber || '')
+    } catch (err) {
+      console.error(err)
       setError('Failed to verify invitation')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleAcceptInvitation = () => {
-    if (!invitation) return
+  const passwordChecks = useMemo(() => {
+    return {
+      min: password.length >= 8,
+      upper: /[A-Z]/.test(password),
+      lower: /[a-z]/.test(password),
+      num: /\d/.test(password),
+      match: password.length > 0 && password === confirmPassword,
+    }
+  }, [password, confirmPassword])
 
-    // Redirect to appropriate page based on invite type with pre-filled data
-    if (invitation.inviteType === 'user') {
-      // Redirect to signup with email pre-filled
-      router.push(`/signup?email=${encodeURIComponent(invitation.email)}&name=${encodeURIComponent(invitation.name)}&invite=${token}`)
-    } else {
-      // Redirect to apply page with data pre-filled
-      router.push(`/apply?email=${encodeURIComponent(invitation.email)}&name=${encodeURIComponent(invitation.name)}&type=${invitation.inviteType}&invite=${token}`)
+  const canGoStep2 = Object.values(passwordChecks).every(Boolean)
+
+  async function completeInvitation() {
+    if (!invite) return
+    if (!canGoStep2) {
+      toast.error('Please set a strong password first')
+      return
+    }
+    if (!termsAccepted) {
+      toast.error('You must accept platform terms')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+
+      const res = await fetch('/api/invitations/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          password,
+          phone,
+          photoURL,
+          bio,
+          brokerageName,
+          companyInfo,
+          whatsapp,
+          licenseNumber,
+          termsAccepted,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || 'Failed to complete onboarding')
+      }
+
+      const loginRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: invite.email, password }),
+      })
+      const loginData = await loginRes.json()
+      if (!loginRes.ok || !loginData?.ok) {
+        throw new Error(loginData?.error || 'Profile completed but auto-login failed')
+      }
+
+      toast.success('Welcome to Viventa!')
+      router.replace(loginData.redirect || '/dashboard')
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to complete invitation')
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  const getIcon = () => {
-    if (!invitation) return <FiMail />
-    switch (invitation.inviteType) {
-      case 'agent':
-        return <FiUser className="w-16 h-16" />
-      case 'broker':
-        return <FiBriefcase className="w-16 h-16" />
-      default:
-        return <FiMail className="w-16 h-16" />
-    }
-  }
-
-  const getTitle = () => {
-    if (!invitation) return 'Invitation'
-    switch (invitation.inviteType) {
-      case 'agent':
-        return 'Real Estate Agent Invitation'
-      case 'broker':
-        return 'Broker Invitation'
-      default:
-        return 'Platform Invitation'
-    }
-  }
-
-  // Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-2xl p-12 text-center max-w-md w-full">
-          <FiLoader className="w-16 h-16 text-[#00A676] mx-auto mb-6 animate-spin" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying Invitation...</h2>
-          <p className="text-gray-600">Please wait while we check your invitation</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <FiLoader className="w-10 h-10 animate-spin text-[#00A676] mx-auto mb-3" />
+          <p className="text-gray-600">Validating invitation...</p>
         </div>
       </div>
     )
   }
 
-  // Error State
-  if (error || !invitation) {
+  if (error || !invite) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-2xl p-12 text-center max-w-md w-full">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6">
-            <FiX className="w-10 h-10 text-red-600" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Invalid Invitation</h2>
-          <p className="text-gray-600 mb-2">{error}</p>
-          <p className="text-sm text-gray-500 mb-8">
-            This invitation may have expired or already been used.
-          </p>
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={() => router.push('/apply')}
-              className="px-6 py-3 bg-gradient-to-r from-[#00A676] to-[#00C896] text-white rounded-xl font-semibold hover:shadow-lg transition-all"
-            >
-              Apply Without Invitation
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-colors"
-            >
-              Go to Homepage
-            </button>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-lg w-full bg-white border border-gray-200 rounded-xl p-6 text-center">
+          <h1 className="text-2xl font-bold text-[#0B2545] mb-3">Invalid Invitation</h1>
+          <p className="text-gray-600 mb-6">{error || 'Invitation not available'}</p>
+          <button
+            onClick={() => router.push('/login')}
+            className="px-4 py-2 bg-[#00A676] text-white rounded-lg"
+          >
+            Go to Login
+          </button>
         </div>
       </div>
     )
   }
 
-  // Valid Invitation State
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 max-w-2xl w-full">
-        {/* Icon */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#00A676] to-[#00C896] rounded-full mb-6">
-            <div className="text-white">{getIcon()}</div>
-          </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">You&apos;re Invited! 🎉</h1>
-          <p className="text-xl text-gray-600">{getTitle()}</p>
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
+      <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-xl shadow-sm">
+        <div className="p-6 border-b border-gray-200">
+          <h1 className="text-2xl font-bold text-[#0B2545]">Complete your Viventa profile</h1>
+          <p className="text-sm text-gray-600 mt-1">{invite.email} • Role: {invite.role}</p>
+          <p className="text-xs text-gray-500 mt-1">Expires: {new Date(invite.expiresAt).toLocaleString()}</p>
         </div>
 
-        {/* Invitation Details */}
-        <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 mb-8">
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-600">Invited as:</label>
-              <p className="text-lg font-semibold text-gray-900 capitalize">
-                {invitation.inviteType === 'agent'
-                  ? 'Real Estate Agent'
-                  : invitation.inviteType === 'broker'
-                  ? 'Broker / Brokerage'
-                  : 'Platform User'}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-600">Your Name:</label>
-              <p className="text-lg font-semibold text-gray-900">{invitation.name}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-600">Email:</label>
-              <p className="text-lg font-semibold text-gray-900">{invitation.email}</p>
-            </div>
-            {invitation.message && (
-              <div>
-                <label className="text-sm font-medium text-gray-600">Personal Message:</label>
-                <p className="text-gray-700 bg-white p-4 rounded-lg mt-2 italic">
-                  &quot;{invitation.message}&quot;
-                </p>
-              </div>
-            )}
-            <div>
-              <label className="text-sm font-medium text-gray-600">Expires:</label>
-              <p className="text-gray-700">
-                {new Date(invitation.expiresAt).toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </p>
-            </div>
+        <div className="px-6 pt-5">
+          <div className="flex items-center gap-2 text-xs text-gray-600 mb-4">
+            <span className={`${step >= 1 ? 'bg-[#00A676] text-white' : 'bg-gray-200'} rounded-full w-6 h-6 inline-flex items-center justify-center`}>1</span>
+            <span>Password</span>
+            <span>•</span>
+            <span className={`${step >= 2 ? 'font-semibold text-[#0B2545]' : ''}`}>2 Profile</span>
+            <span>•</span>
+            <span className={`${step >= 3 ? 'font-semibold text-[#0B2545]' : ''}`}>3 Terms</span>
           </div>
         </div>
 
-        {/* Benefits */}
-        {invitation.inviteType !== 'user' && (
-          <div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-6 mb-8">
-            <h3 className="font-bold text-gray-900 mb-3">What&apos;s Included:</h3>
-            <ul className="space-y-2 text-gray-700">
-              <li className="flex items-start gap-2">
-                <FiCheck className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <span>Professional profile on VIVENTA platform</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <FiCheck className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <span>Access to listing management tools</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <FiCheck className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <span>Connect with qualified buyers and sellers</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <FiCheck className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <span>Performance analytics and insights</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <FiCheck className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <span>Growing network of real estate professionals</span>
-              </li>
-            </ul>
+        {step === 1 && (
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Set password</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm password</label>
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-700 space-y-1">
+              <CheckLine ok={passwordChecks.min} label="At least 8 characters" />
+              <CheckLine ok={passwordChecks.upper} label="At least 1 uppercase letter" />
+              <CheckLine ok={passwordChecks.lower} label="At least 1 lowercase letter" />
+              <CheckLine ok={passwordChecks.num} label="At least 1 number" />
+              <CheckLine ok={passwordChecks.match} label="Passwords match" />
+            </div>
+            <div className="flex justify-end">
+              <button
+                disabled={!canGoStep2}
+                onClick={() => setStep(2)}
+                className="px-4 py-2 rounded-lg bg-[#00A676] text-white disabled:opacity-50"
+              >
+                Continue
+              </button>
+            </div>
           </div>
         )}
 
-        {/* CTA */}
-        <div className="text-center">
-          <button
-            onClick={handleAcceptInvitation}
-            className="w-full px-8 py-4 bg-gradient-to-r from-[#00A676] to-[#00C896] text-white rounded-2xl font-bold text-lg hover:shadow-xl transform hover:scale-105 transition-all mb-4"
-          >
-            Accept Invitation & Get Started →
-          </button>
-          <button
-            onClick={() => router.push('/')}
-            className="text-gray-600 hover:text-gray-900 font-medium"
-          >
-            Maybe Later
-          </button>
-        </div>
+        {step === 2 && (
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Phone" value={phone} onChange={setPhone} />
+              <Field label="WhatsApp" value={whatsapp} onChange={setWhatsapp} />
+            </div>
+            <Field label="Profile Photo URL" value={photoURL} onChange={setPhotoURL} />
+            <Field label="Bio" value={bio} onChange={setBio} />
 
-        {/* Footer Note */}
-        <p className="text-center text-sm text-gray-500 mt-8">
-          By accepting this invitation, you agree to VIVENTA&apos;s Terms of Service and Privacy Policy
-        </p>
+            {invite.role === 'agent' && (
+              <Field label="Brokerage Name" value={brokerageName} onChange={setBrokerageName} />
+            )}
+            {invite.role === 'constructora' && (
+              <Field label="Company Info" value={companyInfo} onChange={setCompanyInfo} />
+            )}
+
+            <Field label="License Number (Optional)" value={licenseNumber} onChange={setLicenseNumber} />
+
+            <div className="flex justify-between">
+              <button onClick={() => setStep(1)} className="px-4 py-2 rounded-lg border border-gray-300">Back</button>
+              <button onClick={() => setStep(3)} className="px-4 py-2 rounded-lg bg-[#00A676] text-white">Continue</button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="p-6 space-y-4">
+            <label className="flex items-start gap-3 text-sm text-gray-700">
+              <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="mt-1" />
+              <span>I accept Viventa platform terms and privacy policy.</span>
+            </label>
+            <div className="flex justify-between">
+              <button onClick={() => setStep(2)} className="px-4 py-2 rounded-lg border border-gray-300">Back</button>
+              <button
+                onClick={completeInvitation}
+                disabled={!termsAccepted || submitting}
+                className="px-4 py-2 rounded-lg bg-[#00A676] text-white disabled:opacity-50"
+              >
+                {submitting ? 'Finishing...' : 'Complete & Enter Dashboard'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+    </div>
+  )
+}
+
+function CheckLine({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <FiCheck className={ok ? 'text-green-600' : 'text-gray-300'} />
+      <span className={ok ? 'text-green-700 font-medium' : 'text-gray-500'}>{label}</span>
+    </div>
+  )
+}
+
+function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
     </div>
   )
 }

@@ -49,8 +49,9 @@ export default function MasterUsersPage() {
     agents: users.filter(u => u.role === 'agent').length,
     brokers: users.filter(u => u.role === 'broker').length,
     buyers: users.filter(u => u.role === 'buyer' || u.role === 'user').length,
+    invited: users.filter(u => u.status === 'invited').length,
     active: users.filter(u => u.status === 'active' && !u.disabled).length,
-    inactive: users.filter(u => u.status === 'inactive' || u.disabled).length,
+    inactive: users.filter(u => u.status === 'inactive' || u.status === 'suspended' || u.disabled).length,
   }), [users])
 
   // Filtered users
@@ -173,6 +174,26 @@ export default function MasterUsersPage() {
     } catch (e) {
       console.error('Failed to delete user', e)
       toast.error('Failed to delete user')
+    }
+  }
+
+  async function resendInvite(userId: string) {
+    try {
+      const res = await fetch('/api/admin/users/resend-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.ok) {
+        toast.error(json.error || 'Failed to resend invite')
+        return
+      }
+      toast.success('Invitation resent successfully')
+      loadUsers()
+    } catch (e) {
+      console.error('Failed to resend invite', e)
+      toast.error('Failed to resend invite')
     }
   }
 
@@ -358,7 +379,8 @@ export default function MasterUsersPage() {
                 <tbody className="divide-y divide-gray-200">
                   {filteredUsers.map((user) => {
                     const roleBadge = getRoleBadge(user.role)
-                    const isDisabled = user.disabled || user.status === 'inactive'
+                    const isDisabled = user.disabled || user.status === 'inactive' || user.status === 'suspended'
+                    const isInvited = user.status === 'invited'
                     
                     return (
                       <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${isDisabled ? 'opacity-60' : ''}`}>
@@ -403,12 +425,28 @@ export default function MasterUsersPage() {
                           {formatDate(user.lastLoginAt)}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${isDisabled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                            {isDisabled ? 'Inactive' : 'Active'}
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                            isInvited
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : isDisabled
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {isInvited ? 'Invited' : isDisabled ? 'Suspended' : 'Active'}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex gap-2 justify-end">
+                            {isInvited && (
+                              <button
+                                onClick={() => resendInvite(user.id)}
+                                className="inline-flex items-center gap-2 px-3 py-2 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 text-sm font-medium rounded-lg transition-colors"
+                                title="Resend invite"
+                              >
+                                <FiMail className="w-4 h-4" />
+                                Resend Invite
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 setEditingUser(user)

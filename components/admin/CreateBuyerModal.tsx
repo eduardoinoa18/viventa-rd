@@ -12,6 +12,7 @@ interface CreateBuyerModalProps {
 
 export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateBuyerModalProps) {
   const [loading, setLoading] = useState(false)
+  const [sendInvite, setSendInvite] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -46,6 +47,7 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
         phone: formData.phone.trim(),
         role: 'buyer',
         criteria: {},
+        sendInvite,
       }
 
       // Add optional criteria fields
@@ -77,7 +79,7 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
         return
       }
 
-      toast.success('Buyer created successfully')
+      toast.success(sendInvite ? 'Buyer created and invitation sent' : 'Buyer created successfully')
       setFormData({
         name: '',
         email: '',
@@ -208,6 +210,15 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
               />
             </div>
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={sendInvite}
+              onChange={(e) => setSendInvite(e.target.checked)}
+            />
+            Send invitation email now (optional)
+          </label>
 
           <div className="grid grid-cols-2 gap-3">
             <div>

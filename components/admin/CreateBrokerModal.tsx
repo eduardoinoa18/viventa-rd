@@ -45,6 +45,7 @@ export default function CreateBrokerModal({ isOpen, onClose, onSuccess }: Create
           phone: formData.phone.trim(),
           role: 'broker',
           company: formData.company.trim(),
+          sendInvite: true,
         }),
       })
 
@@ -54,7 +55,7 @@ export default function CreateBrokerModal({ isOpen, onClose, onSuccess }: Create
         return
       }
 
-      toast.success('Broker created successfully')
+      toast.success('Broker created and invitation sent')
       setFormData({ name: '', email: '', phone: '', company: '' })
       onSuccess()
       onClose()

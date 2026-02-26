@@ -79,6 +79,7 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
           phone: formData.phone.trim(),
           role: 'agent',
           brokerage: formData.brokerageId,
+          sendInvite: true,
         }),
       })
 
@@ -88,7 +89,7 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
         return
       }
 
-      toast.success('Agent created successfully')
+      toast.success('Agent created and invitation sent')
       setFormData({ name: '', email: '', phone: '', brokerageId: '' })
       onSuccess()
       onClose()

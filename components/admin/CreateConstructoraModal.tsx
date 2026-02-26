@@ -47,6 +47,7 @@ export default function CreateConstructoraModal({ isOpen, onClose, onSuccess }: 
           role: 'constructora',
           company: formData.company.trim(),
           contactPerson: formData.contactPerson.trim(),
+          sendInvite: true,
         }),
       })
 
@@ -56,7 +57,7 @@ export default function CreateConstructoraModal({ isOpen, onClose, onSuccess }: 
         return
       }
 
-      toast.success('Constructora created successfully')
+      toast.success('Constructora created and invitation sent')
       setFormData({ name: '', email: '', phone: '', company: '', contactPerson: '' })
       onSuccess()
       onClose()
