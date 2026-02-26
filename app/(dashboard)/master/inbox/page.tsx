@@ -41,7 +41,7 @@ export default function MasterInboxPage() {
 
   const [leads, setLeads] = useState<any[]>([])
   const [loadingLeads, setLoadingLeads] = useState(false)
-  const [leadFilter, setLeadFilter] = useState<'all' | 'property_inquiry' | 'contact_form' | 'social_waitlist'>('all')
+  const [leadFilter, setLeadFilter] = useState<'all' | 'property' | 'project' | 'agent'>('all')
 
   const selectedConversation = useMemo(
     () => conversations.find((conv) => conv.conversationId === selectedConversationId) || null,
@@ -122,12 +122,12 @@ export default function MasterInboxPage() {
     try {
       setLoadingLeads(true)
       setError(null)
-      const res = await fetch('/api/admin/leads?limit=100')
+      const res = await fetch('/api/admin/leads/queue?limit=100')
       const json = await res.json()
       if (!res.ok || !json.ok) throw new Error(json.error || getUiErrorMessage(res.status))
-      const parsed = (json.leads || []).map((lead: any) => ({
+      const parsed = (json?.data?.leads || []).map((lead: any) => ({
         ...lead,
-        createdAt: lead.createdAt ? new Date(lead.createdAt) : new Date(),
+        createdAt: lead.createdAt?.toDate?.()?.toISOString?.() || lead.createdAt || new Date().toISOString(),
       }))
       setLeads(parsed)
     } catch (e: any) {
@@ -310,9 +310,9 @@ export default function MasterInboxPage() {
                   aria-label="Filtrar leads"
                 >
                   <option value="all">Todos</option>
-                  <option value="property_inquiry">Propiedades</option>
-                  <option value="contact_form">Contacto</option>
-                  <option value="social_waitlist">Waitlist</option>
+                  <option value="property">Propiedades</option>
+                  <option value="project">Proyecto/Contacto</option>
+                  <option value="agent">Agente</option>
                 </select>
               </div>
             </div>
@@ -338,19 +338,19 @@ export default function MasterInboxPage() {
                       <tr key={lead.id}>
                         <td className="p-3">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            lead.source === 'property_inquiry' ? 'bg-green-100 text-green-800' :
-                            lead.source === 'contact_form' ? 'bg-blue-100 text-blue-800' :
+                            lead.source === 'property' ? 'bg-green-100 text-green-800' :
+                            lead.source === 'project' ? 'bg-blue-100 text-blue-800' :
                             'bg-purple-100 text-purple-800'
                           }`}>
-                            {lead.source === 'property_inquiry' ? 'Propiedad' : lead.source === 'contact_form' ? 'Contacto' : 'Waitlist'}
+                            {lead.source === 'property' ? 'Propiedad' : lead.source === 'project' ? 'Proyecto/Contacto' : 'Agente'}
                           </span>
                         </td>
                         <td className="p-3">
-                          <div className="font-medium text-[#0B2545]">{lead.name}</div>
-                          <div className="text-xs text-gray-500">{lead.email}</div>
+                          <div className="font-medium text-[#0B2545]">{lead.buyerName}</div>
+                          <div className="text-xs text-gray-500">{lead.buyerEmail}</div>
                         </td>
                         <td className="p-3 text-gray-600 text-xs">
-                          {lead.source === 'property_inquiry' ? (lead.propertyTitle || 'Consulta de propiedad') : (lead.message || 'Sin mensaje')}
+                          {lead.message || 'Sin mensaje'}
                         </td>
                         <td className="p-3 text-xs text-gray-500">
                           {lead.createdAt ? new Date(lead.createdAt).toLocaleString('es-DO') : '—'}
