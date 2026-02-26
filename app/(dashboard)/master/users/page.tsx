@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
 import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiSearch, FiFilter, FiMail, FiPhone } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import CreateBrokerModal from '@/components/admin/CreateBrokerModal'
@@ -437,6 +438,13 @@ export default function MasterUsersPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex gap-2 justify-end">
+                            <Link
+                              href={`/master/users/${user.id}`}
+                              className="inline-flex items-center gap-2 px-3 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 text-sm font-medium rounded-lg transition-colors"
+                              title="View user performance"
+                            >
+                              View
+                            </Link>
                             {isInvited && (
                               <button
                                 onClick={() => resendInvite(user.id)}
