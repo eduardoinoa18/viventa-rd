@@ -39,6 +39,7 @@ export default function MasterInboxPage() {
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState('')
+  const [conversationQuery, setConversationQuery] = useState('')
 
   const [leads, setLeads] = useState<any[]>([])
   const [loadingLeads, setLoadingLeads] = useState(false)
@@ -48,6 +49,16 @@ export default function MasterInboxPage() {
     () => conversations.find((conv) => conv.conversationId === selectedConversationId) || null,
     [conversations, selectedConversationId]
   )
+
+  const filteredConversations = useMemo(() => {
+    if (!conversationQuery.trim()) return conversations
+    const query = conversationQuery.toLowerCase()
+    return conversations.filter((conv) =>
+      `${conv.senderName} ${conv.receiverName} ${conv.lastMessage} ${conv.conversationId}`
+        .toLowerCase()
+        .includes(query)
+    )
+  }, [conversations, conversationQuery])
 
   const getUiErrorMessage = (status?: number) => {
     if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente para abrir el inbox maestro.'
@@ -229,15 +240,23 @@ export default function MasterInboxPage() {
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b flex items-center justify-between">
                 <div className="font-semibold text-[#0B2545]">Conversaciones</div>
-                <div className="text-xs text-gray-500">{conversations.length} total</div>
+                <div className="text-xs text-gray-500">{filteredConversations.length}/{conversations.length}</div>
+              </div>
+              <div className="px-4 py-2 border-b bg-gray-50">
+                <input
+                  value={conversationQuery}
+                  onChange={(e) => setConversationQuery(e.target.value)}
+                  placeholder="Buscar por nombre o mensaje..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#00A676]"
+                />
               </div>
               <div className="max-h-[640px] overflow-y-auto">
                 {loadingConversations ? (
                   <div className="p-4 text-center text-gray-500">Cargando conversaciones...</div>
-                ) : conversations.length === 0 ? (
+                ) : filteredConversations.length === 0 ? (
                   <div className="p-4 text-center text-gray-500">No hay conversaciones aún</div>
                 ) : (
-                  conversations.map((conv) => (
+                  filteredConversations.map((conv) => (
                     <button
                       key={conv.conversationId}
                       onClick={() => setSelectedConversationId(conv.conversationId)}
@@ -374,13 +393,14 @@ export default function MasterInboxPage() {
                     <th className="text-left p-3">Detalle</th>
                     <th className="text-left p-3">Fecha</th>
                     <th className="text-left p-3">Estado</th>
+                    <th className="text-left p-3">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {loadingLeads ? (
-                    <tr><td colSpan={5} className="p-4 text-center text-gray-500">Cargando...</td></tr>
+                    <tr><td colSpan={6} className="p-4 text-center text-gray-500">Cargando...</td></tr>
                   ) : filteredLeads.length === 0 ? (
-                    <tr><td colSpan={5} className="p-4 text-center text-gray-500">No hay leads en este filtro</td></tr>
+                    <tr><td colSpan={6} className="p-4 text-center text-gray-500">No hay leads en este filtro</td></tr>
                   ) : (
                     filteredLeads.map((lead) => (
                       <tr key={lead.id}>
@@ -407,6 +427,21 @@ export default function MasterInboxPage() {
                           <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-xs">
                             {lead.status || 'new'}
                           </span>
+                        </td>
+                        <td className="p-3">
+                          {lead.inboxConversationId ? (
+                            <button
+                              onClick={() => {
+                                setSelectedConversationId(lead.inboxConversationId)
+                                setTab('conversations')
+                              }}
+                              className="px-2 py-1 text-xs rounded bg-[#0B2545] text-white hover:bg-[#143a66]"
+                            >
+                              Open Chat
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-gray-400">No thread yet</span>
+                          )}
                         </td>
                       </tr>
                     ))
