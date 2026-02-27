@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiSearch, FiFilter, FiMail, FiPhone } from 'react-icons/fi'
+import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiSearch, FiFilter, FiMail, FiPhone, FiKey } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import CreateBrokerModal from '@/components/admin/CreateBrokerModal'
 import CreateAgentModal from '@/components/admin/CreateAgentModal'
@@ -195,6 +195,36 @@ export default function MasterUsersPage() {
     } catch (e) {
       console.error('Failed to resend invite', e)
       toast.error('Failed to resend invite')
+    }
+  }
+
+  async function resetPassword(user: User) {
+    try {
+      const res = await fetch('/api/admin/users/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.id, email: user.email }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.ok) {
+        toast.error(json.error || 'Failed to generate reset link')
+        return
+      }
+
+      if (json.resetLink) {
+        try {
+          await navigator.clipboard.writeText(json.resetLink)
+          toast.success('Reset link copied to clipboard')
+        } catch {
+          toast.success('Reset link generated')
+          window.prompt('Copy reset link:', json.resetLink)
+        }
+      } else {
+        toast.success('Password reset prepared')
+      }
+    } catch (e) {
+      console.error('Failed to generate reset link', e)
+      toast.error('Failed to generate reset link')
     }
   }
 
@@ -465,6 +495,14 @@ export default function MasterUsersPage() {
                             >
                               <FiEdit className="w-4 h-4" />
                               Edit
+                            </button>
+                            <button
+                              onClick={() => resetPassword(user)}
+                              className="inline-flex items-center gap-2 px-3 py-2 text-violet-700 bg-violet-50 hover:bg-violet-100 text-sm font-medium rounded-lg transition-colors"
+                              title="Generate password reset link"
+                            >
+                              <FiKey className="w-4 h-4" />
+                              Reset PW
                             </button>
                             <button
                               onClick={() => toggleStatus(user.uid || user.id, isDisabled)}

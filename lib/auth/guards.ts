@@ -7,6 +7,8 @@
 import { redirect } from 'next/navigation'
 import { getServerSession } from './session'
 
+const PORTAL_ROLES = new Set(['master_admin', 'admin', 'agent', 'broker', 'constructora'])
+
 /**
  * Require master admin authentication with 2FA
  * Used in layout.tsx for route protection
@@ -33,6 +35,29 @@ export async function requireMasterAdmin() {
     uid: session.uid,
     email: session.email,
     role: 'master_admin' as const,
+    authenticated: true,
+  }
+}
+
+export async function requirePortalAccess() {
+  const session = await getServerSession()
+
+  if (!session) {
+    redirect('/login')
+  }
+
+  if (!PORTAL_ROLES.has(session.role)) {
+    redirect('/search')
+  }
+
+  if (session.role === 'master_admin' && !session.twoFactorVerified) {
+    redirect('/verify-2fa')
+  }
+
+  return {
+    uid: session.uid,
+    email: session.email,
+    role: session.role,
     authenticated: true,
   }
 }

@@ -56,12 +56,13 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/login?redirect=' + pathname, req.url))
     }
 
-    if (session.role !== 'master_admin') {
-      console.log('  ❌ Not master_admin - redirecting to /login')
-      return NextResponse.redirect(new URL('/login', req.url))
+    const portalRoles = new Set(['master_admin', 'admin', 'agent', 'broker', 'constructora'])
+    if (!portalRoles.has(session.role)) {
+      console.log('  ❌ Not a portal role - redirecting to /search')
+      return NextResponse.redirect(new URL('/search', req.url))
     }
 
-    if (!session.twoFactorVerified) {
+    if (session.role === 'master_admin' && !session.twoFactorVerified) {
       console.log('  ❌ 2FA not verified - redirecting to /verify-2fa')
       return NextResponse.redirect(new URL('/verify-2fa', req.url))
     }

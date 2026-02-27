@@ -160,8 +160,10 @@ export async function POST(req: NextRequest) {
     }
 
     let role = usedMasterFallback ? 'master_admin' : 'buyer'
+    let userName = ''
     if (userDoc.exists) {
       role = (userDoc.data()?.role as string) || role
+      userName = String(userDoc.data()?.name || userDoc.data()?.displayName || '')
       if (usedMasterFallback && role !== 'master_admin') {
         role = 'master_admin'
         await userDocRef.set(
@@ -275,9 +277,9 @@ export async function POST(req: NextRequest) {
 
     const redirectMap: Record<string, string> = {
       buyer: '/search',
-      agent: '/dashboard',
-      broker: '/dashboard',
-      constructora: '/dashboard',
+      agent: '/master/listings',
+      broker: '/master/listings',
+      constructora: '/master/listings',
     }
 
     const response = NextResponse.json({
@@ -288,10 +290,31 @@ export async function POST(req: NextRequest) {
         uid,
         email,
         role,
+        name: userName,
       },
     })
 
     response.cookies.set('__session', sessionCookie, options)
+    response.cookies.set('viventa_role', role, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    })
+    response.cookies.set('viventa_uid', uid, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    })
+    if (userName) {
+      response.cookies.set('viventa_name', userName, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      })
+    }
 
     return response
   } catch (error: any) {

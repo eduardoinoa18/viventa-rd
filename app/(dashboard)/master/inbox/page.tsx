@@ -38,6 +38,7 @@ export default function MasterInboxPage() {
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState('')
 
   const [leads, setLeads] = useState<any[]>([])
   const [loadingLeads, setLoadingLeads] = useState(false)
@@ -160,6 +161,30 @@ export default function MasterInboxPage() {
     return leads.filter((lead) => lead.source === leadFilter)
   }, [leads, leadFilter])
 
+  const quickTemplates = [
+    {
+      key: 'showing_request',
+      label: 'Request Showing',
+      text: 'Hello team, I would like to request a showing for this listing. Please confirm available date/time windows and any access requirements.',
+    },
+    {
+      key: 'opportunity_share',
+      label: 'Share Opportunity',
+      text: 'Sharing this opportunity with the team: buyer interest is high and we should coordinate next steps for qualification and follow-up.',
+    },
+    {
+      key: 'follow_up',
+      label: 'Follow-up',
+      text: 'Quick follow-up on this thread: please share the latest update so we can continue with the buyer process today.',
+    },
+  ]
+
+  function applyTemplate(templateKey: string) {
+    const template = quickTemplates.find((item) => item.key === templateKey)
+    if (!template) return
+    setReply(template.text)
+  }
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -278,6 +303,29 @@ export default function MasterInboxPage() {
               </div>
 
               <div className="border-t px-4 py-3">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <select
+                    value={selectedTemplate}
+                    onChange={(e) => setSelectedTemplate(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+                    aria-label="Quick template"
+                  >
+                    <option value="">Quick template...</option>
+                    {quickTemplates.map((template) => (
+                      <option key={template.key} value={template.key}>
+                        {template.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => applyTemplate(selectedTemplate)}
+                    disabled={!selectedTemplate}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-50"
+                  >
+                    Use Template
+                  </button>
+                </div>
                 <textarea
                   value={reply}
                   onChange={(e) => setReply(e.target.value)}

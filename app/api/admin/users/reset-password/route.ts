@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { getAdminAuth } from '@/lib/firebaseAdmin'
+import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
 
 export async function POST(req: NextRequest) {
   try {
-    const role = cookies().get('viventa_role')?.value
-    if (role !== 'master_admin' && role !== 'admin') {
-      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireMasterAdmin(req)
 
     const { uid, email } = await req.json()
     if (!uid && !email) {

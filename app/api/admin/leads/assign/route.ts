@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { Timestamp } from 'firebase-admin/firestore'
+import crypto from 'crypto'
+import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
+    await requireMasterAdmin(req)
+
     const { leadId, agentId, note } = await req.json()
     if (!leadId || !agentId) {
       return NextResponse.json(

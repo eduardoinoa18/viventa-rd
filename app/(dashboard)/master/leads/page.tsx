@@ -136,7 +136,7 @@ export default function LeadsPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          leadId,
+          id: leadId,
           status: newStatus,
         }),
       })
@@ -301,6 +301,9 @@ export default function LeadsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-xs text-gray-600">{lead.source}</span>
+                      {lead.assignedTo && (
+                        <div className="text-[11px] text-gray-500 mt-1">Assigned to: {lead.assignedTo}</div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select

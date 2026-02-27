@@ -47,6 +47,7 @@ export default function BuyerDetailPage() {
   const [matches, setMatches] = useState<ListingMatch[]>([])
   const [matchesCount, setMatchesCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [sendingMatches, setSendingMatches] = useState(false)
 
   const loadBuyerData = useCallback(async () => {
     if (!buyerId) return
@@ -85,6 +86,26 @@ export default function BuyerDetailPage() {
     loadBuyerData()
   }, [loadBuyerData])
 
+  async function sendMatchesEmail() {
+    if (!buyerId) return
+    try {
+      setSendingMatches(true)
+      const res = await fetch(`/api/crm/buyers/${buyerId}/send-matches`, {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || 'Failed to send matches email')
+      }
+      toast.success(`Matches email sent to ${data?.data?.sentTo || 'buyer'}`)
+    } catch (error: any) {
+      console.error('send matches error', error)
+      toast.error(error?.message || 'No se pudo enviar el email de matches')
+    } finally {
+      setSendingMatches(false)
+    }
+  }
+
   return (
     <main className="flex-1 p-6 bg-gray-50">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -95,12 +116,21 @@ export default function BuyerDetailPage() {
           >
             <FiArrowLeft /> Back to Buyers
           </Link>
-          <button
-            onClick={loadBuyerData}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-[#0B2545] hover:bg-gray-100"
-          >
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={sendMatchesEmail}
+              disabled={sendingMatches || loading}
+              className="rounded-lg bg-[#00A676] px-4 py-2 text-sm font-medium text-white hover:bg-[#008f63] disabled:opacity-60"
+            >
+              {sendingMatches ? 'Sending...' : 'Send Matches Email'}
+            </button>
+            <button
+              onClick={loadBuyerData}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-[#0B2545] hover:bg-gray-100"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
 
         {loading ? (

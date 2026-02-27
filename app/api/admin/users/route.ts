@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, email, phone, role, brokerage, company, criteria, sendInvite } = body
+    const { name, email, phone, role, brokerage, company, contactPerson, criteria, sendInvite } = body
 
     if (!name || !email || !role) {
       return NextResponse.json({ ok: false, error: 'name, email, and role required' }, { status: 400 })
@@ -144,6 +144,7 @@ export async function POST(req: NextRequest) {
       status: 'invited',
       brokerage: brokerage || '',
       company: company || '',
+      contactPerson: contactPerson || '',
       criteria: criteria || {},
       emailVerified: false,
       inviteUsed: false,
@@ -207,28 +208,71 @@ export async function PATCH(req: NextRequest) {
   try {
     await requireMasterAdmin(req)
     const adminDb = getAdminDb()
+    const adminAuth = getAdminAuth()
     if (!adminDb) {
       return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 503 })
     }
+    if (!adminAuth) {
+      return NextResponse.json({ ok: false, error: 'Admin Auth not configured' }, { status: 503 })
+    }
 
     const body = await req.json()
-    const { id, status, role, name, phone, brokerage, company, emailVerified, verified, approved } = body
+    const { id, status, role, name, phone, brokerage, company, email, disabled, emailVerified, verified, approved } = body
     if (!id) return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
+
+    const userRef = adminDb.collection('users').doc(id)
+    const existingSnap = await userRef.get()
+    if (!existingSnap.exists) {
+      return NextResponse.json({ ok: false, error: 'User not found' }, { status: 404 })
+    }
+
+    const existingData = existingSnap.data() as any
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : undefined
+
+    if (normalizedEmail && normalizedEmail !== existingData?.email) {
+      const dupSnap = await adminDb
+        .collection('users')
+        .where('email', '==', normalizedEmail)
+        .limit(1)
+        .get()
+      if (!dupSnap.empty && dupSnap.docs[0].id !== id) {
+        return NextResponse.json({ ok: false, error: 'User email already exists' }, { status: 409 })
+      }
+    }
 
     const updates: any = { updatedAt: new Date() }
     if (status) updates.status = status
     if (role) updates.role = role
     if (name) updates.name = name
+    if (normalizedEmail) updates.email = normalizedEmail
     if (phone !== undefined) updates.phone = phone
     if (brokerage !== undefined) updates.brokerage = brokerage
     if (company !== undefined) updates.company = company
+    if (typeof disabled === 'boolean') updates.disabled = disabled
     if (typeof emailVerified === 'boolean') updates.emailVerified = emailVerified
     if (typeof verified === 'boolean') updates.verified = verified
     if (typeof approved === 'boolean') updates.approved = approved
 
-    await adminDb.collection('users').doc(id).update(updates)
+    await userRef.update(updates)
 
-    const userDoc = await adminDb.collection('users').doc(id).get()
+    const authUpdates: any = {}
+    if (normalizedEmail) authUpdates.email = normalizedEmail
+    if (name) authUpdates.displayName = name
+    if (typeof disabled === 'boolean') authUpdates.disabled = disabled
+    if (typeof emailVerified === 'boolean') authUpdates.emailVerified = emailVerified
+    if (Object.keys(authUpdates).length > 0) {
+      await adminAuth.updateUser(id, authUpdates)
+    }
+
+    if (role) {
+      const authUser = await adminAuth.getUser(id)
+      await adminAuth.setCustomUserClaims(id, {
+        ...(authUser.customClaims || {}),
+        role,
+      })
+    }
+
+    const userDoc = await userRef.get()
     const userData = userDoc.data()
     if (userData) {
       await ActivityLogger.log({
