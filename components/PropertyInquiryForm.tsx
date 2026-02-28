@@ -9,6 +9,10 @@ interface PropertyInquiryFormProps {
   propertyTitle: string
   agentName?: string
   agentEmail?: string
+  selectedUnitNumber?: string
+  selectedUnitModel?: string
+  selectedUnitPrice?: number
+  selectedUnitSizeMt2?: number
   onClose: () => void
 }
 
@@ -17,13 +21,23 @@ export default function PropertyInquiryForm({
   propertyTitle, 
   agentName, 
   agentEmail,
+  selectedUnitNumber,
+  selectedUnitModel,
+  selectedUnitPrice,
+  selectedUnitSizeMt2,
   onClose 
 }: PropertyInquiryFormProps) {
+  const unitContext = selectedUnitNumber
+    ? `Unidad ${selectedUnitNumber}${selectedUnitModel ? ` · ${selectedUnitModel}` : ''}${selectedUnitSizeMt2 ? ` · ${selectedUnitSizeMt2}m²` : ''}${selectedUnitPrice ? ` · ${selectedUnitPrice}` : ''}`
+    : ''
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    message: `Hola, estoy interesado en la propiedad: ${propertyTitle}. Me gustaría obtener más información.`,
+    message: selectedUnitNumber
+      ? `Hola, estoy interesado en la unidad ${selectedUnitNumber} de la propiedad ${propertyTitle}. Me gustaría obtener más información sobre disponibilidad y forma de reserva.`
+      : `Hola, estoy interesado en la propiedad: ${propertyTitle}. Me gustaría obtener más información.`,
     visitDate: '',
     preferredContact: 'email'
   })
@@ -41,6 +55,10 @@ export default function PropertyInquiryForm({
           ...formData,
           propertyId,
           propertyTitle,
+          unitNumber: selectedUnitNumber || '',
+          unitModelType: selectedUnitModel || '',
+          unitPrice: selectedUnitPrice || null,
+          unitSizeMt2: selectedUnitSizeMt2 || null,
           agentName,
           agentEmail,
           source: 'Property Detail Page'
@@ -59,6 +77,8 @@ export default function PropertyInquiryForm({
         {
           propertyId,
           propertyTitle,
+          unitNumber: selectedUnitNumber || '',
+          unitModelType: selectedUnitModel || '',
           preferredContact: formData.preferredContact,
           hasVisitDate: !!formData.visitDate
         },
@@ -102,6 +122,7 @@ export default function PropertyInquiryForm({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
             <p className="text-sm text-blue-800 font-medium">{propertyTitle}</p>
+            {unitContext && <p className="text-xs text-blue-700 mt-1">{unitContext}</p>}
           </div>
 
           <div>

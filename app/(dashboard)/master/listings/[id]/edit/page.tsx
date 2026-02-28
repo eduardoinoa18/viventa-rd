@@ -7,6 +7,7 @@ import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock, FiA
 import { uploadMultipleImages, validateImageFiles } from '@/lib/storageService'
 import Link from 'next/link'
 import UnitInventoryEditor, { type UnitRow } from '@/components/admin/UnitInventoryEditor'
+import MapHotspotEditor, { type ProjectMapHotspot } from '@/components/admin/MapHotspotEditor'
 
 export default function EditPropertyPage() {
   const router = useRouter()
@@ -26,6 +27,7 @@ export default function EditPropertyPage() {
   const exchangeRate = 58.5
   const [features, setFeatures] = useState<string[]>([])
   const [unitRows, setUnitRows] = useState<UnitRow[]>([])
+  const [mapHotspots, setMapHotspots] = useState<ProjectMapHotspot[]>([])
   const [terrainUtilitiesText, setTerrainUtilitiesText] = useState('')
   const autosaveTimerRef = useRef<any>(null)
 
@@ -172,6 +174,7 @@ export default function EditPropertyPage() {
           setCurrency(normalized.currency || 'USD')
           setFeatures(normalized.features || [])
           setUnitRows(normalizedUnits)
+          setMapHotspots(Array.isArray(normalized.projectMapHotspots) ? normalized.projectMapHotspots : [])
           setTerrainUtilitiesText(Array.isArray(normalized.terrainDetails?.utilitiesAvailable)
             ? normalized.terrainDetails.utilitiesAvailable.join(', ')
             : '')
@@ -196,10 +199,10 @@ export default function EditPropertyPage() {
   // Track dirty state
   useEffect(() => {
     if (!form || !originalForm) return
-    const current = JSON.stringify({ ...form, features })
-    const original = JSON.stringify({ ...originalForm, features: originalForm.features || [] })
+    const current = JSON.stringify({ ...form, features, projectMapHotspots: mapHotspots })
+    const original = JSON.stringify({ ...originalForm, features: originalForm.features || [], projectMapHotspots: originalForm.projectMapHotspots || [] })
     setIsDirty(current !== original)
-  }, [form, features, originalForm])
+  }, [form, features, mapHotspots, originalForm])
 
   // Autosave draft every 30s if dirty
   useEffect(() => {
@@ -211,7 +214,7 @@ export default function EditPropertyPage() {
     return () => {
       if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
     }
-  }, [isDirty, form, features, saving])
+  }, [isDirty, form, features, mapHotspots, saving])
 
   // Keyboard shortcut Ctrl+S to save
   useEffect(() => {
@@ -270,6 +273,7 @@ export default function EditPropertyPage() {
         availableUnits: Number(form.availableUnits || 1),
         soldUnits: Number(form.soldUnits || 0),
         projectMapImage: form.projectMapImage?.trim() || '',
+        projectMapHotspots: mapHotspots,
         units: unitRows.filter((unit) => unit.unitNumber.trim()),
         terrainDetails: form.propertyType === 'land' ? {
           zoningType: form.terrainDetails?.zoningType || '',
@@ -408,6 +412,7 @@ export default function EditPropertyPage() {
         availableUnits: Number(form.availableUnits || 1),
         soldUnits: Number(form.soldUnits || 0),
         projectMapImage: form.projectMapImage?.trim() || '',
+        projectMapHotspots: mapHotspots,
         units: unitRows.filter((unit) => unit.unitNumber.trim()),
         terrainDetails: form.propertyType === 'land' ? {
           zoningType: form.terrainDetails?.zoningType || '',
@@ -988,6 +993,10 @@ export default function EditPropertyPage() {
 
                       <div className="md:col-span-2">
                         <UnitInventoryEditor units={unitRows} onChange={handleUnitsChange} />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <MapHotspotEditor hotspots={mapHotspots} units={unitRows} onChange={setMapHotspots} />
                       </div>
                     </>
                   )}

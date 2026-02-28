@@ -39,6 +39,27 @@ interface PropertyPayload {
   totalUnits?: number
   availableUnits?: number
   soldUnits?: number
+  projectMapImage?: string
+  projectMapHotspots?: Array<{
+    id: string
+    unitNumber: string
+    label?: string
+    xPercent: number
+    yPercent: number
+  }>
+  units?: Array<{
+    unitNumber: string
+    modelType: string
+    sizeMt2: number
+    price: number
+    status: 'available' | 'reserved' | 'sold'
+  }>
+  terrainDetails?: {
+    zoningType?: string
+    maxBuildHeight?: string
+    buildPotential?: string
+    utilitiesAvailable?: string[]
+  }
 }
 
 function validatePayload(action: string, data: PropertyPayload) {

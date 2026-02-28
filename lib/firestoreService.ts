@@ -50,6 +50,7 @@ export interface Property {
   availableUnits?: number
   soldUnits?: number
   projectMapImage?: string
+  projectMapHotspots?: ProjectMapHotspot[]
   units?: PropertyUnit[]
   terrainDetails?: TerrainDetails
   agentId: string
@@ -71,6 +72,14 @@ export interface PropertyUnit {
   sizeMt2: number
   price: number
   status: 'available' | 'reserved' | 'sold'
+}
+
+export interface ProjectMapHotspot {
+  id: string
+  unitNumber: string
+  label?: string
+  xPercent: number
+  yPercent: number
 }
 
 export interface TerrainDetails {

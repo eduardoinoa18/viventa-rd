@@ -30,6 +30,44 @@ type ListingUnit = {
   status: 'available' | 'sold' | 'reserved'
 }
 
+type ListingMapHotspot = {
+  id: string
+  unitNumber: string
+  label?: string
+  xPercent: number
+  yPercent: number
+}
+
+const PERCENT_POSITION_CLASS: Record<number, string> = {
+  0: '0',
+  5: '[5%]',
+  10: '[10%]',
+  15: '[15%]',
+  20: '[20%]',
+  25: '[25%]',
+  30: '[30%]',
+  35: '[35%]',
+  40: '[40%]',
+  45: '[45%]',
+  50: '[50%]',
+  55: '[55%]',
+  60: '[60%]',
+  65: '[65%]',
+  70: '[70%]',
+  75: '[75%]',
+  80: '[80%]',
+  85: '[85%]',
+  90: '[90%]',
+  95: '[95%]',
+  100: 'full',
+}
+
+function percentToPositionClass(axis: 'left' | 'top', value: number) {
+  const clamped = Math.max(0, Math.min(100, Math.round(value / 5) * 5))
+  const token = PERCENT_POSITION_CLASS[clamped] || '0'
+  return token === 'full' ? `${axis}-full` : `${axis}-${token}`
+}
+
 export default function ListingDetail(){
   usePageViewTracking()
   const params = useParams()
@@ -41,6 +79,7 @@ export default function ListingDetail(){
   const [currentSession, setCurrentSession] = useState<any>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
   const [selectedModel, setSelectedModel] = useState<string>('all')
+  const [selectedUnitNumber, setSelectedUnitNumber] = useState<string>('')
 
   const normalizeImages = (data: any): string[] => {
     const images = Array.isArray(data?.images) ? data.images.filter(Boolean) : []
@@ -151,6 +190,7 @@ export default function ListingDetail(){
 
   useEffect(() => {
     setSelectedModel('all')
+    setSelectedUnitNumber('')
   }, [listing?.id])
   
   // Show loading while either listing or session is still loading
@@ -243,6 +283,7 @@ export default function ListingDetail(){
   const unitPoolForRange = availableUnits.length > 0 ? availableUnits : units
   const unitModels = Array.from(new Set(units.map((unit) => (unit.modelType || '').trim()).filter(Boolean)))
   const filteredUnits = units.filter((unit) => selectedModel === 'all' || unit.modelType === selectedModel)
+  const selectedUnit = units.find((unit) => unit.unitNumber === selectedUnitNumber)
 
   const unitPriceValues = unitPoolForRange.map((unit) => Number(unit.price || 0)).filter((value) => value > 0)
   const unitAreaValues = unitPoolForRange.map((unit) => Number(unit.sizeMt2 || 0)).filter((value) => value > 0)
@@ -280,6 +321,47 @@ export default function ListingDetail(){
   const computedSoldUnits = hasUnits ? units.filter((unit) => unit.status === 'sold').length : Number(listing.soldUnits || 0)
   const computedReservedUnits = hasUnits ? units.filter((unit) => unit.status === 'reserved').length : 0
   const computedTotalUnits = hasUnits ? units.length : Number(listing.totalUnits || 0)
+
+  const modelInsights = unitModels.map((model) => {
+    const modelUnits = units.filter((unit) => unit.modelType === model)
+    const modelAvailable = modelUnits.filter((unit) => unit.status === 'available')
+    const source = modelAvailable.length > 0 ? modelAvailable : modelUnits
+    const prices = source.map((unit) => unit.price).filter((value) => value > 0)
+    const sizes = source.map((unit) => unit.sizeMt2).filter((value) => value > 0)
+
+    return {
+      model,
+      available: modelAvailable.length,
+      total: modelUnits.length,
+      fromPrice: prices.length > 0 ? Math.min(...prices) : 0,
+      fromMt2: sizes.length > 0 ? Math.min(...sizes) : 0,
+    }
+  })
+
+  const mapHotspots: ListingMapHotspot[] = Array.isArray(listing.projectMapHotspots)
+    ? listing.projectMapHotspots
+      .filter((point: any) => point && point.unitNumber)
+      .map((point: any) => ({
+        id: String(point.id || point.unitNumber),
+        unitNumber: String(point.unitNumber || ''),
+        label: point.label ? String(point.label) : '',
+        xPercent: Number(point.xPercent ?? 0),
+        yPercent: Number(point.yPercent ?? 0),
+      }))
+      .filter((point: ListingMapHotspot) => point.unitNumber && point.xPercent >= 0 && point.xPercent <= 100 && point.yPercent >= 0 && point.yPercent <= 100)
+    : []
+
+  function getUnitStatus(unitNumber: string): ListingUnit['status'] | null {
+    const unit = units.find((row) => row.unitNumber === unitNumber)
+    return unit?.status || null
+  }
+
+  function getHotspotBadgeClass(status: ListingUnit['status'] | null) {
+    if (status === 'available') return 'bg-green-500 border-green-600'
+    if (status === 'reserved') return 'bg-yellow-400 border-yellow-500'
+    if (status === 'sold') return 'bg-red-500 border-red-600'
+    return 'bg-gray-500 border-gray-600'
+  }
 
   const terrain = listing.terrainDetails || {}
   const terrainUtilities = Array.isArray(terrain.utilitiesAvailable)
@@ -411,13 +493,45 @@ export default function ListingDetail(){
 
               {listing.inventoryMode === 'project' && listing.projectMapImage && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h2 className="text-2xl font-bold text-[#0B2545] mb-4">Mapa del Proyecto</h2>
-                  <img
-                    src={listing.projectMapImage}
-                    alt={`Mapa del proyecto ${listing.title}`}
-                    className="w-full rounded-lg border border-gray-200"
-                    loading="lazy"
-                  />
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-[#0B2545]">Mapa del Proyecto</h2>
+                    {mapHotspots.length > 0 && (
+                      <div className="text-xs text-gray-600">Toca un punto para ver unidad y precio</div>
+                    )}
+                  </div>
+                  <div className="relative rounded-lg border border-gray-200 overflow-hidden">
+                    <img
+                      src={listing.projectMapImage}
+                      alt={`Mapa del proyecto ${listing.title}`}
+                      className="w-full"
+                      loading="lazy"
+                    />
+                    {mapHotspots.map((point) => {
+                      const status = getUnitStatus(point.unitNumber)
+                      const isActive = selectedUnitNumber === point.unitNumber
+                      const xClass = percentToPositionClass('left', point.xPercent)
+                      const yClass = percentToPositionClass('top', point.yPercent)
+                      return (
+                        <button
+                          key={point.id}
+                          type="button"
+                          title={point.label || point.unitNumber}
+                          onClick={() => {
+                            const targetUnit = units.find((unit) => unit.unitNumber === point.unitNumber)
+                            if (targetUnit?.modelType) setSelectedModel(targetUnit.modelType)
+                            setSelectedUnitNumber(point.unitNumber)
+                          }}
+                          className={`absolute ${xClass} ${yClass} -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 shadow ${getHotspotBadgeClass(status)} ${isActive ? 'scale-125 ring-4 ring-white/70' : 'hover:scale-110'}`}
+                          aria-label={`Unidad ${point.unitNumber}`}
+                        />
+                      )
+                    })}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
+                    <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /> Disponible</span>
+                    <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400" /> Separada</span>
+                    <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Vendida</span>
+                  </div>
                 </div>
               )}
 
@@ -450,6 +564,26 @@ export default function ListingDetail(){
                     </div>
                   )}
 
+                  {modelInsights.length > 0 && (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                      {modelInsights.map((item) => (
+                        <button
+                          key={item.model}
+                          type="button"
+                          onClick={() => setSelectedModel(item.model)}
+                          className={`text-left p-3 rounded-lg border transition ${selectedModel === item.model ? 'border-[#00A676] bg-[#00A676]/5' : 'border-gray-200 hover:border-[#0B2545]/30'}`}
+                        >
+                          <div className="text-sm font-semibold text-[#0B2545]">{item.model}</div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            Desde {item.fromPrice > 0 ? formatCurrency(item.fromPrice, { currency: listing.currency || 'USD' }) : 'Consultar'}
+                            {item.fromMt2 > 0 ? ` · ${item.fromMt2}m²` : ''}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">{item.available} disponibles de {item.total}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="overflow-x-auto border border-gray-200 rounded-lg">
                     <table className="w-full min-w-[640px] text-sm">
                       <thead className="bg-gray-50 text-left text-gray-600">
@@ -459,11 +593,12 @@ export default function ListingDetail(){
                           <th className="px-4 py-3 font-medium">m²</th>
                           <th className="px-4 py-3 font-medium">Precio</th>
                           <th className="px-4 py-3 font-medium">Estado</th>
+                          <th className="px-4 py-3 font-medium">Acción</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredUnits.map((unit, idx) => (
-                          <tr key={`${unit.unitNumber}-${idx}`} className="border-t border-gray-100">
+                          <tr key={`${unit.unitNumber}-${idx}`} className={`border-t border-gray-100 ${selectedUnitNumber === unit.unitNumber ? 'bg-[#00A676]/5' : ''}`}>
                             <td className="px-4 py-3 font-medium text-[#0B2545]">{unit.unitNumber}</td>
                             <td className="px-4 py-3">{unit.modelType || 'N/A'}</td>
                             <td className="px-4 py-3">{unit.sizeMt2 || 0}</td>
@@ -478,6 +613,22 @@ export default function ListingDetail(){
                               }`}>
                                 {unit.status === 'available' ? 'Disponible' : unit.status === 'reserved' ? 'Separada' : 'Vendida'}
                               </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {unit.status === 'available' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedUnitNumber(unit.unitNumber)
+                                    setShowInquiryForm(true)
+                                  }}
+                                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0B2545] text-white hover:bg-[#143a66]"
+                                >
+                                  Consultar unidad
+                                </button>
+                              ) : (
+                                <span className="text-xs text-gray-400">No disponible</span>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -924,6 +1075,10 @@ export default function ListingDetail(){
           propertyTitle={listing.title}
           agentName={listing.agentName}
           agentEmail={listing.agentEmail}
+          selectedUnitNumber={selectedUnit?.unitNumber || ''}
+          selectedUnitModel={selectedUnit?.modelType || ''}
+          selectedUnitPrice={selectedUnit?.price || 0}
+          selectedUnitSizeMt2={selectedUnit?.sizeMt2 || 0}
           onClose={() => setShowInquiryForm(false)}
         />
       )}

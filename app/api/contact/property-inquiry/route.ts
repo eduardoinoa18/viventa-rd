@@ -22,6 +22,10 @@ export async function POST(request: Request) {
       preferredContact,
       propertyId,
       propertyTitle,
+      unitNumber,
+      unitModelType,
+      unitPrice,
+      unitSizeMt2,
       source
     } = data
 
@@ -62,6 +66,10 @@ export async function POST(request: Request) {
       preferredContact: preferredContact || 'email',
       propertyId,
       propertyTitle: resolvedTitle,
+      unitNumber: unitNumber || '',
+      unitModelType: unitModelType || '',
+      unitPrice: unitPrice ?? null,
+      unitSizeMt2: unitSizeMt2 ?? null,
       agentId: resolvedAgentId,
       agentName: resolvedAgentName,
       agentEmail: resolvedAgentEmail,
@@ -86,6 +94,10 @@ export async function POST(request: Request) {
         inboxConversationId: null,
         preferredContact: preferredContact || 'email',
         visitDate: visitDate || null,
+        unitNumber: unitNumber || '',
+        unitModelType: unitModelType || '',
+        unitPrice: unitPrice ?? null,
+        unitSizeMt2: unitSizeMt2 ?? null,
         legacyInquiryId: inquiryRef.id,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
@@ -139,6 +151,24 @@ export async function POST(request: Request) {
                     <td style="padding: 10px 0; font-weight: bold; color: #666;">Contacto preferido:</td>
                     <td style="padding: 10px 0; color: #333;">${preferredContact === 'email' ? 'Email' : preferredContact === 'phone' ? 'Teléfono' : 'WhatsApp'}</td>
                   </tr>
+                  ${unitNumber ? `
+                  <tr>
+                    <td style="padding: 10px 0; font-weight: bold; color: #666;">Unidad:</td>
+                    <td style="padding: 10px 0; color: #333;">${unitNumber}${unitModelType ? ` · ${unitModelType}` : ''}</td>
+                  </tr>
+                  ` : ''}
+                  ${unitPrice ? `
+                  <tr>
+                    <td style="padding: 10px 0; font-weight: bold; color: #666;">Precio unidad:</td>
+                    <td style="padding: 10px 0; color: #333;">${unitPrice}</td>
+                  </tr>
+                  ` : ''}
+                  ${unitSizeMt2 ? `
+                  <tr>
+                    <td style="padding: 10px 0; font-weight: bold; color: #666;">Metraje unidad:</td>
+                    <td style="padding: 10px 0; color: #333;">${unitSizeMt2} m²</td>
+                  </tr>
+                  ` : ''}
                   ${visitDate ? `
                   <tr>
                     <td style="padding: 10px 0; font-weight: bold; color: #666;">Fecha visita:</td>

@@ -7,6 +7,7 @@ import { type Property } from '@/lib/firestoreService'
 import { uploadMultipleImages, validateImageFiles } from '@/lib/storageService'
 import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock, FiSearch } from 'react-icons/fi'
 import UnitInventoryEditor, { type UnitRow } from '@/components/admin/UnitInventoryEditor'
+import MapHotspotEditor, { type ProjectMapHotspot } from '@/components/admin/MapHotspotEditor'
 // Removed direct Firestore counters usage; server API now generates listingId
 
 type AffiliatedProfessional = {
@@ -69,6 +70,7 @@ export default function CreatePropertyPage() {
   const exchangeRate = 58.5
   const [features, setFeatures] = useState<string[]>([])
   const [unitRows, setUnitRows] = useState<UnitRow[]>([])
+  const [mapHotspots, setMapHotspots] = useState<ProjectMapHotspot[]>([])
   const [terrainUtilitiesText, setTerrainUtilitiesText] = useState('')
   const [sessionMeta, setSessionMeta] = useState<{ uid: string; role: string }>({ uid: '', role: '' })
   const [affiliatedProfessionals, setAffiliatedProfessionals] = useState<AffiliatedProfessional[]>([])
@@ -410,6 +412,7 @@ export default function CreatePropertyPage() {
         availableUnits: Number(form.availableUnits || 1),
         soldUnits: Number(form.soldUnits || 0),
         projectMapImage: form.projectMapImage?.trim() || '',
+        projectMapHotspots: mapHotspots,
         units: unitRows.filter((unit) => unit.unitNumber.trim()),
         terrainDetails: form.propertyType === 'land' ? {
           zoningType: form.terrainDetails?.zoningType || '',
@@ -465,11 +468,12 @@ export default function CreatePropertyPage() {
         propertyType: 'apartment', listingType: 'sale', images: [],
         coverImage: '', promoVideoUrl: '', maintenanceFee: 0, maintenanceFeeCurrency: 'USD', maintenanceInfo: '',
         inventoryMode: 'single', totalUnits: 1, availableUnits: 1, soldUnits: 0,
-        projectMapImage: '', units: [],
+        projectMapImage: '', projectMapHotspots: [], units: [],
         terrainDetails: { zoningType: '', maxBuildHeight: '', buildPotential: '', utilitiesAvailable: [] },
         agentId: '', agentName: '', status: 'pending', featured: false,
       })
       setUnitRows([])
+      setMapHotspots([])
       setTerrainUtilitiesText('')
       
       // Redirect to properties list after 1 second
@@ -1076,6 +1080,10 @@ export default function CreatePropertyPage() {
 
                       <div className="md:col-span-2">
                         <UnitInventoryEditor units={unitRows} onChange={handleUnitsChange} />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <MapHotspotEditor hotspots={mapHotspots} units={unitRows} onChange={setMapHotspots} />
                       </div>
                     </>
                   )}
