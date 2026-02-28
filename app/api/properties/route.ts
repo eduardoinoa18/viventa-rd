@@ -18,6 +18,9 @@ interface PropertyPayload {
   currency?: 'USD' | 'DOP'
   city?: string
   neighborhood?: string
+  location?: string
+  lat?: number
+  lng?: number
   address?: string
   bedrooms?: number
   bathrooms?: number
@@ -87,6 +90,18 @@ function validatePayload(action: string, data: PropertyPayload) {
   }
   if (data.area !== undefined && Number.isNaN(Number(data.area))) {
     errors.push('area must be a number')
+  }
+  if (data.lat !== undefined && Number.isNaN(Number(data.lat))) {
+    errors.push('lat must be a number')
+  }
+  if (data.lng !== undefined && Number.isNaN(Number(data.lng))) {
+    errors.push('lng must be a number')
+  }
+  if (data.lat !== undefined && (Number(data.lat) < -90 || Number(data.lat) > 90)) {
+    errors.push('lat must be between -90 and 90')
+  }
+  if (data.lng !== undefined && (Number(data.lng) < -180 || Number(data.lng) > 180)) {
+    errors.push('lng must be between -180 and 180')
   }
   if (data.maintenanceFee !== undefined && Number.isNaN(Number(data.maintenanceFee))) {
     errors.push('maintenanceFee must be a number')
@@ -189,6 +204,8 @@ export async function POST(req: Request) {
       if (typeof createData.bedrooms === 'string') createData.bedrooms = Number(createData.bedrooms)
       if (typeof createData.bathrooms === 'string') createData.bathrooms = Number(createData.bathrooms)
       if (typeof createData.area === 'string') createData.area = Number(createData.area)
+      if (typeof createData.lat === 'string') createData.lat = Number(createData.lat)
+      if (typeof createData.lng === 'string') createData.lng = Number(createData.lng)
       if (typeof createData.maintenanceFee === 'string') createData.maintenanceFee = Number(createData.maintenanceFee)
       if (typeof createData.totalUnits === 'string') createData.totalUnits = Number(createData.totalUnits)
       if (typeof createData.availableUnits === 'string') createData.availableUnits = Number(createData.availableUnits)
@@ -198,6 +215,10 @@ export async function POST(req: Request) {
         const availableUnits = Number(createData.availableUnits || 0)
         createData.soldUnits = Math.max(totalUnits - availableUnits, 0)
       }
+      if (createData.neighborhood && !createData.address) {
+        createData.address = createData.location
+      }
+      ;(createData as any).sector = createData.neighborhood || (createData as any).sector || ''
       // Generate listingId via yearly counter in a transaction
       const { listingId, id } = await db.runTransaction(async (tx) => {
         const year = new Date().getFullYear().toString()
@@ -262,6 +283,8 @@ export async function POST(req: Request) {
       if (typeof updateData.bedrooms === 'string') updateData.bedrooms = Number(updateData.bedrooms)
       if (typeof updateData.bathrooms === 'string') updateData.bathrooms = Number(updateData.bathrooms)
       if (typeof updateData.area === 'string') updateData.area = Number(updateData.area)
+      if (typeof updateData.lat === 'string') updateData.lat = Number(updateData.lat)
+      if (typeof updateData.lng === 'string') updateData.lng = Number(updateData.lng)
       if (typeof updateData.maintenanceFee === 'string') updateData.maintenanceFee = Number(updateData.maintenanceFee)
       if (typeof updateData.totalUnits === 'string') updateData.totalUnits = Number(updateData.totalUnits)
       if (typeof updateData.availableUnits === 'string') updateData.availableUnits = Number(updateData.availableUnits)
@@ -271,6 +294,10 @@ export async function POST(req: Request) {
         const availableUnits = Number(updateData.availableUnits || 0)
         updateData.soldUnits = Math.max(totalUnits - availableUnits, 0)
       }
+      if (updateData.location && !updateData.address) {
+        updateData.address = updateData.location
+      }
+      ;(updateData as any).sector = updateData.neighborhood || (updateData as any).sector || ''
       await db.collection('properties').doc(id).set({
         ...updateData,
         updatedAt: FieldValue.serverTimestamp(),

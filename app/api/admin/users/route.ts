@@ -100,7 +100,11 @@ async function applyLifecycleSideEffects(params: {
       impacts.openLeadsUnassigned += 1
       batch.update(leadDoc.ref, {
         assignedTo: null,
+        leadStage: 'new',
         status: 'unassigned',
+        previousStage: String(lead.leadStage || lead.status || 'assigned'),
+        stageChangedAt: now,
+        stageChangeReason: 'assignee_lifecycle_change',
         assignedAt: null,
         slaResetAt: now,
         reassignmentRequired: true,

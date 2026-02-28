@@ -435,6 +435,15 @@ export default function ListingDetail(){
   const mainImageRaw = listing.coverImage || listing.images?.[0] || listing.mainImage || listing.image || listing.main_photo_url || '/logo.png'
   const mainImage = mainImageRaw?.startsWith('http') ? mainImageRaw : `${siteUrl}${mainImageRaw.startsWith('/') ? '' : '/'}${mainImageRaw}`
   const promoVideoEmbedUrl = normalizeVideoUrl(listing.promoVideoUrl);
+  const hasCoordinates = Number.isFinite(Number(listing.lat)) && Number.isFinite(Number(listing.lng))
+  const lat = hasCoordinates ? Number(listing.lat) : null
+  const lng = hasCoordinates ? Number(listing.lng) : null
+  const locationLabel = [listing.location, listing.neighborhood || listing.sector, listing.city].filter(Boolean).join(', ')
+  const mapQuery = hasCoordinates
+    ? `${lat},${lng}`
+    : encodeURIComponent([listing.location, listing.neighborhood || listing.sector, listing.city, 'República Dominicana'].filter(Boolean).join(', '))
+  const publicMapLink = `https://www.google.com/maps?q=${mapQuery}`
+  const publicMapEmbed = `https://www.google.com/maps?q=${mapQuery}&output=embed`
 
   return (
     <>
@@ -478,7 +487,7 @@ export default function ListingDetail(){
                 <h1 className="text-4xl font-bold text-[#0B2545] mb-2">{listing.title}</h1>
                 <div className="flex items-center text-gray-600">
                   <FaMapMarkerAlt className="mr-2 text-[#FF6B35]" />
-                  <span>{listing.city || 'N/A'} • {listing.sector || 'N/A'}</span>
+                  <span>{locationLabel || `${listing.city || 'N/A'} • ${listing.neighborhood || listing.sector || 'N/A'}`}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3" />
@@ -764,6 +773,33 @@ export default function ListingDetail(){
                 <p className="text-gray-700 leading-relaxed whitespace-pre-line">
                   {listing.description || 'Sin descripción disponible'}
                 </p>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <h2 className="text-2xl font-bold text-[#0B2545]">Ubicación</h2>
+                  <a
+                    href={publicMapLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-[#0B2545] underline"
+                  >
+                    Ver en Google Maps
+                  </a>
+                </div>
+                <p className="text-gray-700 mb-3">{locationLabel || 'Ubicación no especificada'}</p>
+                {hasCoordinates ? (
+                  <p className="text-xs text-gray-500 mb-3">Coordenadas: {lat}, {lng}</p>
+                ) : null}
+                <div className="overflow-hidden rounded-lg border border-gray-200">
+                  <iframe
+                    src={publicMapEmbed}
+                    title={`Mapa de ${listing.title}`}
+                    className="w-full h-72"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
               </div>
 
               {listing.propertyType === 'land' && (terrain.zoningType || terrain.maxBuildHeight || terrain.buildPotential || terrainUtilities.length > 0) && (
@@ -1071,7 +1107,7 @@ export default function ListingDetail(){
             listing={{
               id: listing.id,
               title: listing.title,
-              address: `${listing.city || ''}, ${listing.sector || ''}`,
+                    address: locationLabel || `${listing.city || ''}, ${listing.neighborhood || listing.sector || ''}`,
               price: Number(ctaPriceSource || listing.price || 0),
               currency: listing.currency || 'USD'
             }}

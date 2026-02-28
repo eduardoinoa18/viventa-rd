@@ -258,6 +258,8 @@ export default function EditPropertyPage() {
         location: form.location?.trim() || '',
         city: form.city?.trim() || '',
         neighborhood: form.neighborhood?.trim() || '',
+        lat: typeof form.lat === 'number' ? form.lat : undefined,
+        lng: typeof form.lng === 'number' ? form.lng : undefined,
         bedrooms: Number(form.bedrooms || 0),
         bathrooms: Number(form.bathrooms || 0),
         area: Number(form.area || 0),
@@ -423,6 +425,8 @@ export default function EditPropertyPage() {
         location: form.location.trim(),
         city: form.city?.trim() || '',
         neighborhood: form.neighborhood?.trim() || '',
+        lat: typeof form.lat === 'number' ? form.lat : undefined,
+        lng: typeof form.lng === 'number' ? form.lng : undefined,
         bedrooms: Number(form.bedrooms || 0),
         bathrooms: Number(form.bathrooms || 0),
         area: Number(form.area || 0),
@@ -690,7 +694,7 @@ export default function EditPropertyPage() {
                   <FiMapPin className="text-[#00A676]" />
                   Ubicación
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-location">Ubicación Completa *</label>
                     <input
@@ -722,7 +726,44 @@ export default function EditPropertyPage() {
                       onChange={e=>setForm({...form, neighborhood: e.target.value})}
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-lat">Latitud</label>
+                    <input
+                      id="edit-lat"
+                      type="number"
+                      step="0.000001"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      placeholder="18.4861"
+                      value={form.lat ?? ''}
+                      onChange={e => setForm({ ...form, lat: e.target.value === '' ? undefined : Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-lng">Longitud</label>
+                    <input
+                      id="edit-lng"
+                      type="number"
+                      step="0.000001"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      placeholder="-69.9312"
+                      value={form.lng ?? ''}
+                      onChange={e => setForm({ ...form, lng: e.target.value === '' ? undefined : Number(e.target.value) })}
+                    />
+                  </div>
                 </div>
+                {(typeof form.lat === 'number' && typeof form.lng === 'number') ? (
+                  <div className="mt-3 text-xs text-gray-600">
+                    Punto exacto configurado. Vista rápida:{' '}
+                    <a
+                      href={`https://www.google.com/maps?q=${form.lat},${form.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#0B2545] underline"
+                    >
+                      abrir en Google Maps
+                    </a>
+                  </div>
+                ) : null}
               </div>
 
               {/* Descriptions */}

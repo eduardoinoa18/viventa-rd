@@ -3,12 +3,13 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 import { Timestamp } from 'firebase-admin/firestore'
 import crypto from 'crypto'
 import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
+import { normalizeLeadStage, stageSlaDueAt, stageToLegacyStatus } from '@/lib/leadLifecycle'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
-    await requireMasterAdmin(req)
+    const admin = await requireMasterAdmin(req)
 
     const { leadId, agentId, note } = await req.json()
     if (!leadId || !agentId) {
@@ -31,6 +32,21 @@ export async function POST(req: NextRequest) {
     }
     const lead = leadSnap.data() as any
     const previousAssignedTo = String(lead?.assignedTo || '')
+    const currentStage = normalizeLeadStage(lead?.leadStage, lead?.status)
+
+    if (['won', 'lost', 'archived'].includes(currentStage)) {
+      return NextResponse.json(
+        { ok: false, error: `Cannot assign a terminal-stage lead (${currentStage})` },
+        { status: 409 }
+      )
+    }
+
+    if (previousAssignedTo && previousAssignedTo !== agentId && !String(note || '').trim()) {
+      return NextResponse.json(
+        { ok: false, error: 'Reassignment reason is required in note' },
+        { status: 400 }
+      )
+    }
 
     // 2. Get agent profile
     const agentSnap = await adminDb.collection('users').doc(agentId).get()
@@ -67,11 +83,22 @@ export async function POST(req: NextRequest) {
     })
 
     // 4. Update lead with assignment and conversation ID
+    const nowDate = now.toDate()
+    const nextStage = currentStage === 'new' ? 'assigned' : currentStage
+
     await leadRef.update({
-      status: 'assigned',
+      leadStage: nextStage,
+      status: stageToLegacyStatus(nextStage),
       assignedTo: agentId,
       assignedAt: now,
       inboxConversationId: conversationId,
+      previousStage: currentStage,
+      stageChangedAt: now,
+      stageChangedBy: admin.uid,
+      stageChangeReason: previousAssignedTo && previousAssignedTo !== agentId ? 'reassigned' : 'assigned',
+      stageSlaDueAt: stageSlaDueAt(nextStage, nowDate),
+      slaResetAt: previousAssignedTo && previousAssignedTo !== agentId ? now : null,
+      reassignmentReason: previousAssignedTo && previousAssignedTo !== agentId ? String(note || '').trim() : null,
       updatedAt: now,
     })
 
@@ -83,6 +110,10 @@ export async function POST(req: NextRequest) {
         newAssignedTo: agentId,
         eventType: previousAssignedTo && previousAssignedTo !== agentId ? 'reassigned' : 'assigned',
         note: note || '',
+        actorUserId: admin.uid,
+        actorEmail: admin.email,
+        leadStageFrom: currentStage,
+        leadStageTo: nextStage,
         createdAt: now,
       })
     } catch (logError) {

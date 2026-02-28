@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { AdminAuthError, requireMasterAdmin } from '@/lib/requireMasterAdmin'
 import { Timestamp } from 'firebase/firestore'
+import { normalizeLeadStage, stageSlaDueAt, stageToLegacyStatus, validateLeadStageTransition } from '@/lib/leadLifecycle'
 
 export const dynamic = 'force-dynamic'
 
@@ -129,7 +130,11 @@ export async function POST(req: NextRequest) {
       buyerEmail: body.buyerEmail.trim().toLowerCase(),
       buyerPhone: body.buyerPhone?.trim() || '',
       message: body.message?.trim() || '',
+      leadStage: 'new',
       status: 'unassigned',
+      stageChangedAt: Timestamp.now(),
+      stageChangeReason: 'lead_created',
+      stageSlaDueAt: stageSlaDueAt('new'),
       assignedTo: null,
       inboxConversationId: null,
       createdAt: Timestamp.now(),
@@ -155,7 +160,7 @@ export async function POST(req: NextRequest) {
 // PATCH /api/admin/leads/queue - Update lead status/assignment
 export async function PATCH(req: NextRequest) {
   try {
-    await requireMasterAdmin(req)
+    const admin = await requireMasterAdmin(req)
 
     const adminDb = getAdminDb()
     if (!adminDb) {
@@ -166,7 +171,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { id, status, assignedTo, inboxConversationId } = body
+    const { id, status, leadStage, assignedTo, inboxConversationId, reason } = body
 
     if (!id) {
       return NextResponse.json(
@@ -175,13 +180,79 @@ export async function PATCH(req: NextRequest) {
       )
     }
 
-    const updates: any = { updatedAt: Timestamp.now() }
+    const leadRef = adminDb.collection('leads').doc(id)
+    const leadSnap = await leadRef.get()
+    if (!leadSnap.exists) {
+      return NextResponse.json({ ok: false, error: 'Lead not found' }, { status: 404 })
+    }
 
-    if (status) updates.status = status
-    if (assignedTo) updates.assignedTo = assignedTo
+    const lead = leadSnap.data() || {}
+    const currentStage = normalizeLeadStage(lead.leadStage, lead.status)
+    const nextStage =
+      typeof leadStage === 'string'
+        ? leadStage
+        : typeof status === 'string'
+        ? normalizeLeadStage(undefined, status)
+        : (assignedTo !== undefined && currentStage === 'new' ? 'assigned' : currentStage)
+
+    const transition = validateLeadStageTransition({ currentStage, nextStage })
+    if (!transition.ok) {
+      return NextResponse.json({ ok: false, error: transition.error, code: transition.code }, { status: 400 })
+    }
+
+    const previousAssignedTo = String(lead.assignedTo || '')
+    const nextAssignedTo = assignedTo !== undefined ? String(assignedTo || '') : previousAssignedTo
+    if (assignedTo !== undefined && previousAssignedTo && nextAssignedTo && previousAssignedTo !== nextAssignedTo && !String(reason || '').trim()) {
+      return NextResponse.json({ ok: false, error: 'Reassignment reason is required' }, { status: 400 })
+    }
+
+    const now = new Date()
+    const updates: any = {
+      updatedAt: Timestamp.now(),
+      leadStage: transition.nextStage,
+      status: stageToLegacyStatus(transition.nextStage),
+      previousStage: transition.currentStage,
+      stageChangedAt: Timestamp.now(),
+      stageChangedBy: admin.uid,
+      stageChangeReason: String(reason || '').trim() || 'queue_patch',
+      stageSlaDueAt: stageSlaDueAt(transition.nextStage, now),
+    }
+
+    if (assignedTo !== undefined) {
+      updates.assignedTo = nextAssignedTo || null
+      updates.assignedAt = nextAssignedTo ? Timestamp.now() : null
+      if (previousAssignedTo && nextAssignedTo && previousAssignedTo !== nextAssignedTo) {
+        updates.slaResetAt = Timestamp.now()
+        updates.reassignmentReason = String(reason || '').trim()
+      }
+    }
+
     if (inboxConversationId) updates.inboxConversationId = inboxConversationId
 
-    await adminDb.collection('leads').doc(id).update(updates)
+    await leadRef.update(updates)
+
+    await adminDb.collection('lead_stage_events').add({
+      leadId: id,
+      previousStage: transition.currentStage,
+      newStage: transition.nextStage,
+      actorUserId: admin.uid,
+      actorEmail: admin.email,
+      reason: String(reason || '').trim() || 'queue_patch',
+      createdAt: Timestamp.now(),
+    })
+
+    if (assignedTo !== undefined && previousAssignedTo !== nextAssignedTo) {
+      await adminDb.collection('lead_assignment_logs').add({
+        leadId: id,
+        previousAssignedTo: previousAssignedTo || null,
+        newAssignedTo: nextAssignedTo || null,
+        eventType: previousAssignedTo ? 'reassigned' : 'assigned',
+        note: String(reason || '').trim(),
+        actorUserId: admin.uid,
+        actorEmail: admin.email,
+        createdAt: Timestamp.now(),
+      })
+    }
 
     return NextResponse.json({
       ok: true,
