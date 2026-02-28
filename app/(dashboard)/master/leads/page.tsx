@@ -312,6 +312,7 @@ export default function LeadsPage() {
                         className={`text-xs font-medium px-3 py-1 rounded-full cursor-pointer border-none ${
                           statusColors[lead.status] || 'bg-gray-100 text-gray-800'
                         }`}
+                        aria-label={`Cambiar estado de lead ${lead.buyerName}`}
                       >
                         <option value="unassigned">Unassigned</option>
                         <option value="assigned">Assigned</option>
@@ -365,6 +366,8 @@ export default function LeadsPage() {
                   setAssignNote('')
                 }}
                 className="text-gray-400 hover:text-gray-600"
+                aria-label="Cerrar modal de asignación"
+                title="Cerrar"
               >
                 <FiX className="w-5 h-5" />
               </button>

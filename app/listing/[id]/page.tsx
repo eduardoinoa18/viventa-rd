@@ -22,6 +22,14 @@ import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaParking, FaBuilding, 
 import { usePageViewTracking } from '@/hooks/useAnalytics'
 import { trackListingView } from '@/lib/analyticsService'
 
+type ListingUnit = {
+  unitNumber: string
+  modelType: string
+  sizeMt2: number
+  price: number
+  status: 'available' | 'sold' | 'reserved'
+}
+
 export default function ListingDetail(){
   usePageViewTracking()
   const params = useParams()
@@ -32,6 +40,7 @@ export default function ListingDetail(){
   const [showInquiryForm, setShowInquiryForm] = useState(false)
   const [currentSession, setCurrentSession] = useState<any>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
+  const [selectedModel, setSelectedModel] = useState<string>('all')
 
   const normalizeImages = (data: any): string[] => {
     const images = Array.isArray(data?.images) ? data.images.filter(Boolean) : []
@@ -139,6 +148,10 @@ export default function ListingDetail(){
       return () => window.removeEventListener('currencyChanged', onCurrency as EventListener)
     }
   }, [])
+
+  useEffect(() => {
+    setSelectedModel('all')
+  }, [listing?.id])
   
   // Show loading while either listing or session is still loading
   if(loading || sessionLoading) {
@@ -209,6 +222,69 @@ export default function ListingDetail(){
   const secondaryCurrency: Currency = currency === 'USD' ? 'DOP' : 'USD'
   const primaryPrice = primaryCurrency === 'USD' ? priceUsd : priceDop
   const secondaryPrice = secondaryCurrency === 'USD' ? priceUsd : priceDop
+
+  const units: ListingUnit[] = Array.isArray(listing.units)
+    ? listing.units
+      .filter((unit: any) => unit && (unit.unitNumber || unit.modelType || unit.model))
+      .map((unit: any) => {
+        const rawStatus = String(unit.status || 'available') as ListingUnit['status']
+        const status: ListingUnit['status'] = rawStatus === 'reserved' || rawStatus === 'sold' ? rawStatus : 'available'
+        return {
+          unitNumber: String(unit.unitNumber || '').trim(),
+          modelType: String(unit.modelType || unit.model || 'General').trim(),
+          sizeMt2: Number(unit.sizeMt2 ?? unit.area ?? 0),
+          price: Number(unit.price || 0),
+          status,
+        }
+      })
+    : []
+  const hasUnits = units.length > 0
+  const availableUnits = units.filter((unit) => unit.status === 'available')
+  const unitPoolForRange = availableUnits.length > 0 ? availableUnits : units
+  const unitModels = Array.from(new Set(units.map((unit) => (unit.modelType || '').trim()).filter(Boolean)))
+  const filteredUnits = units.filter((unit) => selectedModel === 'all' || unit.modelType === selectedModel)
+
+  const unitPriceValues = unitPoolForRange.map((unit) => Number(unit.price || 0)).filter((value) => value > 0)
+  const unitAreaValues = unitPoolForRange.map((unit) => Number(unit.sizeMt2 || 0)).filter((value) => value > 0)
+
+  const minUnitPrice = unitPriceValues.length > 0 ? Math.min(...unitPriceValues) : 0
+  const maxUnitPrice = unitPriceValues.length > 0 ? Math.max(...unitPriceValues) : 0
+  const minUnitArea = unitAreaValues.length > 0 ? Math.min(...unitAreaValues) : 0
+  const maxUnitArea = unitAreaValues.length > 0 ? Math.max(...unitAreaValues) : 0
+
+  const rangePriceSource = minUnitPrice > 0 ? minUnitPrice : listingPrice
+  const rangePriceUsd = listingCurrency === 'USD'
+    ? rangePriceSource
+    : convertCurrency(rangePriceSource, 'DOP', 'USD')
+  const rangePriceDop = listingCurrency === 'DOP'
+    ? rangePriceSource
+    : convertCurrency(rangePriceSource, 'USD', 'DOP')
+  const fromPriceText = formatCurrency(primaryCurrency === 'USD' ? rangePriceUsd : rangePriceDop, { currency: primaryCurrency })
+  const fromPriceSecondaryText = formatCurrency(secondaryCurrency === 'USD' ? rangePriceUsd : rangePriceDop, { currency: secondaryCurrency })
+
+  const modelUnitPoolForRange = selectedModel === 'all'
+    ? unitPoolForRange
+    : unitPoolForRange.filter((unit) => unit.modelType === selectedModel)
+  const modelUnitPriceValues = modelUnitPoolForRange.map((unit) => Number(unit.price || 0)).filter((value) => value > 0)
+  const modelRangePrice = modelUnitPriceValues.length > 0 ? Math.min(...modelUnitPriceValues) : rangePriceSource
+  const modelRangePriceUsd = listingCurrency === 'USD'
+    ? modelRangePrice
+    : convertCurrency(modelRangePrice, 'DOP', 'USD')
+  const modelRangePriceDop = listingCurrency === 'DOP'
+    ? modelRangePrice
+    : convertCurrency(modelRangePrice, 'USD', 'DOP')
+  const modelFromPriceText = formatCurrency(primaryCurrency === 'USD' ? modelRangePriceUsd : modelRangePriceDop, { currency: primaryCurrency })
+  const modelFromPriceSecondaryText = formatCurrency(secondaryCurrency === 'USD' ? modelRangePriceUsd : modelRangePriceDop, { currency: secondaryCurrency })
+
+  const computedAvailableUnits = hasUnits ? availableUnits.length : Number(listing.availableUnits || 0)
+  const computedSoldUnits = hasUnits ? units.filter((unit) => unit.status === 'sold').length : Number(listing.soldUnits || 0)
+  const computedReservedUnits = hasUnits ? units.filter((unit) => unit.status === 'reserved').length : 0
+  const computedTotalUnits = hasUnits ? units.length : Number(listing.totalUnits || 0)
+
+  const terrain = listing.terrainDetails || {}
+  const terrainUtilities = Array.isArray(terrain.utilitiesAvailable)
+    ? terrain.utilitiesAvailable.filter(Boolean)
+    : []
   
   // Generate structured data for SEO
   const propertySchema = listing ? generatePropertySchema({
@@ -252,9 +328,9 @@ export default function ListingDetail(){
   } : null
   
   // Generate meta description
-  const metaDescription = listing.description 
+  const metaDescription = listing.description
     ? listing.description.substring(0, 155) + '...'
-    : `${listing.title} en ${listing.city}. ${listing.bedrooms} hab, ${listing.bathrooms} baños, ${listing.area}m². ${formatCurrency(listing.price || 0, { currency: listing.currency || 'USD' })}`;
+    : `${listing.title} en ${listing.city}. Desde ${formatCurrency(rangePriceSource || listing.price || 0, { currency: listing.currency || 'USD' })}${maxUnitPrice > minUnitPrice ? ` hasta ${formatCurrency(maxUnitPrice, { currency: listing.currency || 'USD' })}` : ''}.${minUnitArea > 0 ? ` Metrajes desde ${minUnitArea}m².` : ''}`;
   
   const metaTitle = `${listing.title} - VIVENTA RD`;
   const propertyUrl = `https://viventa-rd.com/listing/${listing.id}`;
@@ -333,10 +409,88 @@ export default function ListingDetail(){
                 />
               </div>
 
+              {listing.inventoryMode === 'project' && listing.projectMapImage && (
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h2 className="text-2xl font-bold text-[#0B2545] mb-4">Mapa del Proyecto</h2>
+                  <img
+                    src={listing.projectMapImage}
+                    alt={`Mapa del proyecto ${listing.title}`}
+                    className="w-full rounded-lg border border-gray-200"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+
+              {hasUnits && (
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-[#0B2545]">Inventario de Unidades</h2>
+                    <div className="text-sm text-gray-600">
+                      {computedAvailableUnits} disponibles · {computedReservedUnits} separadas · {computedSoldUnits} vendidas
+                    </div>
+                  </div>
+
+                  {unitModels.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <button
+                        className={`px-3 py-1 rounded-full text-sm border ${selectedModel === 'all' ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'border-gray-300 text-gray-700 hover:border-[#0B2545]'}`}
+                        onClick={() => setSelectedModel('all')}
+                      >
+                        Todos
+                      </button>
+                      {unitModels.map((model) => (
+                        <button
+                          key={model}
+                          className={`px-3 py-1 rounded-full text-sm border ${selectedModel === model ? 'bg-[#00A676] text-white border-[#00A676]' : 'border-gray-300 text-gray-700 hover:border-[#00A676]'}`}
+                          onClick={() => setSelectedModel(model)}
+                        >
+                          {model}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                    <table className="w-full min-w-[640px] text-sm">
+                      <thead className="bg-gray-50 text-left text-gray-600">
+                        <tr>
+                          <th className="px-4 py-3 font-medium">Unidad</th>
+                          <th className="px-4 py-3 font-medium">Modelo</th>
+                          <th className="px-4 py-3 font-medium">m²</th>
+                          <th className="px-4 py-3 font-medium">Precio</th>
+                          <th className="px-4 py-3 font-medium">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredUnits.map((unit, idx) => (
+                          <tr key={`${unit.unitNumber}-${idx}`} className="border-t border-gray-100">
+                            <td className="px-4 py-3 font-medium text-[#0B2545]">{unit.unitNumber}</td>
+                            <td className="px-4 py-3">{unit.modelType || 'N/A'}</td>
+                            <td className="px-4 py-3">{unit.sizeMt2 || 0}</td>
+                            <td className="px-4 py-3 font-semibold text-[#0B2545]">{formatCurrency(unit.price || 0, { currency: listing.currency || 'USD' })}</td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                unit.status === 'available'
+                                  ? 'bg-green-100 text-green-700'
+                                  : unit.status === 'reserved'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-red-100 text-red-700'
+                              }`}>
+                                {unit.status === 'available' ? 'Disponible' : unit.status === 'reserved' ? 'Separada' : 'Vendida'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {promoVideoEmbedUrl && (
                 <div className="bg-white rounded-xl shadow-sm p-4">
                   <h2 className="text-2xl font-bold text-[#0B2545] mb-4">Video Promocional</h2>
-                  <div className="relative w-full overflow-hidden rounded-lg" style={{ paddingTop: '56.25%' }}>
+                  <div className="relative w-full overflow-hidden rounded-lg pt-[56.25%]">
                     <iframe
                       src={promoVideoEmbedUrl}
                       title={`Video promocional de ${listing.title}`}
@@ -444,6 +598,44 @@ export default function ListingDetail(){
                 </p>
               </div>
 
+              {listing.propertyType === 'land' && (terrain.zoningType || terrain.maxBuildHeight || terrain.buildPotential || terrainUtilities.length > 0) && (
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h2 className="text-2xl font-bold text-[#0B2545] mb-4">Potencial de Desarrollo</h2>
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    {terrain.zoningType && (
+                      <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <div className="text-gray-500">Zonificación</div>
+                        <div className="font-semibold text-[#0B2545]">{terrain.zoningType}</div>
+                      </div>
+                    )}
+                    {terrain.maxBuildHeight && (
+                      <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <div className="text-gray-500">Altura máxima</div>
+                        <div className="font-semibold text-[#0B2545]">{terrain.maxBuildHeight}</div>
+                      </div>
+                    )}
+                  </div>
+                  {terrainUtilities.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="font-semibold text-[#0B2545] mb-2">Servicios disponibles</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {terrainUtilities.map((service: string, idx: number) => (
+                          <span key={`${service}-${idx}`} className="px-3 py-1 text-xs rounded-full bg-[#00A6A6]/10 text-[#0B2545] border border-[#00A6A6]/20">
+                            {service}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {terrain.buildPotential && (
+                    <div className="mt-4 p-4 rounded-lg bg-[#0B2545]/5 border border-[#0B2545]/10">
+                      <h3 className="font-semibold text-[#0B2545] mb-1">Sugerencia de uso</h3>
+                      <p className="text-gray-700 whitespace-pre-line">{terrain.buildPotential}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Mortgage Calculator */}
               <MortgageCalculator 
                 defaultPrice={Number(listing.price || 0)}
@@ -477,11 +669,18 @@ export default function ListingDetail(){
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-20">
                 <div className="mb-6">
                   <div className="text-4xl font-bold text-[#FF6B35]">
-                    {formatCurrency(primaryPrice, { currency: primaryCurrency })}
+                    {listing.inventoryMode === 'project' && rangePriceSource > 0
+                      ? `Desde ${selectedModel === 'all' ? fromPriceText : modelFromPriceText}`
+                      : formatCurrency(primaryPrice, { currency: primaryCurrency })}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {formatCurrency(secondaryPrice, { currency: secondaryCurrency })}
+                    {listing.inventoryMode === 'project' && rangePriceSource > 0
+                      ? (selectedModel === 'all' ? fromPriceSecondaryText : modelFromPriceSecondaryText)
+                      : formatCurrency(secondaryPrice, { currency: secondaryCurrency })}
                   </div>
+                  {listing.inventoryMode === 'project' && selectedModel !== 'all' && (
+                    <div className="text-xs text-[#0B2545] mt-1">Tipo seleccionado: {selectedModel}</div>
+                  )}
                 </div>
 
                 {Number(listing.maintenanceFee || 0) > 0 && (
@@ -500,8 +699,18 @@ export default function ListingDetail(){
                   <div className="mb-4 p-3 rounded-lg bg-[#0B2545]/5 border border-[#0B2545]/10">
                     <div className="text-sm text-gray-500">Disponibilidad del proyecto</div>
                     <div className="font-semibold text-[#0B2545]">
-                      {Number(listing.availableUnits || 0)} disponibles de {Number(listing.totalUnits || 0)} unidades
+                      {computedAvailableUnits} disponibles de {computedTotalUnits} unidades
                     </div>
+                    {maxUnitPrice > minUnitPrice && (
+                      <div className="text-xs text-gray-600 mt-1">
+                        Rango: {formatCurrency(minUnitPrice, { currency: listing.currency || 'USD' })} - {formatCurrency(maxUnitPrice, { currency: listing.currency || 'USD' })}
+                      </div>
+                    )}
+                    {maxUnitArea > minUnitArea && (
+                      <div className="text-xs text-gray-600 mt-1">
+                        Metraje: {minUnitArea}m² - {maxUnitArea}m²
+                      </div>
+                    )}
                   </div>
                 )}
                 
@@ -600,7 +809,7 @@ export default function ListingDetail(){
                     <p>• Tipo: <span className="text-gray-900 capitalize">{listing.propertyType}</span></p>
                     <p>• Transacción: <span className="text-gray-900 capitalize">{listing.listingType === 'sale' ? 'Venta' : 'Alquiler'}</span></p>
                     {listing.inventoryMode === 'project' && (
-                      <p>• Inventario: <span className="text-gray-900">{Number(listing.availableUnits || 0)}/{Number(listing.totalUnits || 0)} disponibles</span></p>
+                      <p>• Inventario: <span className="text-gray-900">{computedAvailableUnits}/{computedTotalUnits} disponibles</span></p>
                     )}
                     {listing.views > 0 && <p>• Vistas: <span className="text-gray-900">{listing.views.toLocaleString()}</span></p>}
                     {listing.createdAt && (

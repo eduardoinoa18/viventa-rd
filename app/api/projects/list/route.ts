@@ -6,6 +6,8 @@ import { listProjects } from '@/lib/projectService';
 import { db } from '@/lib/firebaseClient';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

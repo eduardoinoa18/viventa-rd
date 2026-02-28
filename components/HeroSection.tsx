@@ -8,13 +8,7 @@ export default function HeroSection() {
   return (
     <section className="relative h-[600px] flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: `url('/hero-dr-luxury.jpg')`,
-          backgroundPosition: 'center',
-        }}
-      >
+      <div className="absolute inset-0 bg-cover bg-center bg-[url('/hero-dr-luxury.jpg')]">
         {/* Dark gradient overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0B2545]/85 via-[#134074]/80 to-[#00A6A6]/70"></div>
       </div>

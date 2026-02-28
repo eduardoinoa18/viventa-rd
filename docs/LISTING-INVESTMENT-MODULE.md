@@ -1040,7 +1040,7 @@ export default function WhatsAppFloatingCTA({
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full py-3 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#20BA5A] transition text-center mb-2 flex items-center justify-center gap-2"
+            className="w-full py-3 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#20BA5A] transition text-center mb-2 flex items-center justify-center gap-2"
           >
             <FaWhatsapp className="text-xl" />
             Enviar WhatsApp
@@ -1048,7 +1048,7 @@ export default function WhatsAppFloatingCTA({
           
           <a
             href={`tel:${agent.phone}`}
-            className="block w-full py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center flex items-center justify-center gap-2"
           >
             <FiPhone />
             Llamar
@@ -1090,7 +1090,7 @@ export default function WhatsAppFloatingCTA({
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full py-3 bg-gradient-to-r from-[#25D366] to-[#20BA5A] text-white rounded-lg font-medium hover:shadow-lg transition text-center flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gradient-to-r from-[#25D366] to-[#20BA5A] text-white rounded-lg font-medium hover:shadow-lg transition text-center flex items-center justify-center gap-2"
           >
             <FaWhatsapp className="text-xl" />
             Contactar por WhatsApp
@@ -1098,14 +1098,14 @@ export default function WhatsAppFloatingCTA({
           
           <a
             href={`tel:${agent.phone}`}
-            className="block w-full py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center flex items-center justify-center gap-2"
           >
             <FiPhone />
             Llamar ahora
           </a>
           
           <button
-            className="block w-full py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-center flex items-center justify-center gap-2"
           >
             <FiMail />
             Enviar email

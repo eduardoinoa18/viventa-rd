@@ -11,6 +11,34 @@ interface ProjectListingPageProps {
   projectId: string;
 }
 
+function getPercentWidthClass(percent: number): string {
+  const clamped = Math.max(0, Math.min(100, Math.round(percent / 5) * 5));
+  const map: Record<number, string> = {
+    0: 'w-0',
+    5: 'w-[5%]',
+    10: 'w-[10%]',
+    15: 'w-[15%]',
+    20: 'w-[20%]',
+    25: 'w-[25%]',
+    30: 'w-[30%]',
+    35: 'w-[35%]',
+    40: 'w-[40%]',
+    45: 'w-[45%]',
+    50: 'w-[50%]',
+    55: 'w-[55%]',
+    60: 'w-[60%]',
+    65: 'w-[65%]',
+    70: 'w-[70%]',
+    75: 'w-[75%]',
+    80: 'w-[80%]',
+    85: 'w-[85%]',
+    90: 'w-[90%]',
+    95: 'w-[95%]',
+    100: 'w-full',
+  };
+  return map[clamped] || 'w-0';
+}
+
 export default function ProjectListingPage({ projectId }: ProjectListingPageProps) {
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -303,16 +331,13 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
           <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full flex">
               <div
-                className="bg-green-500"
-                style={{ width: `${availablePercent}%` }}
+                className={`bg-green-500 ${getPercentWidthClass(availablePercent)}`}
               ></div>
               <div
-                className="bg-blue-500"
-                style={{ width: `${separatedPercent}%` }}
+                className={`bg-blue-500 ${getPercentWidthClass(separatedPercent)}`}
               ></div>
               <div
-                className="bg-gray-700"
-                style={{ width: `${soldPercent}%` }}
+                className={`bg-gray-700 ${getPercentWidthClass(soldPercent)}`}
               ></div>
             </div>
           </div>

@@ -201,12 +201,12 @@ export default function InviteOnboardingPage() {
         {step === 1 && (
           <div className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Set password</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="invite-password">Set password</label>
+              <input id="invite-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Set password" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm password</label>
-              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="invite-confirmPassword">Confirm password</label>
+              <input id="invite-confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Confirm password" />
             </div>
             <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-700 space-y-1">
               <CheckLine ok={passwordChecks.min} label="At least 8 characters" />
@@ -285,10 +285,11 @@ function CheckLine({ ok, label }: { ok: boolean; label: string }) {
 }
 
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  const fieldId = `invite-field-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+      <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor={fieldId}>{label}</label>
+      <input id={fieldId} value={value} onChange={(e) => onChange(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label={label} />
     </div>
   )
 }

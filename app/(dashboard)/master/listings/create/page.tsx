@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { type Property } from '@/lib/firestoreService'
 import { uploadMultipleImages, validateImageFiles } from '@/lib/storageService'
 import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock } from 'react-icons/fi'
+import UnitInventoryEditor, { type UnitRow } from '@/components/admin/UnitInventoryEditor'
 // Removed direct Firestore counters usage; server API now generates listingId
 
 export default function CreatePropertyPage() {
@@ -37,6 +38,14 @@ export default function CreatePropertyPage() {
     totalUnits: 1,
     availableUnits: 1,
     soldUnits: 0,
+    projectMapImage: '',
+    units: [],
+    terrainDetails: {
+      zoningType: '',
+      maxBuildHeight: '',
+      buildPotential: '',
+      utilitiesAvailable: [],
+    },
     agentId: '',
     agentName: '',
     status: 'pending',
@@ -49,6 +58,23 @@ export default function CreatePropertyPage() {
   const [currency, setCurrency] = useState<'USD' | 'DOP'>('USD')
   const exchangeRate = 58.5
   const [features, setFeatures] = useState<string[]>([])
+  const [unitRows, setUnitRows] = useState<UnitRow[]>([])
+  const [terrainUtilitiesText, setTerrainUtilitiesText] = useState('')
+
+  function handleUnitsChange(nextUnits: UnitRow[]) {
+    setUnitRows(nextUnits)
+    const totalUnits = nextUnits.length
+    const availableUnits = nextUnits.filter((item) => item.status === 'available').length
+    const soldUnits = nextUnits.filter((item) => item.status === 'sold').length
+
+    setForm((prev) => ({
+      ...prev,
+      units: nextUnits,
+      totalUnits: totalUnits || prev.totalUnits || 1,
+      availableUnits: totalUnits > 0 ? availableUnits : prev.availableUnits || 0,
+      soldUnits: totalUnits > 0 ? soldUnits : prev.soldUnits || 0,
+    }))
+  }
 
   const amenitiesCategories = {
     interior: {
@@ -265,6 +291,17 @@ export default function CreatePropertyPage() {
         totalUnits: Number(form.totalUnits || 1),
         availableUnits: Number(form.availableUnits || 1),
         soldUnits: Number(form.soldUnits || 0),
+        projectMapImage: form.projectMapImage?.trim() || '',
+        units: unitRows.filter((unit) => unit.unitNumber.trim()),
+        terrainDetails: form.propertyType === 'land' ? {
+          zoningType: form.terrainDetails?.zoningType || '',
+          maxBuildHeight: form.terrainDetails?.maxBuildHeight || '',
+          buildPotential: form.terrainDetails?.buildPotential || '',
+          utilitiesAvailable: terrainUtilitiesText
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean),
+        } : undefined,
         agentId: form.agentId?.trim() || '',
         agentName: form.agentName?.trim() || '',
         status: form.status,
@@ -305,8 +342,12 @@ export default function CreatePropertyPage() {
         propertyType: 'apartment', listingType: 'sale', images: [],
         coverImage: '', promoVideoUrl: '', maintenanceFee: 0, maintenanceFeeCurrency: 'USD', maintenanceInfo: '',
         inventoryMode: 'single', totalUnits: 1, availableUnits: 1, soldUnits: 0,
+        projectMapImage: '', units: [],
+        terrainDetails: { zoningType: '', maxBuildHeight: '', buildPotential: '', utilitiesAvailable: [] },
         agentId: '', agentName: '', status: 'pending', featured: false,
       })
+      setUnitRows([])
+      setTerrainUtilitiesText('')
       
       // Redirect to properties list after 1 second
       setTimeout(() => router.push('/master/listings'), 1000)
@@ -818,9 +859,21 @@ export default function CreatePropertyPage() {
 
                   {form.inventoryMode === 'project' && (
                     <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Total de unidades</label>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Mapa del proyecto (URL de imagen)</label>
                         <input
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          placeholder="https://.../masterplan.jpg"
+                          value={form.projectMapImage || ''}
+                          onChange={e=>setForm({...form, projectMapImage: e.target.value})}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Esta imagen se mostrará en el detalle del listing como mapa maestro.</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="create-totalUnits">Total de unidades</label>
+                        <input
+                          id="create-totalUnits"
                           type="number"
                           min={1}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
@@ -829,13 +882,63 @@ export default function CreatePropertyPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Unidades disponibles</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="create-availableUnits">Unidades disponibles</label>
                         <input
+                          id="create-availableUnits"
                           type="number"
                           min={0}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
                           value={form.availableUnits || 0}
                           onChange={e=>setForm({...form, availableUnits: Number(e.target.value || 0)})}
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <UnitInventoryEditor units={unitRows} onChange={handleUnitsChange} />
+                      </div>
+                    </>
+                  )}
+
+                  {form.propertyType === 'land' && (
+                    <>
+                      <div className="md:col-span-2 mt-2 border-t pt-4">
+                        <h3 className="text-base font-semibold text-[#0B2545] mb-3">Potencial de desarrollo (Terreno)</h3>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Uso de suelo / Zonificación</label>
+                        <input
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          placeholder="Residencial, Comercial Mixto..."
+                          value={form.terrainDetails?.zoningType || ''}
+                          onChange={e=>setForm({...form, terrainDetails: { ...(form.terrainDetails || {}), zoningType: e.target.value }})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Altura máxima de construcción</label>
+                        <input
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          placeholder="Hasta 12 niveles"
+                          value={form.terrainDetails?.maxBuildHeight || ''}
+                          onChange={e=>setForm({...form, terrainDetails: { ...(form.terrainDetails || {}), maxBuildHeight: e.target.value }})}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Servicios disponibles (separados por coma)</label>
+                        <input
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          placeholder="Agua, Electricidad, Fibra óptica, Calle asfaltada"
+                          value={terrainUtilitiesText}
+                          onChange={e=>setTerrainUtilitiesText(e.target.value)}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Sugerencias de desarrollo / potencial comercial</label>
+                        <textarea
+                          rows={3}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          placeholder="Ej: Ideal para proyecto de villas, plaza comercial o torre residencial..."
+                          value={form.terrainDetails?.buildPotential || ''}
+                          onChange={e=>setForm({...form, terrainDetails: { ...(form.terrainDetails || {}), buildPotential: e.target.value }})}
                         />
                       </div>
                     </>

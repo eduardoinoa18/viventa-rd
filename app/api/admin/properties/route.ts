@@ -8,6 +8,21 @@ import { ActivityLogger } from '@/lib/activityLogger'
 
 export const dynamic = 'force-dynamic'
 
+type PropertyUnit = {
+  unitNumber: string
+  modelType: string
+  sizeMt2: number
+  price: number
+  status: 'available' | 'reserved' | 'sold'
+}
+
+type TerrainDetails = {
+  zoningType?: string
+  maxBuildHeight?: string
+  buildPotential?: string
+  utilitiesAvailable?: string[]
+}
+
 function initFirebase() {
   const config = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -98,6 +113,9 @@ export async function POST(req: NextRequest) {
       totalUnits,
       availableUnits,
       soldUnits,
+      projectMapImage,
+      units,
+      terrainDetails,
       features,
       publicRemarks,
       professionalRemarks,
@@ -149,6 +167,9 @@ export async function POST(req: NextRequest) {
         totalUnits: totalUnitsNum,
         availableUnits: availableUnitsNum,
         soldUnits: computedSoldUnits,
+        projectMapImage: projectMapImage || '',
+        units: Array.isArray(units) ? units as PropertyUnit[] : [],
+        terrainDetails: terrainDetails && typeof terrainDetails === 'object' ? terrainDetails as TerrainDetails : undefined,
         features: Array.isArray(features) ? features : [],
         agentId,
         agentName: agentName || '',
@@ -210,6 +231,9 @@ export async function POST(req: NextRequest) {
       totalUnits: totalUnitsNum,
       availableUnits: availableUnitsNum,
       soldUnits: computedSoldUnits,
+      projectMapImage: projectMapImage || '',
+      units: Array.isArray(units) ? units as PropertyUnit[] : [],
+      terrainDetails: terrainDetails && typeof terrainDetails === 'object' ? terrainDetails as TerrainDetails : undefined,
       features: Array.isArray(features) ? features : [],
       agentId,
       agentName: agentName || '',

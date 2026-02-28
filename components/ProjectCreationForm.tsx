@@ -424,14 +424,16 @@ export default function ProjectCreationForm() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="project-constructionStatus">
                     Construction Status *
                   </label>
                   <select
+                    id="project-constructionStatus"
                     name="constructionStatus"
                     value={formState.constructionStatus || ''}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    aria-label="Construction Status"
                   >
                     <option value="pre-venta">Pre-venta</option>
                     <option value="en-construccion">En construcción</option>
@@ -440,14 +442,16 @@ export default function ProjectCreationForm() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="project-deliveryDate">
                     Delivery Date
                   </label>
                   <input
+                    id="project-deliveryDate"
                     type="date"
                     name="deliveryDate"
                     value={formState.deliveryDate || ''}
                     onChange={handleInputChange}
+                    aria-label="Delivery Date"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>

@@ -49,12 +49,30 @@ export interface Property {
   totalUnits?: number
   availableUnits?: number
   soldUnits?: number
+  projectMapImage?: string
+  units?: PropertyUnit[]
+  terrainDetails?: TerrainDetails
   agentId: string
   agentName: string
   status: 'active' | 'pending' | 'sold' | 'draft'
   featured?: boolean
   createdAt?: any
   updatedAt?: any
+}
+
+export interface PropertyUnit {
+  unitNumber: string
+  modelType: string
+  sizeMt2: number
+  price: number
+  status: 'available' | 'reserved' | 'sold'
+}
+
+export interface TerrainDetails {
+  zoningType?: string
+  maxBuildHeight?: string
+  buildPotential?: string
+  utilitiesAvailable?: string[]
 }
 
 export async function createProperty(data: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>) {

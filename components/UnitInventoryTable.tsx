@@ -100,11 +100,13 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="unit-filter-status">Status</label>
           <select
+            id="unit-filter-status"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            aria-label="Filter by status"
           >
             <option value="">All Statuses</option>
             {uniqueStatuses.map((status) => (
@@ -116,11 +118,13 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="unit-filter-bedrooms">Bedrooms</label>
           <select
+            id="unit-filter-bedrooms"
             value={filterBedrooms}
             onChange={(e) => setFilterBedrooms(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            aria-label="Filter by bedrooms"
           >
             <option value="">All</option>
             {uniqueBedrooms.map((br) => (

@@ -94,10 +94,11 @@ export default function MortgageCalculator({
       <div className="space-y-6">
         {/* Price */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="mortgage-price">
             Precio de la propiedad
           </label>
           <input
+            id="mortgage-price"
             type="number"
             value={price}
             onChange={(e) => setPrice(Number(e.target.value))}
@@ -109,10 +110,11 @@ export default function MortgageCalculator({
         
         {/* Down Payment % */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="mortgage-downPaymentPercent">
             Inicial: {downPaymentPercent}% ({formatCurrency(price * downPaymentPercent / 100)})
           </label>
           <input
+            id="mortgage-downPaymentPercent"
             type="range"
             min="5"
             max="80"
@@ -129,10 +131,11 @@ export default function MortgageCalculator({
         
         {/* Interest Rate */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="mortgage-interestRate">
             Tasa de interés: {interestRate.toFixed(1)}%
           </label>
           <input
+            id="mortgage-interestRate"
             type="range"
             min="2"
             max="30"

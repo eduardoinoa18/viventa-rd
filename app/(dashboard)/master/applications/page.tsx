@@ -351,6 +351,7 @@ export default function ApplicationsPage() {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Filtrar por estado"
               >
                 <option value="all">All Statuses</option>
                 <option value="pending">Pending</option>

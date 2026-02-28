@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock, FiArrowLeft, FiAlertCircle } from 'react-icons/fi'
 import { uploadMultipleImages, validateImageFiles } from '@/lib/storageService'
 import Link from 'next/link'
+import UnitInventoryEditor, { type UnitRow } from '@/components/admin/UnitInventoryEditor'
 
 export default function EditPropertyPage() {
   const router = useRouter()
@@ -24,7 +25,24 @@ export default function EditPropertyPage() {
   const [currency, setCurrency] = useState<'USD' | 'DOP'>('USD')
   const exchangeRate = 58.5
   const [features, setFeatures] = useState<string[]>([])
+  const [unitRows, setUnitRows] = useState<UnitRow[]>([])
+  const [terrainUtilitiesText, setTerrainUtilitiesText] = useState('')
   const autosaveTimerRef = useRef<any>(null)
+
+  function handleUnitsChange(nextUnits: UnitRow[]) {
+    setUnitRows(nextUnits)
+    const totalUnits = nextUnits.length
+    const availableUnits = nextUnits.filter((item) => item.status === 'available').length
+    const soldUnits = nextUnits.filter((item) => item.status === 'sold').length
+
+    setForm((prev: any) => ({
+      ...prev,
+      units: nextUnits,
+      totalUnits: totalUnits || prev.totalUnits || 1,
+      availableUnits: totalUnits > 0 ? availableUnits : prev.availableUnits || 0,
+      soldUnits: totalUnits > 0 ? soldUnits : prev.soldUnits || 0,
+    }))
+  }
 
   const amenitiesCategories = {
     interior: {
@@ -118,6 +136,23 @@ export default function EditPropertyPage() {
     return [data?.mainImage, data?.image, data?.main_photo_url].filter(Boolean)
   }
 
+  const normalizeUnits = (rawUnits: any): UnitRow[] => {
+    if (!Array.isArray(rawUnits)) return []
+    return rawUnits
+      .filter((unit: any) => unit && (unit.unitNumber || unit.modelType || unit.model))
+      .map((unit: any) => {
+        const rawStatus = String(unit.status || 'available') as UnitRow['status']
+        const status: UnitRow['status'] = rawStatus === 'reserved' || rawStatus === 'sold' ? rawStatus : 'available'
+        return {
+          unitNumber: String(unit.unitNumber || '').trim(),
+          modelType: String(unit.modelType || unit.model || 'General').trim(),
+          sizeMt2: Number(unit.sizeMt2 ?? unit.area ?? 0),
+          price: Number(unit.price || 0),
+          status,
+        }
+      })
+  }
+
   useEffect(() => {
     if (!propertyId) return
     loadProperty()
@@ -130,11 +165,16 @@ export default function EditPropertyPage() {
       if (res.ok) {
         const json = await res.json()
         if (json.ok && json.data) {
-          const normalized = { ...json.data, images: normalizeImages(json.data) }
+          const normalizedUnits = normalizeUnits(json.data.units)
+          const normalized = { ...json.data, images: normalizeImages(json.data), units: normalizedUnits }
           setForm(normalized)
           setOriginalForm(JSON.parse(JSON.stringify(normalized)))
           setCurrency(normalized.currency || 'USD')
           setFeatures(normalized.features || [])
+          setUnitRows(normalizedUnits)
+          setTerrainUtilitiesText(Array.isArray(normalized.terrainDetails?.utilitiesAvailable)
+            ? normalized.terrainDetails.utilitiesAvailable.join(', ')
+            : '')
           setIsDirty(false)
         } else {
           toast.error('No se encontró la propiedad')
@@ -229,6 +269,17 @@ export default function EditPropertyPage() {
         totalUnits: Number(form.totalUnits || 1),
         availableUnits: Number(form.availableUnits || 1),
         soldUnits: Number(form.soldUnits || 0),
+        projectMapImage: form.projectMapImage?.trim() || '',
+        units: unitRows.filter((unit) => unit.unitNumber.trim()),
+        terrainDetails: form.propertyType === 'land' ? {
+          zoningType: form.terrainDetails?.zoningType || '',
+          maxBuildHeight: form.terrainDetails?.maxBuildHeight || '',
+          buildPotential: form.terrainDetails?.buildPotential || '',
+          utilitiesAvailable: terrainUtilitiesText
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean),
+        } : undefined,
         agentId: form.agentId?.trim() || '',
         agentName: form.agentName?.trim() || '',
         status: 'draft',
@@ -356,6 +407,17 @@ export default function EditPropertyPage() {
         totalUnits: Number(form.totalUnits || 1),
         availableUnits: Number(form.availableUnits || 1),
         soldUnits: Number(form.soldUnits || 0),
+        projectMapImage: form.projectMapImage?.trim() || '',
+        units: unitRows.filter((unit) => unit.unitNumber.trim()),
+        terrainDetails: form.propertyType === 'land' ? {
+          zoningType: form.terrainDetails?.zoningType || '',
+          maxBuildHeight: form.terrainDetails?.maxBuildHeight || '',
+          buildPotential: form.terrainDetails?.buildPotential || '',
+          utilitiesAvailable: terrainUtilitiesText
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean),
+        } : undefined,
         agentId: form.agentId?.trim() || '',
         agentName: form.agentName?.trim() || '',
         status: form.status,
@@ -831,9 +893,10 @@ export default function EditPropertyPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cuota de mantenimiento</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-maintenanceFee">Cuota de mantenimiento</label>
                     <div className="grid grid-cols-3 gap-2">
                       <input
+                        id="edit-maintenanceFee"
                         type="number"
                         min={0}
                         className="col-span-2 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
@@ -853,8 +916,9 @@ export default function EditPropertyPage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Información de mantenimiento</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-maintenanceInfo">Información de mantenimiento</label>
                     <textarea
+                      id="edit-maintenanceInfo"
                       rows={2}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
                       value={form.maintenanceInfo || ''}
@@ -863,8 +927,9 @@ export default function EditPropertyPage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Video promocional (URL)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-promoVideoUrl">Video promocional (URL)</label>
                     <input
+                      id="edit-promoVideoUrl"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
                       placeholder="https://www.youtube.com/watch?v=..."
                       value={form.promoVideoUrl || ''}
@@ -887,9 +952,21 @@ export default function EditPropertyPage() {
 
                   {form.inventoryMode === 'project' && (
                     <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Total de unidades</label>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Mapa del proyecto (URL de imagen)</label>
                         <input
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          placeholder="https://.../masterplan.jpg"
+                          value={form.projectMapImage || ''}
+                          onChange={e=>setForm({...form, projectMapImage: e.target.value})}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Se mostrará en el detalle del listing como mapa maestro interactivo visual.</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-totalUnits">Total de unidades</label>
+                        <input
+                          id="edit-totalUnits"
                           type="number"
                           min={1}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
@@ -898,13 +975,63 @@ export default function EditPropertyPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Unidades disponibles</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-availableUnits">Unidades disponibles</label>
                         <input
+                          id="edit-availableUnits"
                           type="number"
                           min={0}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
                           value={form.availableUnits || 0}
                           onChange={e=>setForm({...form, availableUnits: Number(e.target.value || 0)})}
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <UnitInventoryEditor units={unitRows} onChange={handleUnitsChange} />
+                      </div>
+                    </>
+                  )}
+
+                  {form.propertyType === 'land' && (
+                    <>
+                      <div className="md:col-span-2 mt-2 border-t pt-4">
+                        <h3 className="text-base font-semibold text-[#0B2545] mb-3">Potencial de desarrollo (Terreno)</h3>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Uso de suelo / Zonificación</label>
+                        <input
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          placeholder="Residencial, Comercial Mixto..."
+                          value={form.terrainDetails?.zoningType || ''}
+                          onChange={e=>setForm({...form, terrainDetails: { ...(form.terrainDetails || {}), zoningType: e.target.value }})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Altura máxima de construcción</label>
+                        <input
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          placeholder="Hasta 12 niveles"
+                          value={form.terrainDetails?.maxBuildHeight || ''}
+                          onChange={e=>setForm({...form, terrainDetails: { ...(form.terrainDetails || {}), maxBuildHeight: e.target.value }})}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Servicios disponibles (separados por coma)</label>
+                        <input
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          placeholder="Agua, Electricidad, Fibra óptica, Calle asfaltada"
+                          value={terrainUtilitiesText}
+                          onChange={e=>setTerrainUtilitiesText(e.target.value)}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Sugerencias de desarrollo / potencial comercial</label>
+                        <textarea
+                          rows={3}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          placeholder="Ej: Ideal para proyecto de villas, plaza comercial o torre residencial..."
+                          value={form.terrainDetails?.buildPotential || ''}
+                          onChange={e=>setForm({...form, terrainDetails: { ...(form.terrainDetails || {}), buildPotential: e.target.value }})}
                         />
                       </div>
                     </>
