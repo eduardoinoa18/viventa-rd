@@ -23,6 +23,8 @@ export default function BottomNav() {
   // Build nav items based on auth state
   const adminHome = session?.role === 'master_admin' ? '/admin' : '/search'
 
+  const isBuyer = session?.role === 'buyer' || session?.role === 'user'
+
   const navItems = session ? [
     {
       name: 'Inicio',
@@ -42,7 +44,12 @@ export default function BottomNav() {
       path: '/agents',
       active: pathname?.startsWith('/agents')
     },
-    {
+    isBuyer ? {
+      name: 'Mi Panel',
+      icon: FiUser,
+      path: '/dashboard',
+      active: pathname?.startsWith('/dashboard')
+    } : {
       name: 'Brokers',
       icon: FiUsers,
       path: '/brokers',

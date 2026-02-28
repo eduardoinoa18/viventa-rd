@@ -31,6 +31,7 @@ export default function EditPropertyPage() {
   const [mapHotspots, setMapHotspots] = useState<ProjectMapHotspot[]>([])
   const [terrainUtilitiesText, setTerrainUtilitiesText] = useState('')
   const autosaveTimerRef = useRef<any>(null)
+  const [resolvingGeo, setResolvingGeo] = useState(false)
 
   function handleUnitsChange(nextUnits: UnitRow[]) {
     setUnitRows(nextUnits)
@@ -160,6 +161,52 @@ export default function EditPropertyPage() {
     if (!propertyId) return
     loadProperty()
   }, [propertyId])
+
+  async function autofillCoordinatesFromAddress() {
+    const query = [form?.location, form?.neighborhood, form?.city, 'República Dominicana']
+      .map((value) => String(value || '').trim())
+      .filter(Boolean)
+      .join(', ')
+
+    if (!query || query.length < 6) {
+      toast.error('Escribe una dirección más completa para ubicar el punto')
+      return
+    }
+
+    try {
+      setResolvingGeo(true)
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=do&q=${encodeURIComponent(query)}`)
+      if (!res.ok) {
+        throw new Error('geocode-request-failed')
+      }
+
+      const items = await res.json().catch(() => []) as Array<{ lat?: string; lon?: string; display_name?: string }>
+      if (!Array.isArray(items) || items.length === 0) {
+        toast.error('No encontramos esa dirección. Prueba con más detalle.')
+        return
+      }
+
+      const lat = Number(items[0]?.lat)
+      const lng = Number(items[0]?.lon)
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        toast.error('No se pudieron obtener coordenadas válidas')
+        return
+      }
+
+      setForm((prev: any) => ({
+        ...prev,
+        lat,
+        lng,
+        location: prev?.location?.trim() ? prev.location : (items[0]?.display_name || prev?.location || ''),
+      }))
+      toast.success('Ubicación detectada automáticamente')
+    } catch (error) {
+      console.error('Geocode lookup failed:', error)
+      toast.error('No se pudo buscar la dirección en este momento')
+    } finally {
+      setResolvingGeo(false)
+    }
+  }
 
   async function loadProperty() {
     setLoading(true)
@@ -705,6 +752,14 @@ export default function EditPropertyPage() {
                       onChange={e=>setForm({...form, location: e.target.value})}
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={autofillCoordinatesFromAddress}
+                      disabled={resolvingGeo}
+                      className="mt-2 inline-flex items-center rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                    >
+                      {resolvingGeo ? 'Buscando ubicación...' : 'Buscar dirección y autocompletar coordenadas'}
+                    </button>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-city">Ciudad</label>

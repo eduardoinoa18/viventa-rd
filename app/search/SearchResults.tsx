@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import PropertyCard from '@/components/PropertyCard'
 import AdvancedFilters from '@/components/AdvancedFilters'
 import type { Listing } from '@/types/listing'
 import { FiSearch } from 'react-icons/fi'
+import toast from 'react-hot-toast'
+import { saveSearchCriteria } from '@/lib/buyerPreferences'
+import { useSearchParams } from 'next/navigation'
 
 interface SearchResultsProps {
   initialListings: Listing[]
@@ -12,8 +15,27 @@ interface SearchResultsProps {
 }
 
 export default function SearchResults({ initialListings, initialTotal }: SearchResultsProps) {
+  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [localFilters, setLocalFilters] = useState<any>({})
+
+  useEffect(() => {
+    const q = searchParams.get('q') || ''
+    const type = searchParams.get('type') || undefined
+    const minPrice = searchParams.get('minPrice')
+    const maxPrice = searchParams.get('maxPrice')
+    const bedrooms = searchParams.get('bedrooms')
+    const bathrooms = searchParams.get('bathrooms')
+
+    setSearchQuery(q)
+    setLocalFilters({
+      propertyType: type,
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      bedrooms: bedrooms ? Number(bedrooms) : undefined,
+      bathrooms: bathrooms ? Number(bathrooms) : undefined,
+    })
+  }, [searchParams])
 
   // Client-side filtering for instant results
   const filteredListings = useMemo(() => {
@@ -64,17 +86,35 @@ export default function SearchResults({ initialListings, initialTotal }: SearchR
     })
   }
 
+  function handleSaveSearch() {
+    const activeFilters = {
+      propertyType: localFilters.propertyType,
+      minPrice: localFilters.minPrice,
+      maxPrice: localFilters.maxPrice,
+      bedrooms: localFilters.bedrooms,
+      bathrooms: localFilters.bathrooms,
+    }
+
+    saveSearchCriteria({
+      name: searchQuery?.trim() || 'Búsqueda personalizada',
+      query: searchQuery,
+      filters: activeFilters,
+    })
+
+    toast.success('Búsqueda guardada en tu panel')
+  }
+
   return (
     <>
       {/* Search and Filters */}
-      <div className="mb-8 space-y-4">
+      <div className="mb-4 space-y-3">
         {/* Search Bar */}
         <div className="relative">
           <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Buscar por ubicación, tipo de propiedad..."
-            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF6B35]"
+            className="w-full pl-11 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF6B35] text-sm sm:text-base"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -85,10 +125,17 @@ export default function SearchResults({ initialListings, initialTotal }: SearchR
       </div>
 
       {/* Results Count */}
-      <div className="mb-6 flex items-center justify-between">
-        <p className="text-gray-600">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <p className="text-gray-600 text-sm sm:text-base">
           {filteredListings.length} {filteredListings.length === 1 ? 'propiedad encontrada' : 'propiedades encontradas'}
         </p>
+        <button
+          type="button"
+          onClick={handleSaveSearch}
+          className="px-3 py-1.5 text-xs sm:text-sm rounded-lg border border-gray-300 hover:bg-gray-100 text-[#0B2545]"
+        >
+          Guardar búsqueda
+        </button>
       </div>
 
       {/* Results Grid */}
@@ -100,7 +147,7 @@ export default function SearchResults({ initialListings, initialTotal }: SearchR
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {filteredListings.map((listing) => (
             <PropertyCard key={listing.id} property={listing} />
           ))}

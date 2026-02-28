@@ -157,10 +157,10 @@ export default function ListingTable({
         // List View
         return (
           <div key={listing.id} className="bg-white rounded-lg shadow hover:shadow-xl transition-shadow overflow-hidden">
-            <div className="p-5">
-              <div className="flex items-start gap-4">
+            <div className="p-3 sm:p-5">
+              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 {/* Checkbox + Image */}
-                <div className="flex flex-col items-center gap-2">
+                <div className="flex items-center sm:flex-col sm:items-center gap-2 w-full sm:w-auto">
                   <input
                     type="checkbox"
                     checked={!!selected[listing.id]}
@@ -172,10 +172,10 @@ export default function ListingTable({
                     <img
                       src={listing.images[0]}
                       alt={listing.title}
-                      className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200"
+                      className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border-2 border-gray-200"
                     />
                   ) : (
-                    <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
                       Sin Imagen
                     </div>
                   )}
@@ -183,8 +183,8 @@ export default function ListingTable({
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <h3 className="text-xl font-semibold text-gray-900">{listing.title}</h3>
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                    <h3 className="text-base sm:text-xl font-semibold text-gray-900 leading-tight">{listing.title}</h3>
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusMeta.statusBgColor} ${statusMeta.statusColor}`}>
                       {statusMeta.statusIcon} {statusMeta.statusLabel}
                     </span>
@@ -193,13 +193,13 @@ export default function ListingTable({
                     </span>
                   </div>
 
-                  <div className="text-gray-600 space-y-1 mb-3">
+                  <div className="text-gray-600 space-y-1 mb-2 sm:mb-3 text-sm">
                     <div className="flex items-center gap-2">
                       <FiMapPin /> {listing.city || 'N/A'}{listing.sector ? `, ${listing.sector}` : ''}
                     </div>
                     <div className="flex items-center gap-2">
                       <FiDollarSign />
-                      <span className="font-bold text-[#00A676] text-lg">USD {listing.price.toLocaleString()}</span>
+                      <span className="font-bold text-[#00A676] text-base sm:text-lg">USD {listing.price.toLocaleString()}</span>
                     </div>
                     {(listing.bedrooms || listing.bathrooms || listing.area) && (
                       <div className="flex gap-4 text-sm">
@@ -213,7 +213,7 @@ export default function ListingTable({
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 w-full sm:w-auto">
                   {isPending && (
                     <>
                       <button
@@ -230,10 +230,10 @@ export default function ListingTable({
                       </button>
                     </>
                   )}
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-3 sm:flex gap-2 w-full sm:w-auto">
                     <Link
                       href={`/master/listings/${listing.id}/edit`}
-                      className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm whitespace-nowrap"
+                      className="inline-flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm whitespace-nowrap"
                     >
                       <FiEdit /> Editar
                     </Link>
@@ -241,13 +241,13 @@ export default function ListingTable({
                       href={viewHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm whitespace-nowrap"
+                      className="inline-flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm whitespace-nowrap"
                     >
                       <FiEye /> Ver
                     </a>
                     <button
                       onClick={() => onDelete(listing.id)}
-                      className="inline-flex items-center gap-2 px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm"
+                      className="inline-flex items-center justify-center gap-2 px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm"
                       title="Eliminar"
                     >
                       <FiTrash2 />

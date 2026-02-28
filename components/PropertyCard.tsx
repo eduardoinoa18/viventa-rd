@@ -7,10 +7,12 @@ import { formatCurrency, formatFeatures, formatArea, convertCurrency, type Curre
 import useCurrency from '@/hooks/useCurrency';
 import { analytics } from '@/lib/analytics';
 import { trackPropertyCardClick, getCurrentUserInfo } from '@/lib/analyticsService';
-import { FiCheckCircle } from 'react-icons/fi';
+import { FiCheckCircle, FiHeart } from 'react-icons/fi';
+import { isPropertySaved, toggleSavedProperty } from '@/lib/buyerPreferences';
 
 export default function PropertyCard({ property }: { property: any }) {
   const [imgError, setImgError] = useState(false);
+  const [saved, setSaved] = useState(false);
   
   const rawListingId = property.listingId || property.id || property.objectID;
   const listingId = rawListingId ? String(rawListingId) : '';
@@ -27,6 +29,11 @@ export default function PropertyCard({ property }: { property: any }) {
   // Verification status (placeholder logic - will be replaced with real data)
   const isVerified = property.propertyVerificationStatus === 'verified' || property.verified === true;
   const isFeatured = property.featured || property.featured_until && new Date(property.featured_until) > new Date();
+
+  useEffect(() => {
+    if (!listingId) return;
+    setSaved(isPropertySaved(listingId));
+  }, [listingId]);
 
   const handleClick = () => {
     if (!listingId) return;
@@ -53,10 +60,18 @@ export default function PropertyCard({ property }: { property: any }) {
   const primaryPrice = primaryCurrency === 'USD' ? priceUsd : priceDop;
   const secondaryPrice = secondaryCurrency === 'USD' ? priceUsd : priceDop;
 
+  const handleToggleSaved = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!listingId) return;
+    const result = toggleSavedProperty(listingId);
+    setSaved(result.saved);
+  };
+
   return (
-    <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col relative group">
+    <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col relative group border border-gray-100">
       {/* Image Container with Badges */}
-      <div className="aspect-w-4 aspect-h-3 rounded-t-2xl overflow-hidden relative h-64">
+      <div className="rounded-t-xl overflow-hidden relative h-44 sm:h-52">
         {imgError || !mainImage ? (
           <ImagePlaceholder className="object-cover w-full h-full" />
         ) : (
@@ -67,6 +82,15 @@ export default function PropertyCard({ property }: { property: any }) {
             onError={() => setImgError(true)}
           />
         )}
+
+        <button
+          type="button"
+          onClick={handleToggleSaved}
+          className="absolute top-3 right-3 h-9 w-9 rounded-full bg-white/95 text-[#0B2545] shadow flex items-center justify-center"
+          aria-label={saved ? 'Quitar de guardados' : 'Guardar propiedad'}
+        >
+          <FiHeart className={`${saved ? 'fill-[#FF6B35] text-[#FF6B35]' : 'text-[#0B2545]'}`} />
+        </button>
 
         {/* Verified Badge (Top-Left) */}
         {isVerified && (
@@ -84,7 +108,7 @@ export default function PropertyCard({ property }: { property: any }) {
         )}
 
         {/* Hover Overlay with Quick WhatsApp CTA */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 items-end justify-center p-4 hidden md:flex">
           <a
             href={`https://wa.me/18095551234?text=Me interesa esta propiedad: ${displayTitle}`}
             target="_blank"
@@ -101,10 +125,10 @@ export default function PropertyCard({ property }: { property: any }) {
       </div>
 
       {/* Property Info */}
-      <div className="p-5 flex flex-col flex-grow">
+      <div className="p-3 sm:p-4 flex flex-col flex-grow">
         {/* Price */}
-        <div className="mb-2">
-          <div className="font-bold text-2xl text-[#FF6B35]">
+        <div className="mb-1.5">
+          <div className="font-bold text-lg sm:text-xl text-[#FF6B35] leading-tight">
             {formatCurrency(primaryPrice, { currency: primaryCurrency })}
           </div>
           <div className="text-xs text-gray-500">
@@ -113,12 +137,12 @@ export default function PropertyCard({ property }: { property: any }) {
         </div>
 
         {/* Title */}
-        <h3 className="font-semibold text-lg text-[#0B2545] mb-2 line-clamp-2 min-h-[56px]">
+        <h3 className="font-semibold text-base sm:text-lg text-[#0B2545] mb-1.5 line-clamp-2 min-h-[44px]">
           {displayTitle}
         </h3>
 
         {/* Location */}
-        <div className="text-sm text-gray-600 mb-3 flex items-center gap-1">
+        <div className="text-xs sm:text-sm text-gray-600 mb-2.5 flex items-center gap-1">
           <span>📍</span>
           <span className="line-clamp-1">
             {displayCity}{displayNeighborhood ? `, ${displayNeighborhood}` : ''}
@@ -126,7 +150,7 @@ export default function PropertyCard({ property }: { property: any }) {
         </div>
 
         {/* Property Features (Beds, Baths, Area) */}
-        <div className="text-sm text-gray-700 mb-4 flex items-center gap-4">
+        <div className="text-xs sm:text-sm text-gray-700 mb-3 flex items-center gap-3 flex-wrap">
           {displayBedrooms > 0 && (
             <span className="flex items-center gap-1">
               🛏️ {displayBedrooms}

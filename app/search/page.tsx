@@ -44,12 +44,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     <>
       <Header />
       <main className="min-h-screen bg-gray-50 pb-20 md:pb-0">
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-[#0B2545] mb-2">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
+          <div className="mb-4 sm:mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#0B2545] mb-1 sm:mb-2">
               Buscar propiedades
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 text-sm sm:text-base">
               Encuentra tu propiedad ideal en República Dominicana
             </p>
           </div>

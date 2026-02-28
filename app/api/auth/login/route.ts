@@ -288,7 +288,8 @@ export async function POST(req: NextRequest) {
     }
 
     const redirectMap: Record<string, string> = {
-      buyer: '/search',
+      buyer: '/dashboard',
+      user: '/dashboard',
       agent: '/master/listings',
       broker: '/master/listings',
       constructora: '/master/listings',

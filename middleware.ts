@@ -20,7 +20,7 @@ export async function middleware(req: NextRequest) {
 
   const publicRemoved = [
     '/properties', '/social', '/favorites', '/messages',
-    '/notifications', '/dashboard', '/onboarding', '/profesionales',
+    '/notifications', '/onboarding', '/profesionales',
     '/agent', '/broker'
   ]
   if (publicRemoved.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
@@ -68,6 +68,20 @@ export async function middleware(req: NextRequest) {
     }
 
     console.log('  ✅ Access granted to /master')
+    return NextResponse.next()
+  }
+
+  if (pathname.startsWith('/dashboard')) {
+    const session = await getMiddlewareSession(req)
+    if (!session) {
+      return NextResponse.redirect(new URL('/login?redirect=' + pathname, req.url))
+    }
+
+    const buyerRoles = new Set(['buyer', 'user'])
+    if (!buyerRoles.has(session.role)) {
+      return NextResponse.redirect(new URL('/master', req.url))
+    }
+
     return NextResponse.next()
   }
 

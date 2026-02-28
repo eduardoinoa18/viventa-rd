@@ -200,18 +200,18 @@ export default function MasterListingsPage() {
   const selectedCount = Object.values(selected).filter(Boolean).length
 
   return (
-    <main className="p-6 bg-gray-50 min-h-screen">
+    <main className="p-3 sm:p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-[#0B2545]">Gestión de Propiedades</h1>
-              <p className="text-gray-600 mt-1">Administra y aprueba publicaciones de propiedades</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#0B2545]">Gestión de Propiedades</h1>
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">Administra y aprueba publicaciones de propiedades</p>
             </div>
             <Link
               href="/master/listings/create"
-              className="inline-flex items-center gap-2 px-5 py-3 bg-[#FF6B35] text-white rounded-lg font-semibold hover:bg-[#E55A2B] shadow-lg shadow-[#FF6B35]/30 transition-all"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#FF6B35] text-white rounded-lg font-semibold hover:bg-[#E55A2B] shadow-lg shadow-[#FF6B35]/30 transition-all w-full sm:w-auto"
             >
               <FiPlusSquare /> Nueva Propiedad
             </Link>
