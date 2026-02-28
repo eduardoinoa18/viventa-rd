@@ -26,9 +26,7 @@ export default function PwaInstallPrompt() {
         return
       }
 
-      // Prevent mini-infobar only when using custom prompt
-      e.preventDefault()
-      // Stash the event so it can be triggered later
+      // Stash event for optional custom prompt actions
       setDeferredPrompt(e)
 
       if (shouldShowCustomPrompt) {

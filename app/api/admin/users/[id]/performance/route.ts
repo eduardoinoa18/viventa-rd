@@ -28,6 +28,18 @@ function safeText(value: any): string {
   return typeof value === 'string' ? value : ''
 }
 
+async function safeQueryCollection(
+  queryFactory: () => Promise<any>,
+  fallback: AnyRecord[] = []
+): Promise<AnyRecord[]> {
+  try {
+    const snap = await queryFactory()
+    return snap.docs.map((doc: any) => ({ id: doc.id, ...(doc.data() || {}) }))
+  } catch {
+    return fallback
+  }
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -76,40 +88,39 @@ export async function GET(
       }
     }
 
-    const [propertiesSnap, assignedLeadsSnap, invitesSnap] = await Promise.all([
-      adminDb.collection('properties').where('agentId', '==', userId).get(),
-      adminDb.collection('leads').where('assignedTo', '==', userId).get(),
-      adminDb.collection('invitations').where('userId', '==', userId).get(),
+    const [properties, assignedLeads, invites] = await Promise.all([
+      safeQueryCollection(() => adminDb.collection('properties').where('agentId', '==', userId).get()),
+      safeQueryCollection(() => adminDb.collection('leads').where('assignedTo', '==', userId).get()),
+      safeQueryCollection(() => adminDb.collection('invitations').where('userId', '==', userId).get()),
     ])
-
-    const properties = propertiesSnap.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
-    const assignedLeads = assignedLeadsSnap.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
-    const invites = invitesSnap.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
 
     let buyerLeads: AnyRecord[] = []
     const targetEmail = safeText(targetUser.email).toLowerCase()
     if (targetEmail) {
-      const buyerLeadsSnap = await adminDb.collection('leads').where('buyerEmail', '==', targetEmail).get()
-      buyerLeads = buyerLeadsSnap.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+      buyerLeads = await safeQueryCollection(() => adminDb.collection('leads').where('buyerEmail', '==', targetEmail).get())
     }
 
     let recentActivity: AnyRecord[] = []
-    try {
-      const byEntity = await adminDb
-        .collection('activity_logs')
-        .where('entityId', '==', userId)
-        .orderBy('timestamp', 'desc')
-        .limit(8)
-        .get()
-      recentActivity = byEntity.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
-    } catch {
-      const byUser = await adminDb
-        .collection('activity_logs')
-        .where('userId', '==', userId)
-        .orderBy('timestamp', 'desc')
-        .limit(8)
-        .get()
-      recentActivity = byUser.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+    recentActivity = await safeQueryCollection(
+      () =>
+        adminDb
+          .collection('activity_logs')
+          .where('entityId', '==', userId)
+          .orderBy('timestamp', 'desc')
+          .limit(8)
+          .get()
+    )
+
+    if (recentActivity.length === 0) {
+      recentActivity = await safeQueryCollection(
+        () =>
+          adminDb
+            .collection('activity_logs')
+            .where('userId', '==', userId)
+            .orderBy('timestamp', 'desc')
+            .limit(8)
+            .get()
+      )
     }
 
     let teamStats: AnyRecord | null = null
@@ -118,9 +129,8 @@ export async function GET(
       let teamAgents: AnyRecord[] = []
 
       if (brokerageKey) {
-        const agentSnap = await adminDb.collection('users').where('role', '==', 'agent').get()
-        teamAgents = agentSnap.docs
-          .map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+        const teamAgentCandidates = await safeQueryCollection(() => adminDb.collection('users').where('role', '==', 'agent').get())
+        teamAgents = teamAgentCandidates
           .filter((agent) => normalizeBrokerageKey(agent) === brokerageKey)
       }
 
