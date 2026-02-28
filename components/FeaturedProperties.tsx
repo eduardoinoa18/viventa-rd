@@ -84,20 +84,20 @@ export default function FeaturedProperties() {
   }
 
   return (
-    <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
+    <section className="py-10 sm:py-12 lg:py-16 bg-gradient-to-b from-gray-50 to-white">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 sm:mb-8 lg:mb-10 gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#00A676] to-[#00A6A6] rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#00A676] to-[#00A6A6] rounded-xl flex items-center justify-center flex-shrink-0">
                 <FiTrendingUp className="text-white text-2xl" />
               </div>
-              <h2 className="text-4xl font-bold text-[#0B2545]">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#0B2545] leading-tight">
                 Propiedades Destacadas
               </h2>
             </div>
-            <p className="text-gray-600 text-lg ml-15">
+            <p className="text-gray-600 text-sm sm:text-base lg:text-lg">
               Descubre las mejores oportunidades del mercado inmobiliario
             </p>
           </div>
@@ -112,10 +112,10 @@ export default function FeaturedProperties() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
+        <div className="flex gap-2 sm:gap-4 mb-6 sm:mb-8 overflow-x-auto pb-2">
           <button
             onClick={() => setActiveTab('featured')}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
+            className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold transition-all whitespace-nowrap text-sm sm:text-base ${
               activeTab === 'featured'
                 ? 'bg-gradient-to-r from-[#00A676] to-[#00A6A6] text-white shadow-lg'
                 : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
@@ -125,7 +125,7 @@ export default function FeaturedProperties() {
           </button>
           <button
             onClick={() => setActiveTab('new')}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
+            className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold transition-all whitespace-nowrap text-sm sm:text-base ${
               activeTab === 'new'
                 ? 'bg-gradient-to-r from-[#00A676] to-[#00A6A6] text-white shadow-lg'
                 : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
@@ -135,7 +135,7 @@ export default function FeaturedProperties() {
           </button>
           <button
             onClick={() => setActiveTab('popular')}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
+            className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold transition-all whitespace-nowrap text-sm sm:text-base ${
               activeTab === 'popular'
                 ? 'bg-gradient-to-r from-[#00A676] to-[#00A6A6] text-white shadow-lg'
                 : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
@@ -147,11 +147,11 @@ export default function FeaturedProperties() {
 
         {/* Properties Grid */}
         {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse">
-                <div className="h-64 bg-gray-200"></div>
-                <div className="p-6 space-y-4">
+              <div key={i} className="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse h-full">
+                <div className="h-44 sm:h-52 bg-gray-200"></div>
+                <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                   <div className="h-6 bg-gray-200 rounded"></div>
                   <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                   <div className="flex gap-4">
@@ -164,7 +164,7 @@ export default function FeaturedProperties() {
             ))}
           </div>
         ) : properties.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {properties.map((property) => (
               <PropertyCard key={property.id} property={property} />
             ))}

@@ -5,7 +5,7 @@
  */
 
 "use client"
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
@@ -17,10 +17,17 @@ export default function UnifiedLoginPage() {
   usePageViewTracking()
   
   const router = useRouter()
+  const [nextPath, setNextPath] = useState<string>('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    setNextPath(params.get('next') || '')
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -52,8 +59,9 @@ export default function UnifiedLoginPage() {
         router.push('/verify-2fa')
       } else {
         // Buyer/Professional: Direct access
+        const safeNext = nextPath && nextPath.startsWith('/') ? nextPath : null
         toast.success('¡Bienvenido de vuelta!')
-        router.push(data.redirect || '/search')
+        router.push(safeNext || data.redirect || '/search')
       }
     } catch (err) {
       console.error('Login error:', err)
@@ -144,7 +152,7 @@ export default function UnifiedLoginPage() {
               </a>
               <div className="text-sm text-gray-600">
                 ¿No tienes cuenta?{' '}
-                <a href="/signup" className="text-[#00A676] hover:underline font-semibold">
+                <a href={`/signup${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''}`} className="text-[#00A676] hover:underline font-semibold">
                   Regístrate
                 </a>
               </div>

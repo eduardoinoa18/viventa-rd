@@ -96,9 +96,9 @@ export default function FeaturedProjects() {
     return (
       <div
         key={project.id}
-        className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-100"
+        className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-100 h-full"
       >
-        <div className="relative h-52 bg-gray-200">
+        <div className="relative h-44 sm:h-52 bg-gray-200">
           {project.featuredImage ? (
             <img
               src={project.featuredImage}
@@ -120,7 +120,7 @@ export default function FeaturedProjects() {
           </div>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
           <div>
             <h3 className="text-lg font-bold text-viventa-navy line-clamp-2">
               {project.name}
@@ -179,17 +179,17 @@ export default function FeaturedProjects() {
   };
 
   return (
-    <section className="py-16 bg-gradient-to-b from-white to-viventa-sand/30">
+    <section className="py-10 sm:py-12 lg:py-16 bg-gradient-to-b from-white to-viventa-sand/30">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 sm:mb-8 lg:mb-10 gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-gradient-to-br from-viventa-ocean to-viventa-turquoise rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-viventa-ocean to-viventa-turquoise rounded-xl flex items-center justify-center flex-shrink-0">
                 <FiTrendingUp className="text-white text-2xl" />
               </div>
-              <h2 className="text-4xl font-bold text-viventa-navy">Proyectos Destacados</h2>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-viventa-navy leading-tight">Proyectos Destacados</h2>
             </div>
-            <p className="text-gray-600 text-lg ml-15">
+            <p className="text-gray-600 text-sm sm:text-base lg:text-lg">
               Desarrollos completos con inventario vivo y financiamiento visible
             </p>
           </div>
@@ -204,11 +204,11 @@ export default function FeaturedProjects() {
         </div>
 
         {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse">
-                <div className="h-52 bg-gray-200" />
-                <div className="p-6 space-y-4">
+              <div key={i} className="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse h-full">
+                <div className="h-44 sm:h-52 bg-gray-200" />
+                <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                   <div className="h-5 bg-gray-200 rounded" />
                   <div className="h-4 bg-gray-200 rounded w-3/4" />
                   <div className="grid grid-cols-2 gap-3">
@@ -222,7 +222,7 @@ export default function FeaturedProjects() {
             ))}
           </div>
         ) : projects.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {projects.map(renderProjectCard)}
           </div>
         ) : (

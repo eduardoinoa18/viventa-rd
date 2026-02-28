@@ -69,9 +69,9 @@ export default function PropertyCard({ property }: { property: any }) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col relative group border border-gray-100">
+    <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col relative group border border-gray-100 h-full">
       {/* Image Container with Badges */}
-      <div className="rounded-t-xl overflow-hidden relative h-44 sm:h-52">
+      <div className="rounded-t-xl overflow-hidden relative h-44 sm:h-52 flex-shrink-0">
         {imgError || !mainImage ? (
           <ImagePlaceholder className="object-cover w-full h-full" />
         ) : (
@@ -86,7 +86,7 @@ export default function PropertyCard({ property }: { property: any }) {
         <button
           type="button"
           onClick={handleToggleSaved}
-          className="absolute top-3 right-3 h-9 w-9 rounded-full bg-white/95 text-[#0B2545] shadow flex items-center justify-center"
+          className="absolute top-2 right-2 h-9 w-9 rounded-full bg-white/95 text-[#0B2545] shadow flex items-center justify-center z-20"
           aria-label={saved ? 'Quitar de guardados' : 'Guardar propiedad'}
         >
           <FiHeart className={`${saved ? 'fill-[#FF6B35] text-[#FF6B35]' : 'text-[#0B2545]'}`} />
@@ -102,7 +102,7 @@ export default function PropertyCard({ property }: { property: any }) {
 
         {/* Featured Badge (Top-Right if verified, or Top-Left if not) */}
         {isFeatured && (
-          <div className={`absolute top-3 ${isVerified ? 'right-3' : 'left-3'} bg-gradient-to-r from-[#FF6B35] to-[#FF8C35] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg`}>
+          <div className={`absolute top-3 ${isVerified ? 'right-14' : 'left-3'} bg-gradient-to-r from-[#FF6B35] to-[#FF8C35] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg max-w-[70%] truncate`}>
             ⭐ DESTACADA
           </div>
         )}
@@ -137,12 +137,12 @@ export default function PropertyCard({ property }: { property: any }) {
         </div>
 
         {/* Title */}
-        <h3 className="font-semibold text-base sm:text-lg text-[#0B2545] mb-1.5 line-clamp-2 min-h-[44px]">
+        <h3 className="font-semibold text-base sm:text-lg text-[#0B2545] mb-1.5 line-clamp-2 min-h-[48px]">
           {displayTitle}
         </h3>
 
         {/* Location */}
-        <div className="text-xs sm:text-sm text-gray-600 mb-2.5 flex items-center gap-1">
+        <div className="text-xs sm:text-sm text-gray-600 mb-2.5 flex items-center gap-1 min-h-[20px]">
           <span>📍</span>
           <span className="line-clamp-1">
             {displayCity}{displayNeighborhood ? `, ${displayNeighborhood}` : ''}
@@ -150,7 +150,7 @@ export default function PropertyCard({ property }: { property: any }) {
         </div>
 
         {/* Property Features (Beds, Baths, Area) */}
-        <div className="text-xs sm:text-sm text-gray-700 mb-3 flex items-center gap-3 flex-wrap">
+        <div className="text-xs sm:text-sm text-gray-700 mb-3 flex items-center gap-3 flex-wrap min-h-[22px]">
           {displayBedrooms > 0 && (
             <span className="flex items-center gap-1">
               🛏️ {displayBedrooms}

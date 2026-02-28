@@ -1,7 +1,7 @@
 "use client";
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveSession } from '../../lib/authSession'
 import { auth, db } from '@/lib/firebaseClient'
@@ -16,6 +16,13 @@ export default function SignupPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' })
   const [error, setError] = useState('')
   const router = useRouter()
+  const [nextPath, setNextPath] = useState<string>('')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    setNextPath(params.get('next') || '')
+  }, [])
 
   async function handleSignup(e: any) {
     e.preventDefault()
@@ -59,7 +66,8 @@ export default function SignupPage() {
         // Track signup event
         trackSignup(cred.user.uid, 'buyer')
         setError('')
-        router.push('/search')
+        const safeNext = nextPath && nextPath.startsWith('/') ? nextPath : null
+        router.push(safeNext || '/search')
         toast.success('¡Cuenta creada exitosamente! Revisa tu email.')
       }
     } catch (err: any) {
@@ -142,7 +150,7 @@ export default function SignupPage() {
           {error && <div className="text-red-500 text-sm p-3 bg-red-50 rounded-lg border border-red-200">{error}</div>}
         </form>
         <div className="mt-6 text-center text-sm sm:text-base text-gray-600">
-          ¿Ya tienes cuenta? <a href="/login" className="text-[#3BAFDA] font-semibold hover:underline">Inicia sesión</a>
+          ¿Ya tienes cuenta? <a href={`/login${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''}`} className="text-[#3BAFDA] font-semibold hover:underline">Inicia sesión</a>
         </div>
       </main>
       <Footer />
