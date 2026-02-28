@@ -54,6 +54,11 @@ export interface Property {
   terrainDetails?: TerrainDetails
   agentId: string
   agentName: string
+  agentEmail?: string
+  representation?: 'broker' | 'builder' | 'independent'
+  brokerName?: string
+  builderName?: string
+  companyName?: string
   status: 'active' | 'pending' | 'sold' | 'draft'
   featured?: boolean
   createdAt?: any

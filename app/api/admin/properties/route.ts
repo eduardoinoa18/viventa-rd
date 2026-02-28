@@ -126,6 +126,11 @@ export async function POST(req: NextRequest) {
       featured,
       agentId,
       agentName,
+      agentEmail,
+      representation,
+      brokerName,
+      builderName,
+      companyName,
     } = body
 
     if (!title || !price || !location || !propertyType || !listingType || !agentId) {
@@ -173,6 +178,11 @@ export async function POST(req: NextRequest) {
         features: Array.isArray(features) ? features : [],
         agentId,
         agentName: agentName || '',
+        agentEmail: agentEmail || '',
+        representation: representation || '',
+        brokerName: brokerName || '',
+        builderName: builderName || '',
+        companyName: companyName || '',
         status: status || 'pending',
         featured: Boolean(featured),
         createdAt: new Date(),
@@ -237,6 +247,11 @@ export async function POST(req: NextRequest) {
       features: Array.isArray(features) ? features : [],
       agentId,
       agentName: agentName || '',
+      agentEmail: agentEmail || '',
+      representation: representation || '',
+      brokerName: brokerName || '',
+      builderName: builderName || '',
+      companyName: companyName || '',
       status: status || 'pending', // pending, active, rejected, sold, draft
       featured: Boolean(featured),
       createdAt: serverTimestamp(),

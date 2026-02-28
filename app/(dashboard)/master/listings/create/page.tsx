@@ -5,9 +5,19 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { type Property } from '@/lib/firestoreService'
 import { uploadMultipleImages, validateImageFiles } from '@/lib/storageService'
-import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock } from 'react-icons/fi'
+import { FiImage, FiMapPin, FiDollarSign, FiHome, FiFileText, FiEye, FiLock, FiSearch } from 'react-icons/fi'
 import UnitInventoryEditor, { type UnitRow } from '@/components/admin/UnitInventoryEditor'
 // Removed direct Firestore counters usage; server API now generates listingId
+
+type AffiliatedProfessional = {
+  id: string
+  name: string
+  email: string
+  role: 'agent' | 'broker' | 'constructora'
+  brokerage?: string
+  company?: string
+  status?: string
+}
 
 export default function CreatePropertyPage() {
   const router = useRouter()
@@ -60,6 +70,107 @@ export default function CreatePropertyPage() {
   const [features, setFeatures] = useState<string[]>([])
   const [unitRows, setUnitRows] = useState<UnitRow[]>([])
   const [terrainUtilitiesText, setTerrainUtilitiesText] = useState('')
+  const [sessionMeta, setSessionMeta] = useState<{ uid: string; role: string }>({ uid: '', role: '' })
+  const [affiliatedProfessionals, setAffiliatedProfessionals] = useState<AffiliatedProfessional[]>([])
+  const [loadingProfessionals, setLoadingProfessionals] = useState(false)
+  const [professionalSearch, setProfessionalSearch] = useState('')
+
+  const selectedProfessional = affiliatedProfessionals.find((item) => item.id === form.agentId)
+  const filteredProfessionals = affiliatedProfessionals
+    .filter((item) => {
+      const q = professionalSearch.trim().toLowerCase()
+      if (!q) return true
+      return [item.name, item.email, item.brokerage || '', item.company || '', item.role].some((value) =>
+        value.toLowerCase().includes(q)
+      )
+    })
+    .slice(0, 12)
+
+  function normalizeProfessional(raw: any, fallbackRole: AffiliatedProfessional['role']): AffiliatedProfessional {
+    const rawRole = String(raw?.role || fallbackRole).toLowerCase()
+    const role: AffiliatedProfessional['role'] = rawRole === 'broker' || rawRole === 'constructora' ? rawRole : 'agent'
+    return {
+      id: String(raw?.id || ''),
+      name: String(raw?.name || raw?.displayName || raw?.email || 'Profesional').trim(),
+      email: String(raw?.email || '').trim(),
+      role,
+      brokerage: String(raw?.brokerage || '').trim(),
+      company: String(raw?.company || '').trim(),
+      status: String(raw?.status || '').trim(),
+    }
+  }
+
+  function roleLabel(role: AffiliatedProfessional['role']) {
+    if (role === 'broker') return 'Broker'
+    if (role === 'constructora') return 'Constructora'
+    return 'Agente'
+  }
+
+  async function loadAffiliatedProfessionals() {
+    try {
+      setLoadingProfessionals(true)
+
+      const sessionRes = await fetch('/api/auth/session', { cache: 'no-store' })
+      const sessionJson = await sessionRes.json().catch(() => ({}))
+      const session = sessionRes.ok ? sessionJson?.session : null
+      const role = String(session?.role || '')
+      const uid = String(session?.uid || '')
+      setSessionMeta({ uid, role })
+
+      if (uid && role === 'agent') {
+        setForm((prev) => ({ ...prev, agentId: prev.agentId || uid }))
+      }
+
+      const roleEndpoints = ['agent', 'broker', 'constructora'].map((r) => `/api/admin/users?role=${r}`)
+      const roleResponses = await Promise.all(roleEndpoints.map((url) => fetch(url, { cache: 'no-store' })))
+      const rolePayloads = await Promise.all(roleResponses.map(async (res) => {
+        const json = await res.json().catch(() => ({}))
+        return { ok: res.ok && json?.ok, data: Array.isArray(json?.data) ? json.data : [] }
+      }))
+
+      let merged: AffiliatedProfessional[] = []
+      if (rolePayloads.some((payload) => payload.ok)) {
+        merged = rolePayloads.flatMap((payload, index) => {
+          if (!payload.ok) return []
+          const fallbackRole = index === 1 ? 'broker' : index === 2 ? 'constructora' : 'agent'
+          return payload.data.map((item: any) => normalizeProfessional(item, fallbackRole))
+        })
+      } else {
+        const agentsRes = await fetch('/api/agents?limit=500', { cache: 'no-store' })
+        const agentsJson = await agentsRes.json().catch(() => ({}))
+        const agents = Array.isArray(agentsJson?.data) ? agentsJson.data : []
+        merged = agents.map((item: any) => normalizeProfessional(item, 'agent'))
+      }
+
+      const byId = new Map<string, AffiliatedProfessional>()
+      for (const item of merged) {
+        if (!item.id) continue
+        byId.set(item.id, item)
+      }
+
+      const normalized = Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
+      setAffiliatedProfessionals(normalized)
+
+      if (uid) {
+        const current = normalized.find((item) => item.id === uid)
+        if (current) {
+          setForm((prev) => ({
+            ...prev,
+            agentId: prev.agentId || current.id,
+            agentName: prev.agentName || current.name,
+          }))
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load affiliated professionals:', error)
+    } finally {
+      setLoadingProfessionals(false)
+    }
+  }
+
+  useEffect(() => {
+    loadAffiliatedProfessionals()
+  }, [])
 
   function handleUnitsChange(nextUnits: UnitRow[]) {
     setUnitRows(nextUnits)
@@ -266,6 +377,13 @@ export default function CreatePropertyPage() {
 
     setSaving(true)
     try {
+      const selectedAffiliation = affiliatedProfessionals.find((item) => item.id === form.agentId)
+      const representation = selectedAffiliation?.role === 'constructora'
+        ? 'builder'
+        : selectedAffiliation?.role === 'broker' || (!!selectedAffiliation?.brokerage && selectedAffiliation?.role === 'agent')
+        ? 'broker'
+        : 'independent'
+
       const payload: any = {
         title: form.title.trim(),
         description: form.description?.trim() || form.publicRemarks?.trim() || '', // Fallback for compatibility
@@ -303,7 +421,12 @@ export default function CreatePropertyPage() {
             .filter(Boolean),
         } : undefined,
         agentId: form.agentId?.trim() || '',
-        agentName: form.agentName?.trim() || '',
+        agentName: form.agentName?.trim() || selectedAffiliation?.name || '',
+        agentEmail: selectedAffiliation?.email || '',
+        representation,
+        brokerName: selectedAffiliation?.brokerage || '',
+        builderName: selectedAffiliation?.company || '',
+        companyName: selectedAffiliation?.company || '',
         status: form.status,
         featured: Boolean(form.featured),
         features,
@@ -755,7 +878,56 @@ export default function CreatePropertyPage() {
                 <h2 className="text-xl font-semibold text-[#0B2545] mb-4">Configuración</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Título de la Propiedad <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="professional-search">
+                      Buscar agente/broker/constructora afiliado
+                    </label>
+                    <div className="relative">
+                      <FiSearch className="absolute left-3 top-3.5 text-gray-400" />
+                      <input
+                        id="professional-search"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                        placeholder="Nombre, email, broker o empresa"
+                        value={professionalSearch}
+                        onChange={e=>setProfessionalSearch(e.target.value)}
+                        aria-label="Buscar profesional afiliado"
+                      />
+                    </div>
+                    <div className="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+                      {loadingProfessionals ? (
+                        <div className="px-3 py-3 text-sm text-gray-500">Cargando profesionales afiliados...</div>
+                      ) : filteredProfessionals.length === 0 ? (
+                        <div className="px-3 py-3 text-sm text-gray-500">No se encontraron coincidencias.</div>
+                      ) : (
+                        filteredProfessionals.map((person) => (
+                          <button
+                            key={person.id}
+                            type="button"
+                            onClick={() => {
+                              setForm((prev) => ({ ...prev, agentId: person.id, agentName: person.name }))
+                              setProfessionalSearch(person.name)
+                            }}
+                            className={`w-full text-left px-3 py-2 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 ${form.agentId === person.id ? 'bg-[#00A676]/10' : ''}`}
+                          >
+                            <div className="text-sm font-medium text-[#0B2545]">{person.name}</div>
+                            <div className="text-xs text-gray-600">{person.email || 'Sin email'} · {roleLabel(person.role)}</div>
+                            {(person.brokerage || person.company) && (
+                              <div className="text-xs text-gray-500">{person.brokerage || person.company}</div>
+                            )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                    {!!selectedProfessional && (
+                      <p className="text-xs text-gray-600 mt-2">
+                        Seleccionado: <span className="font-semibold text-[#0B2545]">{selectedProfessional.name}</span>
+                        {selectedProfessional.brokerage || selectedProfessional.company
+                          ? ` · ${selectedProfessional.brokerage || selectedProfessional.company}`
+                          : ''}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">ID del Agente / Profesional</label>
                     <input
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       placeholder="agent-12345"
@@ -770,6 +942,15 @@ export default function CreatePropertyPage() {
                       placeholder="Juan Pérez"
                       value={form.agentName || ''}
                       onChange={e=>setForm({...form, agentName: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Broker / Empresa afiliada</label>
+                    <input
+                      className="w-full px-4 py-3 border border-gray-200 bg-gray-50 rounded-lg"
+                      value={selectedProfessional?.brokerage || selectedProfessional?.company || ''}
+                      placeholder="Se completa al seleccionar un afiliado"
+                      readOnly
                     />
                   </div>
                   <div>
