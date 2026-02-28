@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { FiGrid, FiUsers, FiUser, FiHome, FiSettings, FiPlusSquare, FiClipboard, FiTarget, FiActivity, FiChevronLeft } from 'react-icons/fi'
+import { FiGrid, FiUsers, FiUser, FiHome, FiSettings, FiPlusSquare, FiClipboard, FiTarget, FiActivity, FiChevronLeft, FiCpu } from 'react-icons/fi'
 import { getSession } from '@/lib/authSession'
 
 export default function AdminSidebar() {
@@ -30,6 +30,7 @@ export default function AdminSidebar() {
   // Define navigation based on role
   const allLinks = [
     { href: '/master', label: 'Dashboard', icon: <FiGrid />, roles: ['master_admin', 'admin'] },
+    { href: '/master/control', label: 'Control Center', icon: <FiCpu />, roles: ['master_admin'] },
     { href: '/master/listings', label: userRole === 'agent' ? 'My Properties' : userRole === 'broker' ? 'Team Properties' : 'Properties', icon: <FiHome />, roles: ['master_admin', 'admin', 'agent', 'broker'] },
     { href: '/master/users', label: 'People', icon: <FiUsers />, roles: ['master_admin', 'admin', 'broker'] },
     { href: '/master/leads', label: userRole === 'agent' ? 'My Leads' : 'Leads', icon: <FiTarget />, roles: ['master_admin', 'admin', 'agent', 'broker'] },
