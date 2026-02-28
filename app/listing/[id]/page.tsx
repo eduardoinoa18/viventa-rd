@@ -14,7 +14,6 @@ import ImageGalleryCarousel from '../../../components/ImageGalleryCarousel'
 import ShareButtons from '../../../components/ShareButtons'
 import SimilarProperties from '../../../components/SimilarProperties'
 import InvestmentInsightPanel from '../../../components/InvestmentInsightPanel'
-import MortgageCalculator from '../../../components/MortgageCalculator'
 import WhatsAppFloatingCTA from '../../../components/WhatsAppFloatingCTA'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
@@ -384,6 +383,33 @@ export default function ListingDetail(){
   const terrainUtilities = Array.isArray(terrain.utilitiesAvailable)
     ? terrain.utilitiesAvailable.filter(Boolean)
     : []
+  const terrainSuggestion = typeof terrain.buildPotential === 'string' ? terrain.buildPotential.trim() : ''
+  const listingDescription = typeof listing.description === 'string' ? listing.description.trim() : ''
+  const showTerrainSuggestion = Boolean(
+    terrainSuggestion && !listingDescription.toLowerCase().includes(terrainSuggestion.toLowerCase())
+  )
+
+  const propertyTypeLabelMap: Record<string, string> = {
+    apartment: 'Apartamento',
+    house: 'Casa',
+    condo: 'Condominio',
+    penthouse: 'Penthouse',
+    villa: 'Villa',
+    land: 'Lote',
+    lot: 'Lote',
+    commercial: 'Comercial',
+    office: 'Oficina',
+    warehouse: 'Nave',
+  }
+  const propertyTypeLabel = propertyTypeLabelMap[String(listing.propertyType || '').toLowerCase()] || String(listing.propertyType || 'Propiedad')
+  const listingTypeLabel = listing.listingType === 'rent' ? 'Alquiler' : 'Venta'
+  const priceCurrencyCode = primaryCurrency === 'USD' ? 'USD' : 'DOP'
+  const promoterName = listing.builderName || listing.developerName || listing.promoterName || listing.brokerName || null
+  const promoterRole = listing.representation === 'builder'
+    ? 'Promotor / Constructora'
+    : listing.representation === 'broker'
+      ? 'Inmobiliaria'
+      : 'Representante de la propiedad'
   
   // Generate structured data for SEO
   const propertySchema = listing ? generatePropertySchema({
@@ -490,10 +516,13 @@ export default function ListingDetail(){
       <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div className="px-4 py-3 flex items-center justify-between">
           <div>
-            <div className="text-2xl font-bold text-[#FF6B35]">
+            <div className="text-2xl font-bold text-[#FF6B35] leading-none">
               {listing.inventoryMode === 'project' && rangePriceSource > 0
                 ? `Desde ${formatCurrency(primaryCurrency === 'USD' ? rangePriceUsd : rangePriceDop, { currency: primaryCurrency })}`
                 : formatCurrency(primaryPrice, { currency: primaryCurrency })}
+            </div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-[#0B2545] mt-1">
+              Moneda: {priceCurrencyCode}
             </div>
             <div className="text-xs text-gray-500">
               {formatCurrency(secondaryPrice, { currency: secondaryCurrency })}
@@ -526,9 +555,17 @@ export default function ListingDetail(){
               {/* Property Title & Address - Mobile Optimized */}
               <div className="bg-white sm:rounded-xl shadow-sm p-4 sm:p-6">
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#0B2545] mb-2">{listing.title}</h1>
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#0B2545] text-white">
+                    {propertyTypeLabel}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#00A676]/10 text-[#0B2545] border border-[#00A676]/20">
+                    {listingTypeLabel}
+                  </span>
+                </div>
                 <div className="flex items-center text-gray-600 text-sm sm:text-base mb-4">
                   <FaMapMarkerAlt className="mr-2 text-[#FF6B35] flex-shrink-0" />
-                  <span>{locationLabel || `${listing.city || 'N/A'} • ${listing.neighborhood || listing.sector || 'N/A'}`}</span>
+                  <span>{locationLabel || `${listing.city || 'N/D'} • ${listing.neighborhood || listing.sector || 'N/D'}`}</span>
                 </div>
                 
                 {/* Price - Desktop Only (mobile has sticky bar) */}
@@ -540,6 +577,9 @@ export default function ListingDetail(){
                       ? `Desde ${selectedModel === 'all' ? fromPriceText : modelFromPriceText}`
                       : formatCurrency(primaryPrice, { currency: primaryCurrency })}
                   </div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-[#0B2545] mb-1">
+                    Moneda principal: {priceCurrencyCode}
+                  </div>
                   <div className="text-sm text-gray-500">
                     {listing.inventoryMode === 'project' && selectedUnitPrice > 0
                       ? selectedUnitSecondaryText
@@ -549,6 +589,18 @@ export default function ListingDetail(){
                   </div>
                 </div>
               </div>
+
+              {(promoterName || listing.agentName) && (
+                <div className="bg-white sm:rounded-xl shadow-sm p-4 sm:p-6 border border-[#0B2545]/10">
+                  <h2 className="text-base sm:text-lg font-bold text-[#0B2545] mb-2">Información del promotor</h2>
+                  <p className="text-sm text-gray-700">
+                    {promoterRole}: <span className="font-semibold text-[#0B2545]">{promoterName || listing.agentName}</span>
+                  </p>
+                  <p className="text-xs text-gray-600 mt-2">
+                    Publicado a través de VIVENTA con seguimiento y validación de contacto para mayor confianza.
+                  </p>
+                </div>
+              )}
 
               {/* Key Features - Zillow Style - Above the fold */}
               <div className="bg-white sm:rounded-xl shadow-sm p-4 sm:p-6">
@@ -781,7 +833,7 @@ export default function ListingDetail(){
                         {filteredUnits.map((unit, idx) => (
                           <tr key={`${unit.unitNumber}-${idx}`} className={`border-t border-gray-100 ${selectedUnitNumber === unit.unitNumber ? 'bg-[#00A676]/5' : ''}`}>
                             <td className="px-3 sm:px-4 py-2 sm:py-3 font-medium text-[#0B2545]">{unit.unitNumber}</td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3">{unit.modelType || 'N/A'}</td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3">{unit.modelType || 'N/D'}</td>
                             <td className="px-3 sm:px-4 py-2 sm:py-3">{unit.sizeMt2 || 0}</td>
                             <td className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-[#0B2545]">{formatCurrency(unit.price || 0, { currency: listing.currency || 'USD' })}</td>
                             <td className="px-3 sm:px-4 py-2 sm:py-3">
@@ -844,7 +896,7 @@ export default function ListingDetail(){
                     rel="noopener noreferrer"
                     className="text-xs sm:text-sm font-semibold text-[#0B2545] underline"
                   >
-                    Ver en Maps
+                    Ver en Google Maps
                   </a>
                 </div>
                 <p className="text-sm sm:text-base text-gray-700 mb-3">{locationLabel || 'Ubicación no especificada'}</p>
@@ -892,22 +944,14 @@ export default function ListingDetail(){
                       </div>
                     </div>
                   )}
-                  {terrain.buildPotential && (
+                  {showTerrainSuggestion && (
                     <div className="mt-4 p-4 rounded-lg bg-[#0B2545]/5 border border-[#0B2545]/10">
                       <h3 className="font-semibold text-[#0B2545] mb-1 text-sm sm:text-base">Sugerencia de uso</h3>
-                      <p className="text-sm text-gray-700 whitespace-pre-line">{terrain.buildPotential}</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-line">{terrainSuggestion}</p>
                     </div>
                   )}
                 </div>
               )}
-
-              {/* Mortgage Calculator */}
-              <div className="bg-white sm:rounded-xl shadow-sm overflow-hidden">
-                <MortgageCalculator 
-                  defaultPrice={Number(ctaPriceSource || listing.price || 0)}
-                  currency={listing.currency || 'USD'}
-                />
-              </div>
                 </>
               )}
             </div>
