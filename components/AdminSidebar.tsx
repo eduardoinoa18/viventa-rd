@@ -30,6 +30,7 @@ export default function AdminSidebar() {
   // Define navigation based on role
   const allLinks = [
     { href: '/master', label: 'Dashboard', icon: <FiGrid />, roles: ['master_admin', 'admin'] },
+    { href: '/master/overview', label: 'Executive Overview', icon: <FiActivity />, roles: ['master_admin'] },
     { href: '/master/control', label: 'Control Center', icon: <FiCpu />, roles: ['master_admin'] },
     { href: '/master/listings', label: userRole === 'agent' ? 'My Properties' : userRole === 'broker' ? 'Team Properties' : 'Properties', icon: <FiHome />, roles: ['master_admin', 'admin', 'agent', 'broker'] },
     { href: '/master/users', label: 'People', icon: <FiUsers />, roles: ['master_admin', 'admin', 'broker'] },
