@@ -7,11 +7,6 @@ export default function PwaInstallPrompt() {
 
   useEffect(() => {
     function handler(e: any) {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault()
-      // Stash the event so it can be triggered later
-      setDeferredPrompt(e)
-      
       // Show prompt after user has visited 2+ times
       const visitCount = parseInt(localStorage.getItem('visitCount') || '0')
       localStorage.setItem('visitCount', String(visitCount + 1))
@@ -26,7 +21,17 @@ export default function PwaInstallPrompt() {
         return
       }
 
-      if (!recentlyDismissed && visitCount >= 2) {
+      const shouldShowCustomPrompt = !recentlyDismissed && visitCount >= 2
+      if (!shouldShowCustomPrompt) {
+        return
+      }
+
+      // Prevent mini-infobar only when using custom prompt
+      e.preventDefault()
+      // Stash the event so it can be triggered later
+      setDeferredPrompt(e)
+
+      if (shouldShowCustomPrompt) {
         // Delay a bit so it doesn't fight with initial UI
         setTimeout(() => setVisible(true), 3000)
       }
