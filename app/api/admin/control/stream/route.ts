@@ -239,10 +239,22 @@ export async function GET(req: NextRequest) {
       avgUrgency: stream.length > 0 ? Number((stream.reduce((sum, lead) => sum + lead.urgencyScore, 0) / stream.length).toFixed(1)) : 0,
     }
 
+    let orphanedConversations = 0
+    try {
+      const orphanSnap = await db
+        .collection('conversations')
+        .where('needsParticipantReassignment', '==', true)
+        .get()
+      orphanedConversations = orphanSnap.size
+    } catch (conversationError: any) {
+      console.warn('[admin/control/stream] Failed to read orphaned conversations:', conversationError?.message)
+    }
+
     return NextResponse.json({
       ok: true,
       data: {
         queueStats,
+        orphanedConversations,
         escalationHours,
         reassignmentPolicy,
         stream,

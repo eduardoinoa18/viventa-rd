@@ -5,6 +5,8 @@ import { ActivityLogger } from '@/lib/activityLogger'
 import { AdminAuthError, requireMasterAdmin } from '@/lib/requireMasterAdmin'
 import { getAdminAuth } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
+import { FieldValue } from 'firebase-admin/firestore'
+import { validateLifecycleTransition } from '@/lib/userLifecycle'
 import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
@@ -63,6 +65,130 @@ function usersApiError(error: unknown, fallbackMessage: string) {
   const message = error instanceof Error ? error.message : fallbackMessage
   console.error('[admin/users] error:', message)
   return NextResponse.json({ ok: false, error: fallbackMessage }, { status: 500 })
+}
+
+async function applyLifecycleSideEffects(params: {
+  adminDb: any
+  userId: string
+  fromStatus: string
+  toStatus: string
+  actorEmail: string
+  reason?: string
+}) {
+  const { adminDb, userId, fromStatus, toStatus, actorEmail, reason = 'not_provided' } = params
+  const now = new Date()
+
+  const impacts = {
+    openLeadsUnassigned: 0,
+    buyersDetached: 0,
+    conversationsFlagged: 0,
+    commissionPipelineFlagged: 0,
+  }
+
+  if (!(toStatus === 'suspended' || toStatus === 'archived')) {
+    return impacts
+  }
+
+  const leadSnap = await adminDb.collection('leads').where('assignedTo', '==', userId).get()
+  if (!leadSnap.empty) {
+    const batch = adminDb.batch()
+    for (const leadDoc of leadSnap.docs) {
+      const lead = leadDoc.data() || {}
+      const leadStatus = String(lead.status || 'unassigned')
+      if (leadStatus === 'won' || leadStatus === 'lost') continue
+
+      impacts.openLeadsUnassigned += 1
+      batch.update(leadDoc.ref, {
+        assignedTo: null,
+        status: 'unassigned',
+        assignedAt: null,
+        slaResetAt: now,
+        reassignmentRequired: true,
+        reassignmentReason: 'assignee_lifecycle_change',
+        reassignmentMeta: {
+          userId,
+          fromStatus,
+          toStatus,
+          actorEmail,
+          reason,
+          at: now,
+        },
+        updatedAt: now,
+      })
+
+      const logRef = adminDb.collection('lead_assignment_logs').doc()
+      batch.set(logRef, {
+        leadId: leadDoc.id,
+        previousAssignedTo: userId,
+        newAssignedTo: null,
+        eventType: 'unassigned_lifecycle',
+        note: `Lead unassigned due to user lifecycle transition ${fromStatus} -> ${toStatus}. reason=${reason}`,
+        createdAt: now,
+      })
+    }
+    await batch.commit()
+  }
+
+  try {
+    const buyersSnap = await adminDb
+      .collection('users')
+      .where('role', '==', 'buyer')
+      .where('assignedTo', '==', userId)
+      .get()
+
+    if (!buyersSnap.empty) {
+      const batch = adminDb.batch()
+      for (const buyerDoc of buyersSnap.docs) {
+        impacts.buyersDetached += 1
+        batch.update(buyerDoc.ref, {
+          assignedTo: null,
+          reassignmentRequired: true,
+          reassignmentReason: 'assignee_lifecycle_change',
+          updatedAt: now,
+        })
+      }
+      await batch.commit()
+    }
+  } catch (buyerAssignmentError) {
+    console.warn('[admin/users] buyer detachment skipped:', (buyerAssignmentError as any)?.message)
+  }
+
+  const conversationsSnap = await adminDb
+    .collection('conversations')
+    .where('participantIds', 'array-contains', userId)
+    .get()
+
+  if (!conversationsSnap.empty) {
+    const batch = adminDb.batch()
+    for (const conversationDoc of conversationsSnap.docs) {
+      impacts.conversationsFlagged += 1
+      batch.update(conversationDoc.ref, {
+        needsParticipantReassignment: true,
+        participantLifecycleBlockedIds: FieldValue.arrayUnion(userId),
+        lifecycleReassignmentReason: 'assignee_lifecycle_change',
+        updatedAt: now,
+      })
+    }
+    await batch.commit()
+  }
+
+  if (impacts.openLeadsUnassigned > 0 || impacts.conversationsFlagged > 0) {
+    await adminDb.collection('operational_alerts').add({
+      type: 'user_lifecycle_impact',
+      severity: toStatus === 'archived' ? 'high' : 'medium',
+      userId,
+      fromStatus,
+      toStatus,
+      actorEmail,
+      reason,
+      impacts,
+      status: 'open',
+      createdAt: now,
+      updatedAt: now,
+    })
+  }
+
+  return impacts
 }
 
 // GET /api/admin/users - list users with optional role filter
@@ -206,7 +332,7 @@ export async function POST(req: NextRequest) {
 // PATCH /api/admin/users - update user status or role
 export async function PATCH(req: NextRequest) {
   try {
-    await requireMasterAdmin(req)
+    const admin = await requireMasterAdmin(req)
     const adminDb = getAdminDb()
     const adminAuth = getAdminAuth()
     if (!adminDb) {
@@ -217,7 +343,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { id, status, role, name, phone, brokerage, company, email, disabled, emailVerified, verified, approved } = body
+    const { id, status, role, name, phone, brokerage, company, email, disabled, emailVerified, verified, approved, forcePasswordReset, lifecycleReason } = body
     if (!id) return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
 
     const userRef = adminDb.collection('users').doc(id)
@@ -240,8 +366,32 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
+    const lifecycleTransition =
+      typeof status === 'string'
+        ? validateLifecycleTransition({
+            currentStatus: existingData?.status,
+            nextStatus: status,
+            role: existingData?.role,
+          })
+        : null
+
+    if (lifecycleTransition && !lifecycleTransition.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: lifecycleTransition.error,
+          code: lifecycleTransition.code,
+        },
+        { status: 400 }
+      )
+    }
+
     const updates: any = { updatedAt: new Date() }
-    if (status) updates.status = status
+    if (lifecycleTransition?.ok) {
+      updates.status = lifecycleTransition.nextStatus
+      updates.lifecycleStatusChangedAt = new Date()
+      updates.lifecycleStatusChangedBy = admin.email
+    }
     if (role) updates.role = role
     if (name) updates.name = name
     if (normalizedEmail) updates.email = normalizedEmail
@@ -252,23 +402,74 @@ export async function PATCH(req: NextRequest) {
     if (typeof emailVerified === 'boolean') updates.emailVerified = emailVerified
     if (typeof verified === 'boolean') updates.verified = verified
     if (typeof approved === 'boolean') updates.approved = approved
+    if (typeof forcePasswordReset === 'boolean') updates.forcePasswordReset = forcePasswordReset
+
+    if (lifecycleTransition?.ok) {
+      if (lifecycleTransition.nextStatus === 'suspended' || lifecycleTransition.nextStatus === 'archived') {
+        updates.disabled = true
+      }
+      if (lifecycleTransition.nextStatus === 'active' && lifecycleTransition.currentStatus === 'suspended') {
+        if (typeof disabled !== 'boolean') updates.disabled = false
+      }
+      if (lifecycleTransition.nextStatus === 'archived') {
+        updates.archivedAt = new Date()
+      }
+    }
 
     await userRef.update(updates)
+
+    let sideEffects: any = null
+    if (lifecycleTransition?.ok && lifecycleTransition.currentStatus !== lifecycleTransition.nextStatus) {
+      sideEffects = await applyLifecycleSideEffects({
+        adminDb,
+        userId: id,
+        fromStatus: lifecycleTransition.currentStatus,
+        toStatus: lifecycleTransition.nextStatus,
+        actorEmail: admin.email,
+        reason: typeof lifecycleReason === 'string' && lifecycleReason.trim() ? lifecycleReason.trim() : 'status_change',
+      })
+
+      await adminDb.collection('user_lifecycle_events').add({
+        userId: id,
+        previousState: lifecycleTransition.currentStatus,
+        newState: lifecycleTransition.nextStatus,
+        fromStatus: lifecycleTransition.currentStatus,
+        toStatus: lifecycleTransition.nextStatus,
+        actorUserId: admin.uid,
+        actorEmail: admin.email,
+        reason: typeof lifecycleReason === 'string' && lifecycleReason.trim() ? lifecycleReason.trim() : 'status_change',
+        sideEffectsSummary: sideEffects,
+        impacts: sideEffects,
+        timestamp: new Date(),
+        createdAt: new Date(),
+      })
+    }
 
     const authUpdates: any = {}
     if (normalizedEmail) authUpdates.email = normalizedEmail
     if (name) authUpdates.displayName = name
     if (typeof disabled === 'boolean') authUpdates.disabled = disabled
+    if (typeof updates.disabled === 'boolean') authUpdates.disabled = updates.disabled
     if (typeof emailVerified === 'boolean') authUpdates.emailVerified = emailVerified
     if (Object.keys(authUpdates).length > 0) {
       await adminAuth.updateUser(id, authUpdates)
     }
 
-    if (role) {
+    const mustRevokeTokens =
+      (lifecycleTransition?.ok &&
+        (lifecycleTransition.nextStatus === 'suspended' || lifecycleTransition.nextStatus === 'archived')) ||
+      (typeof forcePasswordReset === 'boolean' && forcePasswordReset)
+
+    if (mustRevokeTokens) {
+      await adminAuth.revokeRefreshTokens(id)
+    }
+
+    if (role || lifecycleTransition?.ok) {
       const authUser = await adminAuth.getUser(id)
       await adminAuth.setCustomUserClaims(id, {
         ...(authUser.customClaims || {}),
-        role,
+        role: role || existingData?.role,
+        status: lifecycleTransition?.ok ? lifecycleTransition.nextStatus : existingData?.status,
       })
     }
 
@@ -283,7 +484,15 @@ export async function PATCH(req: NextRequest) {
         userEmail: userData.email,
         metadata: {
           role: userData.role,
-          status: updates.status || userData.status,
+          status: userData.status,
+          lifecycleTransition: lifecycleTransition?.ok
+            ? {
+                from: lifecycleTransition.currentStatus,
+                to: lifecycleTransition.nextStatus,
+              }
+            : null,
+          sideEffects,
+          forcePasswordReset: !!forcePasswordReset,
           updatedFields: Object.keys(updates).filter(k => k !== 'updatedAt')
         }
       })
@@ -292,6 +501,13 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       message: 'User updated successfully',
+      lifecycle: lifecycleTransition?.ok
+        ? {
+            from: lifecycleTransition.currentStatus,
+            to: lifecycleTransition.nextStatus,
+            sideEffects,
+          }
+        : null,
     })
   } catch (error: any) {
     return usersApiError(error, 'Failed to update user')

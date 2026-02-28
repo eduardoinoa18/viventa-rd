@@ -6,6 +6,8 @@
 
 import { redirect } from 'next/navigation'
 import { getServerSession } from './session'
+import { getAdminDb } from '@/lib/firebaseAdmin'
+import { normalizeLifecycleStatus } from '@/lib/userLifecycle'
 
 const PORTAL_ROLES = new Set(['master_admin', 'admin', 'agent', 'broker', 'constructora'])
 
@@ -31,6 +33,17 @@ export async function requireMasterAdmin() {
     redirect('/verify-2fa')
   }
 
+  const adminDb = getAdminDb()
+  if (adminDb) {
+    const userSnap = await adminDb.collection('users').doc(session.uid).get()
+    if (userSnap.exists) {
+      const status = normalizeLifecycleStatus(userSnap.data()?.status)
+      if (status === 'suspended' || status === 'archived') {
+        redirect('/login')
+      }
+    }
+  }
+
   return {
     uid: session.uid,
     email: session.email,
@@ -52,6 +65,17 @@ export async function requirePortalAccess() {
 
   if (session.role === 'master_admin' && !session.twoFactorVerified) {
     redirect('/verify-2fa')
+  }
+
+  const adminDb = getAdminDb()
+  if (adminDb) {
+    const userSnap = await adminDb.collection('users').doc(session.uid).get()
+    if (userSnap.exists) {
+      const status = normalizeLifecycleStatus(userSnap.data()?.status)
+      if (status === 'suspended' || status === 'archived') {
+        redirect('/login')
+      }
+    }
   }
 
   return {

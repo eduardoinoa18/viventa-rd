@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { FieldValue } from 'firebase-admin/firestore'
 import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin'
 import { createSessionCookie } from '@/lib/auth/session'
+import { normalizeLifecycleStatus } from '@/lib/userLifecycle'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -161,9 +162,11 @@ export async function POST(req: NextRequest) {
 
     let role = usedMasterFallback ? 'master_admin' : 'buyer'
     let userName = ''
+  let userStatus: 'invited' | 'active' | 'suspended' | 'archived' = 'active'
     if (userDoc.exists) {
       role = (userDoc.data()?.role as string) || role
       userName = String(userDoc.data()?.name || userDoc.data()?.displayName || '')
+      userStatus = normalizeLifecycleStatus(userDoc.data()?.status)
       if (usedMasterFallback && role !== 'master_admin') {
         role = 'master_admin'
         await userDocRef.set(
@@ -174,10 +177,18 @@ export async function POST(req: NextRequest) {
           { merge: true }
         )
       }
+
+      if (userStatus === 'suspended' || userStatus === 'archived') {
+        return NextResponse.json(
+          { ok: false, error: `Tu cuenta está ${userStatus}. Contacta al administrador.` },
+          { status: 403 }
+        )
+      }
     } else {
       await userDocRef.set({
         email,
         role,
+        status: 'active',
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       })
@@ -186,6 +197,7 @@ export async function POST(req: NextRequest) {
     try {
       await adminAuth.setCustomUserClaims(uid, {
         role,
+        status: userStatus,
         twoFactorVerified: role !== 'master_admin',
         lastUpdated: Date.now(),
       })

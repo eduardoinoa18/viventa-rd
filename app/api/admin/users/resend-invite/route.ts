@@ -3,6 +3,7 @@ import { requireMasterAdmin, AdminAuthError } from '@/lib/requireMasterAdmin'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
 import { ActivityLogger } from '@/lib/activityLogger'
+import { normalizeLifecycleStatus } from '@/lib/userLifecycle'
 import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
@@ -71,6 +72,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'User email missing' }, { status: 400 })
     }
 
+    const currentStatus = normalizeLifecycleStatus(user?.status)
+    if (currentStatus === 'suspended' || currentStatus === 'archived') {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Cannot resend invitation for a ${currentStatus} user. Reactivate first.`,
+        },
+        { status: 409 }
+      )
+    }
+
     const pendingInvites = await adminDb
       .collection('invitations')
       .where('userId', '==', userId)
@@ -104,7 +116,7 @@ export async function POST(req: NextRequest) {
 
     await adminDb.collection('users').doc(userId).set(
       {
-        status: 'invited',
+        status: currentStatus === 'invited' ? 'invited' : 'active',
         inviteId: inviteRef.id,
         inviteUsed: false,
         inviteExpiresAt: expiresAt,

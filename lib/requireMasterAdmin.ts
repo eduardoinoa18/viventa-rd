@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionFromRequest } from '@/lib/auth/session'
+import { getAdminDb } from '@/lib/firebaseAdmin'
+import { normalizeLifecycleStatus } from '@/lib/userLifecycle'
 
 /**
  * Comprehensive master admin guard
@@ -60,6 +62,22 @@ export async function requireMasterAdmin(request: NextRequest): Promise<AdminCon
   const email = session.email
   if (!email) {
     throw new AdminAuthError('UNAUTHORIZED', 401, 'Admin email missing from session')
+  }
+
+  const adminDb = getAdminDb()
+  if (adminDb) {
+    try {
+      const userSnap = await adminDb.collection('users').doc(session.uid).get()
+      if (userSnap.exists) {
+        const status = normalizeLifecycleStatus(userSnap.data()?.status)
+        if (status === 'suspended' || status === 'archived') {
+          throw new AdminAuthError('UNAUTHORIZED', 401, `Account is ${status}. Access denied.`)
+        }
+      }
+    } catch (error) {
+      if (error instanceof AdminAuthError) throw error
+      console.warn('[requireMasterAdmin] lifecycle status check skipped:', (error as any)?.message)
+    }
   }
 
   // In production, verify email is in allowlist

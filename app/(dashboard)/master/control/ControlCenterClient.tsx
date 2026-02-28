@@ -49,6 +49,7 @@ export default function ControlCenterClient() {
   const [assigningLeadId, setAssigningLeadId] = useState<string | null>(null)
   const [stream, setStream] = useState<ControlLead[]>([])
   const [queueStats, setQueueStats] = useState({ total: 0, red: 0, yellow: 0, green: 0, escalated: 0, avgUrgency: 0 })
+  const [orphanedConversations, setOrphanedConversations] = useState(0)
   const [routingMode, setRoutingMode] = useState<RoutingMode>('manual_only')
   const [escalationHours, setEscalationHours] = useState(2)
   const [reassignmentPolicy, setReassignmentPolicy] = useState<ReassignmentPolicy>({
@@ -75,6 +76,7 @@ export default function ControlCenterClient() {
 
       setStream(Array.isArray(streamJson?.data?.stream) ? streamJson.data.stream : [])
       setQueueStats(streamJson?.data?.queueStats || { total: 0, red: 0, yellow: 0, green: 0, escalated: 0, avgUrgency: 0 })
+      setOrphanedConversations(Number(streamJson?.data?.orphanedConversations || 0))
       setEscalationHours(Number(streamJson?.data?.escalationHours || 2))
       setReassignmentPolicy(streamJson?.data?.reassignmentPolicy || {
         manualReassignEnabled: true,
@@ -231,11 +233,16 @@ export default function ControlCenterClient() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-gray-500">Escalated Leads</div>
             <div className="text-2xl font-bold text-red-700 mt-1">{queueStats.escalated}</div>
             <div className="text-xs text-gray-500 mt-1">Lead unassigned con antigüedad mayor a {escalationHours}h</div>
+          </div>
+          <div className="bg-white rounded-xl border border-orange-200 p-4 shadow-sm">
+            <div className="text-xs uppercase tracking-wide text-orange-700">Orphaned Conversations</div>
+            <div className="text-2xl font-bold text-orange-800 mt-1">{orphanedConversations}</div>
+            <div className="text-xs text-gray-500 mt-1">Conversaciones bloqueadas por lifecycle que requieren reasignación.</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-gray-500">SLA Escalation (Global)</div>
