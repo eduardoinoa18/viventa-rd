@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, isFirebaseConfigured } from '../../../lib/firebaseClient'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { ingestLead } from '@/lib/leadIngestion'
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,6 +28,24 @@ export async function POST(request: NextRequest) {
       message: message || '',
       createdAt: serverTimestamp()
     })
+
+    try {
+      await ingestLead({
+        type: 'request-info',
+        source: 'project',
+        sourceId: 'marketing-contact',
+        buyerName: name,
+        buyerEmail: email,
+        buyerPhone: phone,
+        message,
+        payload: {
+          contactType: type,
+          legacySource: 'marketing_leads',
+        },
+      })
+    } catch (ingestError) {
+      console.error('Lead ingest failed for contact route:', ingestError)
+    }
 
     return NextResponse.json({ ok: true })
   } catch (error: any) {

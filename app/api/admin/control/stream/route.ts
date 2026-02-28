@@ -38,6 +38,13 @@ type UserDoc = {
   disabled?: boolean
 }
 
+type ReassignmentPolicy = {
+  manualReassignEnabled: boolean
+  suggestNewAssigneeEnabled: boolean
+  brokerFallbackEnabled: boolean
+  escalationLogEnabled: boolean
+}
+
 function toMillis(value: any): number {
   if (!value) return 0
   if (typeof value?.toMillis === 'function') return value.toMillis()
@@ -93,6 +100,16 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const limit = Math.min(200, Math.max(20, Number(searchParams.get('limit') || 80)))
     const queueStatus = searchParams.get('status')?.trim() || 'unassigned'
+
+    const settingsSnap = await db.collection('settings').doc('admin').get()
+    const settings = settingsSnap.exists ? (settingsSnap.data() || {}) : {}
+    const escalationHours = Math.max(1, Number(settings.controlEscalationHours || 2))
+    const reassignmentPolicy: ReassignmentPolicy = {
+      manualReassignEnabled: settings?.reassignmentPolicy?.manualReassignEnabled ?? true,
+      suggestNewAssigneeEnabled: settings?.reassignmentPolicy?.suggestNewAssigneeEnabled ?? true,
+      brokerFallbackEnabled: settings?.reassignmentPolicy?.brokerFallbackEnabled ?? true,
+      escalationLogEnabled: settings?.reassignmentPolicy?.escalationLogEnabled ?? true,
+    }
 
     let leadsRef: any = db.collection('leads')
     if (queueStatus !== 'all') leadsRef = leadsRef.where('status', '==', queueStatus)
@@ -162,6 +179,8 @@ export async function GET(req: NextRequest) {
 
       const score = urgencyScore(lead, ageHours)
       const sla = slaLabel(ageHours)
+      const escalated = (lead.status || 'unassigned') === 'unassigned' && ageHours >= escalationHours
+      const escalationLevel = !escalated ? 'none' : ageHours >= 6 ? 'critical' : 'warning'
 
       const suggestions = users
         .map((user) => {
@@ -201,6 +220,8 @@ export async function GET(req: NextRequest) {
         ...lead,
         ageHours: Number(ageHours.toFixed(1)),
         sla,
+        escalated,
+        escalationLevel,
         urgencyScore: score,
         city,
         sector,
@@ -214,6 +235,7 @@ export async function GET(req: NextRequest) {
       red: stream.filter((lead) => lead.sla.color === 'red').length,
       yellow: stream.filter((lead) => lead.sla.color === 'yellow').length,
       green: stream.filter((lead) => lead.sla.color === 'green').length,
+      escalated: stream.filter((lead) => lead.escalated).length,
       avgUrgency: stream.length > 0 ? Number((stream.reduce((sum, lead) => sum + lead.urgencyScore, 0) / stream.length).toFixed(1)) : 0,
     }
 
@@ -221,6 +243,8 @@ export async function GET(req: NextRequest) {
       ok: true,
       data: {
         queueStats,
+        escalationHours,
+        reassignmentPolicy,
         stream,
       },
     })

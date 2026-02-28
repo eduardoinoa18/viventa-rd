@@ -26,6 +26,19 @@ Scope: Beta execution with Paraiso Inmobiliario + controlled marketplace model
 - Add reassignment + fallback owner queue policy controls.
 - Add SLA breach notifications/escalation behavior.
 
+### P0.2 hardening progress (just completed)
+- Added centralized ingestion endpoint: `/api/leads/ingest`.
+- Added shared ingestion service: `lib/leadIngestion.ts`.
+- Routed main public CTA entry points through centralized ingestion service:
+  - `/api/contact/property-inquiry`
+  - `/api/contact/submit`
+  - `/api/contact`
+  - `/api/leads/chat-request`
+- Added global SLA escalation threshold support in Control stream (`controlEscalationHours`, default 2h).
+- Added escalation flags in stream payload (`escalated`, `escalationLevel`).
+- Added reassignment policy scaffold in stream payload (manual/suggest/broker fallback/escalation log toggles).
+- Added assignment/reassignment audit records in `lead_assignment_logs`.
+
 ## 1) Reality Check (Done vs Pending)
 
 Not everything in the full vision is done yet.

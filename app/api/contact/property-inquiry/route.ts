@@ -6,6 +6,7 @@ import { sendEmail } from '@/lib/emailService'
 import { sendInquiryConfirmation } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
 import { rateLimit, keyFromRequest } from '@/lib/rateLimiter'
+import { ingestLead } from '@/lib/leadIngestion'
 
 export async function POST(request: Request) {
   try {
@@ -81,26 +82,23 @@ export async function POST(request: Request) {
 
     // Also push into centralized lead queue
     try {
-      await adminDb.collection('leads').add({
+      await ingestLead({
         type: preferredContact === 'whatsapp' ? 'whatsapp' : visitDate ? 'showing' : 'request-info',
         source: 'property',
         sourceId: propertyId,
         buyerName: name,
-        buyerEmail: String(email).trim().toLowerCase(),
-        buyerPhone: phone || '',
-        message: message || '',
-        status: 'unassigned',
-        assignedTo: null,
-        inboxConversationId: null,
-        preferredContact: preferredContact || 'email',
-        visitDate: visitDate || null,
-        unitNumber: unitNumber || '',
-        unitModelType: unitModelType || '',
-        unitPrice: unitPrice ?? null,
-        unitSizeMt2: unitSizeMt2 ?? null,
-        legacyInquiryId: inquiryRef.id,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
+        buyerEmail: email,
+        buyerPhone: phone,
+        message,
+        payload: {
+          preferredContact: preferredContact || 'email',
+          visitDate: visitDate || null,
+          unitNumber: unitNumber || '',
+          unitModelType: unitModelType || '',
+          unitPrice: unitPrice ?? null,
+          unitSizeMt2: unitSizeMt2 ?? null,
+          legacyInquiryId: inquiryRef.id,
+        },
       })
     } catch (leadQueueError) {
       logger.error('Failed to sync property inquiry to centralized leads queue', leadQueueError)

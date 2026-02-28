@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { ingestLead } from '@/lib/leadIngestion'
 
 export async function POST(req: Request) {
   try {
@@ -25,22 +26,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'admin-not-configured' }, { status: 501 })
     }
 
-    // Create lead
-    const leadRef = await db.collection('leads').add({
-      userId: uid,
-      userName: name || null,
-      userPhone: phone || null,
-      subject,
+    // Create lead via centralized ingestion
+    const lead = await ingestLead({
+      type: 'request-info',
+      source: 'agent',
+      sourceId: 'chat-request',
+      buyerName: name || 'Usuario',
+      buyerEmail: `${uid}@viventa.local`,
+      buyerPhone: phone || '',
       message,
-      status: 'new',
-      type: 'agent_chat_request',
-      source: 'chat',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      payload: {
+        userId: uid,
+        subject,
+        channel: 'chat',
+      },
     })
 
     // Create a new conversation id for user-agent assignment (unassigned agent initially)
-    const conversationId = `user_agent:${uid}:unassigned:${leadRef.id}`
+    const conversationId = `user_agent:${uid}:unassigned:${lead.id}`
 
     // Seed first message in conversation
     await db.collection('messages').add({

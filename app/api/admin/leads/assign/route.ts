@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Lead not found' }, { status: 404 })
     }
     const lead = leadSnap.data() as any
+    const previousAssignedTo = String(lead?.assignedTo || '')
 
     // 2. Get agent profile
     const agentSnap = await adminDb.collection('users').doc(agentId).get()
@@ -73,6 +74,20 @@ export async function POST(req: NextRequest) {
       inboxConversationId: conversationId,
       updatedAt: now,
     })
+
+    // Assignment / reassignment log entry
+    try {
+      await adminDb.collection('lead_assignment_logs').add({
+        leadId,
+        previousAssignedTo: previousAssignedTo || null,
+        newAssignedTo: agentId,
+        eventType: previousAssignedTo && previousAssignedTo !== agentId ? 'reassigned' : 'assigned',
+        note: note || '',
+        createdAt: now,
+      })
+    } catch (logError) {
+      console.warn('Failed to write lead assignment log:', logError)
+    }
 
     return NextResponse.json({
       ok: true,

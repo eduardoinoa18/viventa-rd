@@ -31,7 +31,16 @@ type ControlLead = {
   sector?: string
   propertyType?: string
   sla: { label: string; color: 'green' | 'yellow' | 'red' }
+  escalated?: boolean
+  escalationLevel?: 'none' | 'warning' | 'critical'
   suggestions: Suggestion[]
+}
+
+type ReassignmentPolicy = {
+  manualReassignEnabled: boolean
+  suggestNewAssigneeEnabled: boolean
+  brokerFallbackEnabled: boolean
+  escalationLogEnabled: boolean
 }
 
 export default function ControlCenterClient() {
@@ -39,8 +48,15 @@ export default function ControlCenterClient() {
   const [savingMode, setSavingMode] = useState(false)
   const [assigningLeadId, setAssigningLeadId] = useState<string | null>(null)
   const [stream, setStream] = useState<ControlLead[]>([])
-  const [queueStats, setQueueStats] = useState({ total: 0, red: 0, yellow: 0, green: 0, avgUrgency: 0 })
+  const [queueStats, setQueueStats] = useState({ total: 0, red: 0, yellow: 0, green: 0, escalated: 0, avgUrgency: 0 })
   const [routingMode, setRoutingMode] = useState<RoutingMode>('manual_only')
+  const [escalationHours, setEscalationHours] = useState(2)
+  const [reassignmentPolicy, setReassignmentPolicy] = useState<ReassignmentPolicy>({
+    manualReassignEnabled: true,
+    suggestNewAssigneeEnabled: true,
+    brokerFallbackEnabled: true,
+    escalationLogEnabled: true,
+  })
 
   const loadControlCenter = useCallback(async () => {
     try {
@@ -58,7 +74,14 @@ export default function ControlCenterClient() {
       }
 
       setStream(Array.isArray(streamJson?.data?.stream) ? streamJson.data.stream : [])
-      setQueueStats(streamJson?.data?.queueStats || { total: 0, red: 0, yellow: 0, green: 0, avgUrgency: 0 })
+      setQueueStats(streamJson?.data?.queueStats || { total: 0, red: 0, yellow: 0, green: 0, escalated: 0, avgUrgency: 0 })
+      setEscalationHours(Number(streamJson?.data?.escalationHours || 2))
+      setReassignmentPolicy(streamJson?.data?.reassignmentPolicy || {
+        manualReassignEnabled: true,
+        suggestNewAssigneeEnabled: true,
+        brokerFallbackEnabled: true,
+        escalationLogEnabled: true,
+      })
 
       const mode = settingsJson?.data?.controlRoutingMode as RoutingMode | undefined
       if (mode) setRoutingMode(mode)
@@ -82,6 +105,7 @@ export default function ControlCenterClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           controlRoutingMode: nextMode,
+          controlEscalationHours: escalationHours,
         }),
       })
 
@@ -127,6 +151,34 @@ export default function ControlCenterClient() {
       toast.error(error?.message || 'Error asignando lead')
     } finally {
       setAssigningLeadId(null)
+    }
+  }, [loadControlCenter, routingMode])
+
+  const saveEscalationHours = useCallback(async (nextHours: number) => {
+    try {
+      setSavingMode(true)
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          controlRoutingMode: routingMode,
+          controlEscalationHours: nextHours,
+        }),
+      })
+
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || 'No se pudo guardar el umbral SLA')
+      }
+
+      setEscalationHours(nextHours)
+      toast.success(`SLA escalation global actualizado a ${nextHours}h`)
+      await loadControlCenter()
+    } catch (error: any) {
+      console.error('save escalation hours error', error)
+      toast.error(error?.message || 'No se pudo guardar el SLA global')
+    } finally {
+      setSavingMode(false)
     }
   }, [loadControlCenter, routingMode])
 
@@ -176,6 +228,29 @@ export default function ControlCenterClient() {
           <div className="bg-white rounded-xl border border-[#0B2545]/20 p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-[#0B2545]">Avg Urgency</div>
             <div className="text-3xl font-bold text-[#0B2545] mt-1">{queueStats.avgUrgency}</div>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <div className="text-xs uppercase tracking-wide text-gray-500">Escalated Leads</div>
+            <div className="text-2xl font-bold text-red-700 mt-1">{queueStats.escalated}</div>
+            <div className="text-xs text-gray-500 mt-1">Lead unassigned con antigüedad mayor a {escalationHours}h</div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <div className="text-xs uppercase tracking-wide text-gray-500">SLA Escalation (Global)</div>
+            <div className="mt-2 flex items-center gap-2">
+              {[2, 4, 6].map((hours) => (
+                <button
+                  key={hours}
+                  onClick={() => saveEscalationHours(hours)}
+                  disabled={savingMode}
+                  className={`px-3 py-1.5 rounded-md text-sm border ${escalationHours === hours ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-60`}
+                >
+                  {hours}h
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -229,6 +304,24 @@ export default function ControlCenterClient() {
           </div>
         </section>
 
+        <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="font-semibold text-[#0B2545] mb-2">Reassignment Rules (Scaffold)</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+            <div className={`rounded-lg border p-3 ${reassignmentPolicy.manualReassignEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+              Manual reassign: <strong>{reassignmentPolicy.manualReassignEnabled ? 'ON' : 'OFF'}</strong>
+            </div>
+            <div className={`rounded-lg border p-3 ${reassignmentPolicy.suggestNewAssigneeEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+              Suggest new assignee: <strong>{reassignmentPolicy.suggestNewAssigneeEnabled ? 'ON' : 'OFF'}</strong>
+            </div>
+            <div className={`rounded-lg border p-3 ${reassignmentPolicy.brokerFallbackEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+              Broker fallback: <strong>{reassignmentPolicy.brokerFallbackEnabled ? 'ON' : 'OFF'}</strong>
+            </div>
+            <div className={`rounded-lg border p-3 ${reassignmentPolicy.escalationLogEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+              Escalation log entry: <strong>{reassignmentPolicy.escalationLogEnabled ? 'ON' : 'OFF'}</strong>
+            </div>
+          </div>
+        </section>
+
         <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
             <div className="font-semibold text-[#0B2545] flex items-center gap-2"><FiClock /> Incoming Lead Stream (unassigned)</div>
@@ -268,6 +361,11 @@ export default function ControlCenterClient() {
                         <div className="text-sm text-gray-700">{lead.type || 'request'} • {lead.source || 'source'}</div>
                         <div className="text-xs text-gray-500 mt-1">{lead.city || 'N/A'} {lead.sector ? `• ${lead.sector}` : ''}</div>
                         <div className="text-xs text-gray-500">{lead.propertyType || 'property'} • {lead.ageHours}h</div>
+                        {lead.escalated && (
+                          <span className={`inline-flex mt-1 text-[11px] px-2 py-0.5 rounded-full ${lead.escalationLevel === 'critical' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
+                            Escalated ({lead.escalationLevel})
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-4 align-top">
                         <span className={`text-xs px-2 py-1 rounded-full ${lead.sla.color === 'green' ? 'bg-green-100 text-green-700' : lead.sla.color === 'yellow' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>

@@ -7,7 +7,7 @@ import { sendEmail } from '@/lib/emailService'
 import { sendContactConfirmation } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
 import { getAdminDb } from '@/lib/firebaseAdmin'
-import { Timestamp } from 'firebase-admin/firestore'
+import { ingestLead } from '@/lib/leadIngestion'
 
 export async function POST(request: Request) {
   try {
@@ -45,28 +45,22 @@ export async function POST(request: Request) {
 
     // Also push into centralized lead queue
     try {
-      const adminDb = getAdminDb()
-      if (adminDb) {
-        await adminDb.collection('leads').add({
-          type: 'request-info',
-          source: 'project',
-          sourceId: source || 'website',
-          buyerName: name,
-          buyerEmail: String(email).trim().toLowerCase(),
-          buyerPhone: phone || '',
-          message: message || '',
-          status: 'unassigned',
-          assignedTo: null,
-          inboxConversationId: null,
+      await ingestLead({
+        type: 'request-info',
+        source: 'project',
+        sourceId: source || 'website',
+        buyerName: name,
+        buyerEmail: email,
+        buyerPhone: phone,
+        message,
+        payload: {
           contactType: type || 'general',
           role: role || null,
           company: company || null,
           interests: interests || [],
           legacyContactSubmissionId: docRef.id,
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now(),
-        })
-      }
+        },
+      })
     } catch (leadQueueError) {
       logger.error('Failed to sync contact submission to centralized leads queue', leadQueueError)
     }
