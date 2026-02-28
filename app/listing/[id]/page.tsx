@@ -316,6 +316,21 @@ export default function ListingDetail(){
     : convertCurrency(modelRangePrice, 'USD', 'DOP')
   const modelFromPriceText = formatCurrency(primaryCurrency === 'USD' ? modelRangePriceUsd : modelRangePriceDop, { currency: primaryCurrency })
   const modelFromPriceSecondaryText = formatCurrency(secondaryCurrency === 'USD' ? modelRangePriceUsd : modelRangePriceDop, { currency: secondaryCurrency })
+  const selectedUnitPrice = Number(selectedUnit?.price || 0)
+  const selectedUnitPriceUsd = listingCurrency === 'USD'
+    ? selectedUnitPrice
+    : convertCurrency(selectedUnitPrice, 'DOP', 'USD')
+  const selectedUnitPriceDop = listingCurrency === 'DOP'
+    ? selectedUnitPrice
+    : convertCurrency(selectedUnitPrice, 'USD', 'DOP')
+  const selectedUnitPrimaryText = formatCurrency(primaryCurrency === 'USD' ? selectedUnitPriceUsd : selectedUnitPriceDop, { currency: primaryCurrency })
+  const selectedUnitSecondaryText = formatCurrency(secondaryCurrency === 'USD' ? selectedUnitPriceUsd : selectedUnitPriceDop, { currency: secondaryCurrency })
+
+  const ctaPriceSource = selectedUnitPrice > 0
+    ? selectedUnitPrice
+    : listing.inventoryMode === 'project'
+      ? (selectedModel === 'all' ? rangePriceSource : modelRangePrice)
+      : listingPrice
 
   const computedAvailableUnits = hasUnits ? availableUnits.length : Number(listing.availableUnits || 0)
   const computedSoldUnits = hasUnits ? units.filter((unit) => unit.status === 'sold').length : Number(listing.soldUnits || 0)
@@ -416,7 +431,9 @@ export default function ListingDetail(){
   
   const metaTitle = `${listing.title} - VIVENTA RD`;
   const propertyUrl = `https://viventa-rd.com/listing/${listing.id}`;
-  const mainImage = listing.coverImage || listing.images?.[0] || listing.mainImage || listing.image || listing.main_photo_url || '/logo.png';
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com').replace(/\/$/, '')
+  const mainImageRaw = listing.coverImage || listing.images?.[0] || listing.mainImage || listing.image || listing.main_photo_url || '/logo.png'
+  const mainImage = mainImageRaw?.startsWith('http') ? mainImageRaw : `${siteUrl}${mainImageRaw.startsWith('/') ? '' : '/'}${mainImageRaw}`
   const promoVideoEmbedUrl = normalizeVideoUrl(listing.promoVideoUrl);
 
   return (
@@ -657,7 +674,7 @@ export default function ListingDetail(){
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-2xl font-bold text-[#0B2545] mb-4">Características Principales</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                  {listing.bedrooms > 0 && (
+                  {listing.propertyType !== 'land' && listing.bedrooms > 0 && (
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-[#00A6A6]/10 rounded-lg flex items-center justify-center">
                         <FaBed className="text-[#00A6A6] text-xl" />
@@ -668,7 +685,7 @@ export default function ListingDetail(){
                       </div>
                     </div>
                   )}
-                  {listing.bathrooms > 0 && (
+                  {listing.propertyType !== 'land' && listing.bathrooms > 0 && (
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-[#00A6A6]/10 rounded-lg flex items-center justify-center">
                         <FaBath className="text-[#00A6A6] text-xl" />
@@ -686,7 +703,7 @@ export default function ListingDetail(){
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-[#0B2545]">{listing.area}</div>
-                        <div className="text-sm text-gray-600">m² de construcción</div>
+                        <div className="text-sm text-gray-600">{listing.propertyType === 'land' ? 'm² de terreno' : 'm² de construcción'}</div>
                       </div>
                     </div>
                   )}
@@ -789,7 +806,7 @@ export default function ListingDetail(){
 
               {/* Mortgage Calculator */}
               <MortgageCalculator 
-                defaultPrice={Number(listing.price || 0)}
+                defaultPrice={Number(ctaPriceSource || listing.price || 0)}
                 currency={listing.currency || 'USD'}
               />
             </div>
@@ -811,7 +828,7 @@ export default function ListingDetail(){
                   id: listing.id,
                   title: listing.title,
                   address: `${listing.city || ''}, ${listing.sector || ''}`,
-                  price: Number(listing.price || 0),
+                  price: Number(ctaPriceSource || listing.price || 0),
                   currency: listing.currency || 'USD'
                 }}
               />
@@ -820,17 +837,24 @@ export default function ListingDetail(){
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-20">
                 <div className="mb-6">
                   <div className="text-4xl font-bold text-[#FF6B35]">
-                    {listing.inventoryMode === 'project' && rangePriceSource > 0
+                    {listing.inventoryMode === 'project' && selectedUnitPrice > 0
+                      ? selectedUnitPrimaryText
+                      : listing.inventoryMode === 'project' && rangePriceSource > 0
                       ? `Desde ${selectedModel === 'all' ? fromPriceText : modelFromPriceText}`
                       : formatCurrency(primaryPrice, { currency: primaryCurrency })}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {listing.inventoryMode === 'project' && rangePriceSource > 0
+                    {listing.inventoryMode === 'project' && selectedUnitPrice > 0
+                      ? selectedUnitSecondaryText
+                      : listing.inventoryMode === 'project' && rangePriceSource > 0
                       ? (selectedModel === 'all' ? fromPriceSecondaryText : modelFromPriceSecondaryText)
                       : formatCurrency(secondaryPrice, { currency: secondaryCurrency })}
                   </div>
                   {listing.inventoryMode === 'project' && selectedModel !== 'all' && (
                     <div className="text-xs text-[#0B2545] mt-1">Tipo seleccionado: {selectedModel}</div>
+                  )}
+                  {listing.inventoryMode === 'project' && selectedUnit?.unitNumber && (
+                    <div className="text-xs text-[#0B2545] mt-1">Unidad seleccionada: {selectedUnit.unitNumber}</div>
                   )}
                 </div>
 
@@ -871,7 +895,7 @@ export default function ListingDetail(){
                     phoneNumber={listing.agentPhone || '+18095551234'}
                     propertyTitle={listing.title}
                     propertyId={listing.id}
-                    propertyPrice={String(listing.price || 0)}
+                    propertyPrice={String(ctaPriceSource || listing.price || 0)}
                     agentName={listing.agentName}
                   />
                   
@@ -1048,7 +1072,7 @@ export default function ListingDetail(){
               id: listing.id,
               title: listing.title,
               address: `${listing.city || ''}, ${listing.sector || ''}`,
-              price: Number(listing.price || 0),
+              price: Number(ctaPriceSource || listing.price || 0),
               currency: listing.currency || 'USD'
             }}
           />

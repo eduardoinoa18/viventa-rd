@@ -65,6 +65,7 @@ export default function CreatePropertyPage() {
   const [saving, setSaving] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
+  const [mapUploading, setMapUploading] = useState(false)
   const [progressByIndex, setProgressByIndex] = useState<number[]>([])
   const [currency, setCurrency] = useState<'USD' | 'DOP'>('USD')
   const exchangeRate = 58.5
@@ -352,6 +353,39 @@ export default function CreatePropertyPage() {
     toast.success('Imagen principal actualizada')
   }
 
+  async function uploadProjectMap(file: File | null) {
+    if (!file) {
+      toast.error('Selecciona una imagen para el mapa del proyecto')
+      return
+    }
+
+    const validation = validateImageFiles([file])
+    if (!validation.valid) {
+      validation.errors.forEach((error) => toast.error(error))
+      return
+    }
+
+    if (isE2E) {
+      setForm((prev) => ({ ...prev, projectMapImage: 'https://placehold.co/1200x800?text=Mapa+Proyecto' }))
+      toast.success('Mapa cargado (modo E2E)')
+      return
+    }
+
+    try {
+      setMapUploading(true)
+      const folder = `listing_maps/temp_${Date.now()}`
+      const urls = await uploadMultipleImages([file], folder)
+      const mapUrl = urls[0] || ''
+      setForm((prev) => ({ ...prev, projectMapImage: mapUrl }))
+      toast.success('Mapa del proyecto cargado correctamente')
+    } catch (error: any) {
+      console.error('Project map upload failed:', error)
+      toast.error(error?.message || 'No se pudo subir el mapa del proyecto')
+    } finally {
+      setMapUploading(false)
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     
@@ -580,7 +614,7 @@ export default function CreatePropertyPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="area-input">Área (m²) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="area-input">{form.propertyType === 'land' ? 'Área de terreno (m²) *' : 'Área (m²) *'}</label>
                     <input
                       id="area-input"
                       data-testid="create-area"
@@ -593,34 +627,38 @@ export default function CreatePropertyPage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="bedrooms-input">Habitaciones *</label>
-                    <input
-                      id="bedrooms-input"
-                      data-testid="create-bedrooms"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
-                      type="number"
-                      min="0"
-                      value={form.bedrooms || ''}
-                      onChange={e=>setForm({...form, bedrooms: Number(e.target.value)})}
-                      required
-                    />
-                  </div>
+                  {form.propertyType !== 'land' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="bedrooms-input">Habitaciones *</label>
+                        <input
+                          id="bedrooms-input"
+                          data-testid="create-bedrooms"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                          type="number"
+                          min="0"
+                          value={form.bedrooms || ''}
+                          onChange={e=>setForm({...form, bedrooms: Number(e.target.value)})}
+                          required
+                        />
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="bathrooms-input">Baños *</label>
-                    <input
-                      id="bathrooms-input"
-                      data-testid="create-bathrooms"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={form.bathrooms || ''}
-                      onChange={e=>setForm({...form, bathrooms: Number(e.target.value)})}
-                      required
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="bathrooms-input">Baños *</label>
+                        <input
+                          id="bathrooms-input"
+                          data-testid="create-bathrooms"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          value={form.bathrooms || ''}
+                          onChange={e=>setForm({...form, bathrooms: Number(e.target.value)})}
+                          required
+                        />
+                      </div>
+                    </>
+                  )}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="propertyType">Tipo de Propiedad *</label>
@@ -628,7 +666,15 @@ export default function CreatePropertyPage() {
                       id="propertyType"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                       value={form.propertyType || ''}
-                      onChange={e=>setForm({...form, propertyType: e.target.value as any})}
+                      onChange={e=>{
+                        const nextType = e.target.value as any
+                        setForm((prev) => ({
+                          ...prev,
+                          propertyType: nextType,
+                          bedrooms: nextType === 'land' ? 0 : Number(prev.bedrooms || 1),
+                          bathrooms: nextType === 'land' ? 0 : Number(prev.bathrooms || 1),
+                        }))
+                      }}
                       required
                       aria-label="Tipo de propiedad"
                     >
@@ -1045,14 +1091,36 @@ export default function CreatePropertyPage() {
                   {form.inventoryMode === 'project' && (
                     <>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Mapa del proyecto (URL de imagen)</label>
-                        <input
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
-                          placeholder="https://.../masterplan.jpg"
-                          value={form.projectMapImage || ''}
-                          onChange={e=>setForm({...form, projectMapImage: e.target.value})}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Esta imagen se mostrará en el detalle del listing como mapa maestro.</p>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Mapa del proyecto</label>
+                        <div className="grid md:grid-cols-3 gap-2">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            className="md:col-span-2 w-full px-4 py-3 border border-gray-300 rounded-lg"
+                            onChange={(e) => uploadProjectMap(e.target.files?.[0] || null)}
+                            aria-label="Subir mapa del proyecto"
+                          />
+                          <button
+                            type="button"
+                            disabled={mapUploading}
+                            className="px-4 py-3 bg-[#0B2545] text-white rounded-lg disabled:opacity-50"
+                            onClick={() => toast('Selecciona una imagen para subir automáticamente')}
+                          >
+                            {mapUploading ? 'Subiendo...' : 'Subida rápida'}
+                          </button>
+                        </div>
+                        <div className="mt-2">
+                          <input
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                            placeholder="O pega URL directa del mapa"
+                            value={form.projectMapImage || ''}
+                            onChange={e=>setForm({...form, projectMapImage: e.target.value})}
+                          />
+                        </div>
+                        {!!form.projectMapImage && (
+                          <img src={form.projectMapImage} alt="Mapa de proyecto" className="mt-3 w-full rounded-lg border border-gray-200" />
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">Puedes subir imagen directamente o pegar URL. Luego ubica unidades con clicks en el mapa.</p>
                       </div>
 
                       <div>
@@ -1083,7 +1151,7 @@ export default function CreatePropertyPage() {
                       </div>
 
                       <div className="md:col-span-2">
-                        <MapHotspotEditor hotspots={mapHotspots} units={unitRows} onChange={setMapHotspots} />
+                        <MapHotspotEditor hotspots={mapHotspots} units={unitRows} mapImageUrl={form.projectMapImage || ''} onChange={setMapHotspots} />
                       </div>
                     </>
                   )}

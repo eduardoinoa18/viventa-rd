@@ -22,6 +22,7 @@ export default function EditPropertyPage() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
+  const [mapUploading, setMapUploading] = useState(false)
   const [progressByIndex, setProgressByIndex] = useState<number[]>([])
   const [currency, setCurrency] = useState<'USD' | 'DOP'>('USD')
   const exchangeRate = 58.5
@@ -369,6 +370,32 @@ export default function EditPropertyPage() {
     toast.success('Imagen principal actualizada')
   }
 
+  async function uploadProjectMap(file: File | null) {
+    if (!file) {
+      toast.error('Selecciona una imagen para el mapa del proyecto')
+      return
+    }
+
+    const validation = validateImageFiles([file])
+    if (!validation.valid) {
+      validation.errors.forEach((error) => toast.error(error))
+      return
+    }
+
+    try {
+      setMapUploading(true)
+      const folder = `listing_maps/temp_${Date.now()}`
+      const urls = await uploadMultipleImages([file], folder)
+      setForm((prev: any) => ({ ...prev, projectMapImage: urls[0] || '' }))
+      toast.success('Mapa del proyecto actualizado')
+    } catch (error: any) {
+      console.error('Project map upload failed', error)
+      toast.error(error?.message || 'No se pudo subir el mapa del proyecto')
+    } finally {
+      setMapUploading(false)
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     
@@ -575,7 +602,7 @@ export default function EditPropertyPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-area">Área (m²) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-area">{form.propertyType === 'land' ? 'Área de terreno (m²) *' : 'Área (m²) *'}</label>
                     <input
                       id="edit-area"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
@@ -586,39 +613,51 @@ export default function EditPropertyPage() {
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-bedrooms">Habitaciones *</label>
-                    <input
-                      id="edit-bedrooms"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
-                      type="number"
-                      min="0"
-                      placeholder="3"
-                      value={form.bedrooms || ''}
-                      onChange={e=>setForm({...form, bedrooms: Number(e.target.value)})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-bathrooms">Baños *</label>
-                    <input
-                      id="edit-bathrooms"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      placeholder="2"
-                      value={form.bathrooms || ''}
-                      onChange={e=>setForm({...form, bathrooms: Number(e.target.value)})}
-                      required
-                    />
-                  </div>
+                  {form.propertyType !== 'land' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-bedrooms">Habitaciones *</label>
+                        <input
+                          id="edit-bedrooms"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          type="number"
+                          min="0"
+                          placeholder="3"
+                          value={form.bedrooms || ''}
+                          onChange={e=>setForm({...form, bedrooms: Number(e.target.value)})}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-bathrooms">Baños *</label>
+                        <input
+                          id="edit-bathrooms"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          placeholder="2"
+                          value={form.bathrooms || ''}
+                          onChange={e=>setForm({...form, bathrooms: Number(e.target.value)})}
+                          required
+                        />
+                      </div>
+                    </>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Propiedad *</label>
                     <select
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
                       value={form.propertyType || ''}
-                      onChange={e=>setForm({...form, propertyType: e.target.value})}
+                      onChange={e=>{
+                        const nextType = e.target.value
+                        setForm((prev: any) => ({
+                          ...prev,
+                          propertyType: nextType,
+                          bedrooms: nextType === 'land' ? 0 : Number(prev.bedrooms || 1),
+                          bathrooms: nextType === 'land' ? 0 : Number(prev.bathrooms || 1),
+                        }))
+                      }}
                       required
                       aria-label="Tipo de propiedad"
                     >
@@ -958,14 +997,31 @@ export default function EditPropertyPage() {
                   {form.inventoryMode === 'project' && (
                     <>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Mapa del proyecto (URL de imagen)</label>
-                        <input
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
-                          placeholder="https://.../masterplan.jpg"
-                          value={form.projectMapImage || ''}
-                          onChange={e=>setForm({...form, projectMapImage: e.target.value})}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Se mostrará en el detalle del listing como mapa maestro interactivo visual.</p>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Mapa del proyecto</label>
+                        <div className="grid md:grid-cols-3 gap-2">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            className="md:col-span-2 w-full px-4 py-3 border border-gray-300 rounded-lg"
+                            onChange={(e) => uploadProjectMap(e.target.files?.[0] || null)}
+                            aria-label="Subir mapa del proyecto"
+                          />
+                          <div className="px-4 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-600">
+                            {mapUploading ? 'Subiendo mapa...' : 'Subida automática'}
+                          </div>
+                        </div>
+                        <div className="mt-2">
+                          <input
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                            placeholder="O pega URL directa del mapa"
+                            value={form.projectMapImage || ''}
+                            onChange={e=>setForm({...form, projectMapImage: e.target.value})}
+                          />
+                        </div>
+                        {!!form.projectMapImage && (
+                          <img src={form.projectMapImage} alt="Mapa del proyecto" className="mt-3 w-full rounded-lg border border-gray-200" />
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">Sube imagen o pega URL, luego ubica unidades con clicks en el mapa.</p>
                       </div>
 
                       <div>
@@ -996,7 +1052,7 @@ export default function EditPropertyPage() {
                       </div>
 
                       <div className="md:col-span-2">
-                        <MapHotspotEditor hotspots={mapHotspots} units={unitRows} onChange={setMapHotspots} />
+                        <MapHotspotEditor hotspots={mapHotspots} units={unitRows} mapImageUrl={form.projectMapImage || ''} onChange={setMapHotspots} />
                       </div>
                     </>
                   )}
