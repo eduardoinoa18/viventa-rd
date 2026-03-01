@@ -14,6 +14,7 @@ import ImageGalleryCarousel from '../../../components/ImageGalleryCarousel'
 import ShareButtons from '../../../components/ShareButtons'
 import SimilarProperties from '../../../components/SimilarProperties'
 import InvestmentInsightPanel from '../../../components/InvestmentInsightPanel'
+import MortgageCalculator from '../../../components/MortgageCalculator'
 import WhatsAppFloatingCTA from '../../../components/WhatsAppFloatingCTA'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
@@ -952,6 +953,13 @@ export default function ListingDetail(){
                   )}
                 </div>
               )}
+
+              <div className="bg-white sm:rounded-xl shadow-sm overflow-hidden">
+                <MortgageCalculator
+                  defaultPrice={Number(ctaPriceSource || listing.price || 0)}
+                  currency={listing.currency || 'USD'}
+                />
+              </div>
                 </>
               )}
             </div>
