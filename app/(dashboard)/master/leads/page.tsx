@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { FiClock, FiLayout, FiList, FiX } from 'react-icons/fi'
+import { FiClock, FiLayout, FiList, FiX, FiZap } from 'react-icons/fi'
 
 type LeadStage = 'new' | 'assigned' | 'contacted' | 'qualified' | 'negotiating' | 'won' | 'lost' | 'archived'
 type PipelineStage = 'new' | 'assigned' | 'contacted' | 'qualified' | 'won' | 'lost'
@@ -36,6 +36,17 @@ interface LeadMetrics {
   slaBreached: number
   conversionRate: number
   avgResponseTimeMinutes: number
+  escalationsOpen: number
+  autoAssignable: number
+  topBrokers: BrokerPerformance[]
+}
+
+interface BrokerPerformance {
+  broker: string
+  assigned: number
+  won: number
+  conversionRate: number
+  slaBreachRate: number
 }
 
 interface LeadStats {
@@ -51,6 +62,7 @@ interface AgentOption {
   name: string
   company?: string
   photoURL?: string
+  role?: string
 }
 
 const DEFAULT_METRICS: LeadMetrics = {
@@ -59,6 +71,9 @@ const DEFAULT_METRICS: LeadMetrics = {
   slaBreached: 0,
   conversionRate: 0,
   avgResponseTimeMinutes: 0,
+  escalationsOpen: 0,
+  autoAssignable: 0,
+  topBrokers: [],
 }
 
 const DEFAULT_STATS: LeadStats = {
@@ -159,6 +174,8 @@ export default function LeadsPage() {
   const [agents, setAgents] = useState<AgentOption[]>([])
   const [agentsLoading, setAgentsLoading] = useState(false)
   const [assignNote, setAssignNote] = useState('')
+  const [runningAutoAssign, setRunningAutoAssign] = useState(false)
+  const [runningEscalation, setRunningEscalation] = useState(false)
 
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedSearch(searchInput.trim()), 250)
@@ -211,11 +228,11 @@ export default function LeadsPage() {
   const fetchAgents = useCallback(async () => {
     try {
       setAgentsLoading(true)
-      const res = await fetch('/api/admin/users?role=agent&limit=200')
+      const res = await fetch('/api/admin/users?limit=300')
       const data = await res.json()
 
       if (data.ok && Array.isArray(data.data)) {
-        setAgents(data.data)
+        setAgents(data.data.filter((user: AgentOption) => user.role === 'agent' || user.role === 'broker'))
       } else {
         toast.error('Failed to load agents')
       }
@@ -309,6 +326,67 @@ export default function LeadsPage() {
     } catch (err) {
       console.error('Error deleting lead:', err)
       toast.error('Error deleting lead')
+    }
+  }
+
+  const handleRunAutoAssign = async () => {
+    const candidates = leads
+      .filter((lead) => !lead.ownerAgentId && lead.leadStage === 'new')
+      .slice(0, 25)
+
+    if (candidates.length === 0) {
+      toast('No unassigned new leads to auto-assign')
+      return
+    }
+
+    try {
+      setRunningAutoAssign(true)
+      const results = await Promise.all(
+        candidates.map(async (lead) => {
+          const response = await fetch('/api/admin/leads/auto-assign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ leadId: lead.id }),
+          })
+          const data = await response.json().catch(() => ({ ok: false }))
+          return Boolean(response.ok && data.ok)
+        })
+      )
+
+      const successCount = results.filter(Boolean).length
+      toast.success(`Auto-assigned ${successCount} of ${candidates.length} leads`)
+      fetchLeads()
+    } catch (err) {
+      console.error('Error running auto-assign:', err)
+      toast.error('Failed to run auto-assign')
+    } finally {
+      setRunningAutoAssign(false)
+    }
+  }
+
+  const handleRunEscalation = async () => {
+    try {
+      setRunningEscalation(true)
+      const res = await fetch('/api/admin/leads/escalate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: 250 }),
+      })
+
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        toast.error(data.error || 'Failed to run SLA escalation')
+        return
+      }
+
+      const escalated = Number(data?.data?.escalated || 0)
+      toast.success(escalated > 0 ? `Escalated ${escalated} breached leads` : 'No leads required escalation')
+      fetchLeads()
+    } catch (err) {
+      console.error('Error running SLA escalation:', err)
+      toast.error('Failed to run SLA escalation')
+    } finally {
+      setRunningEscalation(false)
     }
   }
 
@@ -417,6 +495,7 @@ export default function LeadsPage() {
     { label: 'Total Leads', value: stats.metrics.totalLeads, tone: 'text-gray-900' },
     { label: 'Unassigned', value: stats.metrics.unassigned, tone: 'text-amber-600' },
     { label: 'SLA Breached', value: stats.metrics.slaBreached, tone: 'text-red-600' },
+    { label: 'Escalations Open', value: stats.metrics.escalationsOpen, tone: 'text-red-700' },
     { label: 'Conversion Rate', value: `${stats.metrics.conversionRate}%`, tone: 'text-green-700' },
     { label: 'Avg Response Time', value: formatAvgResponse(stats.metrics.avgResponseTimeMinutes), tone: 'text-[#0B2545]' },
   ]
@@ -500,13 +579,66 @@ export default function LeadsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
         {kpiCards.map((card) => (
           <div key={card.label} className="bg-white p-4 rounded-lg border border-gray-200">
             <div className="text-xs font-medium uppercase tracking-wide text-gray-500">{card.label}</div>
             <div className={`mt-2 text-2xl font-bold ${card.tone}`}>{card.value}</div>
           </div>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 xl:col-span-2">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">Automation Controls</h2>
+              <p className="text-xs text-gray-500 mt-1">Run assignment and escalation routines without leaving the queue.</p>
+            </div>
+            <div className="text-xs text-gray-600">Auto-assignable: <span className="font-semibold">{stats.metrics.autoAssignable}</span></div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={handleRunAutoAssign}
+              disabled={runningAutoAssign}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#0B2545] rounded-lg hover:bg-[#12355f] disabled:opacity-50"
+            >
+              <FiZap /> {runningAutoAssign ? 'Running Auto-Assign...' : 'Auto-Assign Unowned'}
+            </button>
+            <button
+              onClick={handleRunEscalation}
+              disabled={runningEscalation}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50"
+            >
+              {runningEscalation ? 'Running Escalation...' : 'Run SLA Escalation'}
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <h2 className="text-sm font-semibold text-gray-900">Top Brokers</h2>
+          <p className="text-xs text-gray-500 mt-1">Ranked by conversion, then volume.</p>
+
+          <div className="mt-3 space-y-2">
+            {stats.metrics.topBrokers.length === 0 ? (
+              <div className="text-xs text-gray-500">No broker performance data yet.</div>
+            ) : (
+              stats.metrics.topBrokers.map((broker, index) => (
+                <div key={`${broker.broker}-${index}`} className="flex items-center justify-between rounded-md border border-gray-200 p-2">
+                  <div>
+                    <div className="text-xs font-semibold text-gray-900 truncate max-w-[180px]">#{index + 1} {broker.broker}</div>
+                    <div className="text-[11px] text-gray-500">{broker.won}/{broker.assigned} won</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs font-semibold text-green-700">{broker.conversionRate}%</div>
+                    <div className="text-[11px] text-red-600">SLA {broker.slaBreachRate}%</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">

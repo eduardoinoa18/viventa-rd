@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { AdminAuthError, requireMasterAdmin } from '@/lib/requireMasterAdmin'
-import { Timestamp } from 'firebase-admin/firestore'
+import { FieldPath, Timestamp } from 'firebase-admin/firestore'
 import {
   isLeadStage,
   isLeadTerminalStage,
@@ -67,6 +67,24 @@ function pct(numerator: number, denominator: number): number {
 function avg(values: number[]): number {
   if (!values.length) return 0
   return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1))
+}
+
+async function loadUsersByIds(adminDb: any, userIds: string[]) {
+  const users = new Map<string, any>()
+  const chunks: string[][] = []
+  for (let i = 0; i < userIds.length; i += 10) {
+    chunks.push(userIds.slice(i, i + 10))
+  }
+
+  for (const chunk of chunks) {
+    if (chunk.length === 0) continue
+    const snap = await adminDb.collection('users').where(FieldPath.documentId(), 'in', chunk).get()
+    for (const doc of snap.docs) {
+      users.set(doc.id, doc.data() || {})
+    }
+  }
+
+  return users
 }
 
 function extractOwnerAgentId(lead: any): string {
@@ -221,6 +239,44 @@ export async function GET(req: NextRequest) {
     const wonCount = leads.filter((lead) => lead.leadStage === 'won').length
     const slaBreachedCount = leads.filter((lead) => lead.slaBreached).length
     const unassignedCount = leads.filter((lead) => !lead.ownerAgentId).length
+    const escalationsOpen = leads.filter((lead) => String(lead.escalationStatus || '') === 'open').length
+    const autoAssignableCount = leads.filter((lead) => !lead.ownerAgentId && lead.leadStage === 'new').length
+
+    const ownerIds = Array.from(
+      new Set(
+        leads
+          .map((lead) => String(lead.ownerAgentId || '').trim())
+          .filter(Boolean)
+      )
+    )
+    const usersById = await loadUsersByIds(adminDb, ownerIds)
+
+    const brokerPerf = new Map<string, { assigned: number; won: number; breached: number }>()
+    for (const lead of leads) {
+      const ownerId = String(lead.ownerAgentId || '').trim()
+      if (!ownerId) continue
+
+      const owner = usersById.get(ownerId) || {}
+      const brokerLabel = String(owner.brokerage || owner.company || owner.name || 'Independent').trim() || 'Independent'
+      const current = brokerPerf.get(brokerLabel) || { assigned: 0, won: 0, breached: 0 }
+
+      current.assigned += 1
+      if (lead.leadStage === 'won') current.won += 1
+      if (lead.slaBreached) current.breached += 1
+
+      brokerPerf.set(brokerLabel, current)
+    }
+
+    const topBrokers = Array.from(brokerPerf.entries())
+      .map(([broker, data]) => ({
+        broker,
+        assigned: data.assigned,
+        won: data.won,
+        conversionRate: pct(data.won, data.assigned),
+        slaBreachRate: pct(data.breached, data.assigned),
+      }))
+      .sort((a, b) => b.conversionRate - a.conversionRate || b.assigned - a.assigned)
+      .slice(0, 5)
 
     const stats = {
       total: leads.length,
@@ -247,6 +303,9 @@ export async function GET(req: NextRequest) {
         slaBreached: slaBreachedCount,
         conversionRate: pct(wonCount, leads.length),
         avgResponseTimeMinutes: avg(responseLatencyMinutes),
+        escalationsOpen,
+        autoAssignable: autoAssignableCount,
+        topBrokers,
       },
     }
 
