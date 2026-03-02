@@ -10,6 +10,7 @@ export const LEAD_STAGES = [
 ] as const
 
 export type LeadStage = (typeof LEAD_STAGES)[number]
+export type LegacyLeadStatus = 'unassigned' | 'assigned' | 'contacted' | 'won' | 'lost'
 
 const STAGE_SET = new Set<string>(LEAD_STAGES)
 
@@ -24,7 +25,7 @@ const ALLOWED_TRANSITIONS: Record<LeadStage, LeadStage[]> = {
   archived: [],
 }
 
-const LEGACY_STATUS_BY_STAGE: Record<LeadStage, 'unassigned' | 'assigned' | 'contacted' | 'won' | 'lost'> = {
+const LEGACY_STATUS_BY_STAGE: Record<LeadStage, LegacyLeadStatus> = {
   new: 'unassigned',
   assigned: 'assigned',
   contacted: 'contacted',
@@ -109,6 +110,10 @@ export function stageToLegacyStatus(stage: LeadStage) {
   return LEGACY_STATUS_BY_STAGE[stage]
 }
 
+export function ownerRequiredForStage(stage: LeadStage): boolean {
+  return stage === 'assigned' || stage === 'contacted' || stage === 'qualified' || stage === 'negotiating' || stage === 'won'
+}
+
 export function stageSlaHours(stage: LeadStage): number {
   return SLA_HOURS_BY_STAGE[stage]
 }
@@ -117,6 +122,20 @@ export function stageSlaDueAt(stage: LeadStage, fromDate = new Date()): Date | n
   const hours = stageSlaHours(stage)
   if (!hours) return null
   return new Date(fromDate.getTime() + hours * 60 * 60 * 1000)
+}
+
+export function secondsToSlaDue(stageSlaDueAtValue: Date | string | null | undefined, now = new Date()): number | null {
+  if (!stageSlaDueAtValue) return null
+  const dueDate = stageSlaDueAtValue instanceof Date ? stageSlaDueAtValue : new Date(stageSlaDueAtValue)
+  if (Number.isNaN(dueDate.getTime())) return null
+  return Math.floor((dueDate.getTime() - now.getTime()) / 1000)
+}
+
+export function isSlaBreached(stage: LeadStage, stageSlaDueAtValue: Date | string | null | undefined, now = new Date()): boolean {
+  if (isLeadTerminalStage(stage)) return false
+  const seconds = secondsToSlaDue(stageSlaDueAtValue, now)
+  if (seconds === null) return false
+  return seconds < 0
 }
 
 export function isLeadTerminalStage(stage: LeadStage): boolean {

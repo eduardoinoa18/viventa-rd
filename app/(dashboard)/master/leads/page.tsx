@@ -3,30 +3,55 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { FiX } from 'react-icons/fi'
+import { FiClock, FiX } from 'react-icons/fi'
+
+type LeadStage = 'new' | 'assigned' | 'contacted' | 'qualified' | 'negotiating' | 'won' | 'lost' | 'archived'
 
 interface LeadRecord {
   id: string
   buyerName: string
   buyerEmail: string
   buyerPhone?: string
-  type: 'request-info' | 'call' | 'whatsapp' | 'showing'
+  type: 'request-info' | 'request-call' | 'whatsapp' | 'showing'
   source: string
   sourceId?: string
   status: 'unassigned' | 'assigned' | 'contacted' | 'won' | 'lost'
-  assignedTo?: string
+  leadStage: LeadStage
+  ownerAgentId?: string | null
+  assignedTo?: string | null
   inboxConversationId?: string
   createdAt: string
   updatedAt: string
+  slaBreached?: boolean
+  secondsToBreach?: number | null
 }
 
 interface LeadStats {
   total: number
-  unassigned: number
-  assigned: number
-  contacted: number
-  won: number
-  lost: number
+  overdue: number
+  unowned: number
+  byStage: Record<LeadStage, number>
+}
+
+const STAGE_TRANSITIONS: Record<LeadStage, LeadStage[]> = {
+  new: ['assigned', 'lost', 'archived'],
+  assigned: ['contacted', 'lost', 'archived'],
+  contacted: ['qualified', 'lost', 'archived'],
+  qualified: ['negotiating', 'lost', 'archived'],
+  negotiating: ['won', 'lost', 'archived'],
+  won: ['archived'],
+  lost: ['archived'],
+  archived: [],
+}
+
+function formatSla(secondsToBreach: number | null | undefined) {
+  if (secondsToBreach === null || secondsToBreach === undefined) return '—'
+  const isOverdue = secondsToBreach < 0
+  const abs = Math.abs(secondsToBreach)
+  const hours = Math.floor(abs / 3600)
+  const minutes = Math.floor((abs % 3600) / 60)
+  const suffix = isOverdue ? 'overdue' : 'left'
+  return `${hours}h ${minutes}m ${suffix}`
 }
 
 export default function LeadsPage() {
@@ -34,26 +59,32 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<LeadRecord[]>([])
   const [stats, setStats] = useState<LeadStats>({
     total: 0,
-    unassigned: 0,
-    assigned: 0,
-    contacted: 0,
-    won: 0,
-    lost: 0,
+    overdue: 0,
+    unowned: 0,
+    byStage: {
+      new: 0,
+      assigned: 0,
+      contacted: 0,
+      qualified: 0,
+      negotiating: 0,
+      won: 0,
+      lost: 0,
+      archived: 0,
+    },
   })
   const [loading, setLoading] = useState(true)
-  const [selectedStatus, setSelectedStatus] = useState<string | null>('unassigned')
+  const [selectedStage, setSelectedStage] = useState<LeadStage | null>('new')
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null)
   const [agents, setAgents] = useState<Array<{ id: string; name: string; company?: string }>>([])
   const [agentsLoading, setAgentsLoading] = useState(false)
   const [assignNote, setAssignNote] = useState('')
 
-  // Fetch leads and stats
   const fetchLeads = useCallback(async () => {
     try {
       setLoading(true)
-      const url = selectedStatus
-        ? `/api/admin/leads/queue?status=${encodeURIComponent(selectedStatus)}&limit=100`
+      const url = selectedStage
+        ? `/api/admin/leads/queue?stage=${encodeURIComponent(selectedStage)}&limit=100`
         : '/api/admin/leads/queue?limit=100'
 
       const res = await fetch(url)
@@ -61,7 +92,7 @@ export default function LeadsPage() {
 
       if (data.ok) {
         setLeads(data.data.leads || [])
-        setStats(data.data.stats || {})
+        setStats(data.data.stats || stats)
       } else {
         toast.error(data.error || 'Failed to fetch leads')
       }
@@ -71,9 +102,8 @@ export default function LeadsPage() {
     } finally {
       setLoading(false)
     }
-  }, [selectedStatus])
+  }, [selectedStage])
 
-  // Fetch agents for assignment
   const fetchAgents = useCallback(async () => {
     try {
       setAgentsLoading(true)
@@ -93,12 +123,10 @@ export default function LeadsPage() {
     }
   }, [])
 
-  // Initial load
   useEffect(() => {
     fetchLeads()
-  }, [selectedStatus, fetchLeads])
+  }, [selectedStage, fetchLeads])
 
-  // Handle assign
   const handleAssign = async (agentId: string) => {
     if (!selectedLeadId) return
 
@@ -129,37 +157,35 @@ export default function LeadsPage() {
     }
   }
 
-  // Handle status update
-  const handleStatusChange = async (leadId: string, newStatus: string) => {
+  const handleStageChange = async (lead: LeadRecord, nextStage: LeadStage) => {
     try {
       const res = await fetch('/api/admin/leads/queue', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: leadId,
-          status: newStatus,
+          id: lead.id,
+          leadStage: nextStage,
         }),
       })
 
       const data = await res.json()
       if (data.ok) {
-        toast.success('Lead status updated')
+        toast.success('Lead stage updated')
         fetchLeads()
       } else {
-        toast.error(data.error || 'Failed to update status')
+        toast.error(data.error || 'Failed to update stage')
       }
     } catch (err) {
-      console.error('Error updating status:', err)
-      toast.error('Error updating status')
+      console.error('Error updating stage:', err)
+      toast.error('Error updating stage')
     }
   }
 
-  // Delete lead
   const handleDeleteLead = async (leadId: string) => {
     if (!confirm('Are you sure you want to delete this lead?')) return
 
     try {
-      const res = await fetch(`/api/admin/leads/queue`, {
+      const res = await fetch('/api/admin/leads/queue', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ leadId }),
@@ -178,31 +204,25 @@ export default function LeadsPage() {
     }
   }
 
-  // Open assign modal
   const openAssignModal = (leadId: string) => {
     setSelectedLeadId(leadId)
     fetchAgents()
     setShowAssignModal(true)
   }
 
-  const statusColors: Record<string, string> = {
-    unassigned: 'bg-yellow-100 text-yellow-800',
+  const stageColor: Record<LeadStage, string> = {
+    new: 'bg-yellow-100 text-yellow-800',
     assigned: 'bg-blue-100 text-blue-800',
     contacted: 'bg-purple-100 text-purple-800',
+    qualified: 'bg-indigo-100 text-indigo-800',
+    negotiating: 'bg-cyan-100 text-cyan-800',
     won: 'bg-green-100 text-green-800',
     lost: 'bg-red-100 text-red-800',
-  }
-
-  const typeIcons: Record<string, string> = {
-    'request-info': '📋',
-    call: '☎️',
-    whatsapp: '💬',
-    showing: '🏠',
+    archived: 'bg-gray-100 text-gray-700',
   }
 
   return (
     <div className="space-y-6 p-6 max-w-7xl">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Lead Queue Management</h1>
         <button
@@ -213,147 +233,130 @@ export default function LeadsPage() {
         </button>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <div
           className="bg-white p-4 rounded-lg border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => setSelectedStatus(null)}
+          onClick={() => setSelectedStage(null)}
         >
           <div className="text-sm text-gray-600">Total Leads</div>
           <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
         </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-sm text-gray-600">Overdue SLA</div>
+          <div className="text-2xl font-bold text-red-600">{stats.overdue}</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-sm text-gray-600">Unowned</div>
+          <div className="text-2xl font-bold text-amber-600">{stats.unowned}</div>
+        </div>
+      </div>
 
-        {[
-          { key: 'unassigned', label: 'Unassigned', color: 'yellow' },
-          { key: 'assigned', label: 'Assigned', color: 'blue' },
-          { key: 'contacted', label: 'Contacted', color: 'purple' },
-          { key: 'won', label: 'Won', color: 'green' },
-          { key: 'lost', label: 'Lost', color: 'red' },
-        ].map((stat) => (
-          <div
-            key={stat.key}
-            className={`bg-white p-4 rounded-lg border border-gray-200 cursor-pointer hover:shadow-md transition-shadow ${
-              selectedStatus === stat.key ? `ring-2 ring-${stat.color}-500` : ''
-            }`}
-            onClick={() => setSelectedStatus(stat.key)}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+        {(Object.keys(stats.byStage) as LeadStage[]).map((stage) => (
+          <button
+            key={stage}
+            onClick={() => setSelectedStage(stage)}
+            className={`p-3 rounded-lg border text-left transition ${selectedStage === stage ? 'border-[#00A676] ring-2 ring-[#00A676]/30' : 'border-gray-200 hover:border-gray-300'}`}
           >
-            <div className="text-sm text-gray-600">{stat.label}</div>
-            <div className="text-2xl font-bold text-gray-900">{stats[stat.key as keyof LeadStats]}</div>
-          </div>
+            <div className="text-xs text-gray-600 capitalize">{stage}</div>
+            <div className="text-xl font-bold text-gray-900">{stats.byStage[stage]}</div>
+          </button>
         ))}
       </div>
 
-      {/* Leads Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Lead Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Contact
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Source
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Lead</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Contact</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Stage</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Owner</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">SLA</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                    Loading leads...
-                  </td>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Loading leads...</td>
                 </tr>
               ) : leads.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                    No leads found
-                  </td>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No leads found</td>
                 </tr>
               ) : (
-                leads.map((lead) => (
-                  <tr key={lead.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{lead.buyerName}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-xs text-gray-600">
-                        <div>{lead.buyerEmail}</div>
-                        {lead.buyerPhone && <div>{lead.buyerPhone}</div>}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-lg" title={lead.type}>
-                        {typeIcons[lead.type] || lead.type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-xs text-gray-600">{lead.source}</span>
-                      {lead.assignedTo && (
-                        <div className="text-[11px] text-gray-500 mt-1">Assigned to: {lead.assignedTo}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        value={lead.status}
-                        onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                        className={`text-xs font-medium px-3 py-1 rounded-full cursor-pointer border-none ${
-                          statusColors[lead.status] || 'bg-gray-100 text-gray-800'
-                        }`}
-                        aria-label={`Cambiar estado de lead ${lead.buyerName}`}
-                      >
-                        <option value="unassigned">Unassigned</option>
-                        <option value="assigned">Assigned</option>
-                        <option value="contacted">Contacted</option>
-                        <option value="won">Won</option>
-                        <option value="lost">Lost</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
-                      {lead.status === 'unassigned' && (
-                        <button
-                          onClick={() => openAssignModal(lead.id)}
-                          className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+                leads.map((lead) => {
+                  const options = [lead.leadStage, ...STAGE_TRANSITIONS[lead.leadStage]]
+                  const owner = lead.ownerAgentId || lead.assignedTo || ''
+                  return (
+                    <tr key={lead.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{lead.buyerName}</div>
+                        <div className="text-xs text-gray-500">{lead.source}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-xs text-gray-600">
+                          <div>{lead.buyerEmail}</div>
+                          {lead.buyerPhone && <div>{lead.buyerPhone}</div>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          value={lead.leadStage}
+                          onChange={(e) => handleStageChange(lead, e.target.value as LeadStage)}
+                          className={`text-xs font-medium px-3 py-1 rounded-full cursor-pointer border-none ${stageColor[lead.leadStage]}`}
+                          aria-label={`Change stage for ${lead.buyerName}`}
                         >
-                          Assign
-                        </button>
-                      )}
-                      {lead.inboxConversationId && (
+                          {options.map((stage) => (
+                            <option key={stage} value={stage}>
+                              {stage}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-700">
+                        {owner || <span className="text-amber-700">Unassigned</span>}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`inline-flex items-center gap-1 text-xs font-medium ${lead.slaBreached ? 'text-red-700' : 'text-gray-700'}`}>
+                          <FiClock /> {formatSla(lead.secondsToBreach)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
+                        {!owner && (
+                          <button
+                            onClick={() => openAssignModal(lead.id)}
+                            className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+                          >
+                            Assign
+                          </button>
+                        )}
+                        {lead.inboxConversationId && (
+                          <button
+                            onClick={() => router.push(`/master/inbox?conv=${lead.inboxConversationId}`)}
+                            className="inline-flex items-center px-3 py-1 text-xs font-medium text-green-600 bg-green-50 rounded-md hover:bg-green-100"
+                          >
+                            Chat
+                          </button>
+                        )}
                         <button
-                          onClick={() => router.push(`/master/inbox?conv=${lead.inboxConversationId}`)}
-                          className="inline-flex items-center px-3 py-1 text-xs font-medium text-green-600 bg-green-50 rounded-md hover:bg-green-100"
+                          onClick={() => handleDeleteLead(lead.id)}
+                          className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100"
                         >
-                          Chat
+                          Delete
                         </button>
-                      )}
-                      <button
-                        onClick={() => handleDeleteLead(lead.id)}
-                        className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Assign Modal */}
       {showAssignModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
@@ -366,8 +369,8 @@ export default function LeadsPage() {
                   setAssignNote('')
                 }}
                 className="text-gray-400 hover:text-gray-600"
-                aria-label="Cerrar modal de asignación"
-                title="Cerrar"
+                aria-label="Close assign modal"
+                title="Close"
               >
                 <FiX className="w-5 h-5" />
               </button>
@@ -397,11 +400,11 @@ export default function LeadsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Optional Note</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reason / Note</label>
                 <textarea
                   value={assignNote}
                   onChange={(e) => setAssignNote(e.target.value)}
-                  placeholder="Add internal notes about this assignment..."
+                  placeholder="Assignment context or reassignment reason..."
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                 />

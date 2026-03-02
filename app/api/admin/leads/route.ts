@@ -3,13 +3,29 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
 import {
   normalizeLeadStage,
+  ownerRequiredForStage,
   stageSlaDueAt,
   stageToLegacyStatus,
   validateLeadStageTransition,
 } from '@/lib/leadLifecycle'
+
 export const dynamic = 'force-dynamic'
 
-// GET /api/admin/leads - compatibility endpoint backed by centralized leads collection
+function extractOwnerAgentId(lead: any): string {
+  const ownerFromCanonical = String(lead?.ownerAgentId || '').trim()
+  if (ownerFromCanonical) return ownerFromCanonical
+
+  if (typeof lead?.assignedTo === 'string') {
+    const ownerFromLegacy = String(lead.assignedTo || '').trim()
+    if (ownerFromLegacy) return ownerFromLegacy
+  }
+
+  const ownerFromLegacyObject = String(lead?.assignedTo?.uid || '').trim()
+  if (ownerFromLegacyObject) return ownerFromLegacyObject
+
+  return ''
+}
+
 export async function GET(req: NextRequest) {
   try {
     await requireMasterAdmin(req)
@@ -22,17 +38,19 @@ export async function GET(req: NextRequest) {
     const limitParam = Number(searchParams.get('limit') || '50')
     const safeLimit = Math.min(Math.max(limitParam, 1), 200)
 
-    const snap = await (adminDb as any)
-      .collection('leads')
-      .orderBy('createdAt', 'desc')
-      .limit(safeLimit)
-      .get()
+    const snap = await adminDb.collection('leads').orderBy('createdAt', 'desc').limit(safeLimit).get()
 
     const leads = snap.docs.map((d: any) => {
-      const data = d.data()
+      const data = d.data() || {}
+      const leadStage = normalizeLeadStage(data.leadStage, data.status)
+      const ownerAgentId = extractOwnerAgentId(data)
       return {
         id: d.id,
         ...data,
+        leadStage,
+        status: stageToLegacyStatus(leadStage),
+        ownerAgentId: ownerAgentId || null,
+        assignedTo: ownerAgentId || null,
         createdAt: data.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(),
       }
     })
@@ -44,7 +62,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// PATCH /api/admin/leads - compatibility patch against centralized leads collection
 export async function PATCH(req: NextRequest) {
   try {
     const admin = await requireMasterAdmin(req)
@@ -53,13 +70,12 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 500 })
     }
 
-    const { leadId, assignedTo, status, leadStage, reason } = await req.json()
-
+    const { leadId, ownerAgentId, assignedTo, status, leadStage, reason } = await req.json()
     if (!leadId) {
       return NextResponse.json({ ok: false, error: 'Missing leadId' }, { status: 400 })
     }
 
-    const leadRef = (adminDb as any).collection('leads').doc(leadId)
+    const leadRef = adminDb.collection('leads').doc(leadId)
     const leadSnap = await leadRef.get()
     if (!leadSnap.exists) {
       return NextResponse.json({ ok: false, error: 'Lead not found' }, { status: 404 })
@@ -67,82 +83,53 @@ export async function PATCH(req: NextRequest) {
 
     const lead = leadSnap.data() || {}
     const currentStage = normalizeLeadStage(lead.leadStage, lead.status)
-    const previousAssignedTo = String(lead.assignedTo || '')
-    const nextAssignedTo = assignedTo !== undefined ? String(assignedTo || '') : previousAssignedTo
-
-    if (assignedTo !== undefined && previousAssignedTo && nextAssignedTo && previousAssignedTo !== nextAssignedTo && !String(reason || '').trim()) {
-      return NextResponse.json({ ok: false, error: 'Reassignment reason is required' }, { status: 400 })
-    }
+    const previousOwner = extractOwnerAgentId(lead)
+    const incomingOwnerRaw = ownerAgentId !== undefined ? ownerAgentId : assignedTo
+    const nextOwner = incomingOwnerRaw !== undefined ? String(incomingOwnerRaw || '').trim() : previousOwner
 
     const requestedStage =
       typeof leadStage === 'string'
         ? leadStage
         : typeof status === 'string'
-        ? normalizeLeadStage(undefined, status)
-        : (assignedTo !== undefined && currentStage === 'new' ? 'assigned' : currentStage)
+          ? normalizeLeadStage(undefined, status)
+          : (incomingOwnerRaw !== undefined && currentStage === 'new' ? 'assigned' : currentStage)
 
-    const transition = validateLeadStageTransition({
-      currentStage,
-      nextStage: requestedStage,
-    })
-
+    const transition = validateLeadStageTransition({ currentStage, nextStage: requestedStage })
     if (!transition.ok) {
       return NextResponse.json({ ok: false, error: transition.error, code: transition.code }, { status: 400 })
     }
 
+    if (ownerRequiredForStage(transition.nextStage) && !nextOwner) {
+      return NextResponse.json({ ok: false, error: 'ownerAgentId is required for this stage', code: 'OWNER_REQUIRED' }, { status: 400 })
+    }
+
+    if (incomingOwnerRaw !== undefined && previousOwner && nextOwner && previousOwner !== nextOwner && !String(reason || '').trim()) {
+      return NextResponse.json({ ok: false, error: 'Reassignment reason is required' }, { status: 400 })
+    }
+
     const now = new Date()
+    const nextStatus = stageToLegacyStatus(transition.nextStage)
     const updateData: any = {
       updatedAt: now,
       leadStage: transition.nextStage,
-      status: stageToLegacyStatus(transition.nextStage),
+      status: nextStatus,
+      legacyStatus: nextStatus,
       previousStage: transition.currentStage,
       stageChangedAt: now,
       stageChangedBy: admin.uid,
       stageChangeReason: String(reason || '').trim() || 'manual_patch',
       stageSlaDueAt: stageSlaDueAt(transition.nextStage, now),
-    }
-
-    if (assignedTo !== undefined) {
-      updateData.assignedTo = nextAssignedTo || null
-      updateData.assignedAt = nextAssignedTo ? now : null
-      if (previousAssignedTo && nextAssignedTo && previousAssignedTo !== nextAssignedTo) {
-        updateData.slaResetAt = now
-        updateData.reassignmentReason = String(reason || '').trim()
-      }
-    }
-
-    if (transition.nextStage === 'won') {
-      updateData.convertedAt = now
+      slaBreached: false,
+      slaBreachedAt: null,
+      ownerAgentId: nextOwner || null,
+      assignedTo: nextOwner || null,
+      assignedAt: nextOwner ? now : null,
+      ownerAssignedAt: nextOwner ? now : null,
+      ownerAssignedBy: nextOwner ? admin.uid : null,
+      ownerAssignmentReason: String(reason || '').trim() || null,
     }
 
     await leadRef.set(updateData, { merge: true })
-
-    await (adminDb as any).collection('lead_stage_events').add({
-      leadId,
-      previousStage: transition.currentStage,
-      newStage: transition.nextStage,
-      actorUserId: admin.uid,
-      actorEmail: admin.email,
-      reason: String(reason || '').trim() || 'manual_patch',
-      assignment: {
-        previousAssignedTo: previousAssignedTo || null,
-        newAssignedTo: nextAssignedTo || null,
-      },
-      createdAt: now,
-    })
-
-    if (assignedTo !== undefined && previousAssignedTo !== nextAssignedTo) {
-      await (adminDb as any).collection('lead_assignment_logs').add({
-        leadId,
-        previousAssignedTo: previousAssignedTo || null,
-        newAssignedTo: nextAssignedTo || null,
-        eventType: previousAssignedTo ? 'reassigned' : 'assigned',
-        note: String(reason || '').trim(),
-        actorUserId: admin.uid,
-        actorEmail: admin.email,
-        createdAt: now,
-      })
-    }
 
     return NextResponse.json({
       ok: true,
