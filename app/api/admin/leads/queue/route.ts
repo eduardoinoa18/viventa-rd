@@ -26,6 +26,49 @@ interface LeadData {
   message?: string
 }
 
+function toDate(value: any): Date | null {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value?.toDate === 'function') {
+    const parsed = value.toDate()
+    return parsed instanceof Date ? parsed : null
+  }
+  if (typeof value?.seconds === 'number') {
+    return new Date(value.seconds * 1000)
+  }
+
+  const parsed = new Date(value)
+  return Number.isFinite(parsed.getTime()) ? parsed : null
+}
+
+function toIso(value: any): string | null {
+  const parsed = toDate(value)
+  return parsed ? parsed.toISOString() : null
+}
+
+function toMillis(value: any): number {
+  const parsed = toDate(value)
+  return parsed ? parsed.getTime() : 0
+}
+
+function parseCsv(input: string | null): string[] {
+  if (!input) return []
+  return input
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function pct(numerator: number, denominator: number): number {
+  if (!denominator) return 0
+  return Number(((numerator / denominator) * 100).toFixed(1))
+}
+
+function avg(values: number[]): number {
+  if (!values.length) return 0
+  return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1))
+}
+
 function extractOwnerAgentId(lead: any): string {
   const ownerFromCanonical = String(lead?.ownerAgentId || '').trim()
   if (ownerFromCanonical) return ownerFromCanonical
@@ -45,7 +88,11 @@ function mapLeadForResponse(doc: any) {
   const data = doc.data() || {}
   const leadStage = normalizeLeadStage(data.leadStage, data.status)
   const ownerAgentId = extractOwnerAgentId(data)
-  const stageSlaDueAtValue = data.stageSlaDueAt?.toDate?.() || data.stageSlaDueAt || null
+  const createdAt = toIso(data.createdAt)
+  const updatedAt = toIso(data.updatedAt)
+  const assignedAt = toIso(data.assignedAt || data.ownerAssignedAt)
+  const stageChangedAt = toIso(data.stageChangedAt)
+  const stageSlaDueAtValue = toDate(data.stageSlaDueAt)
   const breached = isSlaBreached(leadStage, stageSlaDueAtValue)
   const secondsToBreach = secondsToSlaDue(stageSlaDueAtValue)
 
@@ -56,7 +103,12 @@ function mapLeadForResponse(doc: any) {
     status: stageToLegacyStatus(leadStage),
     ownerAgentId: ownerAgentId || null,
     assignedTo: ownerAgentId || null,
-    stageSlaDueAt: stageSlaDueAtValue,
+    createdAt,
+    updatedAt,
+    assignedAt,
+    stageChangedAt,
+    lastActivityAt: updatedAt || stageChangedAt || createdAt,
+    stageSlaDueAt: stageSlaDueAtValue ? stageSlaDueAtValue.toISOString() : null,
     slaBreached: breached,
     secondsToBreach,
   }
@@ -75,16 +127,22 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')?.trim()
     const stage = searchParams.get('stage')?.trim()
+    const stages = parseCsv(searchParams.get('stages')).filter(isLeadStage)
     const type = searchParams.get('type')?.trim()
+    const source = searchParams.get('source')?.trim()
     const ownerAgentId = searchParams.get('ownerAgentId')?.trim()
     const sla = searchParams.get('sla')?.trim()
+    const q = searchParams.get('q')?.trim().toLowerCase()
+    const from = searchParams.get('from')?.trim()
+    const to = searchParams.get('to')?.trim()
     const limit = Math.min(parseInt(searchParams.get('limit') || '100', 10), 200)
 
     let ref: any = adminDb.collection('leads')
 
     if (status) ref = ref.where('status', '==', status)
-    if (stage && isLeadStage(stage)) ref = ref.where('leadStage', '==', stage)
+    if (stage && isLeadStage(stage) && stages.length === 0) ref = ref.where('leadStage', '==', stage)
     if (type) ref = ref.where('type', '==', type)
+    if (source) ref = ref.where('source', '==', source)
 
     let leads: any[] = []
     try {
@@ -95,7 +153,14 @@ export async function GET(req: NextRequest) {
       leads = snap.docs.map(mapLeadForResponse).slice(0, limit)
     }
 
-    if (ownerAgentId) {
+    if (stages.length > 0) {
+      const stageSet = new Set(stages)
+      leads = leads.filter((lead) => stageSet.has(lead.leadStage))
+    }
+
+    if (ownerAgentId === 'unassigned') {
+      leads = leads.filter((lead) => !lead.ownerAgentId)
+    } else if (ownerAgentId) {
       leads = leads.filter((lead) => String(lead.ownerAgentId || '') === ownerAgentId)
     }
 
@@ -103,9 +168,63 @@ export async function GET(req: NextRequest) {
       leads = leads.filter((lead) => lead.slaBreached)
     }
 
+    if (from) {
+      const fromMillis = new Date(from).setHours(0, 0, 0, 0)
+      if (Number.isFinite(fromMillis)) {
+        leads = leads.filter((lead) => {
+          const createdAtMs = toMillis(lead.createdAt)
+          return createdAtMs ? createdAtMs >= fromMillis : false
+        })
+      }
+    }
+
+    if (to) {
+      const toDate = new Date(to)
+      toDate.setHours(23, 59, 59, 999)
+      const toMillisValue = toDate.getTime()
+      if (Number.isFinite(toMillisValue)) {
+        leads = leads.filter((lead) => {
+          const createdAtMs = toMillis(lead.createdAt)
+          return createdAtMs ? createdAtMs <= toMillisValue : false
+        })
+      }
+    }
+
+    if (q) {
+      leads = leads.filter((lead) => {
+        const haystack = [
+          lead.buyerName,
+          lead.buyerEmail,
+          lead.buyerPhone,
+          lead.source,
+          lead.type,
+          lead.ownerAgentId,
+        ]
+          .map((value) => String(value || '').toLowerCase())
+          .join(' ')
+
+        return haystack.includes(q)
+      })
+    }
+
+    leads = leads.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt)).slice(0, limit)
+
+    const responseLatencyMinutes = leads
+      .map((lead) => {
+        const createdMs = toMillis(lead.createdAt)
+        const assignedMs = toMillis(lead.assignedAt)
+        if (!createdMs || !assignedMs || assignedMs < createdMs) return null
+        return (assignedMs - createdMs) / (1000 * 60)
+      })
+      .filter((value): value is number => value !== null)
+
+    const wonCount = leads.filter((lead) => lead.leadStage === 'won').length
+    const slaBreachedCount = leads.filter((lead) => lead.slaBreached).length
+    const unassignedCount = leads.filter((lead) => !lead.ownerAgentId).length
+
     const stats = {
       total: leads.length,
-      unassigned: leads.filter((lead) => lead.status === 'unassigned').length,
+      unassigned: unassignedCount,
       assigned: leads.filter((lead) => lead.status === 'assigned').length,
       contacted: leads.filter((lead) => lead.status === 'contacted').length,
       won: leads.filter((lead) => lead.status === 'won').length,
@@ -120,8 +239,15 @@ export async function GET(req: NextRequest) {
         lost: leads.filter((lead) => lead.leadStage === 'lost').length,
         archived: leads.filter((lead) => lead.leadStage === 'archived').length,
       },
-      overdue: leads.filter((lead) => lead.slaBreached).length,
-      unowned: leads.filter((lead) => !lead.ownerAgentId).length,
+      overdue: slaBreachedCount,
+      unowned: unassignedCount,
+      metrics: {
+        totalLeads: leads.length,
+        unassigned: unassignedCount,
+        slaBreached: slaBreachedCount,
+        conversionRate: pct(wonCount, leads.length),
+        avgResponseTimeMinutes: avg(responseLatencyMinutes),
+      },
     }
 
     return NextResponse.json({ ok: true, data: { leads, stats } })

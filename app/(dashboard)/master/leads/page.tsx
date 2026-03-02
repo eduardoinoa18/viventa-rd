@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { FiClock, FiX } from 'react-icons/fi'
+import { FiClock, FiLayout, FiList, FiX } from 'react-icons/fi'
 
 type LeadStage = 'new' | 'assigned' | 'contacted' | 'qualified' | 'negotiating' | 'won' | 'lost' | 'archived'
+type PipelineStage = 'new' | 'assigned' | 'contacted' | 'qualified' | 'won' | 'lost'
 
 interface LeadRecord {
   id: string
@@ -20,10 +21,21 @@ interface LeadRecord {
   ownerAgentId?: string | null
   assignedTo?: string | null
   inboxConversationId?: string
-  createdAt: string
-  updatedAt: string
+  createdAt?: string | null
+  updatedAt?: string | null
+  assignedAt?: string | null
+  stageChangedAt?: string | null
+  lastActivityAt?: string | null
   slaBreached?: boolean
   secondsToBreach?: number | null
+}
+
+interface LeadMetrics {
+  totalLeads: number
+  unassigned: number
+  slaBreached: number
+  conversionRate: number
+  avgResponseTimeMinutes: number
 }
 
 interface LeadStats {
@@ -31,6 +43,39 @@ interface LeadStats {
   overdue: number
   unowned: number
   byStage: Record<LeadStage, number>
+  metrics: LeadMetrics
+}
+
+interface AgentOption {
+  id: string
+  name: string
+  company?: string
+  photoURL?: string
+}
+
+const DEFAULT_METRICS: LeadMetrics = {
+  totalLeads: 0,
+  unassigned: 0,
+  slaBreached: 0,
+  conversionRate: 0,
+  avgResponseTimeMinutes: 0,
+}
+
+const DEFAULT_STATS: LeadStats = {
+  total: 0,
+  overdue: 0,
+  unowned: 0,
+  byStage: {
+    new: 0,
+    assigned: 0,
+    contacted: 0,
+    qualified: 0,
+    negotiating: 0,
+    won: 0,
+    lost: 0,
+    archived: 0,
+  },
+  metrics: DEFAULT_METRICS,
 }
 
 const STAGE_TRANSITIONS: Record<LeadStage, LeadStage[]> = {
@@ -44,6 +89,16 @@ const STAGE_TRANSITIONS: Record<LeadStage, LeadStage[]> = {
   archived: [],
 }
 
+const FILTER_STAGES: LeadStage[] = ['new', 'assigned', 'contacted', 'qualified', 'negotiating', 'won', 'lost', 'archived']
+const PIPELINE_COLUMNS: Array<{ key: PipelineStage; label: string }> = [
+  { key: 'new', label: 'New' },
+  { key: 'assigned', label: 'Assigned' },
+  { key: 'contacted', label: 'Contacted' },
+  { key: 'qualified', label: 'Qualified' },
+  { key: 'won', label: 'Won' },
+  { key: 'lost', label: 'Lost' },
+]
+
 function formatSla(secondsToBreach: number | null | undefined) {
   if (secondsToBreach === null || secondsToBreach === undefined) return '—'
   const isOverdue = secondsToBreach < 0
@@ -54,45 +109,94 @@ function formatSla(secondsToBreach: number | null | undefined) {
   return `${hours}h ${minutes}m ${suffix}`
 }
 
+function formatRelative(value?: string | null) {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  if (!Number.isFinite(parsed.getTime())) return '—'
+
+  const diffMs = Date.now() - parsed.getTime()
+  if (diffMs < 0) return 'just now'
+  const minutes = Math.floor(diffMs / (1000 * 60))
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
+  if (hours < 24) return `${hours}h ago`
+  return `${days}d ago`
+}
+
+function formatAvgResponse(minutes: number) {
+  if (!minutes) return '—'
+  if (minutes < 60) return `${Math.round(minutes)}m`
+  const hours = Math.floor(minutes / 60)
+  const mins = Math.round(minutes % 60)
+  return `${hours}h ${mins}m`
+}
+
+function mapPipelineStage(stage: LeadStage): PipelineStage {
+  if (stage === 'negotiating') return 'qualified'
+  if (stage === 'archived') return 'lost'
+  return stage as PipelineStage
+}
+
 export default function LeadsPage() {
   const router = useRouter()
   const [leads, setLeads] = useState<LeadRecord[]>([])
-  const [stats, setStats] = useState<LeadStats>({
-    total: 0,
-    overdue: 0,
-    unowned: 0,
-    byStage: {
-      new: 0,
-      assigned: 0,
-      contacted: 0,
-      qualified: 0,
-      negotiating: 0,
-      won: 0,
-      lost: 0,
-      archived: 0,
-    },
-  })
+  const [stats, setStats] = useState<LeadStats>(DEFAULT_STATS)
   const [loading, setLoading] = useState(true)
-  const [selectedStage, setSelectedStage] = useState<LeadStage | null>('new')
+  const [viewMode, setViewMode] = useState<'table' | 'pipeline'>('table')
+  const [selectedStages, setSelectedStages] = useState<LeadStage[]>([])
+  const [ownerFilter, setOwnerFilter] = useState('all')
+  const [sourceFilter, setSourceFilter] = useState('all')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [slaOnly, setSlaOnly] = useState(false)
+  const [searchInput, setSearchInput] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null)
-  const [agents, setAgents] = useState<Array<{ id: string; name: string; company?: string }>>([])
+  const [agents, setAgents] = useState<AgentOption[]>([])
   const [agentsLoading, setAgentsLoading] = useState(false)
   const [assignNote, setAssignNote] = useState('')
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(searchInput.trim()), 250)
+    return () => clearTimeout(timeout)
+  }, [searchInput])
 
   const fetchLeads = useCallback(async () => {
     try {
       setLoading(true)
-      const url = selectedStage
-        ? `/api/admin/leads/queue?stage=${encodeURIComponent(selectedStage)}&limit=100`
-        : '/api/admin/leads/queue?limit=100'
+
+      const params = new URLSearchParams()
+      params.set('limit', '200')
+
+      if (selectedStages.length > 0) {
+        params.set('stages', selectedStages.join(','))
+      }
+
+      if (ownerFilter !== 'all') {
+        params.set('ownerAgentId', ownerFilter)
+      }
+
+      if (sourceFilter !== 'all') {
+        params.set('source', sourceFilter)
+      }
+
+      if (fromDate) params.set('from', fromDate)
+      if (toDate) params.set('to', toDate)
+      if (slaOnly) params.set('sla', 'overdue')
+      if (debouncedSearch) params.set('q', debouncedSearch)
+
+      const url = `/api/admin/leads/queue?${params.toString()}`
 
       const res = await fetch(url)
       const data = await res.json()
 
       if (data.ok) {
         setLeads(data.data.leads || [])
-        setStats(data.data.stats || stats)
+        setStats(data.data.stats || DEFAULT_STATS)
       } else {
         toast.error(data.error || 'Failed to fetch leads')
       }
@@ -102,7 +206,7 @@ export default function LeadsPage() {
     } finally {
       setLoading(false)
     }
-  }, [selectedStage])
+  }, [selectedStages, ownerFilter, sourceFilter, fromDate, toDate, slaOnly, debouncedSearch])
 
   const fetchAgents = useCallback(async () => {
     try {
@@ -125,7 +229,11 @@ export default function LeadsPage() {
 
   useEffect(() => {
     fetchLeads()
-  }, [selectedStage, fetchLeads])
+  }, [fetchLeads])
+
+  useEffect(() => {
+    fetchAgents()
+  }, [fetchAgents])
 
   const handleAssign = async (agentId: string) => {
     if (!selectedLeadId) return
@@ -206,9 +314,93 @@ export default function LeadsPage() {
 
   const openAssignModal = (leadId: string) => {
     setSelectedLeadId(leadId)
-    fetchAgents()
     setShowAssignModal(true)
   }
+
+  const toggleStageFilter = (stage: LeadStage) => {
+    setSelectedStages((current) => {
+      if (current.includes(stage)) {
+        return current.filter((item) => item !== stage)
+      }
+      return [...current, stage]
+    })
+  }
+
+  const clearFilters = () => {
+    setSelectedStages([])
+    setOwnerFilter('all')
+    setSourceFilter('all')
+    setFromDate('')
+    setToDate('')
+    setSlaOnly(false)
+    setSearchInput('')
+    setDebouncedSearch('')
+  }
+
+  const ownerMap = useMemo(() => {
+    return new Map(agents.map((agent) => [agent.id, agent]))
+  }, [agents])
+
+  const sourceOptions = useMemo(() => {
+    const values = new Set(['property', 'project', 'agent'])
+    leads.forEach((lead) => values.add(String(lead.source || '').trim()))
+    return Array.from(values).filter(Boolean)
+  }, [leads])
+
+  const pipelineGroups = useMemo(() => {
+    const grouped: Record<PipelineStage, LeadRecord[]> = {
+      new: [],
+      assigned: [],
+      contacted: [],
+      qualified: [],
+      won: [],
+      lost: [],
+    }
+
+    for (const lead of leads) {
+      const bucket = mapPipelineStage(lead.leadStage)
+      grouped[bucket].push(lead)
+    }
+
+    return grouped
+  }, [leads])
+
+  const hasActiveFilters =
+    selectedStages.length > 0 ||
+    ownerFilter !== 'all' ||
+    sourceFilter !== 'all' ||
+    fromDate !== '' ||
+    toDate !== '' ||
+    slaOnly ||
+    debouncedSearch.length > 0
+
+  const emptyStateMessage = useMemo(() => {
+    if (!hasActiveFilters) {
+      return {
+        title: 'No leads yet',
+        body: 'New inquiries will appear here as soon as they enter the system.',
+      }
+    }
+
+    if (ownerFilter === 'unassigned') {
+      return {
+        title: 'No unassigned leads',
+        body: 'No unassigned leads. Great job — team response time is under control.',
+      }
+    }
+
+    if (slaOnly) {
+      return {
+        title: 'No SLA breaches',
+        body: 'No breached leads match the current filters. Team follow-up is healthy.',
+      }
+    }
+
+    return {
+      title: 'No matching leads',
+      body: 'No results for these filters. Adjust criteria to expand the pipeline view.',
+    }
+  }, [hasActiveFilters, ownerFilter, slaOnly])
 
   const stageColor: Record<LeadStage, string> = {
     new: 'bg-yellow-100 text-yellow-800',
@@ -219,6 +411,81 @@ export default function LeadsPage() {
     won: 'bg-green-100 text-green-800',
     lost: 'bg-red-100 text-red-800',
     archived: 'bg-gray-100 text-gray-700',
+  }
+
+  const kpiCards = [
+    { label: 'Total Leads', value: stats.metrics.totalLeads, tone: 'text-gray-900' },
+    { label: 'Unassigned', value: stats.metrics.unassigned, tone: 'text-amber-600' },
+    { label: 'SLA Breached', value: stats.metrics.slaBreached, tone: 'text-red-600' },
+    { label: 'Conversion Rate', value: `${stats.metrics.conversionRate}%`, tone: 'text-green-700' },
+    { label: 'Avg Response Time', value: formatAvgResponse(stats.metrics.avgResponseTimeMinutes), tone: 'text-[#0B2545]' },
+  ]
+
+  const handleViewLead = (lead: LeadRecord) => {
+    if (lead.source === 'property' && lead.sourceId) {
+      router.push(`/listing/${lead.sourceId}`)
+      return
+    }
+
+    if (lead.source === 'agent' && lead.sourceId) {
+      router.push(`/agents/${lead.sourceId}`)
+      return
+    }
+
+    if (lead.inboxConversationId) {
+      router.push(`/master/inbox?conv=${lead.inboxConversationId}`)
+      return
+    }
+
+    toast('No detailed view is available for this lead yet')
+  }
+
+  const renderOwner = (lead: LeadRecord) => {
+    const ownerId = lead.ownerAgentId || lead.assignedTo || ''
+    if (!ownerId) {
+      return <span className="text-xs font-medium text-amber-700">Unassigned</span>
+    }
+
+    const owner = ownerMap.get(ownerId)
+    const ownerName = owner?.name || ownerId
+    const initials = ownerName
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase()
+
+    return (
+      <div className="inline-flex items-center gap-2">
+        {owner?.photoURL ? (
+          <img src={owner.photoURL} alt={ownerName} className="w-6 h-6 rounded-full object-cover" />
+        ) : (
+          <span className="w-6 h-6 rounded-full bg-[#0B2545]/10 text-[#0B2545] text-[10px] font-semibold flex items-center justify-center">
+            {initials || 'AG'}
+          </span>
+        )}
+        <span className="text-xs text-gray-700">{ownerName}</span>
+      </div>
+    )
+  }
+
+  const renderMoveStage = (lead: LeadRecord) => {
+    const options = [lead.leadStage, ...STAGE_TRANSITIONS[lead.leadStage]]
+    return (
+      <select
+        value={lead.leadStage}
+        onChange={(e) => handleStageChange(lead, e.target.value as LeadStage)}
+        className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white"
+        aria-label={`Move lead ${lead.buyerName} to another stage`}
+      >
+        {options.map((stage) => (
+          <option key={stage} value={stage}>
+            Move: {stage}
+          </option>
+        ))}
+      </select>
+    )
   }
 
   return (
@@ -233,129 +500,271 @@ export default function LeadsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <div
-          className="bg-white p-4 rounded-lg border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => setSelectedStage(null)}
-        >
-          <div className="text-sm text-gray-600">Total Leads</div>
-          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Overdue SLA</div>
-          <div className="text-2xl font-bold text-red-600">{stats.overdue}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Unowned</div>
-          <div className="text-2xl font-bold text-amber-600">{stats.unowned}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-        {(Object.keys(stats.byStage) as LeadStage[]).map((stage) => (
-          <button
-            key={stage}
-            onClick={() => setSelectedStage(stage)}
-            className={`p-3 rounded-lg border text-left transition ${selectedStage === stage ? 'border-[#00A676] ring-2 ring-[#00A676]/30' : 'border-gray-200 hover:border-gray-300'}`}
-          >
-            <div className="text-xs text-gray-600 capitalize">{stage}</div>
-            <div className="text-xl font-bold text-gray-900">{stats.byStage[stage]}</div>
-          </button>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        {kpiCards.map((card) => (
+          <div key={card.label} className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">{card.label}</div>
+            <div className={`mt-2 text-2xl font-bold ${card.tone}`}>{card.value}</div>
+          </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Lead</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Stage</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Owner</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">SLA</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Loading leads...</td>
+      <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[220px]">
+            <input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search lead, email, phone or owner"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A676]/30"
+            />
+          </div>
+
+          <select
+            value={ownerFilter}
+            onChange={(e) => setOwnerFilter(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
+            aria-label="Filter by owner"
+          >
+            <option value="all">All Owners</option>
+            <option value="unassigned">Unassigned</option>
+            {agents.map((agent) => (
+              <option key={agent.id} value={agent.id}>
+                {agent.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
+            aria-label="Filter by source"
+          >
+            <option value="all">All Sources</option>
+            {sourceOptions.map((source) => (
+              <option key={source} value={source}>
+                {source}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
+            aria-label="From date"
+          />
+
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
+            aria-label="To date"
+          />
+
+          <label className="inline-flex items-center gap-2 text-sm text-gray-700 px-3 py-2 border border-gray-300 rounded-lg">
+            <input
+              type="checkbox"
+              checked={slaOnly}
+              onChange={(e) => setSlaOnly(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            SLA Breached
+          </label>
+
+          <button
+            onClick={clearFilters}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Clear
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            {FILTER_STAGES.map((stage) => {
+              const active = selectedStages.includes(stage)
+              return (
+                <button
+                  key={stage}
+                  onClick={() => toggleStageFilter(stage)}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-medium capitalize transition ${active ? 'border-[#00A676] bg-[#00A676]/10 text-[#0B2545]' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}
+                >
+                  {stage} ({stats.byStage[stage] || 0})
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="inline-flex items-center gap-1 border border-gray-300 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md ${viewMode === 'table' ? 'bg-[#0B2545] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+            >
+              <FiList /> Table
+            </button>
+            <button
+              onClick={() => setViewMode('pipeline')}
+              className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md ${viewMode === 'pipeline' ? 'bg-[#0B2545] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+            >
+              <FiLayout /> Pipeline
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-10 text-center text-gray-500">Loading leads...</div>
+      ) : leads.length === 0 ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-10 text-center">
+          <div className="text-lg font-semibold text-gray-900">{emptyStateMessage.title}</div>
+          <p className="mt-2 text-sm text-gray-600">{emptyStateMessage.body}</p>
+        </div>
+      ) : viewMode === 'pipeline' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {PIPELINE_COLUMNS.map((column) => (
+            <div key={column.key} className="bg-white rounded-lg border border-gray-200">
+              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-900">{column.label}</h3>
+                <span className="text-xs font-medium text-gray-600">{pipelineGroups[column.key].length}</span>
+              </div>
+              <div className="p-3 space-y-3 max-h-[520px] overflow-y-auto">
+                {pipelineGroups[column.key].length === 0 ? (
+                  <div className="text-xs text-gray-500 border border-dashed border-gray-200 rounded-lg p-3">
+                    No leads in this stage
+                  </div>
+                ) : (
+                  pipelineGroups[column.key].map((lead) => {
+                    const ownerId = lead.ownerAgentId || lead.assignedTo || ''
+                    return (
+                      <div key={lead.id} className="border border-gray-200 rounded-lg p-3 space-y-3">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">{lead.buyerName}</div>
+                          <div className="text-xs text-gray-500">{lead.buyerEmail}</div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold capitalize ${stageColor[lead.leadStage]}`}>
+                            {lead.leadStage}
+                          </span>
+                          <div className={`inline-flex items-center gap-1 text-[11px] font-semibold ${lead.slaBreached ? 'text-red-700' : 'text-gray-700'}`}>
+                            <FiClock /> {formatSla(lead.secondsToBreach)}
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-gray-600">
+                          <div className="font-medium mb-1">Owner</div>
+                          {renderOwner(lead)}
+                        </div>
+
+                        <div className="text-[11px] text-gray-500">Last activity: {formatRelative(lead.lastActivityAt || lead.updatedAt)}</div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {!ownerId && (
+                            <button
+                              onClick={() => openAssignModal(lead.id)}
+                              className="inline-flex items-center px-2.5 py-1 text-[11px] font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+                            >
+                              Assign
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleViewLead(lead)}
+                            className="inline-flex items-center px-2.5 py-1 text-[11px] font-medium text-[#0B2545] bg-[#0B2545]/10 rounded-md hover:bg-[#0B2545]/20"
+                          >
+                            View
+                          </button>
+                          {renderMoveStage(lead)}
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Lead</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Contact</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Stage</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Owner</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">SLA</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Last Activity</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
                 </tr>
-              ) : leads.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No leads found</td>
-                </tr>
-              ) : (
-                leads.map((lead) => {
-                  const options = [lead.leadStage, ...STAGE_TRANSITIONS[lead.leadStage]]
-                  const owner = lead.ownerAgentId || lead.assignedTo || ''
+              </thead>
+              <tbody>
+                {leads.map((lead) => {
+                  const ownerId = lead.ownerAgentId || lead.assignedTo || ''
+
                   return (
                     <tr key={lead.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{lead.buyerName}</div>
-                        <div className="text-xs text-gray-500">{lead.source}</div>
+                        <div className="text-xs text-gray-500">Source: {lead.source}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <div className="text-xs text-gray-600">
                           <div>{lead.buyerEmail}</div>
                           {lead.buyerPhone && <div>{lead.buyerPhone}</div>}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          value={lead.leadStage}
-                          onChange={(e) => handleStageChange(lead, e.target.value as LeadStage)}
-                          className={`text-xs font-medium px-3 py-1 rounded-full cursor-pointer border-none ${stageColor[lead.leadStage]}`}
-                          aria-label={`Change stage for ${lead.buyerName}`}
-                        >
-                          {options.map((stage) => (
-                            <option key={stage} value={stage}>
-                              {stage}
-                            </option>
-                          ))}
-                        </select>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold capitalize ${stageColor[lead.leadStage]}`}>
+                          {lead.leadStage}
+                        </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-700">
-                        {owner || <span className="text-amber-700">Unassigned</span>}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className={`inline-flex items-center gap-1 text-xs font-medium ${lead.slaBreached ? 'text-red-700' : 'text-gray-700'}`}>
+                      <td className="px-4 py-4 whitespace-nowrap">{renderOwner(lead)}</td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className={`inline-flex items-center gap-1 text-xs font-semibold ${lead.slaBreached ? 'text-red-700' : 'text-gray-700'}`}>
                           <FiClock /> {formatSla(lead.secondsToBreach)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
-                        {!owner && (
+                      <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-600">
+                        {formatRelative(lead.lastActivityAt || lead.updatedAt)}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm">
+                        <div className="flex flex-wrap gap-2">
+                          {!ownerId && (
+                            <button
+                              onClick={() => openAssignModal(lead.id)}
+                              className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+                            >
+                              Assign
+                            </button>
+                          )}
                           <button
-                            onClick={() => openAssignModal(lead.id)}
-                            className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+                            onClick={() => handleViewLead(lead)}
+                            className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#0B2545] bg-[#0B2545]/10 rounded-md hover:bg-[#0B2545]/20"
                           >
-                            Assign
+                            View
                           </button>
-                        )}
-                        {lead.inboxConversationId && (
+                          {renderMoveStage(lead)}
                           <button
-                            onClick={() => router.push(`/master/inbox?conv=${lead.inboxConversationId}`)}
-                            className="inline-flex items-center px-3 py-1 text-xs font-medium text-green-600 bg-green-50 rounded-md hover:bg-green-100"
+                            onClick={() => handleDeleteLead(lead.id)}
+                            className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100"
                           >
-                            Chat
+                            Delete
                           </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteLead(lead.id)}
-                          className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100"
-                        >
-                          Delete
-                        </button>
+                        </div>
                       </td>
                     </tr>
                   )
-                })
-              )}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {showAssignModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
