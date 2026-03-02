@@ -32,6 +32,8 @@ export default function EditPropertyPage() {
   const [terrainUtilitiesText, setTerrainUtilitiesText] = useState('')
   const autosaveTimerRef = useRef<any>(null)
   const [resolvingGeo, setResolvingGeo] = useState(false)
+  const [developers, setDevelopers] = useState<any[]>([])
+  const [loadingDevelopers, setLoadingDevelopers] = useState(false)
 
   function handleUnitsChange(nextUnits: UnitRow[]) {
     setUnitRows(nextUnits)
@@ -160,7 +162,23 @@ export default function EditPropertyPage() {
   useEffect(() => {
     if (!propertyId) return
     loadProperty()
+    loadDevelopers()
   }, [propertyId])
+
+  async function loadDevelopers() {
+    try {
+      setLoadingDevelopers(true)
+      const res = await fetch('/api/developers?status=active', { cache: 'no-store' })
+      const json = await res.json().catch(() => ({}))
+      if (res.ok && Array.isArray(json.developers)) {
+        setDevelopers(json.developers)
+      }
+    } catch (error) {
+      console.error('Failed to load developers:', error)
+    } finally {
+      setLoadingDevelopers(false)
+    }
+  }
 
   async function autofillCoordinatesFromAddress() {
     const query = [form?.location, form?.neighborhood, form?.city, 'República Dominicana']
@@ -336,6 +354,7 @@ export default function EditPropertyPage() {
         } : undefined,
         agentId: form.agentId?.trim() || '',
         agentName: form.agentName?.trim() || '',
+        developerId: form.developerId || undefined,
         status: 'draft',
         featured: Boolean(form.featured),
         features,
@@ -503,6 +522,7 @@ export default function EditPropertyPage() {
         } : undefined,
         agentId: form.agentId?.trim() || '',
         agentName: form.agentName?.trim() || '',
+        developerId: form.developerId || undefined,
         status: form.status,
         featured: Boolean(form.featured),
         features,
@@ -1004,6 +1024,27 @@ export default function EditPropertyPage() {
                       value={form.agentName || ''}
                       onChange={e=>setForm({...form, agentName: e.target.value})}
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Constructora / Desarrollador (Opcional)</label>
+                    <select
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      value={form.developerId || ''}
+                      onChange={e=>setForm({...form, developerId: e.target.value || undefined})}
+                      aria-label="Seleccionar constructora"
+                    >
+                      <option value="">Ninguna / No aplica</option>
+                      {loadingDevelopers ? (
+                        <option disabled>Cargando...</option>
+                      ) : (
+                        developers.map(dev => (
+                          <option key={dev.id} value={dev.id}>{dev.companyName}</option>
+                        ))
+                      )}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Asocia con una constructora para mostrar credenciales en el perfil de la propiedad
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>

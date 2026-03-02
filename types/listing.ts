@@ -60,6 +60,7 @@ export interface Listing {
   ownerId: string; // agent or constructora
   brokerageId?: string;
   projectId?: string;
+  developerId?: string; // NEW: Link to Developer/Constructora
 
   isVerified: boolean;
 

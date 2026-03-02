@@ -33,6 +33,7 @@ interface PropertyPayload {
   agentId?: string
   agentName?: string
   agentEmail?: string
+  developerId?: string
   images?: string[]
   coverImage?: string
   promoVideoUrl?: string

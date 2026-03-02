@@ -16,6 +16,7 @@ import SimilarProperties from '../../../components/SimilarProperties'
 import InvestmentInsightPanel from '../../../components/InvestmentInsightPanel'
 import MortgageCalculator from '../../../components/MortgageCalculator'
 import WhatsAppFloatingCTA from '../../../components/WhatsAppFloatingCTA'
+import DeveloperCard from '../../../components/DeveloperCard'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaParking, FaBuilding, FaCalendar } from 'react-icons/fa'
@@ -81,6 +82,8 @@ export default function ListingDetail(){
   const [sessionLoading, setSessionLoading] = useState(true)
   const [selectedModel, setSelectedModel] = useState<string>('all')
   const [selectedUnitNumber, setSelectedUnitNumber] = useState<string>('')
+  const [developer, setDeveloper] = useState<any>(null)
+  const [developerLoading, setDeveloperLoading] = useState(false)
 
   const normalizeImages = (data: any): string[] => {
     const images = Array.isArray(data?.images) ? data.images.filter(Boolean) : []
@@ -175,6 +178,40 @@ export default function ListingDetail(){
       isMounted = false
     }
   }, [id])
+
+  // Load developer if listing has developerId
+  useEffect(() => {
+    if (!listing?.developerId) {
+      setDeveloper(null)
+      return
+    }
+    
+    let isMounted = true
+    setDeveloperLoading(true)
+
+    fetch(`/api/developers/${listing.developerId}`)
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}))
+        if (!isMounted) return
+        
+        if (res.ok && json.developer) {
+          setDeveloper(json.developer)
+        } else {
+          setDeveloper(null)
+        }
+      })
+      .catch((err) => {
+        console.error('Developer fetch error:', err)
+        if (isMounted) setDeveloper(null)
+      })
+      .finally(() => {
+        if (isMounted) setDeveloperLoading(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [listing?.developerId])
 
   // Currency listener
   useEffect(() => {
@@ -668,6 +705,11 @@ export default function ListingDetail(){
                   {listing.description || 'Sin descripción disponible'}
                 </p>
               </div>
+
+              {/* Developer Card - Trust Badge Compact */}
+              {developer && !developerLoading && (
+                <DeveloperCard developer={developer} variant="compact" />
+              )}
 
               {/* Amenities - Compact on Mobile */}
               {listing.features && listing.features.length > 0 && (

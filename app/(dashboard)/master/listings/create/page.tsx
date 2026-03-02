@@ -80,6 +80,8 @@ export default function CreatePropertyPage() {
   const [loadingProfessionals, setLoadingProfessionals] = useState(false)
   const [professionalSearch, setProfessionalSearch] = useState('')
   const [resolvingGeo, setResolvingGeo] = useState(false)
+  const [developers, setDevelopers] = useState<any[]>([])
+  const [loadingDevelopers, setLoadingDevelopers] = useState(false)
 
   const selectedProfessional = affiliatedProfessionals.find((item) => item.id === form.agentId)
   const filteredProfessionals = affiliatedProfessionals
@@ -112,6 +114,21 @@ export default function CreatePropertyPage() {
     return 'Agente'
   }
 
+  async function loadDevelopers() {
+    try {
+      setLoadingDevelopers(true)
+      const res = await fetch('/api/developers?status=active', { cache: 'no-store' })
+      const json = await res.json().catch(() => ({}))
+      if (res.ok && Array.isArray(json.developers)) {
+        setDevelopers(json.developers)
+      }
+    } catch (error) {
+      console.error('Failed to load developers:', error)
+    } finally {
+      setLoadingDevelopers(false)
+    }
+  }
+
   async function loadAffiliatedProfessionals() {
     try {
       setLoadingProfessionals(true)
@@ -126,6 +143,8 @@ export default function CreatePropertyPage() {
       if (uid && role === 'agent') {
         setForm((prev) => ({ ...prev, agentId: prev.agentId || uid }))
       }
+
+      await loadDevelopers()
 
       const roleEndpoints = ['agent', 'broker', 'constructora'].map((r) => `/api/admin/users?role=${r}`)
       const roleResponses = await Promise.all(roleEndpoints.map((url) => fetch(url, { cache: 'no-store' })))
@@ -516,6 +535,7 @@ export default function CreatePropertyPage() {
         companyName: selectedAffiliation?.company || '',
         status: form.status,
         featured: Boolean(form.featured),
+        developerId: (form as any).developerId || undefined,
         features,
       }
       // Master admin always uses admin API endpoint
@@ -1096,6 +1116,27 @@ export default function CreatePropertyPage() {
                       placeholder="Se completa al seleccionar un afiliado"
                       readOnly
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Constructora / Desarrollador (Opcional)</label>
+                    <select
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      value={(form as any).developerId || ''}
+                      onChange={e=>setForm({...form, developerId: e.target.value || undefined} as any)}
+                      aria-label="Seleccionar constructora"
+                    >
+                      <option value="">Ninguna / No aplica</option>
+                      {loadingDevelopers ? (
+                        <option disabled>Cargando...</option>
+                      ) : (
+                        developers.map(dev => (
+                          <option key={dev.id} value={dev.id}>{dev.companyName}</option>
+                        ))
+                      )}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Asocia con una constructora para mostrar credenciales en el perfil de la propiedad
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="status">Estado de la Publicación</label>

@@ -132,6 +132,7 @@ export async function POST(req: NextRequest) {
       brokerName,
       builderName,
       companyName,
+      developerId,
     } = body
 
     if (!title || !price || !location || !propertyType || !listingType || !agentId) {
@@ -185,6 +186,7 @@ export async function POST(req: NextRequest) {
         brokerName: brokerName || '',
         builderName: builderName || '',
         companyName: companyName || '',
+        developerId: developerId || undefined,
         status: status || 'pending',
         featured: Boolean(featured),
         createdAt: new Date(),
@@ -255,6 +257,7 @@ export async function POST(req: NextRequest) {
       brokerName: brokerName || '',
       builderName: builderName || '',
       companyName: companyName || '',
+      developerId: developerId || undefined,
       status: status || 'pending', // pending, active, rejected, sold, draft
       featured: Boolean(featured),
       createdAt: serverTimestamp(),
