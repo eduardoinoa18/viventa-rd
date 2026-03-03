@@ -117,7 +117,7 @@ export default function ControlCenterClient() {
       const leadsJson = await leadsRes.json().catch(() => ({}))
 
       if (!streamRes.ok || !streamJson?.ok) {
-        throw new Error(streamJson?.error || 'No se pudo cargar el stream de leads')
+        throw new Error(streamJson?.error || 'Failed to load lead stream')
       }
 
       setStream(Array.isArray(streamJson?.data?.stream) ? streamJson.data.stream : [])
@@ -136,7 +136,7 @@ export default function ControlCenterClient() {
       if (mode) setRoutingMode(mode)
     } catch (error: any) {
       console.error('control center load error', error)
-      toast.error(error?.message || 'No se pudo cargar el Control Center')
+      toast.error(error?.message || 'Failed to load Control Center')
     } finally {
       setLoading(false)
     }
@@ -160,14 +160,14 @@ export default function ControlCenterClient() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || 'No se pudo guardar el routing mode')
+        throw new Error(json?.error || 'Failed to save routing mode')
       }
 
       setRoutingMode(nextMode)
-      toast.success('Routing mode actualizado')
+      toast.success('Routing mode updated')
     } catch (error: any) {
       console.error('save routing mode error', error)
-      toast.error(error?.message || 'No se pudo guardar el modo')
+      toast.error(error?.message || 'Failed to save mode')
     } finally {
       setSavingMode(false)
     }
@@ -190,14 +190,14 @@ export default function ControlCenterClient() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || 'No se pudo asignar el lead')
+        throw new Error(json?.error || 'Failed to assign lead')
       }
 
-      toast.success(`Lead asignado a ${suggestion.agentName}`)
+      toast.success(`Lead assigned to ${suggestion.agentName}`)
       await loadControlCenter()
     } catch (error: any) {
       console.error('assign lead error', error)
-      toast.error(error?.message || 'Error asignando lead')
+      toast.error(error?.message || 'Error assigning lead')
     } finally {
       setAssigningLeadId(null)
     }
@@ -217,15 +217,15 @@ export default function ControlCenterClient() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || 'No se pudo guardar el umbral SLA')
+        throw new Error(json?.error || 'Failed to save SLA threshold')
       }
 
       setEscalationHours(nextHours)
-      toast.success(`SLA escalation global actualizado a ${nextHours}h`)
+      toast.success(`Global SLA escalation updated to ${nextHours}h`)
       await loadControlCenter()
     } catch (error: any) {
       console.error('save escalation hours error', error)
-      toast.error(error?.message || 'No se pudo guardar el SLA global')
+      toast.error(error?.message || 'Failed to save global SLA')
     } finally {
       setSavingMode(false)
     }
@@ -234,10 +234,10 @@ export default function ControlCenterClient() {
   const topThree = useMemo(() => stream.slice(0, 3), [stream])
 
   const modeOptions: Array<{ value: RoutingMode; label: string; hint: string }> = [
-    { value: 'manual_only', label: 'Manual only', hint: 'Master decide cada asignación.' },
-    { value: 'auto_brokerage', label: 'Auto-assign to brokerage', hint: 'Preparado para enrutar por brokerage.' },
-    { value: 'auto_top_agent', label: 'Auto-assign to top agent', hint: 'Preparado para usar top score del sistema.' },
-    { value: 'rotation_mode', label: 'Rotation mode', hint: 'Preparado para round-robin operativo.' },
+    { value: 'manual_only', label: 'Manual only', hint: 'Master admin decides each assignment.' },
+    { value: 'auto_brokerage', label: 'Auto-assign to brokerage', hint: 'Ready for brokerage-based routing.' },
+    { value: 'auto_top_agent', label: 'Auto-assign to top agent', hint: 'Ready to use top system score.' },
+    { value: 'rotation_mode', label: 'Rotation mode', hint: 'Ready for operational round-robin.' },
   ]
 
   return (
@@ -246,7 +246,7 @@ export default function ControlCenterClient() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[#0B2545]">Control Center</h1>
-            <p className="text-sm text-gray-600 mt-1">Centro de decisión operacional para lead routing en tiempo real.</p>
+            <p className="text-sm text-gray-600 mt-1">Operational decision center for real-time lead routing.</p>
           </div>
           <button
             onClick={loadControlCenter}
@@ -284,12 +284,12 @@ export default function ControlCenterClient() {
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-gray-500">Escalated Leads</div>
             <div className="text-2xl font-bold text-red-700 mt-1">{queueStats.escalated}</div>
-            <div className="text-xs text-gray-500 mt-1">Lead unassigned con antigüedad mayor a {escalationHours}h</div>
+            <div className="text-xs text-gray-500 mt-1">Unassigned leads older than {escalationHours}h</div>
           </div>
           <div className="bg-white rounded-xl border border-orange-200 p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-orange-700">Orphaned Conversations</div>
             <div className="text-2xl font-bold text-orange-800 mt-1">{orphanedConversations}</div>
-            <div className="text-xs text-gray-500 mt-1">Conversaciones bloqueadas por lifecycle que requieren reasignación.</div>
+            <div className="text-xs text-gray-500 mt-1">Conversations blocked by lifecycle that require reassignment.</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-gray-500">SLA Escalation (Global)</div>
@@ -360,12 +360,12 @@ export default function ControlCenterClient() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             {topThree.length === 0 ? (
-              <div className="text-sm text-gray-500">No hay leads en cola.</div>
+              <div className="text-sm text-gray-500">No leads in queue.</div>
             ) : (
               topThree.map((lead) => (
                 <div key={lead.id} className="rounded-lg border border-gray-200 p-3">
                   <div className="flex items-center justify-between">
-                    <div className="font-medium text-[#0B2545]">{lead.buyerName || 'Lead sin nombre'}</div>
+                    <div className="font-medium text-[#0B2545]">{lead.buyerName || 'Unnamed lead'}</div>
                     <span className={`text-xs px-2 py-1 rounded-full ${lead.sla.color === 'green' ? 'bg-green-100 text-green-700' : lead.sla.color === 'yellow' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
                       {lead.sla.label}
                     </span>
@@ -400,7 +400,7 @@ export default function ControlCenterClient() {
         <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
             <div className="font-semibold text-[#0B2545] flex items-center gap-2"><FiClock /> Incoming Lead Stream (unassigned)</div>
-            <div className="text-xs text-gray-500">Master decide • sistema sugiere</div>
+            <div className="text-xs text-gray-500">Master decides • system suggests</div>
           </div>
 
           <div className="overflow-x-auto">
@@ -417,11 +417,11 @@ export default function ControlCenterClient() {
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">Cargando stream de leads...</td>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">Loading lead stream...</td>
                   </tr>
                 ) : stream.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">No hay leads pendientes de asignación.</td>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">No leads pending assignment.</td>
                   </tr>
                 ) : (
                   stream.map((lead) => (
@@ -468,7 +468,7 @@ export default function ControlCenterClient() {
                                 disabled={assigningLeadId === lead.id}
                                 className="mt-2 px-2.5 py-1.5 text-xs rounded-md bg-[#0B2545] text-white hover:bg-[#143a66] disabled:opacity-60"
                               >
-                                Asignar a este perfil
+                                Assign to this profile
                               </button>
                             </div>
                           ))}

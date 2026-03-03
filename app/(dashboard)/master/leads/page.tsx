@@ -649,7 +649,7 @@ export default function LeadsPage() {
               disabled={runningAutoAssign}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#0B2545] rounded-lg hover:bg-[#12355f] disabled:opacity-50"
             >
-              <FiZap /> {runningAutoAssign ? 'Running Auto-Assign...' : 'Auto-Assign Unowned'}
+              <FiZap /> {runningAutoAssign ? 'Running Auto-Assign...' : 'Auto-Assign Unassigned'}
             </button>
             <button
               onClick={handleRunEscalation}

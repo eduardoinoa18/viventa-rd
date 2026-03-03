@@ -88,7 +88,7 @@ export default function OverviewClient() {
     return (
       <div className="p-6 md:p-8">
         <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
-          Cargando resumen ejecutivo...
+          Loading executive overview...
         </div>
       </div>
     )
@@ -98,14 +98,14 @@ export default function OverviewClient() {
     return (
       <div className="p-6 md:p-8">
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
-          <p className="text-sm font-medium text-red-700">No se pudo cargar el Executive Overview.</p>
+          <p className="text-sm font-medium text-red-700">Failed to load Executive Overview.</p>
           <p className="mt-1 text-xs text-red-600">{error}</p>
           <button
             type="button"
             onClick={fetchData}
             className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
           >
-            Reintentar
+            Retry
           </button>
         </div>
       </div>
@@ -125,7 +125,7 @@ export default function OverviewClient() {
           <h1 className="text-2xl font-bold text-gray-900">Executive Overview</h1>
           <p className="text-sm text-gray-600">Capa CEO para decisiones rápidas por ratio y riesgo.</p>
         </div>
-        <div className="text-xs text-gray-500">Actualizado: {generatedAtLabel || 'N/A'}</div>
+        <div className="text-xs text-gray-500">Updated: {generatedAtLabel || 'N/A'}</div>
       </div>
 
       <section>
@@ -216,7 +216,7 @@ export default function OverviewClient() {
 
       {error ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
-          Última actualización parcial: {error}
+          Partial refresh warning: {error}
         </div>
       ) : null}
     </div>
@@ -280,7 +280,7 @@ function TopListCard({ title, rows }: { title: string; rows: Array<{ label: stri
             </div>
           ))
         ) : (
-          <p className="text-xs text-gray-500">Sin datos</p>
+          <p className="text-xs text-gray-500">No data</p>
         )}
       </div>
     </div>
@@ -289,7 +289,7 @@ function TopListCard({ title, rows }: { title: string; rows: Array<{ label: stri
 
 function SimplePerfList({ rows, metric, suffix }: { rows: PerfRow[]; metric: 'avgLatencyHours' | 'escalationRate'; suffix: string }) {
   if (!rows.length) {
-    return <p className="mt-3 text-xs text-gray-500">Sin riesgos relevantes</p>
+    return <p className="mt-3 text-xs text-gray-500">No significant risks</p>
   }
 
   return (
