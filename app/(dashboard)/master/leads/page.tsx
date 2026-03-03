@@ -172,6 +172,12 @@ function formatRunMetrics(run: AutomationRun) {
   return `scanned ${run.scanned} · escalated ${run.escalated}`
 }
 
+function formatRunDuration(durationMs: number) {
+  if (!durationMs || durationMs < 0) return 'n/a'
+  if (durationMs < 1000) return `${durationMs}ms`
+  return `${(durationMs / 1000).toFixed(1)}s`
+}
+
 function getRunStatusChip(status: string) {
   if (status === 'ok' || status === 'success') {
     return 'border-green-200 bg-green-50 text-green-700'
@@ -675,7 +681,7 @@ export default function LeadsPage() {
                       </span>
                     </div>
                     <div className="text-[11px] text-gray-600">
-                      {formatRunMetrics(run)} · {formatRelative(run.timestamp)}
+                      {formatRunMetrics(run)} · duration {formatRunDuration(run.durationMs)} · {formatRelative(run.timestamp)}
                     </div>
                   </div>
                 ))

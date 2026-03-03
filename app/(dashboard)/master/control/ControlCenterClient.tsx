@@ -50,6 +50,7 @@ type AutomationRun = {
   scanned: number
   assigned: number
   escalated: number
+  durationMs: number
   timestamp: string | null
 }
 
@@ -73,6 +74,12 @@ function formatRelative(value?: string | null) {
 function formatRunMetrics(run: AutomationRun) {
   if (run.job === 'scheduledLeadAutoAssign') return `scanned ${run.scanned} · assigned ${run.assigned}`
   return `scanned ${run.scanned} · escalated ${run.escalated}`
+}
+
+function formatRunDuration(durationMs: number) {
+  if (!durationMs || durationMs < 0) return 'n/a'
+  if (durationMs < 1000) return `${durationMs}ms`
+  return `${(durationMs / 1000).toFixed(1)}s`
 }
 
 function formatJobLabel(job: AutomationRun['job']) {
@@ -322,7 +329,7 @@ export default function ControlCenterClient() {
                       {run.status}
                     </span>
                   </div>
-                  <div className="text-[11px] text-gray-600">{formatRunMetrics(run)} · {formatRelative(run.timestamp)}</div>
+                  <div className="text-[11px] text-gray-600">{formatRunMetrics(run)} · duration {formatRunDuration(run.durationMs)} · {formatRelative(run.timestamp)}</div>
                 </div>
               ))
             )}
