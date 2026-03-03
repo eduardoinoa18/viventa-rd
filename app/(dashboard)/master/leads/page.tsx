@@ -533,16 +533,17 @@ export default function LeadsPage() {
   }
 
   const kpiCards = [
-    { label: 'Total Leads', value: stats.metrics.totalLeads, tone: 'text-gray-900' },
-    { label: 'Unassigned', value: stats.metrics.unassigned, tone: 'text-amber-600' },
-    { label: 'SLA Breached', value: stats.metrics.slaBreached, tone: 'text-red-600' },
-    { label: 'Escalations Open', value: stats.metrics.escalationsOpen, tone: 'text-red-700' },
+    { label: 'Total Leads', value: stats.metrics.totalLeads, tone: 'text-gray-900', hint: 'Current filtered queue size' },
+    { label: 'Unassigned', value: stats.metrics.unassigned, tone: 'text-amber-600', hint: 'Needs ownership now' },
+    { label: 'SLA Breached', value: stats.metrics.slaBreached, tone: 'text-red-600', hint: 'Past stage SLA due time' },
+    { label: 'Escalations Open', value: stats.metrics.escalationsOpen, tone: 'text-red-700', hint: 'Open escalation status' },
     {
       label: 'Conversion Rate',
       value: stats.metrics.conversionRate === null ? '—' : `${stats.metrics.conversionRate}%`,
       tone: 'text-green-700',
+      hint: 'Won / assigned funnel',
     },
-    { label: 'Avg Response Time', value: formatAvgResponse(stats.metrics.avgResponseTimeMinutes), tone: 'text-[#0B2545]' },
+    { label: 'Avg Response Time', value: formatAvgResponse(stats.metrics.avgResponseTimeMinutes), tone: 'text-[#0B2545]', hint: 'Assigned latency windowed 30d' },
   ]
 
   const handleViewLead = (lead: LeadRecord) => {
@@ -629,6 +630,7 @@ export default function LeadsPage() {
           <div key={card.label} className="bg-white p-4 rounded-lg border border-gray-200">
             <div className="text-xs font-medium uppercase tracking-wide text-gray-500">{card.label}</div>
             <div className={`mt-2 text-2xl font-bold ${card.tone}`}>{card.value}</div>
+            <div className="mt-1 text-[11px] text-gray-500">{card.hint}</div>
           </div>
         ))}
       </div>
