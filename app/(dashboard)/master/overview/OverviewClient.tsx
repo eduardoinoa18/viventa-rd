@@ -135,15 +135,15 @@ export default function OverviewClient() {
             title={`SLA Compliance (<= ${data.slaHours}h)`}
             value={`${health.slaComplianceRate}%`}
             status={getComplianceStatus(health.slaComplianceRate)}
-            hint="Share of leads assigned within SLA target"
+            hint="Leads assigned within SLA target window"
           />
-          <MetricCard title="Avg Assignment Time" value={`${health.avgAssignmentHours}h`} hint="Average hours from lead creation to assignment" />
+          <MetricCard title="Avg Assignment Time" value={`${health.avgAssignmentHours}h`} hint="Lead creation to assignment latency (hours)" />
           <MetricCard
             title="Escalation Rate"
             value={`${health.escalationRate}%`}
             status={getInverseRateStatus(health.escalationRate)}
             tone={health.escalationRate >= 25 ? 'warn' : 'default'}
-            hint="Open escalations as share of active queue"
+            hint="Escalated leads as share of active queue"
           />
         </div>
       </section>
@@ -168,19 +168,19 @@ export default function OverviewClient() {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Performance</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-800">Conversion Funnel (30d)</h3>
+            <h3 className="text-sm font-semibold text-gray-800">Conversion Funnel</h3>
             <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <KpiPair label="Lead → Qualified" value={`${perf.leadsToQualifiedRate}%`} />
-              <KpiPair label="Qualified → Deal" value={`${perf.qualifiedToDealRate}%`} />
+              <KpiPair label="Leads → Qualified" value={`${perf.leadsToQualifiedRate}%`} />
+              <KpiPair label="Qualified → Won" value={`${perf.qualifiedToDealRate}%`} />
             </div>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-800">Top / Weak Operators</h3>
+            <h3 className="text-sm font-semibold text-gray-800">Top Performers</h3>
             <div className="mt-3 space-y-2 text-sm">
               <Row label="Top Broker" value={perf.topBroker ? `${perf.topBroker.name} (${perf.topBroker.conversionRate}%)` : 'N/A'} />
               <Row label="Top Agent" value={perf.topAgent ? `${perf.topAgent.name} (${perf.topAgent.conversionRate}%)` : 'N/A'} />
-              <Row label="Weak SLA Broker" value={perf.worstSlaBroker ? `${perf.worstSlaBroker.name} (${perf.worstSlaBroker.slaRate}% SLA)` : 'N/A'} />
+              <Row label="Critical SLA Broker" value={perf.worstSlaBroker ? `${perf.worstSlaBroker.name} (${perf.worstSlaBroker.slaRate}% SLA)` : 'N/A'} />
             </div>
           </div>
         </div>
@@ -199,20 +199,20 @@ export default function OverviewClient() {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Risk Areas</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <MetricCard
-            title="Aging >48h (open)"
+            title="Aging > 48h"
             value={String(data.risk.agingOver48h)}
             status={data.risk.agingOver48h > 0 ? 'risk' : 'ok'}
             tone={data.risk.agingOver48h > 0 ? 'warn' : 'default'}
-            hint="Open leads older than 48 hours"
+            hint="Unassigned leads older than 48 hours"
           />
 
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-800">Slow Agents</h3>
+            <h3 className="text-sm font-semibold text-gray-800">Underperforming Agents</h3>
             <SimplePerfList rows={data.risk.slowAgents} metric="avgLatencyHours" suffix="h" />
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-800">High Escalation Brokers</h3>
+            <h3 className="text-sm font-semibold text-gray-800">High Escalation Risk</h3>
             <SimplePerfList rows={data.risk.highEscalationBrokers} metric="escalationRate" suffix="%" />
           </div>
         </div>

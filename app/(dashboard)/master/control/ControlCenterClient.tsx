@@ -291,12 +291,12 @@ export default function ControlCenterClient() {
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-gray-500">Escalated Leads</div>
             <div className="text-2xl font-bold text-red-700 mt-1">{queueStats.escalated}</div>
-            <div className="text-xs text-gray-500 mt-1">Unassigned leads beyond SLA threshold ({escalationHours}h)</div>
+            <div className="text-xs text-gray-500 mt-1">Breached and escalated beyond {escalationHours}h SLA window</div>
           </div>
           <div className="bg-white rounded-xl border border-orange-200 p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-orange-700">Orphaned Conversations</div>
             <div className="text-2xl font-bold text-orange-800 mt-1">{orphanedConversations}</div>
-            <div className="text-xs text-gray-500 mt-1">Conversations blocked by lifecycle that require reassignment.</div>
+            <div className="text-xs text-gray-500 mt-1">Conversations blocked by lifecycle policy, need reassignment</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-gray-500">Global SLA Escalation Threshold</div>
@@ -316,7 +316,7 @@ export default function ControlCenterClient() {
         </section>
 
         <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <div className="font-semibold text-[#0B2545] mb-2">Automation Activity</div>
+          <div className="font-semibold text-[#0B2545] mb-2">Automation Runs</div>
           <div className="space-y-2">
             {automationRuns.length === 0 ? (
               <div className="text-xs text-gray-500">No scheduler runs available yet.</div>

@@ -657,19 +657,19 @@ export default function LeadsPage() {
               disabled={runningAutoAssign}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#0B2545] rounded-lg hover:bg-[#12355f] disabled:opacity-50"
             >
-              <FiZap /> {runningAutoAssign ? 'Running Auto-Assign...' : 'Auto-Assign Unassigned'}
+              <FiZap /> {runningAutoAssign ? 'Running...' : 'Run auto-assign'}
             </button>
             <button
               onClick={handleRunEscalation}
               disabled={runningEscalation}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50"
             >
-              {runningEscalation ? 'Running Escalation...' : 'Run SLA Escalation'}
+              {runningEscalation ? 'Running...' : 'Run SLA escalation'}
             </button>
           </div>
 
           <div className="mt-4 border-t border-gray-100 pt-3">
-            <div className="text-xs font-semibold text-gray-700">Automation Activity</div>
+            <div className="text-xs font-semibold text-gray-700">Automation Runs</div>
             <div className="mt-2 space-y-2">
               {automationRuns.length === 0 ? (
                 <div className="text-xs text-gray-500">No automation runs yet.</div>
@@ -693,8 +693,8 @@ export default function LeadsPage() {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Top Brokers</h2>
-          <p className="text-xs text-gray-500 mt-1">Ranked by conversion, then volume.</p>
+          <h2 className="text-sm font-semibold text-gray-900">Top Performing Brokers</h2>
+          <p className="text-xs text-gray-500 mt-1">Ranked by conversion rate and deal volume</p>
 
           <div className="mt-3 space-y-2">
             {stats.metrics.topBrokers.length === 0 ? (
@@ -901,12 +901,12 @@ export default function LeadsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Lead</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Contact</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Contact Info</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Stage</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Owner</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">SLA</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Last Activity</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">SLA Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Activity</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -995,7 +995,7 @@ export default function LeadsPage() {
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Agent</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Assign to agent</label>
                 {agentsLoading ? (
                   <div className="text-sm text-gray-500">Loading agents...</div>
                 ) : agents.length === 0 ? (
