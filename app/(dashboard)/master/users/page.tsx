@@ -26,6 +26,9 @@ type User = {
   uid?: string
   agentCode?: string
   brokerCode?: string
+  createdAt?: any
+  complianceReviewRequired?: boolean
+  complianceReviewStatus?: string
 }
 
 type UsersOverview = {
@@ -283,6 +286,63 @@ export default function MasterUsersPage() {
     }
   }
 
+  const getRiskMeta = (user: User) => {
+    let score = 0
+    const reasons: string[] = []
+
+    if (user.disabled || user.status === 'suspended' || user.status === 'inactive') {
+      score += 40
+      reasons.push('suspended_or_disabled')
+    }
+
+    if (!user.emailVerified && user.status === 'active') {
+      score += 20
+      reasons.push('active_without_email_verification')
+    }
+
+    if (user.status === 'invited') {
+      score += 15
+      reasons.push('invite_pending')
+    }
+
+    if (!user.phone) {
+      score += 10
+      reasons.push('missing_phone')
+    }
+
+    if (user.complianceReviewRequired) {
+      score += 25
+      reasons.push('compliance_review_pending')
+    }
+
+    const capped = Math.min(100, score)
+    const level = capped >= 60 ? 'high' : capped >= 30 ? 'medium' : 'low'
+    return { score: capped, level, reasons }
+  }
+
+  async function forceComplianceCheck(user: User) {
+    const reason = window.prompt('Compliance review reason (optional):', 'manual_master_admin_review')
+    if (reason === null) return
+
+    try {
+      const res = await fetch('/api/admin/users/compliance-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, reason: reason?.trim() || undefined }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.ok) {
+        toast.error(json.error || 'Failed to request compliance review')
+        return
+      }
+      toast.success('Compliance check requested')
+      loadUsers()
+    } catch (error) {
+      console.error('force compliance check error', error)
+      toast.error('Failed to request compliance review')
+    }
+  }
+
   return (
     <div className="flex-1 overflow-auto">
       <div className="max-w-7xl mx-auto p-8">
@@ -461,6 +521,7 @@ export default function MasterUsersPage() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Company</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Last Login</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Risk</th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -469,6 +530,7 @@ export default function MasterUsersPage() {
                     const roleBadge = getRoleBadge(user.role)
                     const isDisabled = user.disabled || user.status === 'inactive' || user.status === 'suspended'
                     const isInvited = user.status === 'invited'
+                    const risk = getRiskMeta(user)
                     
                     return (
                       <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${isDisabled ? 'opacity-60' : ''}`}>
@@ -523,6 +585,17 @@ export default function MasterUsersPage() {
                             {isInvited ? 'Invited' : isDisabled ? 'Suspended' : 'Active'}
                           </span>
                         </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                            risk.level === 'high'
+                              ? 'bg-red-100 text-red-800'
+                              : risk.level === 'medium'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            {risk.level.toUpperCase()} ({risk.score})
+                          </span>
+                        </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex gap-2 justify-end">
                             <Link
@@ -560,6 +633,13 @@ export default function MasterUsersPage() {
                             >
                               <FiKey className="w-4 h-4" />
                               Reset PW
+                            </button>
+                            <button
+                              onClick={() => forceComplianceCheck(user)}
+                              className="inline-flex items-center gap-2 px-3 py-2 text-orange-700 bg-orange-50 hover:bg-orange-100 text-sm font-medium rounded-lg transition-colors"
+                              title="Force compliance check"
+                            >
+                              Compliance
                             </button>
                             <button
                               onClick={() => toggleStatus(user.uid || user.id, isDisabled)}
