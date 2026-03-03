@@ -135,13 +135,15 @@ export default function OverviewClient() {
             title={`SLA Compliance (<= ${data.slaHours}h)`}
             value={`${health.slaComplianceRate}%`}
             status={getComplianceStatus(health.slaComplianceRate)}
+            hint="Share of leads assigned within SLA target"
           />
-          <MetricCard title="Avg Assignment Time" value={`${health.avgAssignmentHours}h`} />
+          <MetricCard title="Avg Assignment Time" value={`${health.avgAssignmentHours}h`} hint="Average hours from lead creation to assignment" />
           <MetricCard
             title="Escalation Rate"
             value={`${health.escalationRate}%`}
             status={getInverseRateStatus(health.escalationRate)}
             tone={health.escalationRate >= 25 ? 'warn' : 'default'}
+            hint="Open escalations as share of active queue"
           />
         </div>
       </section>
@@ -149,15 +151,16 @@ export default function OverviewClient() {
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Volume & Flow</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <MetricCard title="Leads 7d" value={String(flow.leads7d)} />
-          <MetricCard title="Leads 30d" value={String(flow.leads30d)} />
+          <MetricCard title="Leads 7d" value={String(flow.leads7d)} hint="New leads captured in the last 7 days" />
+          <MetricCard title="Leads 30d" value={String(flow.leads30d)} hint="New leads captured in the last 30 days" />
           <MetricCard
             title="Velocity Trend 7d"
             value={`${flow.velocityTrend7dPct}%`}
             status={getTrendStatus(flow.velocityTrend7dPct)}
             tone={flow.velocityTrend7dPct < 0 ? 'warn' : 'default'}
+            hint="Week-over-week lead flow change"
           />
-          <MetricCard title="Active Pipeline" value={String(flow.activePipelineCount)} />
+          <MetricCard title="Active Pipeline" value={String(flow.activePipelineCount)} hint="Leads currently in non-terminal stages" />
         </div>
       </section>
 
@@ -200,6 +203,7 @@ export default function OverviewClient() {
             value={String(data.risk.agingOver48h)}
             status={data.risk.agingOver48h > 0 ? 'risk' : 'ok'}
             tone={data.risk.agingOver48h > 0 ? 'warn' : 'default'}
+            hint="Open leads older than 48 hours"
           />
 
           <div className="rounded-xl border border-gray-200 bg-white p-4">
@@ -228,11 +232,13 @@ function MetricCard({
   value,
   tone = 'default',
   status,
+  hint,
 }: {
   title: string
   value: string
   tone?: 'default' | 'warn'
   status?: 'ok' | 'watch' | 'risk'
+  hint?: string
 }) {
   return (
     <div className={`rounded-xl border p-4 ${tone === 'warn' ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white'}`}>
@@ -245,6 +251,7 @@ function MetricCard({
         ) : null}
       </div>
       <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
+      {hint ? <p className="mt-1 text-[11px] text-gray-500">{hint}</p> : null}
     </div>
   )
 }
