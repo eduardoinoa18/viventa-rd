@@ -21,8 +21,27 @@ interface BuyerRecord {
   email: string
   phone?: string
   status?: string
+  lifecycleStage?: 'new' | 'active' | 'nurturing' | 'offer' | 'won' | 'lost'
+  engagementScore?: number
+  priority?: 'low' | 'medium' | 'high'
+  assignedAgentName?: string
+  lastContactAt?: string
+  nextFollowUpAt?: string
   criteria?: BuyerCriteria
   createdAt?: string
+}
+
+function formatRelativeDate(value?: string) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return '—'
+  const diff = date.getTime() - Date.now()
+  const minutes = Math.round(diff / (1000 * 60))
+  if (Math.abs(minutes) < 60) return `${Math.abs(minutes)}m ${minutes >= 0 ? 'left' : 'ago'}`
+  const hours = Math.round(minutes / 60)
+  if (Math.abs(hours) < 24) return `${Math.abs(hours)}h ${hours >= 0 ? 'left' : 'ago'}`
+  const days = Math.round(hours / 24)
+  return `${Math.abs(days)}d ${days >= 0 ? 'left' : 'ago'}`
 }
 
 export default function MasterBuyersPage() {
@@ -127,6 +146,18 @@ export default function MasterBuyersPage() {
               {[locationFilter, purposeFilter, search].filter((value) => value.trim()).length}
             </div>
           </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-sm text-gray-500">High Priority</div>
+            <div className="text-2xl font-bold text-red-700">
+              {buyers.filter((buyer) => buyer.priority === 'high').length}
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-sm text-gray-500">Follow-up Due</div>
+            <div className="text-2xl font-bold text-amber-600">
+              {buyers.filter((buyer) => buyer.nextFollowUpAt && new Date(buyer.nextFollowUpAt).getTime() <= Date.now()).length}
+            </div>
+          </div>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -184,20 +215,21 @@ export default function MasterBuyersPage() {
                   <th className="px-5 py-3 text-left">Contact</th>
                   <th className="px-5 py-3 text-left">Location</th>
                   <th className="px-5 py-3 text-left">Budget</th>
-                  <th className="px-5 py-3 text-left">Criteria</th>
+                  <th className="px-5 py-3 text-left">Lifecycle</th>
+                  <th className="px-5 py-3 text-left">Engagement</th>
                   <th className="px-5 py-3 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-5 py-8 text-center text-gray-500">
+                    <td colSpan={7} className="px-5 py-8 text-center text-gray-500">
                       Loading buyers...
                     </td>
                   </tr>
                 ) : filteredBuyers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-5 py-8 text-center text-gray-500">
+                    <td colSpan={7} className="px-5 py-8 text-center text-gray-500">
                       No buyers found.
                     </td>
                   </tr>
@@ -230,25 +262,20 @@ export default function MasterBuyersPage() {
                         )}
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-                          {buyer.criteria?.purpose && (
-                            <span className="rounded-full bg-blue-50 px-2 py-1 text-blue-700">
-                              {buyer.criteria?.purpose}
-                            </span>
-                          )}
-                          {buyer.criteria?.bedrooms && (
-                            <span className="rounded-full bg-gray-100 px-2 py-1">
-                              {buyer.criteria?.bedrooms} beds
-                            </span>
-                          )}
-                          {buyer.criteria?.amenities?.length ? (
-                            <span className="rounded-full bg-gray-100 px-2 py-1">
-                              {buyer.criteria?.amenities?.slice(0, 2).join(', ')}
-                            </span>
-                          ) : null}
-                          {!buyer.criteria?.purpose && !buyer.criteria?.bedrooms && !buyer.criteria?.amenities?.length && (
-                            <span className="text-gray-400">No criteria</span>
-                          )}
+                        <div className="flex flex-col gap-1 text-xs">
+                          <span className="inline-flex w-fit rounded-full bg-blue-50 px-2 py-1 text-blue-700 capitalize">
+                            {buyer.lifecycleStage || 'new'}
+                          </span>
+                          <span className={`inline-flex w-fit rounded-full px-2 py-1 capitalize ${buyer.priority === 'high' ? 'bg-red-100 text-red-700' : buyer.priority === 'low' ? 'bg-gray-100 text-gray-700' : 'bg-amber-100 text-amber-700'}`}>
+                            {buyer.priority || 'medium'} priority
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="space-y-1 text-xs text-gray-600">
+                          <div>Score: <span className="font-semibold text-[#0B2545]">{buyer.engagementScore ?? 50}</span>/100</div>
+                          <div>Owner: {buyer.assignedAgentName || 'Unassigned'}</div>
+                          <div>Next: {formatRelativeDate(buyer.nextFollowUpAt)}</div>
                         </div>
                       </td>
                       <td className="px-5 py-4">

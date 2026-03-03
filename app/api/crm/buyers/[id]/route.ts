@@ -5,6 +5,32 @@ import { AdminAuthError, requireMasterAdmin } from '@/lib/requireMasterAdmin'
 
 export const dynamic = 'force-dynamic'
 
+function normalizeBuyerLifecycleStage(value: unknown): 'new' | 'active' | 'nurturing' | 'offer' | 'won' | 'lost' {
+  const allowed = new Set(['new', 'active', 'nurturing', 'offer', 'won', 'lost'])
+  if (typeof value === 'string' && allowed.has(value)) {
+    return value as 'new' | 'active' | 'nurturing' | 'offer' | 'won' | 'lost'
+  }
+  return 'new'
+}
+
+function normalizeBuyerPriority(value: unknown): 'low' | 'medium' | 'high' {
+  if (value === 'low' || value === 'medium' || value === 'high') return value
+  return 'medium'
+}
+
+function normalizeEngagementScore(value: unknown): number {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return 50
+  return Math.max(0, Math.min(100, Math.round(numeric)))
+}
+
+function asIsoDateOrEmpty(value: unknown): string {
+  if (!value) return ''
+  const date = new Date(String(value))
+  if (!Number.isFinite(date.getTime())) return ''
+  return date.toISOString()
+}
+
 // GET /api/crm/buyers/[id] - Get single buyer detail
 export async function GET(
   req: NextRequest,
@@ -32,7 +58,18 @@ export async function GET(
       )
     }
 
-    const buyer = { id: doc.id, ...doc.data() } as any
+    const source = doc.data() as any
+    const buyer = {
+      id: doc.id,
+      ...source,
+      lifecycleStage: normalizeBuyerLifecycleStage(source?.lifecycleStage),
+      engagementScore: normalizeEngagementScore(source?.engagementScore),
+      priority: normalizeBuyerPriority(source?.priority),
+      assignedAgentId: String(source?.assignedAgentId || '').trim(),
+      assignedAgentName: String(source?.assignedAgentName || '').trim(),
+      lastContactAt: asIsoDateOrEmpty(source?.lastContactAt),
+      nextFollowUpAt: asIsoDateOrEmpty(source?.nextFollowUpAt),
+    } as any
 
     // Verify it's actually a buyer
     if (buyer.role !== 'buyer') {

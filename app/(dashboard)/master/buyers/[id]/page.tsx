@@ -22,6 +22,12 @@ interface BuyerRecord {
   email: string
   phone?: string
   status?: string
+  lifecycleStage?: 'new' | 'active' | 'nurturing' | 'offer' | 'won' | 'lost'
+  engagementScore?: number
+  priority?: 'low' | 'medium' | 'high'
+  assignedAgentName?: string
+  lastContactAt?: string
+  nextFollowUpAt?: string
   criteria?: BuyerCriteria
 }
 
@@ -48,6 +54,14 @@ export default function BuyerDetailPage() {
   const [matchesCount, setMatchesCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [sendingMatches, setSendingMatches] = useState(false)
+  const [savingProfile, setSavingProfile] = useState(false)
+
+  const [lifecycleStage, setLifecycleStage] = useState<'new' | 'active' | 'nurturing' | 'offer' | 'won' | 'lost'>('new')
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium')
+  const [engagementScore, setEngagementScore] = useState(50)
+  const [assignedAgentName, setAssignedAgentName] = useState('')
+  const [lastContactAt, setLastContactAt] = useState('')
+  const [nextFollowUpAt, setNextFollowUpAt] = useState('')
 
   const loadBuyerData = useCallback(async () => {
     if (!buyerId) return
@@ -74,6 +88,13 @@ export default function BuyerDetailPage() {
       setBuyer(buyerData.data)
       setMatches(matchesData.data?.listings || [])
       setMatchesCount(matchesData.data?.listingsCount || 0)
+
+      setLifecycleStage((buyerData.data?.lifecycleStage || 'new') as 'new' | 'active' | 'nurturing' | 'offer' | 'won' | 'lost')
+      setPriority((buyerData.data?.priority || 'medium') as 'low' | 'medium' | 'high')
+      setEngagementScore(Number(buyerData.data?.engagementScore || 50))
+      setAssignedAgentName(String(buyerData.data?.assignedAgentName || ''))
+      setLastContactAt(String(buyerData.data?.lastContactAt || '').slice(0, 16))
+      setNextFollowUpAt(String(buyerData.data?.nextFollowUpAt || '').slice(0, 16))
     } catch (error) {
       console.error('buyer detail error', error)
       toast.error('No se pudo cargar el comprador')
@@ -103,6 +124,39 @@ export default function BuyerDetailPage() {
       toast.error(error?.message || 'No se pudo enviar el email de matches')
     } finally {
       setSendingMatches(false)
+    }
+  }
+
+  async function saveBuyerProfile() {
+    if (!buyerId) return
+    try {
+      setSavingProfile(true)
+      const res = await fetch('/api/crm/buyers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: buyerId,
+          lifecycleStage,
+          priority,
+          engagementScore,
+          assignedAgentName,
+          lastContactAt: lastContactAt || null,
+          nextFollowUpAt: nextFollowUpAt || null,
+        }),
+      })
+
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || 'Failed to update buyer profile')
+      }
+
+      toast.success('Buyer CRM profile updated')
+      await loadBuyerData()
+    } catch (error: any) {
+      console.error('save buyer profile error', error)
+      toast.error(error?.message || 'Unable to update buyer profile')
+    } finally {
+      setSavingProfile(false)
     }
   }
 
@@ -152,6 +206,91 @@ export default function BuyerDetailPage() {
                 <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
                   {buyer.status || 'active'}
                 </span>
+              </div>
+
+              <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Buyer CRM Lifecycle</div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  <label className="text-xs text-gray-600">
+                    Stage
+                    <select
+                      value={lifecycleStage}
+                      onChange={(event) => setLifecycleStage(event.target.value as 'new' | 'active' | 'nurturing' | 'offer' | 'won' | 'lost')}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+                    >
+                      <option value="new">new</option>
+                      <option value="active">active</option>
+                      <option value="nurturing">nurturing</option>
+                      <option value="offer">offer</option>
+                      <option value="won">won</option>
+                      <option value="lost">lost</option>
+                    </select>
+                  </label>
+
+                  <label className="text-xs text-gray-600">
+                    Priority
+                    <select
+                      value={priority}
+                      onChange={(event) => setPriority(event.target.value as 'low' | 'medium' | 'high')}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+                    >
+                      <option value="low">low</option>
+                      <option value="medium">medium</option>
+                      <option value="high">high</option>
+                    </select>
+                  </label>
+
+                  <label className="text-xs text-gray-600">
+                    Engagement Score (0-100)
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={engagementScore}
+                      onChange={(event) => setEngagementScore(Math.max(0, Math.min(100, Number(event.target.value || 0))))}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+                    />
+                  </label>
+
+                  <label className="text-xs text-gray-600">
+                    Assigned Agent
+                    <input
+                      value={assignedAgentName}
+                      onChange={(event) => setAssignedAgentName(event.target.value)}
+                      placeholder="Agent name"
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+                    />
+                  </label>
+
+                  <label className="text-xs text-gray-600">
+                    Last Contact
+                    <input
+                      type="datetime-local"
+                      value={lastContactAt}
+                      onChange={(event) => setLastContactAt(event.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+                    />
+                  </label>
+
+                  <label className="text-xs text-gray-600">
+                    Next Follow-up
+                    <input
+                      type="datetime-local"
+                      value={nextFollowUpAt}
+                      onChange={(event) => setNextFollowUpAt(event.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+                    />
+                  </label>
+                </div>
+                <div className="mt-3">
+                  <button
+                    onClick={saveBuyerProfile}
+                    disabled={savingProfile}
+                    className="rounded-lg bg-[#0B2545] px-4 py-2 text-sm font-medium text-white hover:bg-[#12355f] disabled:opacity-60"
+                  >
+                    {savingProfile ? 'Saving...' : 'Save Buyer CRM Profile'}
+                  </button>
+                </div>
               </div>
 
               <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">

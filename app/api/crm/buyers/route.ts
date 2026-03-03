@@ -11,6 +11,13 @@ interface BuyerData {
   email: string
   phone?: string
   role: 'buyer'
+  lifecycleStage?: 'new' | 'active' | 'nurturing' | 'offer' | 'won' | 'lost'
+  engagementScore?: number
+  priority?: 'low' | 'medium' | 'high'
+  assignedAgentId?: string
+  assignedAgentName?: string
+  lastContactAt?: string
+  nextFollowUpAt?: string
   criteria?: {
     location?: string
     budgetMin?: number
@@ -20,6 +27,32 @@ interface BuyerData {
     amenities?: string[]
     projectOnly?: boolean
   }
+}
+
+function normalizeBuyerLifecycleStage(value: unknown): 'new' | 'active' | 'nurturing' | 'offer' | 'won' | 'lost' {
+  const allowed = new Set(['new', 'active', 'nurturing', 'offer', 'won', 'lost'])
+  if (typeof value === 'string' && allowed.has(value)) {
+    return value as 'new' | 'active' | 'nurturing' | 'offer' | 'won' | 'lost'
+  }
+  return 'new'
+}
+
+function normalizeBuyerPriority(value: unknown): 'low' | 'medium' | 'high' {
+  if (value === 'low' || value === 'medium' || value === 'high') return value
+  return 'medium'
+}
+
+function normalizeEngagementScore(value: unknown): number {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return 50
+  return Math.max(0, Math.min(100, Math.round(numeric)))
+}
+
+function asIsoDateOrEmpty(value: unknown): string {
+  if (!value) return ''
+  const date = new Date(String(value))
+  if (!Number.isFinite(date.getTime())) return ''
+  return date.toISOString()
 }
 
 // GET /api/crm/buyers - List all buyers
@@ -55,6 +88,13 @@ export async function GET(req: NextRequest) {
       const buyers = snap.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data(),
+        lifecycleStage: normalizeBuyerLifecycleStage(doc.data()?.lifecycleStage),
+        engagementScore: normalizeEngagementScore(doc.data()?.engagementScore),
+        priority: normalizeBuyerPriority(doc.data()?.priority),
+        assignedAgentId: String(doc.data()?.assignedAgentId || '').trim(),
+        assignedAgentName: String(doc.data()?.assignedAgentName || '').trim(),
+        lastContactAt: asIsoDateOrEmpty(doc.data()?.lastContactAt),
+        nextFollowUpAt: asIsoDateOrEmpty(doc.data()?.nextFollowUpAt),
       }))
 
       return NextResponse.json({ ok: true, data: buyers, count: buyers.length })
@@ -62,7 +102,17 @@ export async function GET(req: NextRequest) {
       // Fallback if ordering fails
       const snap = await ref.get()
       const buyers = snap.docs
-        .map((doc: any) => ({ id: doc.id, ...doc.data() }))
+        .map((doc: any) => ({
+          id: doc.id,
+          ...doc.data(),
+          lifecycleStage: normalizeBuyerLifecycleStage(doc.data()?.lifecycleStage),
+          engagementScore: normalizeEngagementScore(doc.data()?.engagementScore),
+          priority: normalizeBuyerPriority(doc.data()?.priority),
+          assignedAgentId: String(doc.data()?.assignedAgentId || '').trim(),
+          assignedAgentName: String(doc.data()?.assignedAgentName || '').trim(),
+          lastContactAt: asIsoDateOrEmpty(doc.data()?.lastContactAt),
+          nextFollowUpAt: asIsoDateOrEmpty(doc.data()?.nextFollowUpAt),
+        }))
         .slice(0, limit)
 
       return NextResponse.json({ ok: true, data: buyers, count: buyers.length })
@@ -112,6 +162,13 @@ export async function POST(req: NextRequest) {
       role: 'buyer',
       criteria: body.criteria || {},
       status: 'active',
+      lifecycleStage: normalizeBuyerLifecycleStage(body.lifecycleStage),
+      engagementScore: normalizeEngagementScore(body.engagementScore),
+      priority: normalizeBuyerPriority(body.priority),
+      assignedAgentId: body.assignedAgentId?.trim() || '',
+      assignedAgentName: body.assignedAgentName?.trim() || '',
+      lastContactAt: body.lastContactAt ? new Date(body.lastContactAt) : null,
+      nextFollowUpAt: body.nextFollowUpAt ? new Date(body.nextFollowUpAt) : null,
       verified: false,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
@@ -154,7 +211,20 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { id, name, email, phone, criteria } = body
+    const {
+      id,
+      name,
+      email,
+      phone,
+      criteria,
+      lifecycleStage,
+      engagementScore,
+      priority,
+      assignedAgentId,
+      assignedAgentName,
+      lastContactAt,
+      nextFollowUpAt,
+    } = body
 
     if (!id) {
       return NextResponse.json(
@@ -169,6 +239,13 @@ export async function PATCH(req: NextRequest) {
     if (email) updates.email = email.trim().toLowerCase()
     if (phone !== undefined) updates.phone = phone?.trim() || ''
     if (criteria) updates.criteria = criteria
+    if (lifecycleStage !== undefined) updates.lifecycleStage = normalizeBuyerLifecycleStage(lifecycleStage)
+    if (engagementScore !== undefined) updates.engagementScore = normalizeEngagementScore(engagementScore)
+    if (priority !== undefined) updates.priority = normalizeBuyerPriority(priority)
+    if (assignedAgentId !== undefined) updates.assignedAgentId = String(assignedAgentId || '').trim()
+    if (assignedAgentName !== undefined) updates.assignedAgentName = String(assignedAgentName || '').trim()
+    if (lastContactAt !== undefined) updates.lastContactAt = lastContactAt ? new Date(String(lastContactAt)) : null
+    if (nextFollowUpAt !== undefined) updates.nextFollowUpAt = nextFollowUpAt ? new Date(String(nextFollowUpAt)) : null
 
     await adminDb.collection('users').doc(id).update(updates)
 
