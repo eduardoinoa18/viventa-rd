@@ -25,6 +25,8 @@ interface Application {
   reviewNotes?: string
   reviewScore?: number
   reviewRecommendation?: 'approve' | 'manual_review' | 'decline'
+  rejectionReasonCode?: string | null
+  failedRequirements?: string[]
 }
 
 type ReviewCriteria = {
@@ -473,6 +475,12 @@ export default function ApplicationsPage() {
                             </span>
                             {app.reviewRecommendation && (
                               <p className="mt-1 text-xs text-gray-500">Recommendation: {app.reviewRecommendation.replace('_', ' ')}</p>
+                            )}
+                            {app.rejectionReasonCode && (
+                              <p className="mt-1 text-xs text-rose-700">Reason: {app.rejectionReasonCode.replace(/_/g, ' ')}</p>
+                            )}
+                            {Array.isArray(app.failedRequirements) && app.failedRequirements.length > 0 && (
+                              <p className="mt-1 text-xs text-rose-600">Failed: {app.failedRequirements.join(', ')}</p>
                             )}
                           </div>
                         </td>
