@@ -253,7 +253,7 @@ export default function ControlCenterClient() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[#0B2545]">Control Center</h1>
-            <p className="text-sm text-gray-600 mt-1">Operational decision center for real-time lead routing.</p>
+            <p className="text-sm text-gray-600 mt-1">Real-time command surface for lead routing decisions.</p>
           </div>
           <button
             onClick={loadControlCenter}
@@ -291,7 +291,7 @@ export default function ControlCenterClient() {
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-gray-500">Escalated Leads</div>
             <div className="text-2xl font-bold text-red-700 mt-1">{queueStats.escalated}</div>
-            <div className="text-xs text-gray-500 mt-1">Unassigned leads older than {escalationHours}h</div>
+            <div className="text-xs text-gray-500 mt-1">Unassigned leads beyond SLA threshold ({escalationHours}h)</div>
           </div>
           <div className="bg-white rounded-xl border border-orange-200 p-4 shadow-sm">
             <div className="text-xs uppercase tracking-wide text-orange-700">Orphaned Conversations</div>
@@ -299,7 +299,7 @@ export default function ControlCenterClient() {
             <div className="text-xs text-gray-500 mt-1">Conversations blocked by lifecycle that require reassignment.</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="text-xs uppercase tracking-wide text-gray-500">SLA Escalation (Global)</div>
+            <div className="text-xs uppercase tracking-wide text-gray-500">Global SLA Escalation Threshold</div>
             <div className="mt-2 flex items-center gap-2">
               {[2, 4, 6].map((hours) => (
                 <button
@@ -319,7 +319,7 @@ export default function ControlCenterClient() {
           <div className="font-semibold text-[#0B2545] mb-2">Automation Activity</div>
           <div className="space-y-2">
             {automationRuns.length === 0 ? (
-              <div className="text-xs text-gray-500">No automation runs recorded yet.</div>
+              <div className="text-xs text-gray-500">No scheduler runs available yet.</div>
             ) : (
               automationRuns.slice(0, 4).map((run) => (
                 <div key={run.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 px-2 py-1.5">
@@ -338,7 +338,7 @@ export default function ControlCenterClient() {
 
         <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="flex items-center gap-2 text-[#0B2545] font-semibold mb-3">
-            <FiTarget /> Broker Routing Mode
+            <FiTarget /> Routing Policy
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {modeOptions.map((option) => {
@@ -363,11 +363,11 @@ export default function ControlCenterClient() {
 
         <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="flex items-center gap-2 text-[#0B2545] font-semibold mb-3">
-            <FiActivity /> Immediate Priority (Top 3)
+            <FiActivity /> Immediate Priority Queue (Top 3)
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             {topThree.length === 0 ? (
-              <div className="text-sm text-gray-500">No leads in queue.</div>
+              <div className="text-sm text-gray-500">No high-priority leads in queue.</div>
             ) : (
               topThree.map((lead) => (
                 <div key={lead.id} className="rounded-lg border border-gray-200 p-3">
@@ -387,7 +387,7 @@ export default function ControlCenterClient() {
         </section>
 
         <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <div className="font-semibold text-[#0B2545] mb-2">Reassignment Rules (Scaffold)</div>
+          <div className="font-semibold text-[#0B2545] mb-2">Reassignment Rules</div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
             <div className={`rounded-lg border p-3 ${reassignmentPolicy.manualReassignEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
               Manual reassign: <strong>{reassignmentPolicy.manualReassignEnabled ? 'ON' : 'OFF'}</strong>
@@ -406,8 +406,8 @@ export default function ControlCenterClient() {
 
         <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-            <div className="font-semibold text-[#0B2545] flex items-center gap-2"><FiClock /> Incoming Lead Stream (unassigned)</div>
-            <div className="text-xs text-gray-500">Master decides • system suggests</div>
+            <div className="font-semibold text-[#0B2545] flex items-center gap-2"><FiClock /> Incoming Lead Stream (Unassigned)</div>
+            <div className="text-xs text-gray-500">Manual decision with ranked suggestions</div>
           </div>
 
           <div className="overflow-x-auto">
