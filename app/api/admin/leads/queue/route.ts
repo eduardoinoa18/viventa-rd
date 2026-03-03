@@ -69,6 +69,10 @@ function avg(values: number[]): number {
   return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1))
 }
 
+function mapOperationalCount(value: unknown): number {
+  return Number.isFinite(Number(value)) ? Number(value) : 0
+}
+
 async function loadUsersByIds(adminDb: any, userIds: string[]) {
   const users = new Map<string, any>()
   const chunks: string[][] = []
@@ -227,12 +231,21 @@ export async function GET(req: NextRequest) {
 
     leads = leads.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt)).slice(0, limit)
 
+    const nowMs = Date.now()
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+    const RESPONSE_TIME_CLAMP_MINUTES = 7 * 24 * 60
+    const responseWindowStages = new Set<ReturnType<typeof normalizeLeadStage>>(['assigned', 'contacted', 'qualified', 'won'])
+
     const responseLatencyMinutes = leads
       .map((lead) => {
+        if (!responseWindowStages.has(lead.leadStage)) return null
         const createdMs = toMillis(lead.createdAt)
         const assignedMs = toMillis(lead.assignedAt)
         if (!createdMs || !assignedMs || assignedMs < createdMs) return null
-        return (assignedMs - createdMs) / (1000 * 60)
+        if (nowMs - createdMs > THIRTY_DAYS_MS) return null
+        const latencyMinutes = (assignedMs - createdMs) / (1000 * 60)
+        if (latencyMinutes <= 0) return null
+        return Math.min(latencyMinutes, RESPONSE_TIME_CLAMP_MINUTES)
       })
       .filter((value): value is number => value !== null)
 
@@ -241,6 +254,7 @@ export async function GET(req: NextRequest) {
     const unassignedCount = leads.filter((lead) => !lead.ownerAgentId).length
     const escalationsOpen = leads.filter((lead) => String(lead.escalationStatus || '') === 'open').length
     const autoAssignableCount = leads.filter((lead) => !lead.ownerAgentId && lead.leadStage === 'new').length
+    const assignedFunnelCount = leads.filter((lead) => ['assigned', 'contacted', 'qualified', 'negotiating', 'won', 'lost'].includes(lead.leadStage)).length
 
     const ownerIds = Array.from(
       new Set(
@@ -278,6 +292,32 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.conversionRate - a.conversionRate || b.assigned - a.assigned)
       .slice(0, 5)
 
+    const jobsSnap = await adminDb
+      .collection('operational_jobs')
+      .orderBy('timestamp', 'desc')
+      .limit(8)
+      .get()
+
+    const automationRuns = jobsSnap.docs
+      .map((doc) => {
+        const data = doc.data() || {}
+        const job = String(data.job || '').trim()
+        if (job !== 'scheduledLeadAutoAssign' && job !== 'scheduledLeadSlaEscalation') return null
+
+        return {
+          id: doc.id,
+          job,
+          status: String(data.status || 'unknown').trim().toLowerCase(),
+          scanned: mapOperationalCount(data.scanned),
+          assigned: mapOperationalCount(data.assigned),
+          escalated: mapOperationalCount(data.escalated),
+          durationMs: mapOperationalCount(data.durationMs),
+          timestamp: toIso(data.timestamp),
+        }
+      })
+      .filter((run): run is NonNullable<typeof run> => run !== null)
+      .slice(0, 6)
+
     const stats = {
       total: leads.length,
       unassigned: unassignedCount,
@@ -301,7 +341,7 @@ export async function GET(req: NextRequest) {
         totalLeads: leads.length,
         unassigned: unassignedCount,
         slaBreached: slaBreachedCount,
-        conversionRate: pct(wonCount, leads.length),
+        conversionRate: assignedFunnelCount > 0 ? pct(wonCount, assignedFunnelCount) : null,
         avgResponseTimeMinutes: avg(responseLatencyMinutes),
         escalationsOpen,
         autoAssignable: autoAssignableCount,
@@ -309,7 +349,7 @@ export async function GET(req: NextRequest) {
       },
     }
 
-    return NextResponse.json({ ok: true, data: { leads, stats } })
+    return NextResponse.json({ ok: true, data: { leads, stats, automationRuns } })
   } catch (error: any) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json({ ok: false, error: error.message, code: error.code }, { status: error.status })

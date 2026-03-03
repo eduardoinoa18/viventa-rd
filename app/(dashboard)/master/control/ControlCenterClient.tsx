@@ -43,12 +43,56 @@ type ReassignmentPolicy = {
   escalationLogEnabled: boolean
 }
 
+type AutomationRun = {
+  id: string
+  job: 'scheduledLeadAutoAssign' | 'scheduledLeadSlaEscalation'
+  status: string
+  scanned: number
+  assigned: number
+  escalated: number
+  timestamp: string | null
+}
+
+function formatRelative(value?: string | null) {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  if (!Number.isFinite(parsed.getTime())) return '—'
+
+  const diffMs = Date.now() - parsed.getTime()
+  if (diffMs < 0) return 'just now'
+  const minutes = Math.floor(diffMs / (1000 * 60))
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
+  if (hours < 24) return `${hours}h ago`
+  return `${days}d ago`
+}
+
+function formatRunMetrics(run: AutomationRun) {
+  if (run.job === 'scheduledLeadAutoAssign') return `scanned ${run.scanned} · assigned ${run.assigned}`
+  return `scanned ${run.scanned} · escalated ${run.escalated}`
+}
+
+function formatJobLabel(job: AutomationRun['job']) {
+  if (job === 'scheduledLeadAutoAssign') return 'Auto-Assign'
+  return 'SLA Escalation'
+}
+
+function getRunStatusChip(status: string) {
+  if (status === 'ok' || status === 'success') return 'border-green-200 bg-green-50 text-green-700'
+  if (status === 'running' || status === 'queued') return 'border-amber-200 bg-amber-50 text-amber-700'
+  return 'border-red-200 bg-red-50 text-red-700'
+}
+
 export default function ControlCenterClient() {
   const [loading, setLoading] = useState(true)
   const [savingMode, setSavingMode] = useState(false)
   const [assigningLeadId, setAssigningLeadId] = useState<string | null>(null)
   const [stream, setStream] = useState<ControlLead[]>([])
   const [queueStats, setQueueStats] = useState({ total: 0, red: 0, yellow: 0, green: 0, escalated: 0, avgUrgency: 0 })
+  const [automationRuns, setAutomationRuns] = useState<AutomationRun[]>([])
   const [orphanedConversations, setOrphanedConversations] = useState(0)
   const [routingMode, setRoutingMode] = useState<RoutingMode>('manual_only')
   const [escalationHours, setEscalationHours] = useState(2)
@@ -62,13 +106,15 @@ export default function ControlCenterClient() {
   const loadControlCenter = useCallback(async () => {
     try {
       setLoading(true)
-      const [streamRes, settingsRes] = await Promise.all([
+      const [streamRes, settingsRes, leadsRes] = await Promise.all([
         fetch('/api/admin/control/stream?status=unassigned&limit=80'),
         fetch('/api/admin/settings'),
+        fetch('/api/admin/leads/queue?limit=20'),
       ])
 
       const streamJson = await streamRes.json().catch(() => ({}))
       const settingsJson = await settingsRes.json().catch(() => ({}))
+      const leadsJson = await leadsRes.json().catch(() => ({}))
 
       if (!streamRes.ok || !streamJson?.ok) {
         throw new Error(streamJson?.error || 'No se pudo cargar el stream de leads')
@@ -84,6 +130,7 @@ export default function ControlCenterClient() {
         brokerFallbackEnabled: true,
         escalationLogEnabled: true,
       })
+      setAutomationRuns(Array.isArray(leadsJson?.data?.automationRuns) ? leadsJson.data.automationRuns : [])
 
       const mode = settingsJson?.data?.controlRoutingMode as RoutingMode | undefined
       if (mode) setRoutingMode(mode)
@@ -258,6 +305,27 @@ export default function ControlCenterClient() {
                 </button>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="font-semibold text-[#0B2545] mb-2">Automation Activity</div>
+          <div className="space-y-2">
+            {automationRuns.length === 0 ? (
+              <div className="text-xs text-gray-500">No automation runs recorded yet.</div>
+            ) : (
+              automationRuns.slice(0, 4).map((run) => (
+                <div key={run.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 px-2 py-1.5">
+                  <div className="text-xs text-gray-800 inline-flex items-center gap-2">
+                    <span className="font-semibold">{formatJobLabel(run.job)}</span>
+                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getRunStatusChip(run.status)}`}>
+                      {run.status}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-gray-600">{formatRunMetrics(run)} · {formatRelative(run.timestamp)}</div>
+                </div>
+              ))
+            )}
           </div>
         </section>
 

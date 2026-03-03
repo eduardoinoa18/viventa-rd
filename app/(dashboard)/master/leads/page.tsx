@@ -34,7 +34,7 @@ interface LeadMetrics {
   totalLeads: number
   unassigned: number
   slaBreached: number
-  conversionRate: number
+  conversionRate: number | null
   avgResponseTimeMinutes: number
   escalationsOpen: number
   autoAssignable: number
@@ -57,6 +57,17 @@ interface LeadStats {
   metrics: LeadMetrics
 }
 
+interface AutomationRun {
+  id: string
+  job: 'scheduledLeadAutoAssign' | 'scheduledLeadSlaEscalation'
+  status: string
+  scanned: number
+  assigned: number
+  escalated: number
+  durationMs: number
+  timestamp: string | null
+}
+
 interface AgentOption {
   id: string
   name: string
@@ -69,7 +80,7 @@ const DEFAULT_METRICS: LeadMetrics = {
   totalLeads: 0,
   unassigned: 0,
   slaBreached: 0,
-  conversionRate: 0,
+  conversionRate: null,
   avgResponseTimeMinutes: 0,
   escalationsOpen: 0,
   autoAssignable: 0,
@@ -149,6 +160,28 @@ function formatAvgResponse(minutes: number) {
   return `${hours}h ${mins}m`
 }
 
+function formatJobLabel(job: AutomationRun['job']) {
+  if (job === 'scheduledLeadAutoAssign') return 'Auto-Assign'
+  return 'SLA Escalation'
+}
+
+function formatRunMetrics(run: AutomationRun) {
+  if (run.job === 'scheduledLeadAutoAssign') {
+    return `scanned ${run.scanned} · assigned ${run.assigned}`
+  }
+  return `scanned ${run.scanned} · escalated ${run.escalated}`
+}
+
+function getRunStatusChip(status: string) {
+  if (status === 'ok' || status === 'success') {
+    return 'border-green-200 bg-green-50 text-green-700'
+  }
+  if (status === 'running' || status === 'queued') {
+    return 'border-amber-200 bg-amber-50 text-amber-700'
+  }
+  return 'border-red-200 bg-red-50 text-red-700'
+}
+
 function mapPipelineStage(stage: LeadStage): PipelineStage {
   if (stage === 'negotiating') return 'qualified'
   if (stage === 'archived') return 'lost'
@@ -159,6 +192,7 @@ export default function LeadsPage() {
   const router = useRouter()
   const [leads, setLeads] = useState<LeadRecord[]>([])
   const [stats, setStats] = useState<LeadStats>(DEFAULT_STATS)
+  const [automationRuns, setAutomationRuns] = useState<AutomationRun[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'table' | 'pipeline'>('table')
   const [selectedStages, setSelectedStages] = useState<LeadStage[]>([])
@@ -214,6 +248,7 @@ export default function LeadsPage() {
       if (data.ok) {
         setLeads(data.data.leads || [])
         setStats(data.data.stats || DEFAULT_STATS)
+        setAutomationRuns(data.data.automationRuns || [])
       } else {
         toast.error(data.error || 'Failed to fetch leads')
       }
@@ -496,7 +531,11 @@ export default function LeadsPage() {
     { label: 'Unassigned', value: stats.metrics.unassigned, tone: 'text-amber-600' },
     { label: 'SLA Breached', value: stats.metrics.slaBreached, tone: 'text-red-600' },
     { label: 'Escalations Open', value: stats.metrics.escalationsOpen, tone: 'text-red-700' },
-    { label: 'Conversion Rate', value: `${stats.metrics.conversionRate}%`, tone: 'text-green-700' },
+    {
+      label: 'Conversion Rate',
+      value: stats.metrics.conversionRate === null ? '—' : `${stats.metrics.conversionRate}%`,
+      tone: 'text-green-700',
+    },
     { label: 'Avg Response Time', value: formatAvgResponse(stats.metrics.avgResponseTimeMinutes), tone: 'text-[#0B2545]' },
   ]
 
@@ -588,6 +627,12 @@ export default function LeadsPage() {
         ))}
       </div>
 
+      {stats.metrics.totalLeads > 0 && stats.metrics.totalLeads < 10 && (
+        <div className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+          Low dataset — metrics stabilizing
+        </div>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4 xl:col-span-2">
           <div className="flex items-center justify-between gap-3">
@@ -613,6 +658,29 @@ export default function LeadsPage() {
             >
               {runningEscalation ? 'Running Escalation...' : 'Run SLA Escalation'}
             </button>
+          </div>
+
+          <div className="mt-4 border-t border-gray-100 pt-3">
+            <div className="text-xs font-semibold text-gray-700">Automation Activity</div>
+            <div className="mt-2 space-y-2">
+              {automationRuns.length === 0 ? (
+                <div className="text-xs text-gray-500">No automation runs recorded yet.</div>
+              ) : (
+                automationRuns.map((run) => (
+                  <div key={run.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 px-2 py-1.5">
+                    <div className="text-xs text-gray-800 inline-flex items-center gap-2">
+                      <span className="font-semibold">{formatJobLabel(run.job)}</span>
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getRunStatusChip(run.status)}`}>
+                        {run.status}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-gray-600">
+                      {formatRunMetrics(run)} · {formatRelative(run.timestamp)}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 

@@ -15,7 +15,7 @@ import { usePageViewTracking } from '@/hooks/useAnalytics'
 
 export default function UnifiedLoginPage() {
   usePageViewTracking()
-  
+
   const router = useRouter()
   const [nextPath, setNextPath] = useState<string>('')
   const [email, setEmail] = useState('')
