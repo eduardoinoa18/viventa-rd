@@ -143,7 +143,7 @@ export default function ControlCenterClient() {
       if (mode) setRoutingMode(mode)
     } catch (error: any) {
       console.error('control center load error', error)
-      toast.error(error?.message || 'Failed to load Control Center')
+      toast.error(error?.message || 'Unable to load Control Center')
     } finally {
       setLoading(false)
     }
@@ -167,14 +167,14 @@ export default function ControlCenterClient() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || 'Failed to save routing mode')
+        throw new Error(json?.error || 'Unable to save routing mode')
       }
 
       setRoutingMode(nextMode)
       toast.success('Routing mode updated')
     } catch (error: any) {
       console.error('save routing mode error', error)
-      toast.error(error?.message || 'Failed to save mode')
+      toast.error(error?.message || 'Unable to save mode')
     } finally {
       setSavingMode(false)
     }
@@ -197,14 +197,14 @@ export default function ControlCenterClient() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || 'Failed to assign lead')
+        throw new Error(json?.error || 'Unable to assign lead')
       }
 
       toast.success(`Lead assigned to ${suggestion.agentName}`)
       await loadControlCenter()
     } catch (error: any) {
       console.error('assign lead error', error)
-      toast.error(error?.message || 'Error assigning lead')
+      toast.error(error?.message || 'Unable to assign lead')
     } finally {
       setAssigningLeadId(null)
     }
@@ -224,7 +224,7 @@ export default function ControlCenterClient() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || 'Failed to save SLA threshold')
+        throw new Error(json?.error || 'Unable to save SLA threshold')
       }
 
       setEscalationHours(nextHours)
@@ -232,7 +232,7 @@ export default function ControlCenterClient() {
       await loadControlCenter()
     } catch (error: any) {
       console.error('save escalation hours error', error)
-      toast.error(error?.message || 'Failed to save global SLA')
+      toast.error(error?.message || 'Unable to save global SLA')
     } finally {
       setSavingMode(false)
     }

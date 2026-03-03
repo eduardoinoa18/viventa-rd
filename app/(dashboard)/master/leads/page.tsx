@@ -256,11 +256,11 @@ export default function LeadsPage() {
         setStats(data.data.stats || DEFAULT_STATS)
         setAutomationRuns(data.data.automationRuns || [])
       } else {
-        toast.error(data.error || 'Failed to fetch leads')
+        toast.error(data.error || 'Unable to load leads')
       }
     } catch (err) {
       console.error('Error fetching leads:', err)
-      toast.error('Error fetching leads')
+      toast.error('Unable to load leads')
     } finally {
       setLoading(false)
     }
@@ -275,11 +275,11 @@ export default function LeadsPage() {
       if (data.ok && Array.isArray(data.data)) {
         setAgents(data.data.filter((user: AgentOption) => user.role === 'agent' || user.role === 'broker'))
       } else {
-        toast.error('Failed to load agents')
+        toast.error('Unable to load agents')
       }
     } catch (err) {
       console.error('Error fetching agents:', err)
-      toast.error('Error loading agents')
+      toast.error('Unable to load agents')
     } finally {
       setAgentsLoading(false)
     }
@@ -315,11 +315,11 @@ export default function LeadsPage() {
         setAssignNote('')
         fetchLeads()
       } else {
-        toast.error(data.error || 'Failed to assign lead')
+        toast.error(data.error || 'Unable to assign lead')
       }
     } catch (err) {
       console.error('Error assigning lead:', err)
-      toast.error('Error assigning lead')
+      toast.error('Unable to assign lead')
     }
   }
 
@@ -339,11 +339,11 @@ export default function LeadsPage() {
         toast.success('Lead stage updated')
         fetchLeads()
       } else {
-        toast.error(data.error || 'Failed to update stage')
+        toast.error(data.error || 'Unable to update stage')
       }
     } catch (err) {
       console.error('Error updating stage:', err)
-      toast.error('Error updating stage')
+      toast.error('Unable to update stage')
     }
   }
 
@@ -362,11 +362,11 @@ export default function LeadsPage() {
         toast.success('Lead deleted')
         fetchLeads()
       } else {
-        toast.error(data.error || 'Failed to delete lead')
+        toast.error(data.error || 'Unable to delete lead')
       }
     } catch (err) {
       console.error('Error deleting lead:', err)
-      toast.error('Error deleting lead')
+      toast.error('Unable to delete lead')
     }
   }
 
@@ -376,7 +376,7 @@ export default function LeadsPage() {
       .slice(0, 25)
 
     if (candidates.length === 0) {
-      toast('No unassigned new leads to auto-assign')
+      toast('No unassigned new leads available for auto-assign')
       return
     }
 
@@ -399,7 +399,7 @@ export default function LeadsPage() {
       fetchLeads()
     } catch (err) {
       console.error('Error running auto-assign:', err)
-      toast.error('Failed to run auto-assign')
+      toast.error('Unable to run auto-assign')
     } finally {
       setRunningAutoAssign(false)
     }
@@ -416,7 +416,7 @@ export default function LeadsPage() {
 
       const data = await res.json()
       if (!res.ok || !data.ok) {
-        toast.error(data.error || 'Failed to run SLA escalation')
+        toast.error(data.error || 'Unable to run SLA escalation')
         return
       }
 
@@ -425,7 +425,7 @@ export default function LeadsPage() {
       fetchLeads()
     } catch (err) {
       console.error('Error running SLA escalation:', err)
-      toast.error('Failed to run SLA escalation')
+      toast.error('Unable to run SLA escalation')
     } finally {
       setRunningEscalation(false)
     }
