@@ -356,7 +356,7 @@ export default function ControlCenterClient() {
 
         <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="flex items-center gap-2 text-[#0B2545] font-semibold mb-3">
-            <FiActivity /> Prioridad inmediata (Top 3)
+            <FiActivity /> Immediate Priority (Top 3)
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             {topThree.length === 0 ? (
@@ -371,7 +371,7 @@ export default function ControlCenterClient() {
                     </span>
                   </div>
                   <div className="text-xs text-gray-600 mt-1">{lead.city || 'N/A'} {lead.sector ? `• ${lead.sector}` : ''}</div>
-                  <div className="text-xs text-gray-500 mt-1">{lead.type} • urgencia {lead.urgencyScore}</div>
+                  <div className="text-xs text-gray-500 mt-1">{lead.type} • urgency {lead.urgencyScore}</div>
                   <div className="text-xs text-gray-500">{lead.propertyType || 'property'} • {lead.ageHours}h</div>
                 </div>
               ))
@@ -408,10 +408,10 @@ export default function ControlCenterClient() {
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   <th className="px-4 py-3 text-left">Lead</th>
-                  <th className="px-4 py-3 text-left">Contexto</th>
+                  <th className="px-4 py-3 text-left">Context</th>
                   <th className="px-4 py-3 text-left">SLA</th>
-                  <th className="px-4 py-3 text-left">Urgencia</th>
-                  <th className="px-4 py-3 text-left">Sugerencias</th>
+                  <th className="px-4 py-3 text-left">Urgency</th>
+                  <th className="px-4 py-3 text-left">Suggestions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -427,8 +427,8 @@ export default function ControlCenterClient() {
                   stream.map((lead) => (
                     <tr key={lead.id}>
                       <td className="px-4 py-4 align-top">
-                        <div className="font-medium text-[#0B2545]">{lead.buyerName || 'Lead sin nombre'}</div>
-                        <div className="text-xs text-gray-600">{lead.buyerEmail || 'sin email'}</div>
+                        <div className="font-medium text-[#0B2545]">{lead.buyerName || 'Unnamed lead'}</div>
+                        <div className="text-xs text-gray-600">{lead.buyerEmail || 'no email'}</div>
                         {lead.buyerPhone && <div className="text-xs text-gray-500">{lead.buyerPhone}</div>}
                         <div className="text-xs text-gray-400 mt-1">ID: {lead.id.slice(0, 8)}...</div>
                       </td>
