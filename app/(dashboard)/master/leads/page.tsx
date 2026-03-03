@@ -723,7 +723,7 @@ export default function LeadsPage() {
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search lead, email, phone or owner"
+              placeholder="Search by name, email, phone, or agent"
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A676]/30"
             />
           </div>
@@ -734,7 +734,7 @@ export default function LeadsPage() {
             className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
             aria-label="Filter by owner"
           >
-            <option value="all">All Owners</option>
+            <option value="all">All agents</option>
             <option value="unassigned">Unassigned</option>
             {agents.map((agent) => (
               <option key={agent.id} value={agent.id}>
@@ -749,7 +749,7 @@ export default function LeadsPage() {
             className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
             aria-label="Filter by source"
           >
-            <option value="all">All Sources</option>
+            <option value="all">All sources</option>
             {sourceOptions.map((source) => (
               <option key={source} value={source}>
                 {source}
@@ -786,8 +786,9 @@ export default function LeadsPage() {
           <button
             onClick={clearFilters}
             className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+            title="Clear all active filters"
           >
-            Clear
+            Clear filters
           </button>
         </div>
 
@@ -825,7 +826,7 @@ export default function LeadsPage() {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-10 text-center text-gray-500">Loading leads...</div>
+        <div className="bg-white rounded-lg border border-gray-200 p-10 text-center text-gray-500">Loading lead queue...</div>
       ) : leads.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-10 text-center">
           <div className="text-lg font-semibold text-gray-900">{emptyStateMessage.title}</div>
@@ -842,7 +843,7 @@ export default function LeadsPage() {
               <div className="p-3 space-y-3 max-h-[520px] overflow-y-auto">
                 {pipelineGroups[column.key].length === 0 ? (
                   <div className="text-xs text-gray-500 border border-dashed border-gray-200 rounded-lg p-3">
-                    No leads in this stage
+                    No leads in this column
                   </div>
                 ) : (
                   pipelineGroups[column.key].map((lead) => {
@@ -978,7 +979,7 @@ export default function LeadsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Assign Lead to Agent</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Assign lead to agent</h2>
               <button
                 onClick={() => {
                   setShowAssignModal(false)
@@ -995,9 +996,9 @@ export default function LeadsPage() {
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Assign to agent</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select an agent</label>
                 {agentsLoading ? (
-                  <div className="text-sm text-gray-500">Loading agents...</div>
+                  <div className="text-sm text-gray-500">Loading available agents...</div>
                 ) : agents.length === 0 ? (
                   <div className="text-sm text-red-600">No agents available</div>
                 ) : (
@@ -1017,11 +1018,11 @@ export default function LeadsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Reason / Note</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Assignment reason (optional)</label>
                 <textarea
                   value={assignNote}
                   onChange={(e) => setAssignNote(e.target.value)}
-                  placeholder="Assignment context or reassignment reason..."
+                  placeholder="Explain why this is the best assignment..."
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                 />
