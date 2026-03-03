@@ -34,6 +34,21 @@ type ReviewCriteria = {
   readinessSignal: boolean
 }
 
+type RejectionReasonCode =
+  | 'kyc_failed'
+  | 'missing_required_documents'
+  | 'license_or_registration_invalid'
+  | 'market_fit_insufficient'
+  | 'compliance_risk_high'
+  | 'other'
+
+const HARD_REQUIREMENT_OPTIONS = [
+  { key: 'identity', label: 'Identity/KYC validation' },
+  { key: 'license', label: 'Valid license or registration' },
+  { key: 'documents', label: 'Required legal documents' },
+  { key: 'compliance', label: 'Compliance risk threshold' },
+] as const
+
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,6 +59,8 @@ export default function ApplicationsPage() {
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
   const [reviewNotes, setReviewNotes] = useState('')
   const [showReviewModal, setShowReviewModal] = useState(false)
+  const [rejectionReason, setRejectionReason] = useState<RejectionReasonCode | ''>('')
+  const [failedRequirements, setFailedRequirements] = useState<string[]>([])
   const [reviewCriteria, setReviewCriteria] = useState<ReviewCriteria>({
     identityVerified: false,
     businessProfileValid: false,
@@ -150,6 +167,8 @@ export default function ApplicationsPage() {
   function openReview(app: Application) {
     setSelectedApp(app)
     setReviewNotes('')
+    setRejectionReason('')
+    setFailedRequirements([])
     setReviewCriteria({
       identityVerified: false,
       businessProfileValid: false,
@@ -163,6 +182,12 @@ export default function ApplicationsPage() {
     setShowReviewModal(false)
     setSelectedApp(null)
     setReviewNotes('')
+    setRejectionReason('')
+    setFailedRequirements([])
+  }
+
+  function toggleFailedRequirement(key: string) {
+    setFailedRequirements((prev) => (prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]))
   }
 
   async function submitReviewDecision(status: 'approved' | 'rejected' | 'more_info') {
@@ -183,6 +208,16 @@ export default function ApplicationsPage() {
       return
     }
 
+    if (status === 'rejected' && !rejectionReason) {
+      toast.error('Please select a structured rejection reason.')
+      return
+    }
+
+    if (status === 'rejected' && failedRequirements.length === 0) {
+      toast.error('Select at least one failed hard requirement.')
+      return
+    }
+
     setProcessingId(selectedApp.id)
     try {
       const res = await fetch('/api/admin/applications', {
@@ -199,6 +234,8 @@ export default function ApplicationsPage() {
           company: selectedApp.company,
           criteriaChecks: reviewCriteria,
           criteriaScore: reviewScore,
+          rejectionReason,
+          failedRequirements,
         }),
       })
 
@@ -539,6 +576,38 @@ export default function ApplicationsPage() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
             />
             <p className="text-xs text-gray-500 mt-2">These notes and criteria are stored in the application review record.</p>
+
+            <div className="mt-4 rounded-lg border border-gray-200 p-3">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Structured rejection reason (required to reject)</label>
+              <select
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value as RejectionReasonCode | '')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                aria-label="Structured rejection reason"
+              >
+                <option value="">Select a reason</option>
+                <option value="kyc_failed">KYC/identity failed</option>
+                <option value="missing_required_documents">Missing required documents</option>
+                <option value="license_or_registration_invalid">License/registration invalid</option>
+                <option value="market_fit_insufficient">Market fit insufficient</option>
+                <option value="compliance_risk_high">Compliance risk too high</option>
+                <option value="other">Other</option>
+              </select>
+
+              <p className="mt-3 text-sm font-semibold text-gray-700">Hard requirements failed</p>
+              <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+                {HARD_REQUIREMENT_OPTIONS.map((option) => (
+                  <label key={option.key} className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={failedRequirements.includes(option.key)}
+                      onChange={() => toggleFailedRequirement(option.key)}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </div>
 
             <div className="flex flex-wrap gap-3 mt-6 justify-end">
               <button

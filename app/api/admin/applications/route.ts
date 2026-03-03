@@ -57,7 +57,7 @@ function buildCriteriaFromApplication(appData: any) {
 export async function PATCH(req: NextRequest) {
   try {
     const admin = await requireMasterAdmin(req)
-    const { id, status, notes, criteriaChecks, criteriaScore } = await req.json()
+    const { id, status, notes, criteriaChecks, criteriaScore, rejectionReason, failedRequirements } = await req.json()
 
     if (!id || !status) {
       return adminErrorResponse('INVALID_REQUEST', undefined, 'Missing required fields')
@@ -101,6 +101,16 @@ export async function PATCH(req: NextRequest) {
     updateData.reviewScore = finalCriteriaScore
     updateData.reviewRecommendation =
       finalCriteriaScore >= 75 ? 'approve' : finalCriteriaScore >= 50 ? 'manual_review' : 'decline'
+
+    if (status === 'rejected') {
+      updateData.rejectionReasonCode = typeof rejectionReason === 'string' && rejectionReason.trim() ? rejectionReason.trim() : 'unspecified'
+      updateData.failedRequirements = Array.isArray(failedRequirements)
+        ? failedRequirements.filter((item: unknown) => typeof item === 'string' && item.trim()).map((item: string) => item.trim())
+        : []
+    } else {
+      updateData.rejectionReasonCode = null
+      updateData.failedRequirements = []
+    }
 
     // If approved, try to generate credentials and upsert user profile via Admin SDK
     let code: string | undefined
