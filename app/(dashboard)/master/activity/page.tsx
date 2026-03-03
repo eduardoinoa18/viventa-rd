@@ -22,6 +22,11 @@ export default function MasterActivityPage() {
   const [loading, setLoading] = useState(true)
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [typeFilter, setTypeFilter] = useState('all')
+  const [actorFilter, setActorFilter] = useState('')
+  const [entityFilter, setEntityFilter] = useState('')
+  const [objectFilter, setObjectFilter] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const [search, setSearch] = useState('')
 
   async function loadActivity() {
@@ -30,6 +35,11 @@ export default function MasterActivityPage() {
       const query = new URLSearchParams()
       query.set('limit', '200')
       if (typeFilter !== 'all') query.set('type', typeFilter)
+      if (actorFilter.trim()) query.set('actorEmail', actorFilter.trim())
+      if (entityFilter.trim()) query.set('entityType', entityFilter.trim())
+      if (objectFilter.trim()) query.set('objectId', objectFilter.trim())
+      if (fromDate) query.set('from', fromDate)
+      if (toDate) query.set('to', toDate)
 
       const res = await fetch(`/api/admin/activity?${query.toString()}`)
       const json = await res.json()
@@ -47,7 +57,42 @@ export default function MasterActivityPage() {
 
   useEffect(() => {
     loadActivity()
-  }, [typeFilter])
+  }, [typeFilter, actorFilter, entityFilter, objectFilter, fromDate, toDate])
+
+  async function exportCsv() {
+    try {
+      const query = new URLSearchParams()
+      query.set('limit', '500')
+      query.set('format', 'csv')
+      if (typeFilter !== 'all') query.set('type', typeFilter)
+      if (actorFilter.trim()) query.set('actorEmail', actorFilter.trim())
+      if (entityFilter.trim()) query.set('entityType', entityFilter.trim())
+      if (objectFilter.trim()) query.set('objectId', objectFilter.trim())
+      if (fromDate) query.set('from', fromDate)
+      if (toDate) query.set('to', toDate)
+
+      const res = await fetch(`/api/admin/activity?${query.toString()}`)
+      if (!res.ok) {
+        throw new Error('Unable to export CSV')
+      }
+
+      const csvText = await res.text()
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', 'activity-log-export.csv')
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      toast.success('CSV export generated')
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error?.message || 'Unable to export CSV')
+    }
+  }
 
   const filtered = useMemo(() => {
     if (!search.trim()) return activities
@@ -75,12 +120,20 @@ export default function MasterActivityPage() {
             </h1>
             <p className="text-gray-600 mt-1">Immutable audit trail for admin operations</p>
           </div>
-          <button
-            onClick={loadActivity}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-100 text-sm"
-          >
-            <FiRefreshCw /> Refresh
-          </button>
+          <div className="inline-flex items-center gap-2">
+            <button
+              onClick={exportCsv}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-100 text-sm"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={loadActivity}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-100 text-sm"
+            >
+              <FiRefreshCw /> Refresh
+            </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -94,20 +147,62 @@ export default function MasterActivityPage() {
             />
           </div>
 
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            aria-label="Filter activity type"
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-          >
-            <option value="all">All Types</option>
-            <option value="user">User</option>
-            <option value="application">Application</option>
-            <option value="property">Property</option>
-            <option value="auth">Auth</option>
-            <option value="system">System</option>
-            <option value="billing">Billing</option>
-          </select>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              aria-label="Filter activity type"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="all">All Types</option>
+              <option value="user">User</option>
+              <option value="application">Application</option>
+              <option value="property">Property</option>
+              <option value="auth">Auth</option>
+              <option value="system">System</option>
+              <option value="billing">Billing</option>
+            </select>
+
+            <input
+              value={actorFilter}
+              onChange={(e) => setActorFilter(e.target.value)}
+              placeholder="Actor email"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              aria-label="Filter by actor email"
+            />
+
+            <input
+              value={entityFilter}
+              onChange={(e) => setEntityFilter(e.target.value)}
+              placeholder="Entity type"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              aria-label="Filter by entity type"
+            />
+
+            <input
+              value={objectFilter}
+              onChange={(e) => setObjectFilter(e.target.value)}
+              placeholder="Object ID"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              aria-label="Filter by object id"
+            />
+
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              aria-label="Filter activity from date"
+            />
+
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              aria-label="Filter activity to date"
+            />
+          </div>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">

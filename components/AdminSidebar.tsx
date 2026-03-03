@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { FiGrid, FiUsers, FiUser, FiHome, FiSettings, FiPlusSquare, FiClipboard, FiTarget, FiActivity, FiChevronLeft, FiCpu, FiDollarSign, FiShield } from 'react-icons/fi'
+import { FiGrid, FiUsers, FiUser, FiHome, FiSettings, FiPlusSquare, FiClipboard, FiTarget, FiActivity, FiChevronLeft, FiCpu, FiDollarSign, FiShield, FiTrendingUp, FiMap } from 'react-icons/fi'
 import { getSession } from '@/lib/authSession'
 
 export default function AdminSidebar() {
@@ -38,6 +38,8 @@ export default function AdminSidebar() {
     { href: '/master/buyers', label: 'Buyers', icon: <FiUser />, roles: ['master_admin', 'admin', 'broker'] },
     { href: '/master/revenue', label: 'Revenue & Billing', icon: <FiDollarSign />, roles: ['master_admin'] },
     { href: '/master/data-quality', label: 'Data Quality', icon: <FiShield />, roles: ['master_admin'] },
+    { href: '/master/growth', label: 'Growth Engine', icon: <FiTrendingUp />, roles: ['master_admin'] },
+    { href: '/master/marketplace-intelligence', label: 'Marketplace Intelligence', icon: <FiMap />, roles: ['master_admin'] },
     { href: '/master/activity', label: 'Activity', icon: <FiActivity />, roles: ['master_admin', 'admin'] },
     { href: '/master/applications', label: 'Applications', icon: <FiClipboard />, roles: ['master_admin', 'admin'] },
     { href: '/master/settings', label: 'Settings', icon: <FiSettings />, roles: ['master_admin'] },

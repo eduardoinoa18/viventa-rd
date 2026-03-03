@@ -31,6 +31,12 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10', 10)
     const type = searchParams.get('type')?.trim()
     const action = searchParams.get('action')?.trim()
+    const actorEmail = searchParams.get('actorEmail')?.trim().toLowerCase()
+    const entityType = searchParams.get('entityType')?.trim().toLowerCase()
+    const objectId = searchParams.get('objectId')?.trim().toLowerCase()
+    const from = searchParams.get('from')?.trim()
+    const to = searchParams.get('to')?.trim()
+    const format = searchParams.get('format')?.trim().toLowerCase()
 
     let ref: any = adminDb.collection('activity_logs')
     if (type) ref = ref.where('type', '==', type)
@@ -45,7 +51,7 @@ export async function GET(req: NextRequest) {
       snap = await ref.limit(safeLimit).get()
     }
 
-    const activities = snap.docs.map((doc: any) => {
+    let activities = snap.docs.map((doc: any) => {
       const data = doc.data()
       return {
         id: doc.id,
@@ -54,6 +60,77 @@ export async function GET(req: NextRequest) {
         createdAt: data.createdAt?.toDate?.()?.toISOString?.() || data.createdAt || null,
       }
     })
+
+    activities = activities.filter((item: any) => {
+      const actor = String(item.actorEmail || '').toLowerCase()
+      const entity = String(item.entityType || '').toLowerCase()
+      const entityId = String(item.entityId || '').toLowerCase()
+
+      if (actorEmail && !actor.includes(actorEmail)) return false
+      if (entityType && !entity.includes(entityType)) return false
+      if (objectId && !entityId.includes(objectId)) return false
+
+      const ts = item.timestamp ? new Date(item.timestamp).getTime() : 0
+      if (from) {
+        const minTs = new Date(from).getTime()
+        if (Number.isFinite(minTs) && ts && ts < minTs) return false
+      }
+      if (to) {
+        const maxTs = new Date(to).getTime()
+        if (Number.isFinite(maxTs) && ts && ts > maxTs) return false
+      }
+
+      return true
+    })
+
+    if (format === 'csv') {
+      const headers = [
+        'timestamp',
+        'type',
+        'action',
+        'actorEmail',
+        'actorRole',
+        'entityType',
+        'entityId',
+        'ip',
+        'isOverride',
+        'isEscalation',
+      ]
+
+      const escapeCsv = (value: unknown) => {
+        const text = String(value ?? '')
+        if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+          return `"${text.replace(/"/g, '""')}"`
+        }
+        return text
+      }
+
+      const rows = activities.map((item: any) => {
+        const metadata = item?.metadata || {}
+        const row = [
+          item.timestamp || '',
+          item.type || '',
+          item.action || '',
+          item.actorEmail || '',
+          item.actorRole || '',
+          item.entityType || '',
+          item.entityId || '',
+          metadata?.ip || item?.ip || '',
+          metadata?.isOverride ? 'true' : 'false',
+          metadata?.isEscalation ? 'true' : 'false',
+        ]
+        return row.map(escapeCsv).join(',')
+      })
+
+      const csv = [headers.join(','), ...rows].join('\n')
+      return new NextResponse(csv, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="activity-log-export.csv"',
+        },
+      })
+    }
 
     return NextResponse.json({
       ok: true,
