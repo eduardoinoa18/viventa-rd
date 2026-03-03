@@ -88,7 +88,7 @@ export default function OverviewClient() {
     return (
       <div className="p-6 md:p-8">
         <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
-          Loading executive overview...
+          Loading executive overview data...
         </div>
       </div>
     )
@@ -98,7 +98,7 @@ export default function OverviewClient() {
     return (
       <div className="p-6 md:p-8">
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
-          <p className="text-sm font-medium text-red-700">Failed to load Executive Overview.</p>
+          <p className="text-sm font-medium text-red-700">Unable to load Executive Overview.</p>
           <p className="mt-1 text-xs text-red-600">{error}</p>
           <button
             type="button"
@@ -287,7 +287,7 @@ function TopListCard({ title, rows }: { title: string; rows: Array<{ label: stri
             </div>
           ))
         ) : (
-          <p className="text-xs text-gray-500">No data</p>
+          <p className="text-xs text-gray-500">No data yet</p>
         )}
       </div>
     </div>
@@ -296,7 +296,7 @@ function TopListCard({ title, rows }: { title: string; rows: Array<{ label: stri
 
 function SimplePerfList({ rows, metric, suffix }: { rows: PerfRow[]; metric: 'avgLatencyHours' | 'escalationRate'; suffix: string }) {
   if (!rows.length) {
-    return <p className="mt-3 text-xs text-gray-500">No significant risks</p>
+    return <p className="mt-3 text-xs text-gray-500">No significant risks detected</p>
   }
 
   return (

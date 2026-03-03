@@ -497,27 +497,27 @@ export default function LeadsPage() {
     if (!hasActiveFilters) {
       return {
         title: 'No leads yet',
-        body: 'New inquiries will appear here as soon as they enter the system.',
+        body: 'New inquiries appear here as soon as they enter the system.',
       }
     }
 
     if (ownerFilter === 'unassigned') {
       return {
         title: 'No unassigned leads',
-        body: 'No unassigned leads. Great job — team response time is under control.',
+        body: 'All leads currently have an owner assigned.',
       }
     }
 
     if (slaOnly) {
       return {
         title: 'No SLA breaches',
-        body: 'No breached leads match the current filters. Team follow-up is healthy.',
+        body: 'No breached leads match the current filters.',
       }
     }
 
     return {
       title: 'No matching leads',
-      body: 'No results for these filters. Adjust criteria to expand the pipeline view.',
+      body: 'No results for current filters. Adjust criteria to expand the view.',
     }
   }, [hasActiveFilters, ownerFilter, slaOnly])
 
@@ -672,7 +672,7 @@ export default function LeadsPage() {
             <div className="text-xs font-semibold text-gray-700">Automation Activity</div>
             <div className="mt-2 space-y-2">
               {automationRuns.length === 0 ? (
-                <div className="text-xs text-gray-500">No automation runs recorded yet.</div>
+                <div className="text-xs text-gray-500">No automation runs yet.</div>
               ) : (
                 automationRuns.map((run) => (
                   <div key={run.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 px-2 py-1.5">
