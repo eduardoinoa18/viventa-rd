@@ -259,6 +259,7 @@ export default function ControlCenterClient() {
             onClick={loadControlCenter}
             disabled={loading}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm hover:bg-gray-100 disabled:opacity-60"
+            title="Reload all lead stream and settings data"
           >
             <FiRefreshCw /> Refresh
           </button>

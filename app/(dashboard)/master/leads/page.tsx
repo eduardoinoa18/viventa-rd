@@ -762,7 +762,8 @@ export default function LeadsPage() {
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
             className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
-            aria-label="From date"
+            aria-label="Start date (created after)"
+            title="Filter leads created on or after this date"
           />
 
           <input
@@ -770,17 +771,19 @@ export default function LeadsPage() {
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
             className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
-            aria-label="To date"
+            aria-label="End date (created before)"
+            title="Filter leads created on or before this date"
           />
 
-          <label className="inline-flex items-center gap-2 text-sm text-gray-700 px-3 py-2 border border-gray-300 rounded-lg">
+          <label className="inline-flex items-center gap-2 text-sm text-gray-700 px-3 py-2 border border-gray-300 rounded-lg" title="Show only leads that have exceeded their SLA">
             <input
               type="checkbox"
               checked={slaOnly}
               onChange={(e) => setSlaOnly(e.target.checked)}
               className="rounded border-gray-300"
+              aria-label="Filter by SLA breached status"
             />
-            SLA Breached
+            Show SLA breaches only
           </label>
 
           <button
