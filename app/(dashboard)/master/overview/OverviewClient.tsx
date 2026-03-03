@@ -131,9 +131,18 @@ export default function OverviewClient() {
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Operational Health</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <MetricCard title={`SLA Compliance (<= ${data.slaHours}h)`} value={`${health.slaComplianceRate}%`} />
+          <MetricCard
+            title={`SLA Compliance (<= ${data.slaHours}h)`}
+            value={`${health.slaComplianceRate}%`}
+            status={getComplianceStatus(health.slaComplianceRate)}
+          />
           <MetricCard title="Avg Assignment Time" value={`${health.avgAssignmentHours}h`} />
-          <MetricCard title="Escalation Rate" value={`${health.escalationRate}%`} tone={health.escalationRate >= 25 ? 'warn' : 'default'} />
+          <MetricCard
+            title="Escalation Rate"
+            value={`${health.escalationRate}%`}
+            status={getInverseRateStatus(health.escalationRate)}
+            tone={health.escalationRate >= 25 ? 'warn' : 'default'}
+          />
         </div>
       </section>
 
@@ -142,7 +151,12 @@ export default function OverviewClient() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <MetricCard title="Leads 7d" value={String(flow.leads7d)} />
           <MetricCard title="Leads 30d" value={String(flow.leads30d)} />
-          <MetricCard title="Velocity Trend 7d" value={`${flow.velocityTrend7dPct}%`} tone={flow.velocityTrend7dPct < 0 ? 'warn' : 'default'} />
+          <MetricCard
+            title="Velocity Trend 7d"
+            value={`${flow.velocityTrend7dPct}%`}
+            status={getTrendStatus(flow.velocityTrend7dPct)}
+            tone={flow.velocityTrend7dPct < 0 ? 'warn' : 'default'}
+          />
           <MetricCard title="Active Pipeline" value={String(flow.activePipelineCount)} />
         </div>
       </section>
@@ -181,7 +195,12 @@ export default function OverviewClient() {
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Risk Areas</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <MetricCard title="Aging >48h (open)" value={String(data.risk.agingOver48h)} tone={data.risk.agingOver48h > 0 ? 'warn' : 'default'} />
+          <MetricCard
+            title="Aging >48h (open)"
+            value={String(data.risk.agingOver48h)}
+            status={data.risk.agingOver48h > 0 ? 'risk' : 'ok'}
+            tone={data.risk.agingOver48h > 0 ? 'warn' : 'default'}
+          />
 
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <h3 className="text-sm font-semibold text-gray-800">Slow Agents</h3>
@@ -204,10 +223,27 @@ export default function OverviewClient() {
   )
 }
 
-function MetricCard({ title, value, tone = 'default' }: { title: string; value: string; tone?: 'default' | 'warn' }) {
+function MetricCard({
+  title,
+  value,
+  tone = 'default',
+  status,
+}: {
+  title: string
+  value: string
+  tone?: 'default' | 'warn'
+  status?: 'ok' | 'watch' | 'risk'
+}) {
   return (
     <div className={`rounded-xl border p-4 ${tone === 'warn' ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white'}`}>
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{title}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{title}</p>
+        {status ? (
+          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getStatusChipClass(status)}`}>
+            {statusLabel(status)}
+          </span>
+        ) : null}
+      </div>
       <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
     </div>
   )
@@ -269,4 +305,34 @@ function SimplePerfList({ rows, metric, suffix }: { rows: PerfRow[]; metric: 'av
       })}
     </div>
   )
+}
+
+function getComplianceStatus(value: number): 'ok' | 'watch' | 'risk' {
+  if (value >= 80) return 'ok'
+  if (value >= 60) return 'watch'
+  return 'risk'
+}
+
+function getInverseRateStatus(value: number): 'ok' | 'watch' | 'risk' {
+  if (value <= 10) return 'ok'
+  if (value <= 20) return 'watch'
+  return 'risk'
+}
+
+function getTrendStatus(value: number): 'ok' | 'watch' | 'risk' {
+  if (value >= 0) return 'ok'
+  if (value >= -10) return 'watch'
+  return 'risk'
+}
+
+function getStatusChipClass(status: 'ok' | 'watch' | 'risk') {
+  if (status === 'ok') return 'border-green-200 bg-green-50 text-green-700'
+  if (status === 'watch') return 'border-amber-200 bg-amber-50 text-amber-700'
+  return 'border-red-200 bg-red-50 text-red-700'
+}
+
+function statusLabel(status: 'ok' | 'watch' | 'risk') {
+  if (status === 'ok') return 'Healthy'
+  if (status === 'watch') return 'Watch'
+  return 'Risk'
 }
