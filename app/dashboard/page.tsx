@@ -140,6 +140,15 @@ export default function BuyerDashboardPage() {
       <Header />
       <main className="min-h-screen bg-gray-50 pb-20 md:pb-8">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-5">
+          <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sticky top-20 z-20">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <Link href="/search" className="text-center px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Buscar</Link>
+              <Link href="/favorites" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Favoritos</Link>
+              <Link href="/messages" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Mensajes</Link>
+              <Link href="/contact" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Ayuda</Link>
+            </div>
+          </section>
+
           <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
             <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Hola, {displayName}</h1>
             <p className="text-sm text-gray-600 mt-1">Tu panel para guardar propiedades y seguir tus búsquedas.</p>
@@ -154,6 +163,17 @@ export default function BuyerDashboardPage() {
               </div>
             </div>
           </section>
+
+          {savedPropertyIds.length === 0 && savedSearches.length === 0 && (
+            <section className="bg-gradient-to-r from-[#0B2545] to-[#134074] rounded-xl border border-[#0B2545]/20 shadow-sm p-4 sm:p-5 text-white">
+              <h2 className="text-lg font-semibold">Configura tu panel en 1 minuto</h2>
+              <p className="text-sm text-white/90 mt-1">Guarda una búsqueda y tu primera propiedad para recibir recomendaciones más relevantes.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link href="/search" className="px-3 py-2 rounded-lg bg-white text-[#0B2545] text-sm font-medium">Guardar primera búsqueda</Link>
+                <Link href="/search" className="px-3 py-2 rounded-lg border border-white/40 text-sm font-medium">Explorar propiedades</Link>
+              </div>
+            </section>
+          )}
 
           <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
             <div className="flex items-center justify-between gap-2 mb-3">

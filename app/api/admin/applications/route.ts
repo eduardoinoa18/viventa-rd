@@ -10,10 +10,54 @@ import { adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
 import { logAdminAction } from '@/lib/logAdminAction'
 export const dynamic = 'force-dynamic'
 
+type AppType = 'agent' | 'new-agent' | 'broker' | 'constructora'
+
+function normalizeApplicationType(value: unknown): AppType {
+  const normalized = String(value || '').toLowerCase()
+  if (normalized === 'broker') return 'broker'
+  if (normalized === 'constructora' || normalized === 'developer') return 'constructora'
+  if (normalized === 'new-agent') return 'new-agent'
+  return 'agent'
+}
+
+function toBool(value: unknown): boolean {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') return value === 'true'
+  return false
+}
+
+function buildCriteriaFromApplication(appData: any) {
+  const years = Number(appData?.years || 0)
+  const hasCoreIdentity = !!String(appData?.contact || '').trim() && !!String(appData?.email || '').trim() && !!String(appData?.phone || '').trim()
+  const hasBusinessSignal =
+    !!String(appData?.company || '').trim() ||
+    !!String(appData?.website || '').trim() ||
+    !!String(appData?.markets || '').trim() ||
+    !!String(appData?.businessDetails || '').trim()
+  const hasDocuments = !!appData?.resumeUrl || !!appData?.documentUrl || !!String(appData?.license || '').trim()
+  const readiness = years >= 1 || toBool(appData?.insurance) || Number(appData?.agents || 0) > 0
+
+  const checks = {
+    identityVerified: hasCoreIdentity,
+    businessProfileValid: hasBusinessSignal,
+    documentationComplete: hasDocuments,
+    readinessSignal: readiness,
+  }
+
+  const checkCount = Object.values(checks).filter(Boolean).length
+  const score = Math.round((checkCount / 4) * 100)
+
+  return {
+    checks,
+    score,
+    recommendedDecision: score >= 75 ? 'approve' : score >= 50 ? 'manual_review' : 'decline',
+  }
+}
+
 export async function PATCH(req: NextRequest) {
   try {
     const admin = await requireMasterAdmin(req)
-    const { id, status, notes } = await req.json()
+    const { id, status, notes, criteriaChecks, criteriaScore } = await req.json()
 
     if (!id || !status) {
       return adminErrorResponse('INVALID_REQUEST', undefined, 'Missing required fields')
@@ -37,6 +81,27 @@ export async function PATCH(req: NextRequest) {
     const appSnap = await appRef.get()
     const appData = appSnap.exists ? appSnap.data() : null
 
+    const computedCriteria = buildCriteriaFromApplication(appData || {})
+    const finalCriteriaChecks =
+      criteriaChecks && typeof criteriaChecks === 'object'
+        ? {
+            identityVerified: toBool((criteriaChecks as any).identityVerified),
+            businessProfileValid: toBool((criteriaChecks as any).businessProfileValid),
+            documentationComplete: toBool((criteriaChecks as any).documentationComplete),
+            readinessSignal: toBool((criteriaChecks as any).readinessSignal),
+          }
+        : computedCriteria.checks
+
+    const finalCriteriaScore =
+      typeof criteriaScore === 'number' && Number.isFinite(criteriaScore)
+        ? Math.max(0, Math.min(100, Math.round(criteriaScore)))
+        : Math.round((Object.values(finalCriteriaChecks).filter(Boolean).length / 4) * 100)
+
+    updateData.reviewCriteria = finalCriteriaChecks
+    updateData.reviewScore = finalCriteriaScore
+    updateData.reviewRecommendation =
+      finalCriteriaScore >= 75 ? 'approve' : finalCriteriaScore >= 50 ? 'manual_review' : 'decline'
+
     // If approved, try to generate credentials and upsert user profile via Admin SDK
     let code: string | undefined
     let resetLink: string | undefined
@@ -47,17 +112,17 @@ export async function PATCH(req: NextRequest) {
         const email: string = (appData.email || '').toLowerCase()
         const name: string = appData.contact || ''
         const phone: string = appData.phone || ''
-        const type: 'agent' | 'broker' | string = appData.type || 'agent'
+        const type = normalizeApplicationType(appData.type)
 
-        // Generate unique code: A##### or B#####
-        const prefix = type === 'broker' ? 'B' : 'A'
+        // Generate unique code per role
+        const prefix = type === 'broker' ? 'B' : type === 'constructora' ? 'C' : 'A'
         const adminDbSafe = adminDb as any
         const generateUniqueCode = async (): Promise<string> => {
           for (let i = 0; i < 5; i++) {
             const candidate = `${prefix}${Math.floor(10000 + Math.random() * 90000)}`
             const exists = await adminDbSafe
               .collection('users')
-              .where(prefix === 'A' ? 'agentCode' : 'brokerCode', '==', candidate)
+              .where(prefix === 'A' ? 'agentCode' : prefix === 'B' ? 'brokerCode' : 'constructoraCode', '==', candidate)
               .limit(1)
               .get()
             if (exists.empty) return candidate
@@ -86,7 +151,7 @@ export async function PATCH(req: NextRequest) {
         }
 
         // Upsert user profile in Firestore (Admin)
-        const role = type === 'broker' ? 'broker' : 'agent'
+        const role = type === 'broker' ? 'broker' : type === 'constructora' ? 'constructora' : 'agent'
         const payload: any = {
           uid,
           email,
@@ -99,7 +164,10 @@ export async function PATCH(req: NextRequest) {
         }
         if (role === 'agent') payload.agentCode = code
         if (role === 'broker') payload.brokerCode = code
+        if (role === 'constructora') payload.constructoraCode = code
         if (appData.company) payload.brokerage = appData.company
+        if (appData.company) payload.company = appData.company
+        if (appData.contactPerson) payload.contactPerson = appData.contactPerson
 
         await adminDb.collection('users').doc(uid).set(payload, { merge: true })
 
@@ -112,10 +180,29 @@ export async function PATCH(req: NextRequest) {
           }
 
           // Send professional credentials email (Spanish, Caribbean styling)
-          const roleEs: 'agent' | 'broker' = (role === 'broker' ? 'broker' : 'agent')
-          if (code && resetLink) {
+          const roleEs: 'agent' | 'broker' = role === 'broker' ? 'broker' : 'agent'
+          if (role !== 'constructora' && code && resetLink) {
             await sendProfessionalCredentials(email, name || 'Profesional', roleEs, code, resetLink)
             logger.info('Professional credentials email sent', { email, role: roleEs, code })
+          } else if (role === 'constructora' && code && resetLink) {
+            await sendEmail({
+              to: email,
+              subject: '✅ Tu cuenta de Constructora en VIVENTA fue aprobada',
+              html: `
+                <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;">
+                  <div style="background:linear-gradient(135deg,#0B2545 0%, #00A676 100%);color:#fff;padding:24px;border-radius:10px 10px 0 0;">
+                    <h2 style="margin:0;">VIVENTA Constructora</h2>
+                    <p style="margin:8px 0 0;opacity:.95;">Tu solicitud fue aprobada</p>
+                  </div>
+                  <div style="border:1px solid #e5e7eb;border-top:none;padding:24px;border-radius:0 0 10px 10px;">
+                    <p>Hola <strong>${name || 'Equipo'}</strong>,</p>
+                    <p>Tu aplicación como constructora fue aprobada. Ya puedes activar tu acceso.</p>
+                    <p><strong>Código de constructora:</strong> ${code}</p>
+                    <p><a href="${resetLink}" style="display:inline-block;padding:12px 18px;background:#00A676;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Configurar contraseña</a></p>
+                  </div>
+                </div>
+              `,
+            })
           }
         } catch (e) {
           logger.error('Failed to send professional credentials email', e)
@@ -125,6 +212,7 @@ export async function PATCH(req: NextRequest) {
         updateData.approvedAt = new Date()
         updateData.assignedCode = code
         updateData.linkedUid = uid
+        updateData.approvedRole = role
       }
     }
 
@@ -154,7 +242,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Missing email or status' }, { status: 400 })
     }
 
-    const typeLabel = type === 'broker' ? 'Brokerage' : type === 'agent' ? 'Agente' : 'Desarrollador'
+    const normalizedType = normalizeApplicationType(type)
+    const typeLabel = normalizedType === 'broker' ? 'Brokerage' : normalizedType === 'constructora' ? 'Constructora' : 'Agente'
     const subject = status === 'approved' 
       ? `✅ Tu aplicación a VIVENTA ha sido aprobada`
       : `Actualización sobre tu aplicación a VIVENTA`

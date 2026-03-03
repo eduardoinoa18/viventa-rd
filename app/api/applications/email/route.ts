@@ -26,8 +26,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const isAgent = type === 'agent'
-    const subject = `Solicitud Recibida - VIVENTA ${isAgent ? 'Agente' : 'Bróker'}`
+    const normalizedType = String(type || '').toLowerCase()
+    const isAgent = normalizedType === 'agent' || normalizedType === 'new-agent'
+    const isConstructora = normalizedType === 'constructora' || normalizedType === 'developer'
+    const subject = `Solicitud Recibida - VIVENTA ${isConstructora ? 'Constructora' : isAgent ? 'Agente' : 'Bróker'}`
 
     const html = `
 <!DOCTYPE html>
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest) {
 
       <div class="highlight-box">
         <p style="margin: 0; font-size: 16px;">
-          ✅ Tu solicitud como <strong>${isAgent ? 'Agente Inmobiliario' : 'Bróker'}</strong> ha sido recibida exitosamente y está siendo revisada por nuestro equipo.
+          ✅ Tu solicitud como <strong>${isConstructora ? 'Constructora / Desarrollador' : isAgent ? 'Agente Inmobiliario' : 'Bróker'}</strong> ha sido recibida exitosamente y está siendo revisada por nuestro equipo.
         </p>
       </div>
 
@@ -154,7 +156,7 @@ export async function POST(req: NextRequest) {
     `
 
     // Use our new Caribbean-styled template instead
-    await sendApplicationConfirmation(email, name, type as 'agent' | 'broker')
+    await sendApplicationConfirmation(email, name, isAgent ? 'agent' : 'broker')
     
     logger.info('Application confirmation email sent', { email, name, type })
 

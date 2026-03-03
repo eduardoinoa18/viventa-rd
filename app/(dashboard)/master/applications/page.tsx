@@ -9,7 +9,7 @@ interface Application {
   contact: string
   email: string
   phone: string
-  type: 'agent' | 'broker' | 'new-agent'
+  type: 'agent' | 'broker' | 'new-agent' | 'constructora'
   status: 'pending' | 'approved' | 'rejected' | 'more_info'
   createdAt: any
   company?: string
@@ -23,6 +23,15 @@ interface Application {
   approvedAt?: any
   reviewedBy?: string
   reviewNotes?: string
+  reviewScore?: number
+  reviewRecommendation?: 'approve' | 'manual_review' | 'decline'
+}
+
+type ReviewCriteria = {
+  identityVerified: boolean
+  businessProfileValid: boolean
+  documentationComplete: boolean
+  readinessSignal: boolean
 }
 
 export default function ApplicationsPage() {
@@ -34,7 +43,24 @@ export default function ApplicationsPage() {
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
   const [reviewNotes, setReviewNotes] = useState('')
-  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewCriteria, setReviewCriteria] = useState<ReviewCriteria>({
+    identityVerified: false,
+    businessProfileValid: false,
+    documentationComplete: false,
+    readinessSignal: false,
+  })
+
+  const reviewScore = useMemo(() => {
+    const passed = Object.values(reviewCriteria).filter(Boolean).length
+    return Math.round((passed / 4) * 100)
+  }, [reviewCriteria])
+
+  const reviewRecommendation = useMemo<'approve' | 'manual_review' | 'decline'>(() => {
+    if (reviewScore >= 75) return 'approve'
+    if (reviewScore >= 50) return 'manual_review'
+    return 'decline'
+  }, [reviewScore])
 
   // Filtered applications
   const filteredApplications = useMemo(() => {
@@ -121,48 +147,41 @@ export default function ApplicationsPage() {
     }
   }
 
-  // Handle approve
-  async function handleApprove(app: Application) {
-    if (!app.email || !app.contact) {
+  function openReview(app: Application) {
+    setSelectedApp(app)
+    setReviewNotes('')
+    setReviewCriteria({
+      identityVerified: false,
+      businessProfileValid: false,
+      documentationComplete: false,
+      readinessSignal: false,
+    })
+    setShowReviewModal(true)
+  }
+
+  function closeReview() {
+    setShowReviewModal(false)
+    setSelectedApp(null)
+    setReviewNotes('')
+  }
+
+  async function submitReviewDecision(status: 'approved' | 'rejected' | 'more_info') {
+    if (!selectedApp) return
+
+    if (!selectedApp.email || !selectedApp.contact) {
       toast.error('Missing required application data')
       return
     }
 
-    setProcessingId(app.id)
-    try {
-      const res = await fetch('/api/admin/applications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: app.id,
-          status: 'approved',
-          email: app.email,
-          name: app.contact,
-          type: app.type,
-          phone: app.phone,
-          company: app.company,
-        }),
-      })
-
-      const json = await res.json()
-      
-      if (res.ok && json.ok) {
-        toast.success(`${app.contact} approved! Credentials email sent.`)
-        loadApplications()
-      } else {
-        toast.error(json.error || 'Failed to approve application')
-      }
-    } catch (e) {
-      console.error('Failed to approve application', e)
-      toast.error('Failed to approve application')
-    } finally {
-      setProcessingId(null)
+    if (status === 'approved' && reviewScore < 75) {
+      toast.error('Approval requires at least 75 review score (3 of 4 criteria).')
+      return
     }
-  }
 
-  // Handle reject
-  async function handleReject() {
-    if (!selectedApp) return
+    if (status === 'rejected' && reviewNotes.trim().length < 10) {
+      toast.error('Please provide a clear rejection reason (at least 10 characters).')
+      return
+    }
 
     setProcessingId(selectedApp.id)
     try {
@@ -171,58 +190,36 @@ export default function ApplicationsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: selectedApp.id,
-          status: 'rejected',
-          notes: reviewNotes,
+          status,
+          notes: reviewNotes?.trim() || undefined,
           email: selectedApp.email,
           name: selectedApp.contact,
           type: selectedApp.type,
+          phone: selectedApp.phone,
+          company: selectedApp.company,
+          criteriaChecks: reviewCriteria,
+          criteriaScore: reviewScore,
         }),
       })
 
       const json = await res.json()
       
       if (res.ok && json.ok) {
-        toast.success(`${selectedApp.contact} rejected`)
-        setShowRejectModal(false)
-        setReviewNotes('')
-        setSelectedApp(null)
+        if (status === 'approved') {
+          toast.success(`${selectedApp.contact} approved! Credentials email sent.`)
+        } else if (status === 'rejected') {
+          toast.success(`${selectedApp.contact} rejected`)
+        } else {
+          toast.success('Sent request for more info')
+        }
+        closeReview()
         loadApplications()
       } else {
-        toast.error(json.error || 'Failed to reject application')
+        toast.error(json.error || 'Failed to update application review')
       }
     } catch (e) {
-      console.error('Failed to reject application', e)
-      toast.error('Failed to reject application')
-    } finally {
-      setProcessingId(null)
-    }
-  }
-
-  // Handle request more info
-  async function handleMoreInfo(app: Application) {
-    setProcessingId(app.id)
-    try {
-      const res = await fetch('/api/admin/applications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: app.id,
-          status: 'more_info',
-          notes: 'We need additional information before we can proceed. Please review your email.',
-        }),
-      })
-
-      const json = await res.json()
-      
-      if (res.ok && json.ok) {
-        toast.success('Sent request for more info')
-        loadApplications()
-      } else {
-        toast.error(json.error || 'Failed to send request')
-      }
-    } catch (e) {
-      console.error('Failed to send request', e)
-      toast.error('Failed to send request')
+      console.error('Failed to update application review', e)
+      toast.error('Failed to update application review')
     } finally {
       setProcessingId(null)
     }
@@ -261,8 +258,16 @@ export default function ApplicationsPage() {
       agent: '🏢 Agent',
       'new-agent': '🌱 New Agent',
       broker: '🏛️ Brokerage',
+      constructora: '🏗️ Constructora',
     }
     return labels[type] || type
+  }
+
+  const getReviewBadge = (score?: number) => {
+    const safe = typeof score === 'number' ? score : 0
+    if (safe >= 75) return 'bg-emerald-100 text-emerald-800'
+    if (safe >= 50) return 'bg-amber-100 text-amber-800'
+    return 'bg-rose-100 text-rose-800'
   }
 
   const getStatusBadge = (status: string) => {
@@ -293,7 +298,7 @@ export default function ApplicationsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Professional Applications</h1>
-          <p className="text-gray-600">Review and manage agent and brokerage applications</p>
+          <p className="text-gray-600">Review and manage agent, broker, and constructora applications with criteria-based decisions</p>
         </div>
 
         {/* Stats Cards */}
@@ -391,6 +396,7 @@ export default function ApplicationsPage() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Applicant</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Company/Market</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Criteria</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Applied</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
@@ -423,6 +429,16 @@ export default function ApplicationsPage() {
                             {app.years && <p className="text-gray-500">{app.years}+ yrs exp</p>}
                           </div>
                         </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm">
+                            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${getReviewBadge(app.reviewScore)}`}>
+                              Score: {typeof app.reviewScore === 'number' ? app.reviewScore : 0}
+                            </span>
+                            {app.reviewRecommendation && (
+                              <p className="mt-1 text-xs text-gray-500">Recommendation: {app.reviewRecommendation.replace('_', ' ')}</p>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                           {formatDate(app.createdAt)}
                         </td>
@@ -436,31 +452,12 @@ export default function ApplicationsPage() {
                             {isPending && (
                               <>
                                 <button
-                                  onClick={() => handleApprove(app)}
+                                  onClick={() => openReview(app)}
                                   disabled={processingId === app.id}
-                                  className="inline-flex items-center gap-2 px-3 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                                >
-                                  <FiCheck className="w-4 h-4" />
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelectedApp(app)
-                                    setShowRejectModal(true)
-                                  }}
-                                  disabled={processingId === app.id}
-                                  className="inline-flex items-center gap-2 px-3 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                                >
-                                  <FiX className="w-4 h-4" />
-                                  Reject
-                                </button>
-                                <button
-                                  onClick={() => handleMoreInfo(app)}
-                                  disabled={processingId === app.id}
-                                  className="inline-flex items-center gap-2 px-3 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                  className="inline-flex items-center gap-2 px-3 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                                 >
                                   <FiAlertCircle className="w-4 h-4" />
-                                  Info
+                                  Review
                                 </button>
                               </>
                             )}
@@ -484,38 +481,92 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
-      {/* Reject Modal */}
-      {showRejectModal && selectedApp && (
+      {/* Review Modal */}
+      {showReviewModal && selectedApp && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Reject Application</h3>
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Review Application</h3>
             <p className="text-gray-600 mb-4">
-              Rejecting application from <strong>{selectedApp.contact}</strong>
+              Reviewing <strong>{selectedApp.contact}</strong> ({getTypeLabel(selectedApp.type)})
             </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={reviewCriteria.identityVerified}
+                  onChange={(e) => setReviewCriteria(prev => ({ ...prev, identityVerified: e.target.checked }))}
+                />
+                Identity and contact verified
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={reviewCriteria.businessProfileValid}
+                  onChange={(e) => setReviewCriteria(prev => ({ ...prev, businessProfileValid: e.target.checked }))}
+                />
+                Business profile and market fit valid
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={reviewCriteria.documentationComplete}
+                  onChange={(e) => setReviewCriteria(prev => ({ ...prev, documentationComplete: e.target.checked }))}
+                />
+                Documentation is complete
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={reviewCriteria.readinessSignal}
+                  onChange={(e) => setReviewCriteria(prev => ({ ...prev, readinessSignal: e.target.checked }))}
+                />
+                Operational readiness confirmed
+              </label>
+            </div>
+
+            <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <p className="text-sm text-gray-700">
+                Review score: <strong>{reviewScore}</strong> • Recommendation: <strong>{reviewRecommendation.replace('_', ' ')}</strong>
+              </p>
+            </div>
+
             <textarea
               value={reviewNotes}
               onChange={(e) => setReviewNotes(e.target.value)}
-              placeholder="Reason for rejection (optional)..."
+              placeholder="Reviewer notes (required for rejection, optional otherwise)..."
               rows={4}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
             />
-            <p className="text-xs text-gray-500 mt-2">This will be sent to the applicant in their rejection email.</p>
-            <div className="flex gap-3 mt-6 justify-end">
+            <p className="text-xs text-gray-500 mt-2">These notes and criteria are stored in the application review record.</p>
+
+            <div className="flex flex-wrap gap-3 mt-6 justify-end">
               <button
-                onClick={() => {
-                  setShowRejectModal(false)
-                  setReviewNotes('')
-                }}
+                onClick={closeReview}
                 className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={handleReject}
+                onClick={() => submitReviewDecision('more_info')}
+                disabled={processingId === selectedApp.id}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
+              >
+                {processingId === selectedApp.id ? 'Processing...' : 'Request Info'}
+              </button>
+              <button
+                onClick={() => submitReviewDecision('rejected')}
                 disabled={processingId === selectedApp.id}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
               >
                 {processingId === selectedApp.id ? 'Rejecting...' : 'Reject'}
+              </button>
+              <button
+                onClick={() => submitReviewDecision('approved')}
+                disabled={processingId === selectedApp.id || reviewScore < 75}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
+              >
+                {processingId === selectedApp.id ? 'Approving...' : 'Approve'}
               </button>
             </div>
           </div>

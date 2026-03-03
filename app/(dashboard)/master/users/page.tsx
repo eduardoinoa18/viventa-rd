@@ -28,8 +28,27 @@ type User = {
   brokerCode?: string
 }
 
+type UsersOverview = {
+  totals: {
+    totalUsers: number
+    invitedPending: number
+    stalledInvites: number
+    suspendedUsers: number
+    unverifiedActive: number
+    onboardingCompletionRate: number
+  }
+  pendingApplications: {
+    total: number
+    byType: Record<string, number>
+  }
+  governance: {
+    lifecycleEvents7d: number
+  }
+}
+
 export default function MasterUsersPage() {
   const [users, setUsers] = useState<User[]>([])
+  const [overview, setOverview] = useState<UsersOverview | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -106,10 +125,14 @@ export default function MasterUsersPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/admin/users')
-      const json = await res.json()
-      if (!res.ok || !json.ok) {
-        const message = json?.error || getUiErrorMessage(res.status)
+      const [usersRes, overviewRes] = await Promise.all([
+        fetch('/api/admin/users'),
+        fetch('/api/admin/users/overview'),
+      ])
+
+      const [json, overviewJson] = await Promise.all([usersRes.json(), overviewRes.json()])
+      if (!usersRes.ok || !json.ok) {
+        const message = json?.error || getUiErrorMessage(usersRes.status)
         setError(message)
         toast.error(message)
         setUsers([])
@@ -118,6 +141,10 @@ export default function MasterUsersPage() {
 
       if (Array.isArray(json.data)) {
         setUsers(json.data)
+      }
+
+      if (overviewRes.ok && overviewJson?.ok && overviewJson?.data) {
+        setOverview(overviewJson.data as UsersOverview)
       }
     } catch (e) {
       console.error('Failed to load users', e)
@@ -300,6 +327,35 @@ export default function MasterUsersPage() {
         </div>
 
         {/* Stats Cards */}
+        {overview && (
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+            <div className="bg-white rounded-lg border border-indigo-200 p-4">
+              <div className="text-sm font-medium text-indigo-700">Pending Invites</div>
+              <div className="text-3xl font-bold text-indigo-900">{overview.totals.invitedPending}</div>
+            </div>
+            <div className="bg-white rounded-lg border border-amber-200 p-4">
+              <div className="text-sm font-medium text-amber-700">Stalled &gt;72h</div>
+              <div className="text-3xl font-bold text-amber-900">{overview.totals.stalledInvites}</div>
+            </div>
+            <div className="bg-white rounded-lg border border-rose-200 p-4">
+              <div className="text-sm font-medium text-rose-700">Suspended</div>
+              <div className="text-3xl font-bold text-rose-900">{overview.totals.suspendedUsers}</div>
+            </div>
+            <div className="bg-white rounded-lg border border-orange-200 p-4">
+              <div className="text-sm font-medium text-orange-700">Unverified Active</div>
+              <div className="text-3xl font-bold text-orange-900">{overview.totals.unverifiedActive}</div>
+            </div>
+            <div className="bg-white rounded-lg border border-emerald-200 p-4">
+              <div className="text-sm font-medium text-emerald-700">Onboarding Complete</div>
+              <div className="text-3xl font-bold text-emerald-900">{overview.totals.onboardingCompletionRate}%</div>
+            </div>
+            <div className="bg-white rounded-lg border border-slate-200 p-4">
+              <div className="text-sm font-medium text-slate-700">Lifecycle Events (7d)</div>
+              <div className="text-3xl font-bold text-slate-900">{overview.governance.lifecycleEvents7d}</div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="text-sm font-medium text-gray-600">Total Users</div>
@@ -358,6 +414,7 @@ export default function MasterUsersPage() {
                 <option value="agent">Agents</option>
                 <option value="broker">Brokers</option>
                 <option value="buyer">Buyers</option>
+                <option value="constructora">Constructoras</option>
               </select>
               <select
                 value={statusFilter}

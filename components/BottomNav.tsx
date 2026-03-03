@@ -25,48 +25,80 @@ export default function BottomNav() {
 
   const isBuyer = session?.role === 'buyer' || session?.role === 'user'
 
-  const navItems = session ? [
-    {
-      name: 'Inicio',
-      icon: FiHome,
-      path: '/',
-      active: pathname === '/'
-    },
-    {
-      name: 'Buscar',
-      icon: FiSearch,
-      path: '/search',
-      active: pathname?.startsWith('/search')
-    },
-    {
-      name: 'Agentes',
-      icon: FiUsers,
-      path: '/agents',
-      active: pathname?.startsWith('/agents')
-    },
-    isBuyer ? {
-      name: 'Mi Panel',
-      icon: FiUser,
-      path: '/dashboard',
-      active: pathname?.startsWith('/dashboard')
-    } : {
-      name: 'Brokers',
-      icon: FiUsers,
-      path: '/brokers',
-      active: pathname?.startsWith('/brokers')
-    },
-    session.role === 'master_admin' ? {
-      name: 'Admin',
-      icon: FiUser,
-      path: adminHome,
-      active: pathname?.startsWith('/admin')
-    } : {
-      name: 'Contacto',
-      icon: FiMail,
-      path: '/contact',
-      active: pathname?.startsWith('/contact')
-    }
-  ] : [
+  const navItems = session ? (
+    isBuyer
+      ? [
+          {
+            name: 'Inicio',
+            icon: FiHome,
+            path: '/',
+            active: pathname === '/'
+          },
+          {
+            name: 'Buscar',
+            icon: FiSearch,
+            path: '/search',
+            active: pathname?.startsWith('/search')
+          },
+          {
+            name: 'Favoritos',
+            icon: FiUsers,
+            path: '/favorites',
+            active: pathname?.startsWith('/favorites')
+          },
+          {
+            name: 'Panel',
+            icon: FiUser,
+            path: '/dashboard',
+            active: pathname?.startsWith('/dashboard')
+          },
+          {
+            name: 'Mensajes',
+            icon: FiMail,
+            path: '/messages',
+            active: pathname?.startsWith('/messages')
+          }
+        ]
+      : [
+          {
+            name: 'Inicio',
+            icon: FiHome,
+            path: '/',
+            active: pathname === '/'
+          },
+          {
+            name: 'Buscar',
+            icon: FiSearch,
+            path: '/search',
+            active: pathname?.startsWith('/search')
+          },
+          {
+            name: 'Agentes',
+            icon: FiUsers,
+            path: '/agents',
+            active: pathname?.startsWith('/agents')
+          },
+          {
+            name: 'Brokers',
+            icon: FiUsers,
+            path: '/brokers',
+            active: pathname?.startsWith('/brokers')
+          },
+          session.role === 'master_admin'
+            ? {
+                name: 'Admin',
+                icon: FiUser,
+                path: adminHome,
+                active: pathname?.startsWith('/admin')
+              }
+            : {
+                name: 'Contacto',
+                icon: FiMail,
+                path: '/contact',
+                active: pathname?.startsWith('/contact')
+              }
+        ]
+  ) : [
     {
       name: 'Inicio',
       icon: FiHome,

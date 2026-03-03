@@ -7,7 +7,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { FiCheck, FiArrowLeft, FiArrowRight, FiBriefcase, FiUsers, FiStar, FiHelpCircle } from 'react-icons/fi'
 import { uploadFile, validateFile, generateApplicationFilePath } from '@/lib/storageService'
 
-type ApplicationType = 'agent' | 'broker' | 'new-agent'
+type ApplicationType = 'agent' | 'broker' | 'new-agent' | 'constructora'
 
 interface FormData {
   // Step 1: Type Selection & Basic Info
@@ -87,7 +87,7 @@ export default function ApplyPageNew() {
     referralSource: ''
   })
 
-  const totalSteps = form.type === 'broker' ? 5 : form.type === 'new-agent' ? 4 : 5
+  const totalSteps = form.type === 'broker' || form.type === 'constructora' ? 5 : form.type === 'new-agent' ? 4 : 5
   const progress = (currentStep / totalSteps) * 100
 
   function updateForm(updates: Partial<FormData>) {
@@ -172,14 +172,14 @@ export default function ApplyPageNew() {
       }
 
       // Upload documents for brokers
-      if (form.type === 'broker' && bizDocFile) {
+      if ((form.type === 'broker' || form.type === 'constructora') && bizDocFile) {
         const validation = validateFile(bizDocFile)
         if (!validation.valid) {
           toast.error(validation.error || 'Archivo inválido')
           setSubmitting(false)
           return
         }
-        const path = generateApplicationFilePath('broker', bizDocFile.name)
+        const path = generateApplicationFilePath(form.type === 'constructora' ? 'developer' : 'broker', bizDocFile.name)
         documentUrl = await uploadFile(bizDocFile, path, setUploadProgress)
       }
 
@@ -217,7 +217,7 @@ export default function ApplyPageNew() {
           email: form.email,
           phone: form.phone,
           message: `Nueva solicitud ${form.type === 'new-agent' ? '(Agente Nuevo)' : form.type}: ${form.contact}\n\nID: ${docRef.id}\n\nDetalles:\n${form.businessDetails || form.whyRealEstate}`,
-          subject: `Nueva Solicitud: ${form.type === 'agent' ? 'Agente Experimentado' : form.type === 'new-agent' ? 'Agente Nuevo' : 'Bróker'} - ${form.contact}`,
+          subject: `Nueva Solicitud: ${form.type === 'agent' ? 'Agente Experimentado' : form.type === 'new-agent' ? 'Agente Nuevo' : form.type === 'constructora' ? 'Constructora' : 'Bróker'} - ${form.contact}`,
           source: 'application_form'
         })
       }).catch(err => console.error('Notification error:', err))
@@ -320,7 +320,7 @@ export default function ApplyPageNew() {
                 Selecciona la opción que mejor te describe
               </p>
 
-              <div className="grid md:grid-cols-3 gap-4 mb-8">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <button
                   onClick={() => updateForm({ type: 'agent' })}
                   className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
@@ -366,6 +366,21 @@ export default function ApplyPageNew() {
                   <h3 className="font-bold text-lg mb-2">Bróker</h3>
                   <p className="text-sm text-gray-600">
                     Tengo mi propia inmobiliaria
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => updateForm({ type: 'constructora' })}
+                  className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
+                    form.type === 'constructora'
+                      ? 'border-orange-600 bg-orange-50 shadow-lg scale-105'
+                      : 'border-gray-200 hover:border-orange-300 hover:shadow-md'
+                  }`}
+                >
+                  <FiBriefcase className="mx-auto text-4xl mb-3 text-orange-600" />
+                  <h3 className="font-bold text-lg mb-2">Constructora</h3>
+                  <p className="text-sm text-gray-600">
+                    Represento una desarrolladora o constructora
                   </p>
                 </button>
               </div>
@@ -437,7 +452,7 @@ export default function ApplyPageNew() {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {form.type === 'broker' ? 'Empresa' : 'Inmobiliaria Actual'}
+                      {form.type === 'broker' || form.type === 'constructora' ? 'Empresa' : 'Inmobiliaria Actual'}
                       {form.type === 'new-agent' && ' (Opcional)'}
                     </label>
                     <input
@@ -445,7 +460,7 @@ export default function ApplyPageNew() {
                       value={form.company}
                       onChange={e => updateForm({ company: e.target.value })}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                      placeholder={form.type === 'new-agent' ? 'Ninguna (soy nuevo)' : 'Mi Empresa Inmobiliaria'}
+                      placeholder={form.type === 'new-agent' ? 'Ninguna (soy nuevo)' : form.type === 'constructora' ? 'Nombre de tu constructora' : 'Mi Empresa Inmobiliaria'}
                     />
                   </div>
                 </div>
@@ -467,7 +482,7 @@ export default function ApplyPageNew() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {form.type === 'broker' ? 'Licencia de Bróker' : 'Número de Licencia'}
+                      {form.type === 'broker' ? 'Licencia de Bróker' : form.type === 'constructora' ? 'Registro mercantil / licencia' : 'Número de Licencia'}
                       <span className="text-gray-500 text-xs ml-2">(Opcional)</span>
                     </label>
                     <input
@@ -715,20 +730,20 @@ export default function ApplyPageNew() {
           )}
 
           {/* Step 4: Broker Details OR Final Details */}
-          {currentStep === 4 && form.type === 'broker' && (
+          {currentStep === 4 && (form.type === 'broker' || form.type === 'constructora') && (
             <div className="animate-fade-in">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                Información de tu Inmobiliaria
+                {form.type === 'constructora' ? 'Información de tu Constructora' : 'Información de tu Inmobiliaria'}
               </h2>
               <p className="text-gray-600 mb-8">
-                Detalles sobre tu empresa y equipo
+                {form.type === 'constructora' ? 'Detalles sobre tus proyectos y equipo comercial' : 'Detalles sobre tu empresa y equipo'}
               </p>
 
               <div className="space-y-6">
                 <div className="grid md:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Número de Agentes <span className="text-red-500">*</span>
+                      {form.type === 'constructora' ? 'Tamaño del Equipo Comercial' : 'Número de Agentes'} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="number"
@@ -759,7 +774,7 @@ export default function ApplyPageNew() {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Número de Oficinas
+                      {form.type === 'constructora' ? 'Número de Proyectos Activos' : 'Número de Oficinas'}
                     </label>
                     <input
                       type="number"
@@ -774,7 +789,7 @@ export default function ApplyPageNew() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Sistema CRM Actual
+                      {form.type === 'constructora' ? 'Sistema de gestión comercial actual' : 'Sistema CRM Actual'}
                     <span className="text-gray-500 text-xs ml-2">(Opcional)</span>
                   </label>
                   <input
@@ -795,9 +810,9 @@ export default function ApplyPageNew() {
                     className="mt-1 w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                   />
                   <label htmlFor="insurance" className="text-sm text-purple-900">
-                    <strong>Mi empresa cuenta con seguro E&O (Errors & Omissions)</strong>
+                    <strong>{form.type === 'constructora' ? 'Mi empresa cuenta con seguros y cumplimiento regulatorio vigente' : 'Mi empresa cuenta con seguro E&O (Errors & Omissions)'}</strong>
                     <br />
-                    <span className="text-xs">Esto protege a tu empresa y clientes de errores profesionales</span>
+                    <span className="text-xs">{form.type === 'constructora' ? 'Esto acelera el proceso de validación de tu perfil profesional' : 'Esto protege a tu empresa y clientes de errores profesionales'}</span>
                   </label>
                 </div>
 
@@ -817,7 +832,7 @@ export default function ApplyPageNew() {
                     <label htmlFor="bizDoc" className="cursor-pointer">
                       <FiUsers className="mx-auto text-4xl text-gray-400 mb-2" />
                       <p className="font-medium text-gray-700">
-                        {bizDocFile ? bizDocFile.name : 'Adjunta licencia de negocio o certificaciones'}
+                        {bizDocFile ? bizDocFile.name : form.type === 'constructora' ? 'Adjunta registro mercantil, certificaciones o dossier de proyectos' : 'Adjunta licencia de negocio o certificaciones'}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">PDF, DOC o DOCX - Máx. 10MB</p>
                     </label>
@@ -828,7 +843,7 @@ export default function ApplyPageNew() {
           )}
 
           {/* Step 5 (or 4 for non-brokers): Motivation & Additional Info */}
-          {((currentStep === 5 && form.type === 'broker') || 
+          {((currentStep === 5 && (form.type === 'broker' || form.type === 'constructora')) || 
             (currentStep === 4 && form.type === 'agent') ||
             (currentStep === 4 && form.type === 'new-agent')) && (
             <div className="animate-fade-in">
@@ -941,7 +956,7 @@ export default function ApplyPageNew() {
             {/* Skip button for optional steps */}
             {((currentStep === 2 && form.type === 'agent') || 
               (currentStep === 3) ||
-              (currentStep === 4 && form.type === 'broker')) && (
+              (currentStep === 4 && (form.type === 'broker' || form.type === 'constructora'))) && (
               <button
                 onClick={skipStep}
                 className="px-6 py-3 text-gray-500 hover:text-gray-700 font-medium transition-colors"

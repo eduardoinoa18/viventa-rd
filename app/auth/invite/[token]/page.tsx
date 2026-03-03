@@ -95,6 +95,29 @@ export default function InviteOnboardingPage() {
 
   const canGoStep2 = Object.values(passwordChecks).every(Boolean)
 
+  const roleMeta = useMemo(() => {
+    if (!invite) return { label: 'User', profileHint: 'Completa tu perfil para iniciar rápido.' }
+    if (invite.role === 'constructora') {
+      return {
+        label: 'Constructora',
+        profileHint: 'Agrega empresa, WhatsApp y descripción de proyectos para activar tu presencia comercial.',
+      }
+    }
+    if (invite.role === 'broker') {
+      return {
+        label: 'Broker',
+        profileHint: 'Completa datos de tu firma para acelerar tu activación en el panel.',
+      }
+    }
+    if (invite.role === 'agent') {
+      return {
+        label: 'Agent',
+        profileHint: 'Tu perfil completo mejora visibilidad y confianza en listados y leads.',
+      }
+    }
+    return { label: invite.role, profileHint: 'Completa tu perfil para iniciar rápido.' }
+  }, [invite])
+
   async function completeInvitation() {
     if (!invite) return
     if (!canGoStep2) {
@@ -183,8 +206,9 @@ export default function InviteOnboardingPage() {
       <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-xl shadow-sm">
         <div className="p-6 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-[#0B2545]">Complete your Viventa profile</h1>
-          <p className="text-sm text-gray-600 mt-1">{invite.email} • Role: {invite.role}</p>
+          <p className="text-sm text-gray-600 mt-1">{invite.email} • Role: {roleMeta.label}</p>
           <p className="text-xs text-gray-500 mt-1">Expires: {new Date(invite.expiresAt).toLocaleString()}</p>
+          <p className="text-xs text-[#0B2545] mt-2">{roleMeta.profileHint}</p>
         </div>
 
         <div className="px-6 pt-5">
@@ -237,6 +261,9 @@ export default function InviteOnboardingPage() {
             <Field label="Bio" value={bio} onChange={setBio} />
 
             {invite.role === 'agent' && (
+              <Field label="Brokerage Name" value={brokerageName} onChange={setBrokerageName} />
+            )}
+            {invite.role === 'broker' && (
               <Field label="Brokerage Name" value={brokerageName} onChange={setBrokerageName} />
             )}
             {invite.role === 'constructora' && (
