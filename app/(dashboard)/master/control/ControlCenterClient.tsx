@@ -307,9 +307,10 @@ export default function ControlCenterClient() {
                   key={hours}
                   onClick={() => saveEscalationHours(hours)}
                   disabled={savingMode}
-                  className={`px-3 py-1.5 rounded-md text-sm border ${escalationHours === hours ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-60`}
+                  className={`px-3 py-1.5 rounded-md text-sm border font-medium ${escalationHours === hours ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-60`}
+                  title={escalationHours === hours ? 'Current escalation threshold' : 'Set escalation threshold'}
                 >
-                  {hours}h
+                  {hours}h{escalationHours === hours ? ' (current)' : ''}
                 </button>
               ))}
             </div>
@@ -317,7 +318,7 @@ export default function ControlCenterClient() {
         </section>
 
         <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <div className="font-semibold text-[#0B2545] mb-2">Automation Runs</div>
+          <div className="font-semibold text-[#0B2545] mb-2 uppercase tracking-wide">Recent automation runs</div>
           <div className="space-y-2">
             {automationRuns.length === 0 ? (
               <div className="text-xs text-gray-500">No scheduler runs available yet.</div>

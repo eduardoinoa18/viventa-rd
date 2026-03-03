@@ -669,10 +669,10 @@ export default function LeadsPage() {
           </div>
 
           <div className="mt-4 border-t border-gray-100 pt-3">
-            <div className="text-xs font-semibold text-gray-700">Automation Runs</div>
+            <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Recent automation activity</div>
             <div className="mt-2 space-y-2">
               {automationRuns.length === 0 ? (
-                <div className="text-xs text-gray-500">No automation runs yet.</div>
+                <div className="text-xs text-gray-500">No scheduled jobs have run yet.</div>
               ) : (
                 automationRuns.map((run) => (
                   <div key={run.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 px-2 py-1.5">
@@ -693,7 +693,7 @@ export default function LeadsPage() {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Top Performing Brokers</h2>
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Top performing brokers</h2>
           <p className="text-xs text-gray-500 mt-1">Ranked by conversion rate and deal volume</p>
 
           <div className="mt-3 space-y-2">
