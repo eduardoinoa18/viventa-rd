@@ -19,21 +19,32 @@ export default function MasterListingsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [intelligencePreset, setIntelligencePreset] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [selected, setSelected] = useState<Record<string, boolean>>({})
 
   // Filtered listings based on search
   const filteredListings = useMemo(() => {
-    if (!searchQuery.trim()) return listings
-    const query = searchQuery.toLowerCase()
-    return listings.filter(
-      (l) =>
+    const query = searchQuery.trim().toLowerCase()
+
+    return listings.filter((l) => {
+      const matchesSearch = !query ||
         l.title?.toLowerCase().includes(query) ||
         l.city?.toLowerCase().includes(query) ||
         l.sector?.toLowerCase().includes(query)
-    )
-  }, [listings, searchQuery])
+
+      if (!matchesSearch) return false
+
+      if (intelligencePreset === 'pending_verification') return !Boolean(l.isVerified)
+      if (intelligencePreset === 'missing_photos') return Boolean(l.missingPhotos)
+      if (intelligencePreset === 'price_anomaly') return (l.anomalyFlags || []).includes('price_anomaly')
+      if (intelligencePreset === 'no_assigned_broker') return !Boolean(l.hasAssignedBroker)
+      if (intelligencePreset === 'duplicate_risk') return Boolean(l.duplicateRisk)
+
+      return true
+    })
+  }, [listings, searchQuery, intelligencePreset])
 
   const allSelected = filteredListings.length > 0 && filteredListings.every((l) => selected[l.id])
 
@@ -235,6 +246,8 @@ export default function MasterListingsPage() {
             onSearchChange={setSearchQuery}
             statusFilter={statusFilter}
             onStatusChange={setStatusFilter}
+            intelligencePreset={intelligencePreset}
+            onIntelligencePresetChange={setIntelligencePreset}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
           />

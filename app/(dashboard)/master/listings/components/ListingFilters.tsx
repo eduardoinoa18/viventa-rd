@@ -8,6 +8,8 @@ interface ListingFiltersProps {
   onSearchChange: (query: string) => void
   statusFilter: string
   onStatusChange: (status: string) => void
+  intelligencePreset: string
+  onIntelligencePresetChange: (preset: string) => void
   viewMode: 'list' | 'grid'
   onViewModeChange: (mode: 'list' | 'grid') => void
 }
@@ -17,6 +19,8 @@ export default function ListingFilters({
   onSearchChange,
   statusFilter,
   onStatusChange,
+  intelligencePreset,
+  onIntelligencePresetChange,
   viewMode,
   onViewModeChange,
 }: ListingFiltersProps) {
@@ -51,6 +55,21 @@ export default function ListingFilters({
                 {s.label}
               </option>
             ))}
+          </select>
+
+          <select
+            value={intelligencePreset}
+            onChange={(e) => onIntelligencePresetChange(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent"
+            aria-label="Filtrar por preset de inteligencia"
+            title="Filter by moderation and quality presets"
+          >
+            <option value="all">All quality presets</option>
+            <option value="pending_verification">Pending verification</option>
+            <option value="missing_photos">Missing photos</option>
+            <option value="price_anomaly">Price anomaly</option>
+            <option value="no_assigned_broker">No assigned broker</option>
+            <option value="duplicate_risk">Duplicate risk</option>
           </select>
 
           {/* View Mode Toggle */}

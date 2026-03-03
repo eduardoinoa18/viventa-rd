@@ -45,6 +45,92 @@ function initFirebase() {
   return getFirestore()
 }
 
+function computeListingIntelligence(source: any) {
+  const images = Array.isArray(source?.images) ? source.images : []
+  const title = String(source?.title || '').trim()
+  const description = String(source?.description || source?.publicRemarks || '').trim()
+  const city = String(source?.city || source?.location || '').trim()
+  const sector = String(source?.sector || source?.neighborhood || '').trim()
+  const price = Number(source?.price || 0)
+  const area = Number(source?.area || source?.squareMeters || 0)
+  const bedrooms = Number(source?.bedrooms || 0)
+  const bathrooms = Number(source?.bathrooms || 0)
+  const hasGeocode = Number.isFinite(Number(source?.lat)) && Number.isFinite(Number(source?.lng)) && Number(source?.lat) !== 0 && Number(source?.lng) !== 0
+  const hasAssignedBroker = Boolean(String(source?.brokerName || source?.companyName || '').trim())
+
+  const checks = [
+    title.length > 3,
+    description.length > 20,
+    price > 0,
+    city.length > 0,
+    sector.length > 0,
+    area > 0,
+    images.length > 0,
+    bedrooms >= 0,
+    bathrooms >= 0,
+    hasGeocode,
+  ]
+
+  const qualityScore = Math.round((checks.filter(Boolean).length / checks.length) * 100)
+
+  const visibilityScore = Math.round(
+    Math.min(
+      100,
+      (images.length > 0 ? 30 : 0) +
+      (title ? 20 : 0) +
+      (description ? 20 : 0) +
+      (city ? 15 : 0) +
+      (sector ? 15 : 0)
+    )
+  )
+
+  const seoScore = Math.round(
+    Math.min(
+      100,
+      (title.length >= 20 ? 40 : title.length > 0 ? 25 : 0) +
+      (description.length >= 80 ? 40 : description.length > 20 ? 25 : 0) +
+      (city && sector ? 20 : city ? 10 : 0)
+    )
+  )
+
+  const anomalyFlags: string[] = []
+  if (images.length === 0) anomalyFlags.push('missing_photos')
+  if (!hasGeocode) anomalyFlags.push('missing_geocode')
+  if (!hasAssignedBroker) anomalyFlags.push('no_assigned_broker')
+  if (price > 0 && area > 0) {
+    const pricePerM2 = price / area
+    if (pricePerM2 < 150 || pricePerM2 > 15000) anomalyFlags.push('price_anomaly')
+  }
+  if (qualityScore < 60) anomalyFlags.push('low_quality')
+
+  return {
+    qualityScore,
+    visibilityScore,
+    seoScore,
+    anomalyFlags,
+    missingPhotos: images.length === 0,
+    missingGeocode: !hasGeocode,
+    hasAssignedBroker,
+  }
+}
+
+function markDuplicateRisk(rows: any[]) {
+  const keyMap = new Map<string, number>()
+
+  for (const row of rows) {
+    const key = `${String(row?.title || '').trim().toLowerCase()}|${String(row?.city || row?.location || '').trim().toLowerCase()}|${Number(row?.price || 0)}`
+    keyMap.set(key, (keyMap.get(key) || 0) + 1)
+  }
+
+  return rows.map((row) => {
+    const key = `${String(row?.title || '').trim().toLowerCase()}|${String(row?.city || row?.location || '').trim().toLowerCase()}|${Number(row?.price || 0)}`
+    return {
+      ...row,
+      duplicateRisk: (keyMap.get(key) || 0) > 1 && key !== '||0',
+    }
+  })
+}
+
 // GET /api/admin/properties - list all properties with optional status filter
 export async function GET(req: NextRequest) {
   try {
@@ -56,7 +142,15 @@ export async function GET(req: NextRequest) {
       let ref: any = adminDb.collection('properties')
       if (statusFilter) ref = ref.where('status', '==', statusFilter)
       const snap = await ref.orderBy('createdAt', 'desc').get()
-      const properties = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+      const withSignals = snap.docs.map((d: any) => {
+        const raw = d.data()
+        return {
+          id: d.id,
+          ...raw,
+          ...computeListingIntelligence(raw),
+        }
+      })
+      const properties = markDuplicateRisk(withSignals)
       return NextResponse.json({ ok: true, data: properties })
     }
 
@@ -74,10 +168,15 @@ export async function GET(req: NextRequest) {
     }
 
     const snapshot = await getDocs(q)
-    const properties = snapshot.docs.map((d: any) => ({
-      id: d.id,
-      ...d.data(),
-    }))
+    const withSignals = snapshot.docs.map((d: any) => {
+      const raw = d.data()
+      return {
+        id: d.id,
+        ...raw,
+        ...computeListingIntelligence(raw),
+      }
+    })
+    const properties = markDuplicateRisk(withSignals)
 
     return NextResponse.json({ ok: true, data: properties })
   } catch (e: any) {

@@ -68,6 +68,16 @@ export interface Listing {
   views?: number;
   featured_until?: Date | null;
 
+  // Admin intelligence signals
+  qualityScore?: number;
+  visibilityScore?: number;
+  seoScore?: number;
+  anomalyFlags?: string[];
+  duplicateRisk?: boolean;
+  missingPhotos?: boolean;
+  missingGeocode?: boolean;
+  hasAssignedBroker?: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }
