@@ -336,12 +336,12 @@ export default function ControlCenterClient() {
 
   const topThree = useMemo(() => stream.slice(0, 3), [stream])
 
-  const modeOptions: Array<{ value: RoutingMode; label: string; hint: string }> = [
+  const modeOptions = [
     { value: 'manual_only', label: 'Manual only', hint: 'Master admin decides each assignment.' },
     { value: 'auto_brokerage', label: 'Auto-assign to brokerage', hint: 'Ready for brokerage-based routing.' },
     { value: 'auto_top_agent', label: 'Auto-assign to top agent', hint: 'Ready to use top system score.' },
     { value: 'rotation_mode', label: 'Rotation mode', hint: 'Ready for operational round-robin.' },
-  ]
+  ] as const
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -656,7 +656,13 @@ export default function ControlCenterClient() {
                             <div className={`text-sm font-bold ${slaTimer.isRed ? 'text-red-700' : 'text-green-700'}`}>
                               {formatSLATimer(slaTimer.timeRemaining)}
                             </div>
-                            <div className={`h-1.5 rounded-full ${slaTimer.isRed ? 'bg-red-500 w-4' : slaTimer.percentage > 75 ? 'bg-green-500 w-16' : slaTimer.percentage > 50 ? 'bg-green-500 w-12' : 'bg-yellow-500 w-8'}`} /p className="text-orange-500" /> {lead.urgencyScore}
+                            <div className={`h-1.5 rounded-full ${slaTimer.isRed ? 'bg-red-500 w-4' : slaTimer.percentage > 75 ? 'bg-green-500 w-16' : slaTimer.percentage > 50 ? 'bg-green-500 w-12' : 'bg-yellow-500 w-8'}`} />
+                            <div className="text-xs text-gray-500">{escalationHours}h window</div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <div className="text-sm font-semibold text-[#0B2545] inline-flex items-center gap-1">
+                            <FiZap className="text-orange-500" /> {lead.urgencyScore}
                           </div>
                         </td>
                         <td className="px-4 py-4 align-top">

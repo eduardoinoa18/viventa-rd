@@ -123,7 +123,7 @@ export default function OverviewClient() {
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Executive Overview</h1>
-          <p className="text-sm text-gray-600">CEO layer for rapid ratio and risk decisions.</p>
+          <p className="text-sm text-gray-600 mt-1">Lead metrics and risk highlights for operational decisions.</p>
         </div>
         <div className="text-xs text-gray-500">Updated: {generatedAtLabel || 'N/A'}</div>
       </div>

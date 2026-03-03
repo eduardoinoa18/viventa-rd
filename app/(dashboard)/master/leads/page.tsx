@@ -216,6 +216,7 @@ export default function LeadsPage() {
   const [assignNote, setAssignNote] = useState('')
   const [runningAutoAssign, setRunningAutoAssign] = useState(false)
   const [runningEscalation, setRunningEscalation] = useState(false)
+  const [showDuplicates, setShowDuplicates] = useState(false)
 
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedSearch(searchInput.trim()), 250)
@@ -482,6 +483,42 @@ export default function LeadsPage() {
     }
 
     return grouped
+  }, [leads])
+
+  const detectedDuplicates = useMemo(() => {
+    const emailMap = new Map<string, LeadRecord[]>()
+    const phoneMap = new Map<string, LeadRecord[]>()
+
+    for (const lead of leads) {
+      const email = lead.buyerEmail?.toLowerCase().trim()
+      const phone = lead.buyerPhone?.replace(/\D/g, '').trim()
+
+      if (email) {
+        if (!emailMap.has(email)) emailMap.set(email, [])
+        emailMap.get(email)!.push(lead)
+      }
+
+      if (phone && phone.length >= 7) {
+        if (!phoneMap.has(phone)) phoneMap.set(phone, [])
+        phoneMap.get(phone)!.push(lead)
+      }
+    }
+
+    const duplicates: Array<{type: 'email' | 'phone'; key: string; leads: LeadRecord[]}> = []
+
+    emailMap.forEach((leads, email) => {
+      if (leads.length > 1) {
+        duplicates.push({ type: 'email', key: email, leads })
+      }
+    })
+
+    phoneMap.forEach((leads, phone) => {
+      if (leads.length > 1) {
+        duplicates.push({ type: 'phone', key: phone, leads })
+      }
+    })
+
+    return duplicates.sort((a, b) => b.leads.length - a.leads.length)
   }, [leads])
 
   const hasActiveFilters =
@@ -830,7 +867,62 @@ export default function LeadsPage() {
 
       {loading ? (
         <div className="bg-white rounded-lg border border-gray-200 p-10 text-center text-gray-500">Loading lead queue...</div>
-      ) : leads.length === 0 ? (
+      ) : (
+        <>
+          {detectedDuplicates.length > 0 && showDuplicates && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-amber-900">Potential Duplicates Detected</h3>
+                  <p className="text-xs text-amber-700 mt-1">{detectedDuplicates.length} duplicate lead group{detectedDuplicates.length !== 1 ? 's' : ''} found by email or phone</p>
+                </div>
+                <button
+                  onClick={() => setShowDuplicates(false)}
+                  className="text-amber-600 hover:text-amber-900"
+                  title="Hide duplicate groups"
+                  aria-label="Hide duplicate groups"
+                >
+                  <FiX className="text-lg" />
+                </button>
+              </div>
+              <div className="space-y-3 max-h-48 overflow-y-auto">
+                {detectedDuplicates.slice(0, 10).map((dup, idx) => (
+                  <div key={`${dup.type}-${idx}`} className="bg-white rounded-lg border border-amber-200 p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs font-semibold text-gray-900">
+                        {dup.type === 'email' ? '✉️' : '📱'} {dup.key}
+                      </div>
+                      <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{dup.leads.length} leads</span>
+                    </div>
+                    <div className="space-y-1">
+                      {dup.leads.map((lead) => (
+                        <div key={lead.id} className="text-xs text-gray-700 flex items-center justify-between">
+                          <span>{lead.buyerName} ({lead.leadStage})</span>
+                          <span className="text-gray-500">{formatRelative(lead.createdAt)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {detectedDuplicates.length > 10 && (
+                <div className="mt-2 text-xs text-amber-600">
+                  +{detectedDuplicates.length - 10} more duplicate groups
+                </div>
+              )}
+            </div>
+          )}
+
+          {detectedDuplicates.length > 0 && !showDuplicates && (
+            <button
+              onClick={() => setShowDuplicates(true)}
+              className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm font-medium text-amber-700 hover:bg-amber-100 mb-6 w-full text-left"
+            >
+              Show {detectedDuplicates.length} potential duplicate lead group{detectedDuplicates.length !== 1 ? 's' : ''} detected by email/phone
+            </button>
+          )}
+
+          {leads.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-10 text-center">
           <div className="text-lg font-semibold text-gray-900">{emptyStateMessage.title}</div>
           <p className="mt-2 text-sm text-gray-600">{emptyStateMessage.body}</p>
@@ -976,6 +1068,8 @@ export default function LeadsPage() {
             </table>
           </div>
         </div>
+      )}
+        </>
       )}
 
       {showAssignModal && (
