@@ -6,6 +6,7 @@ import { FiUsers, FiHome, FiDollarSign, FiClock, FiUserPlus, FiActivity, FiCheck
 export default function MasterOverviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [dateRange, setDateRange] = useState('month')
   const [stats, setStats] = useState({
     // Property Management KPIs
     totalProperties: 0,
@@ -41,6 +42,16 @@ export default function MasterOverviewPage() {
       },
     },
     window: 'all' as 'all'|'day'|'week'|'month',
+    // Broker performance & velocity
+    topBrokers: [] as Array<{id: string; name: string; leadsThis: number; conversionRate: number; revenue: number}>,
+    leadVelocity: [] as Array<{day: string; count: number}>,
+    registrationVelocity: [] as Array<{day: string; count: number}>,
+    growthMetrics: {
+      leadsGrowth: 0,
+      usersGrowth: 0,
+      revenueGrowth: 0,
+      isGrowing: true,
+    }
   })
   const [timeWindow, setTimeWindow] = useState<'all'|'day'|'week'|'month'>('all')
 
@@ -102,6 +113,15 @@ export default function MasterOverviewPage() {
               },
             },
             window: timeWindow,
+            topBrokers: d.topBrokers || [],
+            leadVelocity: d.leadVelocity || [],
+            registrationVelocity: d.registrationVelocity || [],
+            growthMetrics: d.growthMetrics || {
+              leadsGrowth: 0,
+              usersGrowth: 0,
+              revenueGrowth: 0,
+              isGrowing: true,
+            },
           })
         }
       })
@@ -318,6 +338,122 @@ export default function MasterOverviewPage() {
           </div>
         </div>
       </section>
+
+      {/* Growth & Performance */}
+      <section className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Is Viventa Growing?</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className={`rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1 ${stats.growthMetrics.isGrowing ? 'bg-gradient-to-br from-green-500 to-green-600' : 'bg-gradient-to-br from-red-500 to-red-600'} text-white`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/80 text-sm font-medium">Platform Status</span>
+              <FiActivity className="text-3xl opacity-80" />
+            </div>
+            <div className="text-3xl font-bold mb-1">{stats.growthMetrics.isGrowing ? '✓ Growing' : '✗ Declining'}</div>
+            <div className="text-white/70 text-xs">Network health</div>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/80 text-sm font-medium">Leads Growth</span>
+              <FiUsers className="text-3xl opacity-80" />
+            </div>
+            <div className="text-3xl font-bold mb-1">{stats.growthMetrics.leadsGrowth > 0 ? '+' : ''}{stats.growthMetrics.leadsGrowth}%</div>
+            <div className="text-white/70 text-xs">vs previous period</div>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/80 text-sm font-medium">User Growth</span>
+              <FiUserPlus className="text-3xl opacity-80" />
+            </div>
+            <div className="text-3xl font-bold mb-1">{stats.growthMetrics.usersGrowth > 0 ? '+' : ''}{stats.growthMetrics.usersGrowth}%</div>
+            <div className="text-white/70 text-xs">Total registrations</div>
+          </div>
+
+          <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/80 text-sm font-medium">Revenue Growth</span>
+              <FiDollarSign className="text-3xl opacity-80" />
+            </div>
+            <div className="text-3xl font-bold mb-1">{stats.growthMetrics.revenueGrowth > 0 ? '+' : ''}{stats.growthMetrics.revenueGrowth}%</div>
+            <div className="text-white/70 text-xs">Monthly trend</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Top Brokers This Month */}
+      {stats.topBrokers.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Top performing brokers</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-semibold">Broker</th>
+                  <th className="px-6 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-semibold">Leads This Month</th>
+                  <th className="px-6 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-semibold">Conversion Rate</th>
+                  <th className="px-6 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-semibold">Revenue</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {stats.topBrokers.slice(0, 5).map((broker) => (
+                  <tr key={broker.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 font-medium text-[#0B2545]">{broker.name}</td>
+                    <td className="px-6 py-4 text-gray-700">{broker.leadsThis}</td>
+                    <td className="px-6 py-4 text-gray-700">{broker.conversionRate}%</td>
+                    <td className="px-6 py-4 text-gray-700">${broker.revenue.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Lead Velocity & Registration Velocity Charts */}
+      {(stats.leadVelocity.length > 0 || stats.registrationVelocity.length > 0) && (
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Velocity & Momentum</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {stats.leadVelocity.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Lead velocity (last 7 days)</h3>
+                <div className="space-y-3">
+                  {stats.leadVelocity.map((day, idx) => {
+                    const maxCount = Math.max(...stats.leadVelocity.map(d => d.count), 1)
+                    const widthClass = day.count === 0 ? 'w-1' : day.count >= maxCount ? 'w-full' : day.count >= maxCount * 0.75 ? 'w-4/5' : day.count >= maxCount * 0.5 ? 'w-3/5' : day.count >= maxCount * 0.25 ? 'w-2/5' : 'w-1/5'
+                    return (
+                      <div key={idx} className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 w-12">{day.day}</span>
+                        <div className={`h-2 rounded-full bg-gradient-to-r from-cyan-400 to-cyan-600 flex-1 mx-3 ${widthClass}`} />
+                        <span className="text-sm font-semibold text-gray-800 w-12 text-right">{day.count}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            {stats.registrationVelocity.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Registration velocity (last 7 days)</h3>
+                <div className="space-y-3">
+                  {stats.registrationVelocity.map((day, idx) => {
+                    const maxCount = Math.max(...stats.registrationVelocity.map(d => d.count), 1)
+                    const widthClass = day.count === 0 ? 'w-1' : day.count >= maxCount ? 'w-full' : day.count >= maxCount * 0.75 ? 'w-4/5' : day.count >= maxCount * 0.5 ? 'w-3/5' : day.count >= maxCount * 0.25 ? 'w-2/5' : 'w-1/5'
+                    return (
+                      <div key={idx} className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 w-12">{day.day}</span>
+                        <div className={`h-2 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 flex-1 mx-3 ${widthClass}`} />
+                        <span className="text-sm font-semibold text-gray-800 w-12 text-right">{day.count}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Quick Actions */}
       <section>
