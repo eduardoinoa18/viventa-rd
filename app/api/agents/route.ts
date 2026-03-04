@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import type { DocumentData, QuerySnapshot } from 'firebase-admin/firestore'
+import { calculateProfessionalRankingScore } from '@/lib/professionalRanking'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,10 @@ type AgentDoc = {
   approved?: boolean
   emailVerified?: boolean
   verified?: boolean
+  salesCount?: number
+  reviewCount?: number
+  yearsExperience?: number
+  activeSubscription?: boolean
 }
 
 type AgentPublic = {
@@ -41,6 +46,7 @@ type AgentPublic = {
   status: string
   approved: boolean
   emailVerified: boolean
+  rankingScore: number
 }
 
 export async function GET(req: NextRequest) {
@@ -74,6 +80,11 @@ export async function GET(req: NextRequest) {
     const data: AgentPublic[] = snap.docs
       .map((d) => {
         const user = (d.data() || {}) as AgentDoc
+        const rating = Number(user.rating || 4.5)
+        const reviewsCount = Number(user.reviewCount || 0)
+        const salesCount = Number(user.salesCount || 0)
+        const yearsExperience = Number(user.yearsExperience || 0)
+
         return {
           id: d.id,
           name: user.name || user.displayName || 'Agente',
@@ -84,12 +95,22 @@ export async function GET(req: NextRequest) {
           photo: user.photoURL || user.photo || user.profileImage || '',
           profileImage: user.profileImage || user.photoURL || user.photo || '',
           agentCode: user.agentCode || user.professionalCode || '',
-          rating: Number(user.rating || 4.5),
+          rating,
           online: Boolean(user.online),
           languages: user.languages || 'Español',
           status: user.status || '',
           approved: Boolean(user.approved),
           emailVerified: Boolean(user.emailVerified || user.verified),
+          rankingScore: calculateProfessionalRankingScore({
+            rating,
+            reviewsCount,
+            salesCount,
+            yearsExperience,
+            emailVerified: Boolean(user.emailVerified || user.verified),
+            identityVerified: Boolean(user.verified),
+            hasProfessionalCode: Boolean(user.agentCode || user.professionalCode),
+            hasActiveSubscription: Boolean(user.activeSubscription),
+          }),
         }
       })
       .filter((u) => u.status === 'active' && u.approved)

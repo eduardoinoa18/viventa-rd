@@ -8,12 +8,29 @@ function getAuthInfo(req: NextRequest) {
 }
 
 function canEdit(role?: string) {
-  return role === 'agent' || role === 'broker' || role === 'master_admin'
+  return role === 'agent' || role === 'broker' || role === 'constructora' || role === 'master_admin'
 }
 
 // Allowed profile fields to update
 const ALLOWED_FIELDS = new Set([
-  'bio', 'specialties', 'languages', 'officeAddress', 'website', 'certifications', 'photoUrl'
+  'bio',
+  'description',
+  'specialties',
+  'languages',
+  'officeAddress',
+  'website',
+  'certifications',
+  'photoUrl',
+  'profileImage',
+  'companyLogo',
+  'company',
+  'yearsExperience',
+  'yearsInBusiness',
+  'salesCount',
+  'teamSize',
+  'markets',
+  'city',
+  'phone'
 ])
 
 export async function GET(req: NextRequest) {
@@ -28,12 +45,23 @@ export async function GET(req: NextRequest) {
     const data = userDoc.data() || {}
     const profile = {
       bio: data.bio || '',
+      description: data.description || '',
       specialties: data.specialties || [],
       languages: data.languages || [],
       officeAddress: data.officeAddress || '',
       website: data.website || '',
       certifications: data.certifications || '',
       photoUrl: data.photoUrl || '',
+      profileImage: data.profileImage || '',
+      companyLogo: data.companyLogo || '',
+      company: data.company || '',
+      yearsExperience: data.yearsExperience || 0,
+      yearsInBusiness: data.yearsInBusiness || 0,
+      salesCount: data.salesCount || 0,
+      teamSize: data.teamSize || 0,
+      markets: data.markets || '',
+      city: data.city || '',
+      phone: data.phone || '',
       professionalCode: data.professionalCode || '',
       role: data.role || '',
       name: data.name || ''
@@ -59,6 +87,14 @@ export async function PATCH(req: NextRequest) {
       if (ALLOWED_FIELDS.has(key)) {
         if (key === 'specialties' || key === 'languages') {
           updates[key] = Array.isArray(value) ? value.map(v => String(v).trim()).slice(0, 25) : []
+        } else if (
+          key === 'yearsExperience' ||
+          key === 'yearsInBusiness' ||
+          key === 'salesCount' ||
+          key === 'teamSize'
+        ) {
+          const parsed = Number(value)
+          updates[key] = Number.isFinite(parsed) ? Math.max(0, parsed) : 0
         } else if (typeof value === 'string') {
           updates[key] = value.trim().slice(0, 2000)
         } else {

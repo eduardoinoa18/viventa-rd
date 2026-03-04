@@ -6,6 +6,8 @@ import toast from 'react-hot-toast'
 
 interface Application {
   id: string
+  entityId?: string
+  source?: 'application' | 'subscription_request'
   contact: string
   email: string
   phone: string
@@ -27,6 +29,12 @@ interface Application {
   reviewRecommendation?: 'approve' | 'manual_review' | 'decline'
   rejectionReasonCode?: string | null
   failedRequirements?: string[]
+  reviewCriteria?: Partial<ReviewCriteria>
+  notes?: string
+  contactPerson?: string
+  planId?: string
+  userId?: string | null
+  createdBy?: string
 }
 
 type ReviewCriteria = {
@@ -168,14 +176,14 @@ export default function ApplicationsPage() {
 
   function openReview(app: Application) {
     setSelectedApp(app)
-    setReviewNotes('')
+    setReviewNotes(app.reviewNotes || app.notes || '')
     setRejectionReason('')
     setFailedRequirements([])
     setReviewCriteria({
-      identityVerified: false,
-      businessProfileValid: false,
-      documentationComplete: false,
-      readinessSignal: false,
+      identityVerified: Boolean(app.reviewCriteria?.identityVerified),
+      businessProfileValid: Boolean(app.reviewCriteria?.businessProfileValid),
+      documentationComplete: Boolean(app.reviewCriteria?.documentationComplete),
+      readinessSignal: Boolean(app.reviewCriteria?.readinessSignal),
     })
     setShowReviewModal(true)
   }
@@ -222,23 +230,34 @@ export default function ApplicationsPage() {
 
     setProcessingId(selectedApp.id)
     try {
-      const res = await fetch('/api/admin/applications', {
+      const endpoint = selectedApp.source === 'subscription_request'
+        ? '/api/admin/revenue/subscription-requests'
+        : '/api/admin/applications'
+
+      const body = selectedApp.source === 'subscription_request'
+        ? {
+            id: selectedApp.entityId || selectedApp.id,
+            status,
+          }
+        : {
+            id: selectedApp.entityId || selectedApp.id,
+            status,
+            notes: reviewNotes?.trim() || undefined,
+            email: selectedApp.email,
+            name: selectedApp.contact,
+            type: selectedApp.type,
+            phone: selectedApp.phone,
+            company: selectedApp.company,
+            criteriaChecks: reviewCriteria,
+            criteriaScore: reviewScore,
+            rejectionReason,
+            failedRequirements,
+          }
+
+      const res = await fetch(endpoint, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: selectedApp.id,
-          status,
-          notes: reviewNotes?.trim() || undefined,
-          email: selectedApp.email,
-          name: selectedApp.contact,
-          type: selectedApp.type,
-          phone: selectedApp.phone,
-          company: selectedApp.company,
-          criteriaChecks: reviewCriteria,
-          criteriaScore: reviewScore,
-          rejectionReason,
-          failedRequirements,
-        }),
+        body: JSON.stringify(body),
       })
 
       const json = await res.json()
@@ -270,10 +289,14 @@ export default function ApplicationsPage() {
 
     setProcessingId(app.id)
     try {
-      const res = await fetch('/api/admin/applications', {
+      const endpoint = app.source === 'subscription_request'
+        ? '/api/admin/revenue/subscription-requests'
+        : '/api/admin/applications'
+
+      const res = await fetch(endpoint, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: app.id }),
+        body: JSON.stringify({ id: app.entityId || app.id }),
       })
 
       const json = await res.json()
@@ -300,6 +323,13 @@ export default function ApplicationsPage() {
       constructora: '🏗️ Constructora',
     }
     return labels[type] || type
+  }
+
+  const getSourceBadge = (source?: string) => {
+    if (source === 'subscription_request') {
+      return { className: 'bg-indigo-100 text-indigo-800', label: 'Billing Intake' }
+    }
+    return { className: 'bg-slate-100 text-slate-700', label: 'Direct Application' }
   }
 
   const getReviewBadge = (score?: number) => {
@@ -330,6 +360,8 @@ export default function ApplicationsPage() {
     const d = new Date(date)
     return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
+
+  const isPendingSelection = selectedApp?.status === 'pending'
 
   return (
     <div className="flex-1 overflow-auto">
@@ -457,6 +489,9 @@ export default function ApplicationsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-sm font-medium text-gray-700">{getTypeLabel(app.type)}</span>
+                          <span className={`ml-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${getSourceBadge(app.source).className}`}>
+                            {getSourceBadge(app.source).label}
+                          </span>
                           {app.pathway === 'new_agent_program' && (
                             <span className="block text-xs text-blue-600">New Agent Program</span>
                           )}
@@ -494,18 +529,14 @@ export default function ApplicationsPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex gap-2 justify-end">
-                            {isPending && (
-                              <>
-                                <button
-                                  onClick={() => openReview(app)}
-                                  disabled={processingId === app.id}
-                                  className="inline-flex items-center gap-2 px-3 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                                >
-                                  <FiAlertCircle className="w-4 h-4" />
-                                  Review
-                                </button>
-                              </>
-                            )}
+                            <button
+                              onClick={() => openReview(app)}
+                              disabled={processingId === app.id}
+                              className="inline-flex items-center gap-2 px-3 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <FiAlertCircle className="w-4 h-4" />
+                              {isPending ? 'Review' : 'Open'}
+                            </button>
                             <button
                               onClick={() => handleDelete(app)}
                               disabled={processingId === app.id}
@@ -529,17 +560,46 @@ export default function ApplicationsPage() {
       {/* Review Modal */}
       {showReviewModal && selectedApp && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
+          <div className="bg-white rounded-lg max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Review Application</h3>
             <p className="text-gray-600 mb-4">
               Reviewing <strong>{selectedApp.contact}</strong> ({getTypeLabel(selectedApp.type)})
             </p>
+
+            <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">Submitted Information</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                <p><span className="text-gray-500">Source:</span> <span className="font-medium text-gray-900">{getSourceBadge(selectedApp.source).label}</span></p>
+                <p><span className="text-gray-500">Status:</span> <span className="font-medium text-gray-900">{selectedApp.status}</span></p>
+                <p><span className="text-gray-500">Name:</span> <span className="font-medium text-gray-900">{selectedApp.contact || '—'}</span></p>
+                <p><span className="text-gray-500">Email:</span> <span className="font-medium text-gray-900">{selectedApp.email || '—'}</span></p>
+                <p><span className="text-gray-500">Phone:</span> <span className="font-medium text-gray-900">{selectedApp.phone || '—'}</span></p>
+                <p><span className="text-gray-500">Type:</span> <span className="font-medium text-gray-900">{getTypeLabel(selectedApp.type)}</span></p>
+                <p><span className="text-gray-500">Company:</span> <span className="font-medium text-gray-900">{selectedApp.company || '—'}</span></p>
+                <p><span className="text-gray-500">Contact Person:</span> <span className="font-medium text-gray-900">{selectedApp.contactPerson || '—'}</span></p>
+                <p><span className="text-gray-500">Years:</span> <span className="font-medium text-gray-900">{selectedApp.years ?? '—'}</span></p>
+                <p><span className="text-gray-500">Markets:</span> <span className="font-medium text-gray-900">{selectedApp.markets || '—'}</span></p>
+                <p><span className="text-gray-500">Volume 12m:</span> <span className="font-medium text-gray-900">{selectedApp.volume12m ?? '—'}</span></p>
+                <p><span className="text-gray-500">Website:</span> {selectedApp.website ? <a className="font-medium text-blue-700 hover:underline" href={selectedApp.website} target="_blank" rel="noreferrer">Open</a> : <span className="font-medium text-gray-900">—</span>}</p>
+                <p><span className="text-gray-500">Plan ID:</span> <span className="font-medium text-gray-900">{selectedApp.planId || '—'}</span></p>
+                <p><span className="text-gray-500">Linked User:</span> <span className="font-medium text-gray-900">{selectedApp.userId || '—'}</span></p>
+                <p><span className="text-gray-500">Submitted:</span> <span className="font-medium text-gray-900">{formatDate(selectedApp.createdAt)}</span></p>
+                <p><span className="text-gray-500">Approved At:</span> <span className="font-medium text-gray-900">{formatDate(selectedApp.approvedAt)}</span></p>
+                <p><span className="text-gray-500">Resume:</span> {selectedApp.resumeUrl ? <a className="font-medium text-blue-700 hover:underline" href={selectedApp.resumeUrl} target="_blank" rel="noreferrer">Open file</a> : <span className="font-medium text-gray-900">—</span>}</p>
+                <p><span className="text-gray-500">Document:</span> {selectedApp.documentUrl ? <a className="font-medium text-blue-700 hover:underline" href={selectedApp.documentUrl} target="_blank" rel="noreferrer">Open file</a> : <span className="font-medium text-gray-900">—</span>}</p>
+              </div>
+              <details className="mt-3">
+                <summary className="cursor-pointer text-xs text-gray-600">View full submitted payload</summary>
+                <pre className="mt-2 p-3 bg-white border border-gray-200 rounded text-[11px] text-gray-700 overflow-auto">{JSON.stringify(selectedApp, null, 2)}</pre>
+              </details>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
               <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input
                   type="checkbox"
                   checked={reviewCriteria.identityVerified}
+                  disabled={!isPendingSelection}
                   onChange={(e) => setReviewCriteria(prev => ({ ...prev, identityVerified: e.target.checked }))}
                 />
                 Identity and contact verified
@@ -548,6 +608,7 @@ export default function ApplicationsPage() {
                 <input
                   type="checkbox"
                   checked={reviewCriteria.businessProfileValid}
+                  disabled={!isPendingSelection}
                   onChange={(e) => setReviewCriteria(prev => ({ ...prev, businessProfileValid: e.target.checked }))}
                 />
                 Business profile and market fit valid
@@ -556,6 +617,7 @@ export default function ApplicationsPage() {
                 <input
                   type="checkbox"
                   checked={reviewCriteria.documentationComplete}
+                  disabled={!isPendingSelection}
                   onChange={(e) => setReviewCriteria(prev => ({ ...prev, documentationComplete: e.target.checked }))}
                 />
                 Documentation is complete
@@ -564,6 +626,7 @@ export default function ApplicationsPage() {
                 <input
                   type="checkbox"
                   checked={reviewCriteria.readinessSignal}
+                  disabled={!isPendingSelection}
                   onChange={(e) => setReviewCriteria(prev => ({ ...prev, readinessSignal: e.target.checked }))}
                 />
                 Operational readiness confirmed
@@ -581,6 +644,7 @@ export default function ApplicationsPage() {
               onChange={(e) => setReviewNotes(e.target.value)}
               placeholder="Reviewer notes (required for rejection, optional otherwise)..."
               rows={4}
+              disabled={!isPendingSelection}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
             />
             <p className="text-xs text-gray-500 mt-2">These notes and criteria are stored in the application review record.</p>
@@ -590,6 +654,7 @@ export default function ApplicationsPage() {
               <select
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value as RejectionReasonCode | '')}
+                disabled={!isPendingSelection}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 aria-label="Structured rejection reason"
               >
@@ -609,6 +674,7 @@ export default function ApplicationsPage() {
                     <input
                       type="checkbox"
                       checked={failedRequirements.includes(option.key)}
+                      disabled={!isPendingSelection}
                       onChange={() => toggleFailedRequirement(option.key)}
                     />
                     {option.label}
@@ -624,27 +690,31 @@ export default function ApplicationsPage() {
               >
                 Cancel
               </button>
-              <button
-                onClick={() => submitReviewDecision('more_info')}
-                disabled={processingId === selectedApp.id}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
-              >
-                {processingId === selectedApp.id ? 'Processing...' : 'Request Info'}
-              </button>
-              <button
-                onClick={() => submitReviewDecision('rejected')}
-                disabled={processingId === selectedApp.id}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
-              >
-                {processingId === selectedApp.id ? 'Rejecting...' : 'Reject'}
-              </button>
-              <button
-                onClick={() => submitReviewDecision('approved')}
-                disabled={processingId === selectedApp.id || reviewScore < 75}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
-              >
-                {processingId === selectedApp.id ? 'Approving...' : 'Approve'}
-              </button>
+              {isPendingSelection && (
+                <>
+                  <button
+                    onClick={() => submitReviewDecision('more_info')}
+                    disabled={processingId === selectedApp.id}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
+                  >
+                    {processingId === selectedApp.id ? 'Processing...' : 'Request Info'}
+                  </button>
+                  <button
+                    onClick={() => submitReviewDecision('rejected')}
+                    disabled={processingId === selectedApp.id}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
+                  >
+                    {processingId === selectedApp.id ? 'Rejecting...' : 'Reject'}
+                  </button>
+                  <button
+                    onClick={() => submitReviewDecision('approved')}
+                    disabled={processingId === selectedApp.id || reviewScore < 75}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
+                  >
+                    {processingId === selectedApp.id ? 'Approving...' : 'Approve'}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

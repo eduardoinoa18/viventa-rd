@@ -33,6 +33,11 @@ interface PropertyPayload {
   agentId?: string
   agentName?: string
   agentEmail?: string
+  ownerRole?: 'agent' | 'broker' | 'constructora'
+  professionalCode?: string
+  agentCode?: string
+  brokerCode?: string
+  constructoraCode?: string
   developerId?: string
   images?: string[]
   coverImage?: string
@@ -175,7 +180,7 @@ export async function POST(req: Request) {
     const role = session?.role || cookieStore.get('viventa_role')?.value
     const uid = session?.uid || cookieStore.get('viventa_uid')?.value
     const isAdmin = role === 'master_admin' || role === 'admin'
-    const isPro = role === 'agent' || role === 'broker'
+    const isPro = role === 'agent' || role === 'broker' || role === 'constructora'
 
     const { ok, errors } = validatePayload(action, data)
     if (!ok) {
@@ -198,9 +203,29 @@ export async function POST(req: Request) {
       if (uid) {
         const userSnap = await db.collection('users').doc(uid).get()
         if (userSnap.exists) {
-          const userData = userSnap.data() as { name?: string; displayName?: string; email?: string }
+          const userData = userSnap.data() as {
+            name?: string
+            displayName?: string
+            email?: string
+            role?: string
+            professionalCode?: string
+            agentCode?: string
+            brokerCode?: string
+            constructoraCode?: string
+          }
+          const code = userData?.professionalCode || userData?.agentCode || userData?.brokerCode || userData?.constructoraCode || ''
+
+          if (isPro && !code) {
+            return NextResponse.json({ error: 'Professional code required. This account must be approved before publishing listings.' }, { status: 403 })
+          }
+
           createData.agentName = userData?.name || userData?.displayName || userData?.email || createData.agentName
           createData.agentEmail = userData?.email || createData.agentEmail
+          createData.ownerRole = (userData?.role as any) || (role as any)
+          createData.professionalCode = code || undefined
+          if (userData?.agentCode) createData.agentCode = userData.agentCode
+          if (userData?.brokerCode) createData.brokerCode = userData.brokerCode
+          if (userData?.constructoraCode) createData.constructoraCode = userData.constructoraCode
         }
       }
       // default to active if not provided

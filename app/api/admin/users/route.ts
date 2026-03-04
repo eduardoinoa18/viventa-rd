@@ -8,6 +8,7 @@ import { sendEmail } from '@/lib/emailService'
 import { FieldValue } from 'firebase-admin/firestore'
 import { validateLifecycleTransition } from '@/lib/userLifecycle'
 import crypto from 'crypto'
+import { ensureProfessionalCode } from '@/lib/professionalCodes'
 
 export const dynamic = 'force-dynamic'
 
@@ -411,6 +412,27 @@ export async function PATCH(req: NextRequest) {
     if (typeof forcePasswordReset === 'boolean') updates.forcePasswordReset = forcePasswordReset
     if (onboardingQuestionnaire && typeof onboardingQuestionnaire === 'object') updates.onboardingQuestionnaire = onboardingQuestionnaire
     if (typeof onboardingStatus === 'string' && onboardingStatus.trim()) updates.onboardingStatus = onboardingStatus.trim()
+
+    const roleForCode = String(role || existingData?.role || '').trim().toLowerCase()
+    const isProfessionalRole = roleForCode === 'agent' || roleForCode === 'broker' || roleForCode === 'constructora'
+    const shouldAssignProfessionalCode =
+      isProfessionalRole &&
+      (
+        approved === true ||
+        status === 'active' ||
+        lifecycleTransition?.nextStatus === 'active'
+      )
+
+    if (shouldAssignProfessionalCode) {
+      const ensured = await ensureProfessionalCode({
+        adminDb,
+        role: roleForCode,
+        userData: existingData || {},
+      })
+      updates.professionalCode = ensured.code
+      updates[ensured.field] = ensured.code
+      updates.approved = true
+    }
 
     if (lifecycleTransition?.ok) {
       if (lifecycleTransition.nextStatus === 'suspended' || lifecycleTransition.nextStatus === 'archived') {

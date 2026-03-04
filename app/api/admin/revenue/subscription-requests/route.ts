@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
 import { AdminAuthError, requireMasterAdmin } from '@/lib/requireMasterAdmin'
+import { ensureProfessionalCode } from '@/lib/professionalCodes'
 
 export const dynamic = 'force-dynamic'
 
@@ -197,22 +198,129 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'id and status are required' }, { status: 400 })
     }
 
-    await adminDb.collection('subscription_requests').doc(String(id)).set(
-      {
-        status: String(status),
-        reviewedBy: admin.email,
-        reviewedAt: new Date(),
-        updatedAt: new Date(),
-      },
-      { merge: true }
-    )
+    const normalizedStatus = String(status)
 
-    return NextResponse.json({ ok: true })
+    const requestRef = adminDb.collection('subscription_requests').doc(String(id))
+    const requestSnap = await requestRef.get()
+    const requestData = requestSnap.exists ? requestSnap.data() : null
+
+    const updatePayload: Record<string, any> = {
+      status: normalizedStatus,
+      reviewedBy: admin.email,
+      reviewedAt: new Date(),
+      updatedAt: new Date(),
+    }
+
+    let assignedCode: string | null = null
+    if (normalizedStatus === 'approved' && requestData) {
+      const targetUserId = String(requestData.userId || '').trim()
+      const targetEmail = String(requestData.email || '').trim().toLowerCase()
+      const requestRole = String(requestData.role || 'agent').trim().toLowerCase()
+
+      let userRef: any = null
+      let userData: any = null
+
+      if (targetUserId) {
+        userRef = adminDb.collection('users').doc(targetUserId)
+        const userSnap = await userRef.get()
+        userData = userSnap.exists ? userSnap.data() : null
+      } else if (targetEmail) {
+        const userByEmail = await adminDb.collection('users').where('email', '==', targetEmail).limit(1).get()
+        if (!userByEmail.empty) {
+          userRef = userByEmail.docs[0].ref
+          userData = userByEmail.docs[0].data()
+          updatePayload.userId = userByEmail.docs[0].id
+        }
+      }
+
+      if (userRef) {
+        const ensured = await ensureProfessionalCode({
+          adminDb,
+          role: requestRole,
+          userData: userData || {},
+        })
+        assignedCode = ensured.code
+
+        await userRef.set(
+          {
+            role: requestRole,
+            professionalCode: ensured.code,
+            [ensured.field]: ensured.code,
+            status: 'active',
+            approved: true,
+            updatedAt: new Date(),
+            approvedAt: new Date(),
+          },
+          { merge: true }
+        )
+
+        updatePayload.assignedCode = ensured.code
+      }
+    }
+
+    await requestRef.set(updatePayload, { merge: true })
+
+    return NextResponse.json({ ok: true, code: assignedCode })
   } catch (error: any) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json({ ok: false, error: error.message, code: error.code }, { status: error.status })
     }
     console.error('[admin/revenue/subscription-requests][PATCH] error', error)
     return NextResponse.json({ ok: false, error: 'Failed to update subscription request' }, { status: 500 })
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    await requireMasterAdmin(req)
+    const adminDb = getAdminDb()
+    if (!adminDb) return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 503 })
+
+    const { id } = await req.json()
+    if (!id) {
+      return NextResponse.json({ ok: false, error: 'id is required' }, { status: 400 })
+    }
+
+    const requestRef = adminDb.collection('subscription_requests').doc(String(id))
+    const requestSnap = await requestRef.get()
+    const requestData = requestSnap.exists ? requestSnap.data() : null
+
+    await requestRef.delete()
+
+    const userId = String(requestData?.userId || '').trim()
+    const email = String(requestData?.email || '').trim().toLowerCase()
+    const revokePayload = {
+      status: 'revoked',
+      revokedAt: new Date(),
+      updatedAt: new Date(),
+    }
+
+    if (userId) {
+      const inviteSnap = await adminDb
+        .collection('invitations')
+        .where('userId', '==', userId)
+        .where('used', '==', false)
+        .limit(20)
+        .get()
+
+      await Promise.all(inviteSnap.docs.map((doc: any) => doc.ref.set(revokePayload, { merge: true })))
+    } else if (email) {
+      const inviteSnap = await adminDb
+        .collection('invitations')
+        .where('email', '==', email)
+        .where('used', '==', false)
+        .limit(20)
+        .get()
+
+      await Promise.all(inviteSnap.docs.map((doc: any) => doc.ref.set(revokePayload, { merge: true })))
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (error: any) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ ok: false, error: error.message, code: error.code }, { status: error.status })
+    }
+    console.error('[admin/revenue/subscription-requests][DELETE] error', error)
+    return NextResponse.json({ ok: false, error: 'Failed to delete subscription request' }, { status: 500 })
   }
 }

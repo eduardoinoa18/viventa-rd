@@ -65,3 +65,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Failed to create billing plan' }, { status: 500 })
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    await requireMasterAdmin(req)
+    const adminDb = getAdminDb()
+    if (!adminDb) return NextResponse.json({ ok: false, error: 'Admin SDK not configured' }, { status: 503 })
+
+    const { id } = await req.json()
+    if (!id) {
+      return NextResponse.json({ ok: false, error: 'id is required' }, { status: 400 })
+    }
+
+    await adminDb.collection('billing_plans').doc(String(id)).delete()
+    return NextResponse.json({ ok: true })
+  } catch (error: any) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ ok: false, error: error.message, code: error.code }, { status: error.status })
+    }
+    console.error('[admin/revenue/plans][DELETE] error', error)
+    return NextResponse.json({ ok: false, error: 'Failed to delete billing plan' }, { status: 500 })
+  }
+}

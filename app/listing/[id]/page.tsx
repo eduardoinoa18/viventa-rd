@@ -1149,6 +1149,11 @@ export default function ListingDetail(){
                 <div>
                   <h3 className="text-lg sm:text-xl font-bold text-[#0B2545]">{listing.agentName || 'Agente VIVENTA'}</h3>
                   <p className="text-sm sm:text-base text-gray-600">Agente Inmobiliario</p>
+                  {(listing.professionalCode || listing.agentCode || listing.brokerCode || listing.constructoraCode) && (
+                    <p className="text-xs sm:text-sm text-emerald-700 mt-0.5">
+                      Código verificado: <span className="font-mono font-semibold">{listing.professionalCode || listing.agentCode || listing.brokerCode || listing.constructoraCode}</span>
+                    </p>
+                  )}
                   {listing.agentEmail && (
                     <p className="text-xs sm:text-sm text-gray-500 mt-0.5">{listing.agentEmail}</p>
                   )}
@@ -1176,6 +1181,9 @@ export default function ListingDetail(){
                   <h4 className="font-semibold text-sm sm:text-base text-gray-900 mb-2 sm:mb-3">Sobre esta propiedad</h4>
                   <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
                     <p>• Listado ID: <span className="font-mono text-gray-900 break-all">{listing.listingId || listing.id}</span></p>
+                    {(listing.professionalCode || listing.agentCode || listing.brokerCode || listing.constructoraCode) && (
+                      <p>• Código del profesional: <span className="font-mono text-gray-900 break-all">{listing.professionalCode || listing.agentCode || listing.brokerCode || listing.constructoraCode}</span></p>
+                    )}
                     <p>• Tipo: <span className="text-gray-900 capitalize">{listing.propertyType}</span></p>
                     <p>• Transacción: <span className="text-gray-900 capitalize">{listing.listingType === 'sale' ? 'Venta' : 'Alquiler'}</span></p>
                     {listing.inventoryMode === 'project' && (

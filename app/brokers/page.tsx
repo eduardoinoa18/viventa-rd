@@ -4,8 +4,6 @@ import Footer from '../../components/Footer'
 import BrokerCard from '../../components/BrokerCard'
 import { useMemo, useState, useEffect } from 'react'
 import { FiSearch, FiStar, FiUsers } from 'react-icons/fi'
-import { collection, getDocs, query, where } from 'firebase/firestore'
-import { db } from '@/lib/firebaseClient'
 
 export default function BrokersPage() {
   const [brokers, setBrokers] = useState<any[]>([])
@@ -21,53 +19,24 @@ export default function BrokersPage() {
   async function loadBrokers() {
     try {
       setLoading(true)
-      // Fetch all active AND approved brokers from Firestore
-      const brokersQuery = query(
-        collection(db, 'users'),
-        where('role', '==', 'broker'),
-        where('status', '==', 'active'),
-        where('approved', '==', true)
-      )
-      const snapshot = await getDocs(brokersQuery)
-      const brokersList = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data(),
-        // Normalize fields for BrokerCard
-        photo: doc.data().companyLogo || doc.data().profileImage || '/brokerage-placeholder.jpg',
-        area: doc.data().areas || doc.data().markets || doc.data().city || 'República Dominicana',
-        rating: doc.data().rating || 4.7,
-        teamSize: doc.data().teamSize || doc.data().agents || 0,
+      const res = await fetch('/api/brokers?limit=500', { cache: 'no-store' })
+      const json = await res.json().catch(() => ({ ok: false, data: [] }))
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || 'Failed to fetch brokers')
+      }
+
+      const brokersList = (json.data || []).map((broker: any) => ({
+        ...broker,
+        photo: broker.profileImage || broker.companyLogo || '/brokerage-placeholder.jpg',
+        area: broker.area || broker.markets || broker.city || 'República Dominicana',
+        rating: broker.rating || 4.7,
+        teamSize: broker.teamSize || broker.agents || 0,
       }))
+
       setBrokers(brokersList)
     } catch (error: any) {
       console.error('Error loading brokers:', error)
-      // If compound index doesn't exist, fall back to filtering client-side
-      if (error.message?.includes('index')) {
-        console.warn('Missing composite index, filtering client-side')
-        try {
-          const basicQuery = query(
-            collection(db, 'users'),
-            where('role', '==', 'broker')
-          )
-          const snapshot = await getDocs(basicQuery)
-          const brokersList = snapshot.docs
-            .filter((doc: any) => {
-              const data = doc.data()
-              return data.status === 'active' && data.approved === true
-            })
-            .map((doc: any) => ({
-              id: doc.id,
-              ...doc.data(),
-              photo: doc.data().companyLogo || doc.data().profileImage || '/brokerage-placeholder.jpg',
-              area: doc.data().areas || doc.data().markets || doc.data().city || 'República Dominicana',
-              rating: doc.data().rating || 4.7,
-              teamSize: doc.data().teamSize || doc.data().agents || 0,
-            }))
-          setBrokers(brokersList)
-        } catch (fallbackError) {
-          console.error('Fallback query also failed:', fallbackError)
-        }
-      }
+      setBrokers([])
     } finally {
       setLoading(false)
     }

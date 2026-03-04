@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import GrowthClient from '../growth/GrowthClient'
+import DataQualityClient from '../data-quality/DataQualityClient'
+import MarketplaceIntelligenceClient from '../marketplace-intelligence/MarketplaceIntelligenceClient'
 
 type PerfRow = {
   key: string
@@ -49,9 +53,36 @@ type OverviewData = {
 }
 
 export default function OverviewClient() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<OverviewData | null>(null)
+
+  const intelligenceTabs = [
+    { key: 'overview', label: 'Executive Overview' },
+    { key: 'growth', label: 'Growth Engine' },
+    { key: 'data-quality', label: 'Data Quality' },
+    { key: 'marketplace-intelligence', label: 'Marketplace Intelligence' },
+  ] as const
+
+  const activeIntelligenceTab = useMemo(() => {
+    const raw = searchParams?.get('intel') || 'overview'
+    return intelligenceTabs.some((tab) => tab.key === raw) ? raw : 'overview'
+  }, [searchParams])
+
+  const activeTabIndex = intelligenceTabs.findIndex((tab) => tab.key === activeIntelligenceTab)
+
+  const setIntelligenceTab = (key: (typeof intelligenceTabs)[number]['key']) => {
+    const params = new URLSearchParams(searchParams?.toString() || '')
+    if (key === 'overview') {
+      params.delete('intel')
+    } else {
+      params.set('intel', key)
+    }
+    const query = params.toString()
+    router.replace(`/master/overview${query ? `?${query}` : ''}`)
+  }
 
   const fetchData = async () => {
     try {
@@ -115,6 +146,59 @@ export default function OverviewClient() {
 
   if (!data) return null
 
+  if (activeIntelligenceTab !== 'overview') {
+    return (
+      <div className="space-y-4 p-6 md:p-8">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Intelligence Hub</h1>
+            <p className="text-sm text-gray-600 mt-1">Switch between merged intelligence modules without leaving this page.</p>
+          </div>
+          <div className="text-xs text-gray-500">Updated: {generatedAtLabel || 'N/A'}</div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {intelligenceTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setIntelligenceTab(tab.key)}
+              className={`text-xs px-3 py-1.5 rounded-lg border ${
+                activeIntelligenceTab === tab.key
+                  ? 'border-[#00A676] bg-[#00A676] text-white'
+                  : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIntelligenceTab(intelligenceTabs[Math.max(0, activeTabIndex - 1)].key)}
+              disabled={activeTabIndex <= 0}
+              className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setIntelligenceTab(intelligenceTabs[Math.min(intelligenceTabs.length - 1, activeTabIndex + 1)].key)}
+              disabled={activeTabIndex >= intelligenceTabs.length - 1}
+              className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        {activeIntelligenceTab === 'growth' ? <GrowthClient /> : null}
+        {activeIntelligenceTab === 'data-quality' ? <DataQualityClient /> : null}
+        {activeIntelligenceTab === 'marketplace-intelligence' ? <MarketplaceIntelligenceClient /> : null}
+      </div>
+    )
+  }
+
   const health = data.operationalHealth
   const flow = data.volumeFlow
   const perf = data.performance
@@ -123,17 +207,29 @@ export default function OverviewClient() {
     <div className="space-y-6 p-6 md:p-8">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Executive Overview</h1>
-          <p className="text-sm text-gray-600 mt-1">Lead metrics and risk highlights for operational decisions.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Intelligence Hub</h1>
+          <p className="text-sm text-gray-600 mt-1">Executive overview plus merged navigation for growth, data quality, and marketplace insights.</p>
         </div>
         <div className="text-xs text-gray-500">Updated: {generatedAtLabel || 'N/A'}</div>
       </div>
 
       <section>
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Link href="/master/growth" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Growth Engine</Link>
-          <Link href="/master/data-quality" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Data Quality</Link>
-          <Link href="/master/marketplace-intelligence" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Marketplace Intelligence</Link>
+          {intelligenceTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setIntelligenceTab(tab.key)}
+              className={`text-xs px-3 py-1.5 rounded-lg border ${
+                activeIntelligenceTab === tab.key
+                  ? 'border-[#00A676] bg-[#00A676] text-white'
+                  : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+          <Link href="/master/growth" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Open standalone pages</Link>
         </div>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Operational Health</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

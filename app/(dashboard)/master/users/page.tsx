@@ -456,6 +456,17 @@ export default function MasterUsersPage() {
 
         {/* Filters & Search */}
         <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Quick Views</span>
+            <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'all' && statusFilter === 'all' ? 'border-[#0B2545] bg-[#0B2545] text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>All People</button>
+            <button type="button" onClick={() => { setRoleFilter('agent'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'agent' ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Agents</button>
+            <button type="button" onClick={() => { setRoleFilter('broker'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'broker' ? 'border-purple-600 bg-purple-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Brokers</button>
+            <button type="button" onClick={() => { setRoleFilter('constructora'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'constructora' ? 'border-orange-600 bg-orange-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Constructoras</button>
+            <button type="button" onClick={() => { setRoleFilter('buyer'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'buyer' ? 'border-green-600 bg-green-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Buyers</button>
+            <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('active') }} className={`text-xs px-3 py-1.5 rounded-lg border ${statusFilter === 'active' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Active</button>
+            <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('inactive') }} className={`text-xs px-3 py-1.5 rounded-lg border ${statusFilter === 'inactive' ? 'border-red-600 bg-red-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Inactive</button>
+            <button type="button" onClick={() => { setSearchQuery(''); setRoleFilter('all'); setStatusFilter('all') }} className="ml-auto text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Clear Filters</button>
+          </div>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex-1 relative">
               <FiSearch className="absolute left-3 top-3 w-5 h-5 text-gray-400" />

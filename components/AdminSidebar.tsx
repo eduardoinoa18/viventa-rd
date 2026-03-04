@@ -30,16 +30,16 @@ export default function AdminSidebar() {
   // Define navigation based on role
   const allLinks = [
     { href: '/master', label: 'Dashboard', icon: <FiGrid />, roles: ['master_admin', 'admin'] },
-    { href: '/master/overview', label: 'Executive Overview', icon: <FiActivity />, roles: ['master_admin'] },
     { href: '/master/control', label: 'Control Center', icon: <FiCpu />, roles: ['master_admin'] },
-    { href: '/master/listings', label: userRole === 'agent' ? 'My Properties' : userRole === 'broker' ? 'Team Properties' : 'Properties', icon: <FiHome />, roles: ['master_admin', 'admin', 'agent', 'broker'] },
+    { href: '/master/listings', label: userRole === 'agent' ? 'My Properties' : userRole === 'broker' ? 'Team Properties' : userRole === 'constructora' ? 'Project Listings' : 'Properties', icon: <FiHome />, roles: ['master_admin', 'admin', 'agent', 'broker', 'constructora'] },
     { href: '/master/users', label: 'People', icon: <FiUsers />, roles: ['master_admin', 'admin', 'broker'] },
-    { href: '/master/leads', label: userRole === 'agent' ? 'My Leads' : 'Leads', icon: <FiTarget />, roles: ['master_admin', 'admin', 'agent', 'broker'] },
+    { href: '/master/leads', label: userRole === 'agent' ? 'My Leads' : userRole === 'constructora' ? 'Project Leads' : 'Leads', icon: <FiTarget />, roles: ['master_admin', 'admin', 'agent', 'broker', 'constructora'] },
     { href: '/master/buyers', label: 'Buyers', icon: <FiUser />, roles: ['master_admin', 'admin', 'broker'] },
     { href: '/master/revenue', label: 'Revenue & Billing', icon: <FiDollarSign />, roles: ['master_admin'] },
     { href: '/master/overview', label: 'Intelligence Hub', icon: <FiTrendingUp />, roles: ['master_admin'] },
     { href: '/master/activity', label: 'Activity', icon: <FiActivity />, roles: ['master_admin', 'admin'] },
     { href: '/master/applications', label: 'Applications', icon: <FiClipboard />, roles: ['master_admin', 'admin'] },
+    { href: '/master/reviews', label: 'Reviews', icon: <FiShield />, roles: ['master_admin'] },
     { href: '/master/settings', label: 'Settings', icon: <FiSettings />, roles: ['master_admin'] },
   ]
   
@@ -61,7 +61,7 @@ export default function AdminSidebar() {
       <nav className="space-y-2">
         {links.map(link => (
           <Link
-            key={link.href}
+            key={`${link.href}-${link.label}`}
             href={link.href}
             className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
               pathname === link.href
@@ -78,7 +78,7 @@ export default function AdminSidebar() {
         <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-inner border border-blue-100">
           <div className="text-xs font-bold text-blue-900 mb-2 tracking-wide">QUICK ACTIONS</div>
           <div className="space-y-2">
-            {['master_admin', 'admin', 'agent', 'broker'].includes(userRole) && (
+            {['master_admin', 'admin', 'agent', 'broker', 'constructora'].includes(userRole) && (
               <Link href="/master/listings/create" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
                 <FiPlusSquare className="text-blue-600" /> <span>Create Property</span>
               </Link>
@@ -88,7 +88,7 @@ export default function AdminSidebar() {
                 <FiUsers className="text-blue-600" /> <span>Manage {userRole === 'broker' ? 'Team' : 'People'}</span>
               </Link>
             )}
-            {['master_admin', 'admin', 'agent', 'broker'].includes(userRole) && (
+            {['master_admin', 'admin', 'agent', 'broker', 'constructora'].includes(userRole) && (
               <Link href="/master/leads" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
                 <FiTarget className="text-blue-600" /> <span>Manage Leads</span>
               </Link>

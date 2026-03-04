@@ -8,6 +8,7 @@ import { logger } from '@/lib/logger'
 import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
 import { adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
 import { logAdminAction } from '@/lib/logAdminAction'
+import { ensureProfessionalCode } from '@/lib/professionalCodes'
 export const dynamic = 'force-dynamic'
 
 type AppType = 'agent' | 'new-agent' | 'broker' | 'constructora'
@@ -124,24 +125,6 @@ export async function PATCH(req: NextRequest) {
         const phone: string = appData.phone || ''
         const type = normalizeApplicationType(appData.type)
 
-        // Generate unique code per role
-        const prefix = type === 'broker' ? 'B' : type === 'constructora' ? 'C' : 'A'
-        const adminDbSafe = adminDb as any
-        const generateUniqueCode = async (): Promise<string> => {
-          for (let i = 0; i < 5; i++) {
-            const candidate = `${prefix}${Math.floor(10000 + Math.random() * 90000)}`
-            const exists = await adminDbSafe
-              .collection('users')
-              .where(prefix === 'A' ? 'agentCode' : prefix === 'B' ? 'brokerCode' : 'constructoraCode', '==', candidate)
-              .limit(1)
-              .get()
-            if (exists.empty) return candidate
-          }
-          // Fallback: timestamp-based
-          return `${prefix}${Date.now().toString().slice(-5)}`
-        }
-        code = await generateUniqueCode()
-
         // Ensure Auth user exists
         let uid: string
         try {
@@ -162,19 +145,26 @@ export async function PATCH(req: NextRequest) {
 
         // Upsert user profile in Firestore (Admin)
         const role = type === 'broker' ? 'broker' : type === 'constructora' ? 'constructora' : 'agent'
+        const existingUserSnap = await adminDb.collection('users').doc(uid).get()
+        const ensured = await ensureProfessionalCode({
+          adminDb,
+          role,
+          userData: existingUserSnap.exists ? (existingUserSnap.data() as any) : {},
+        })
+        code = ensured.code
+
         const payload: any = {
           uid,
           email,
           name,
           phone,
           role,
+          professionalCode: ensured.code,
           status: 'active',
           approvedAt: new Date(),
           updatedAt: new Date(),
         }
-        if (role === 'agent') payload.agentCode = code
-        if (role === 'broker') payload.brokerCode = code
-        if (role === 'constructora') payload.constructoraCode = code
+        payload[ensured.field] = ensured.code
         if (appData.company) payload.brokerage = appData.company
         if (appData.company) payload.company = appData.company
         if (appData.contactPerson) payload.contactPerson = appData.contactPerson
@@ -344,7 +334,53 @@ export async function GET(req: NextRequest) {
     } catch {
       snap = await ref.limit(safeLimit).get()
     }
-    const data = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+
+    let subscriptionRef: any = adminDb.collection('subscription_requests')
+    if (status) subscriptionRef = subscriptionRef.where('status', '==', status)
+    let subscriptionSnap
+    try {
+      subscriptionSnap = await subscriptionRef.orderBy('createdAt', 'desc').limit(safeLimit).get()
+    } catch {
+      subscriptionSnap = await subscriptionRef.limit(safeLimit).get()
+    }
+
+    const applicationRows = snap.docs.map((d: any) => ({
+      id: `application:${d.id}`,
+      entityId: d.id,
+      source: 'application',
+      ...d.data(),
+    }))
+
+    const subscriptionRows = subscriptionSnap.docs.map((d: any) => {
+      const row = d.data() || {}
+      const role = String(row.role || 'agent').toLowerCase()
+      const normalizedType: AppType = role === 'broker' ? 'broker' : role === 'constructora' ? 'constructora' : 'agent'
+
+      return {
+        id: `subscription_request:${d.id}`,
+        entityId: d.id,
+        source: 'subscription_request',
+        contact: row.name || '',
+        email: row.email || '',
+        phone: row.phone || '',
+        type: normalizedType,
+        status: row.status || 'pending',
+        createdAt: row.createdAt || null,
+        company: row.company || '',
+        reviewNotes: row.notes || '',
+        userId: row.userId || null,
+        planId: row.planId || '',
+      }
+    })
+
+    const data = [...applicationRows, ...subscriptionRows]
+      .sort((a: any, b: any) => {
+        const aDate = new Date(a?.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt || 0).getTime()
+        const bDate = new Date(b?.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt || 0).getTime()
+        return bDate - aDate
+      })
+      .slice(0, safeLimit)
+
     return NextResponse.json({ ok: true, data })
   } catch (e: any) {
     console.error('applications GET error', e)

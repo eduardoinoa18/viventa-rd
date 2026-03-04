@@ -246,6 +246,24 @@ export async function POST(req: NextRequest) {
         ? Math.max(totalUnitsNum - availableUnitsNum, 0)
         : Number(soldUnits || 0)
 
+      let ownerRole = ''
+      let professionalCode = ''
+      let agentCode = ''
+      let brokerCode = ''
+      let constructoraCode = ''
+
+      if (agentId) {
+        const ownerSnap = await adminDb.collection('users').doc(String(agentId)).get()
+        if (ownerSnap.exists) {
+          const owner = ownerSnap.data() as any
+          ownerRole = String(owner?.role || '')
+          professionalCode = String(owner?.professionalCode || owner?.agentCode || owner?.brokerCode || owner?.constructoraCode || '')
+          agentCode = String(owner?.agentCode || '')
+          brokerCode = String(owner?.brokerCode || '')
+          constructoraCode = String(owner?.constructoraCode || '')
+        }
+      }
+
       const propertyDoc = {
         title,
         description: description || '',
@@ -281,6 +299,11 @@ export async function POST(req: NextRequest) {
         agentId,
         agentName: agentName || '',
         agentEmail: agentEmail || '',
+        ownerRole,
+        professionalCode,
+        agentCode,
+        brokerCode,
+        constructoraCode,
         representation: representation || '',
         brokerName: brokerName || '',
         builderName: builderName || '',
