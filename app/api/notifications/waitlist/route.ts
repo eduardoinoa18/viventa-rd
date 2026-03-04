@@ -3,10 +3,12 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 import { Timestamp } from 'firebase-admin/firestore'
 import { sendEmail } from '@/lib/emailService'
 import { rateLimit, keyFromRequest } from '@/lib/rateLimiter'
+import { getPublicAppUrl } from '@/lib/publicAppUrl'
 
 export async function POST(req: NextRequest) {
   try {
     const { name, email, phone, interest } = await req.json()
+    const baseUrl = getPublicAppUrl()
 
     if (!name || !email) {
       return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 })
@@ -117,7 +119,7 @@ export async function POST(req: NextRequest) {
                 <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-left: 4px solid #2196F3; border-radius: 4px;">
                   <p style="margin: 0; color: #0B2545;">
                     <strong>📊 Acción Rápida:</strong> Ver todas las inscripciones en tu 
-                    <a href="${process.env.NEXT_PUBLIC_BASE_URL}/master/leads?source=social_waitlist" style="color: #00A676;">Portal de Administración</a>
+                    <a href="${baseUrl}/master/leads?source=social_waitlist" style="color: #00A676;">Portal de Administración</a>
                   </p>
                 </div>
               </div>
@@ -170,7 +172,7 @@ export async function POST(req: NextRequest) {
                 </p>
 
                 <div style="text-align: center; margin: 30px 0;">
-                  <a href="${process.env.NEXT_PUBLIC_BASE_URL}" 
+                  <a href="${baseUrl}" 
                      style="display: inline-block; background: linear-gradient(to right, #004AAD, #00A676); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
                     Visitar VIVENTA
                   </a>

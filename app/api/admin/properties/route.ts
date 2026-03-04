@@ -5,6 +5,7 @@ import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
 import { ActivityLogger } from '@/lib/activityLogger'
+import { getPublicAppUrl } from '@/lib/publicAppUrl'
 
 export const dynamic = 'force-dynamic'
 
@@ -435,7 +436,7 @@ export async function PATCH(req: NextRequest) {
           const agentName = (before as any).agentName
           const listingTitle = (before as any).title
           if (agentEmail && listingTitle) {
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://viventa-rd.com'
+            const baseUrl = getPublicAppUrl()
             const url = `${baseUrl}/listing/${id}`
             const from = process.env.NEXT_PUBLIC_EMAIL_FROM || 'no-reply@viventa-rd.com'
             const subject = `Tu listado ya está publicado: ${listingTitle}`
@@ -488,7 +489,7 @@ export async function PATCH(req: NextRequest) {
         const agentName = (before as any).agentName
         const listingTitle = (before as any).title
         if (agentEmail && listingTitle) {
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://viventa-rd.com'
+          const baseUrl = getPublicAppUrl()
           const url = `${baseUrl}/listing/${id}`
           const from = process.env.NEXT_PUBLIC_EMAIL_FROM || 'no-reply@viventa-rd.com'
           const subject = `Tu listado ya está publicado: ${listingTitle}`

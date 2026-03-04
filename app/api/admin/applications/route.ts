@@ -9,6 +9,7 @@ import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
 import { adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
 import { logAdminAction } from '@/lib/logAdminAction'
 import { ensureProfessionalCode } from '@/lib/professionalCodes'
+import { getPublicAppUrl } from '@/lib/publicAppUrl'
 export const dynamic = 'force-dynamic'
 
 type AppType = 'agent' | 'new-agent' | 'broker' | 'constructora'
@@ -174,7 +175,7 @@ export async function PATCH(req: NextRequest) {
         // Build password setup link (fallback to our custom flow if admin reset link not available)
         try {
           if (!resetLink) {
-            const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com'
+            const site = getPublicAppUrl()
             const token = createPasswordSetupToken(uid)
             resetLink = `${site}/auth/setup-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}&id=${code}`
           }

@@ -4,6 +4,7 @@
  */
 
 import { sendEmail } from './emailService'
+import { getPublicAppUrl } from './publicAppUrl'
 
 const VIVENTA_COLORS = {
   primary: '#0B2545',
@@ -112,6 +113,7 @@ export async function sendProfessionalCredentials(
   credentialId: string,
   setupLink: string
 ) {
+  const appUrl = getPublicAppUrl()
   const typeEs = type === 'agent' ? 'Agente' : 'Bróker'
   const typeDescription = type === 'agent' 
     ? 'Ahora puedes crear y gestionar tus listados de propiedades.' 
@@ -156,7 +158,7 @@ export async function sendProfessionalCredentials(
           <h3 style="color: ${VIVENTA_COLORS.primary};">🚀 Próximos Pasos:</h3>
           <ol style="padding-left: 20px; line-height: 1.8;">
             <li>Haz clic en el botón de arriba para crear tu contraseña</li>
-            <li>Inicia sesión en <a href="${process.env.NEXT_PUBLIC_SITE_URL}/profesionales">${process.env.NEXT_PUBLIC_SITE_URL}/profesionales</a></li>
+            <li>Inicia sesión en <a href="${appUrl}/profesionales">${appUrl}/profesionales</a></li>
             <li>Completa tu perfil profesional</li>
             <li>¡Comienza a publicar propiedades!</li>
           </ol>
@@ -205,6 +207,7 @@ export async function sendContactConfirmation(
   email: string,
   name: string
 ) {
+  const appUrl = getPublicAppUrl()
   const html = `
     <!DOCTYPE html>
     <html>
@@ -238,7 +241,7 @@ export async function sendContactConfirmation(
 
           <p style="color: #6B7280; margin-top: 30px;">
             Mientras tanto, puedes explorar nuestras propiedades disponibles en 
-            <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com'}" style="color: ${VIVENTA_COLORS.secondary};">www.viventa-rd.com</a>
+            <a href="${appUrl}" style="color: ${VIVENTA_COLORS.secondary};">www.viventa-rd.com</a>
           </p>
 
           <div style="background: #FFF4ED; padding: 15px; border-radius: 8px; margin-top: 25px; text-align: center;">

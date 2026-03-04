@@ -4,6 +4,7 @@ import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
 import { AdminAuthError, requireMasterAdmin } from '@/lib/requireMasterAdmin'
 import { ensureProfessionalCode } from '@/lib/professionalCodes'
+import { getPublicAppUrl } from '@/lib/publicAppUrl'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +20,7 @@ async function sendInvitationEmail(params: {
   expiresHours: number
 }) {
   const { email, name, role, token, expiresHours } = params
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+  const baseUrl = getPublicAppUrl()
   const inviteUrl = `${baseUrl}/auth/invite/${token}`
 
   await sendEmail({

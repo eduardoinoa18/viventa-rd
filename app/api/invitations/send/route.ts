@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
+import { getPublicAppUrl } from '@/lib/publicAppUrl'
 import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
     const inviteRef = await adminDb.collection('invitations').add(invitationData)
 
     // Generate invitation link
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const baseUrl = getPublicAppUrl()
     const inviteLink = `${baseUrl}/auth/invite/${token}`
 
     // Prepare email content based on invite type

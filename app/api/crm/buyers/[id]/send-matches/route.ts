@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { AdminAuthError, requireMasterAdmin } from '@/lib/requireMasterAdmin'
 import { sendEmail } from '@/lib/emailService'
+import { getPublicAppUrl } from '@/lib/publicAppUrl'
 
 export const dynamic = 'force-dynamic'
 
@@ -91,7 +92,7 @@ export async function POST(
       }
     })
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const baseUrl = getPublicAppUrl()
 
     const cards = listings
       .map((listing: MatchListing) => {
