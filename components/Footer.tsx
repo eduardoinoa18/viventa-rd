@@ -8,8 +8,10 @@ export default function Footer() {
     { href: '/', label: 'Inicio' },
     { href: '/search', label: 'Buscar' },
     { href: '/agents', label: 'Agentes' },
-    { href: '/brokers', label: 'Brokerages' },
+    { href: '/brokers', label: 'Brokers' },
     { href: '/contact', label: 'Contacto' },
+    { href: '/terminos', label: 'Términos' },
+    { href: '/privacidad', label: 'Privacidad' },
     { href: '/disclosures', label: 'Avisos Legales' },
   ]
   const links = publicLinks

@@ -14,6 +14,7 @@ import { trackSignup } from '@/lib/analyticsService'
 export default function SignupPage() {
   usePageViewTracking()
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' })
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
   const [nextPath, setNextPath] = useState<string>('')
@@ -30,6 +31,10 @@ export default function SignupPage() {
       setError('Completa todos los campos.')
       return
     }
+    if (!termsAccepted) {
+      setError('Debes aceptar los Términos y la Política de Privacidad.')
+      return
+    }
     try {
       const cred = await createUserWithEmailAndPassword(auth, form.email, form.password)
       if (cred.user) {
@@ -42,6 +47,8 @@ export default function SignupPage() {
           phone: form.phone || '',
           role: 'buyer',
           profileComplete: true,
+          termsAccepted: true,
+          termsAcceptedAt: new Date(),
           createdAt: serverTimestamp(),
         }, { merge: true })
 
@@ -147,6 +154,20 @@ export default function SignupPage() {
           >
             Registrarse
           </button>
+          <label className="flex items-start gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              Acepto los{' '}
+              <a href="/terminos" target="_blank" rel="noreferrer" className="text-[#3BAFDA] font-semibold hover:underline">Términos y Condiciones</a>
+              {' '}y la{' '}
+              <a href="/privacidad" target="_blank" rel="noreferrer" className="text-[#3BAFDA] font-semibold hover:underline">Política de Privacidad</a>.
+            </span>
+          </label>
           {error && <div className="text-red-500 text-sm p-3 bg-red-50 rounded-lg border border-red-200">{error}</div>}
         </form>
         <div className="mt-6 text-center text-sm sm:text-base text-gray-600">

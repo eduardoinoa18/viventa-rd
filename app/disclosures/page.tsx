@@ -33,7 +33,7 @@ export default function DisclosuresPage() {
 
             <div>
               <h2 className="text-xl font-semibold mb-3">4. Privacidad y Tratamiento de Datos</h2>
-              <p className="text-gray-700">Protegemos los datos personales conforme a la legislación vigente en República Dominicana y estándares internacionales. La información de contacto que compartes al enviar formularios se utiliza para gestionar tu solicitud y ofrecerte asesoría. Puedes solicitar la actualización o eliminación de tus datos contactándonos.</p>
+              <p className="text-gray-700">Protegemos los datos personales conforme a la legislación vigente en República Dominicana y estándares internacionales. La información de contacto que compartes al enviar formularios se utiliza para gestionar tu solicitud y ofrecerte asesoría. Puedes solicitar la actualización o eliminación de tus datos contactándonos. Consulta nuestra <a className="text-[#004AAD] hover:underline" href="/privacidad">Política de Privacidad</a> y nuestros <a className="text-[#004AAD] hover:underline" href="/terminos">Términos y Condiciones</a>.</p>
             </div>
 
             <div>

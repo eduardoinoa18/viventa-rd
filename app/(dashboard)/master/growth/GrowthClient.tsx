@@ -127,24 +127,24 @@ export default function GrowthClient() {
 
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4 xl:col-span-2">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Growth Funnel</h2>
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Embudo de Crecimiento</h2>
           <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Users</div><div className="text-xl font-semibold text-[#0B2545]">{data.funnel.users}</div></div>
-            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Completed Registration</div><div className="text-xl font-semibold text-[#0B2545]">{data.funnel.registrationCompleted}</div></div>
-            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Leads Created</div><div className="text-xl font-semibold text-[#0B2545]">{data.funnel.leadsCreated}</div></div>
-            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Leads Contacted</div><div className="text-xl font-semibold text-[#0B2545]">{data.funnel.leadsContacted}</div></div>
-            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Leads Won</div><div className="text-xl font-semibold text-green-700">{data.funnel.leadsWon}</div></div>
-            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Leads Lost</div><div className="text-xl font-semibold text-red-700">{data.funnel.leadsLost}</div></div>
+            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Usuarios</div><div className="text-xl font-semibold text-[#0B2545]">{data.funnel.users}</div></div>
+            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Registros completados</div><div className="text-xl font-semibold text-[#0B2545]">{data.funnel.registrationCompleted}</div></div>
+            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Leads creados</div><div className="text-xl font-semibold text-[#0B2545]">{data.funnel.leadsCreated}</div></div>
+            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Leads contactados</div><div className="text-xl font-semibold text-[#0B2545]">{data.funnel.leadsContacted}</div></div>
+            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Leads ganados</div><div className="text-xl font-semibold text-green-700">{data.funnel.leadsWon}</div></div>
+            <div className="rounded-md border border-gray-200 p-3"><div className="text-gray-500">Leads perdidos</div><div className="text-xl font-semibold text-red-700">{data.funnel.leadsLost}</div></div>
           </div>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Engagement Outputs (30d)</h2>
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Resultados de interacción (30d)</h2>
           <div className="mt-3 space-y-2 text-sm">
-            <div className="rounded-md border border-gray-200 p-3 flex items-center justify-between"><span className="text-gray-600">Email sent</span><span className="font-semibold text-[#0B2545] inline-flex items-center gap-1"><FiMail /> {data.totals.emailSent30d}</span></div>
-            <div className="rounded-md border border-gray-200 p-3 flex items-center justify-between"><span className="text-gray-600">Messages sent</span><span className="font-semibold text-[#0B2545]">{data.totals.messageSent30d}</span></div>
-            <div className="rounded-md border border-gray-200 p-3 flex items-center justify-between"><span className="text-gray-600">Views</span><span className="font-semibold text-[#0B2545]">{data.totals.views30d}</span></div>
-            <div className="rounded-md border border-gray-200 p-3 flex items-center justify-between"><span className="text-gray-600">Inquiries</span><span className="font-semibold text-[#0B2545]">{data.totals.inquiries30d}</span></div>
+            <div className="rounded-md border border-gray-200 p-3 flex items-center justify-between"><span className="text-gray-600">Emails enviados</span><span className="font-semibold text-[#0B2545] inline-flex items-center gap-1"><FiMail /> {data.totals.emailSent30d}</span></div>
+            <div className="rounded-md border border-gray-200 p-3 flex items-center justify-between"><span className="text-gray-600">Mensajes enviados</span><span className="font-semibold text-[#0B2545]">{data.totals.messageSent30d}</span></div>
+            <div className="rounded-md border border-gray-200 p-3 flex items-center justify-between"><span className="text-gray-600">Vistas</span><span className="font-semibold text-[#0B2545]">{data.totals.views30d}</span></div>
+            <div className="rounded-md border border-gray-200 p-3 flex items-center justify-between"><span className="text-gray-600">Consultas</span><span className="font-semibold text-[#0B2545]">{data.totals.inquiries30d}</span></div>
           </div>
         </div>
       </section>

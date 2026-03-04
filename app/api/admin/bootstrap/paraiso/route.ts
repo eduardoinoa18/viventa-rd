@@ -36,14 +36,14 @@ async function sendInvitationEmail(params: {
 
   await sendEmail({
     to: email,
-    subject: `Viventa Beta Invite: ${roleLabel}`,
+    subject: `Invitación Beta VIVENTA: ${roleLabel}`,
     from: 'noreply@viventa.com',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto;">
-        <h2 style="color:#0B2545;">Viventa Beta Access</h2>
-        <p>Hi ${name},</p>
-        <p>Your <strong>${roleLabel}</strong> account has been prepared for Viventa Beta (Paraiso Inmobiliario).</p>
-        <p>Complete your profile and set your password:</p>
+        <h2 style="color:#0B2545;">Acceso Beta VIVENTA</h2>
+        <p>Hola ${name},</p>
+        <p>Tu cuenta de <strong>${roleLabel}</strong> fue preparada para VIVENTA Beta (Paraiso Inmobiliario).</p>
+        <p>Completa tu perfil y crea tu contraseña:</p>
         <p><a href="${inviteUrl}" style="color:#00A676; font-weight:bold;">${inviteUrl}</a></p>
       </div>
     `,

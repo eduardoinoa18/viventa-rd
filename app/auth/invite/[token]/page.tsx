@@ -62,7 +62,7 @@ export default function InviteOnboardingPage() {
 
       const data = await res.json()
       if (!res.ok || !data?.ok) {
-        setError(data?.error || 'Invalid invitation')
+        setError(data?.error || 'Invitación no válida')
         return
       }
 
@@ -77,7 +77,7 @@ export default function InviteOnboardingPage() {
       setLicenseNumber(invitation.userProfile?.licenseNumber || '')
     } catch (err) {
       console.error(err)
-      setError('Failed to verify invitation')
+      setError('No se pudo verificar la invitación')
     } finally {
       setLoading(false)
     }
@@ -96,7 +96,7 @@ export default function InviteOnboardingPage() {
   const canGoStep2 = Object.values(passwordChecks).every(Boolean)
 
   const roleMeta = useMemo(() => {
-    if (!invite) return { label: 'User', profileHint: 'Completa tu perfil para iniciar rápido.' }
+    if (!invite) return { label: 'Usuario', profileHint: 'Completa tu perfil para iniciar rápido.' }
     if (invite.role === 'constructora') {
       return {
         label: 'Constructora',
@@ -111,21 +111,24 @@ export default function InviteOnboardingPage() {
     }
     if (invite.role === 'agent') {
       return {
-        label: 'Agent',
+        label: 'Agente',
         profileHint: 'Tu perfil completo mejora visibilidad y confianza en listados y leads.',
       }
     }
-    return { label: invite.role, profileHint: 'Completa tu perfil para iniciar rápido.' }
+    if (invite.role === 'buyer') {
+      return { label: 'Comprador', profileHint: 'Completa tu perfil para iniciar rápido.' }
+    }
+    return { label: 'Usuario', profileHint: 'Completa tu perfil para iniciar rápido.' }
   }, [invite])
 
   async function completeInvitation() {
     if (!invite) return
     if (!canGoStep2) {
-      toast.error('Please set a strong password first')
+      toast.error('Primero debes crear una contraseña segura')
       return
     }
     if (!termsAccepted) {
-      toast.error('You must accept platform terms')
+      toast.error('Debes aceptar los términos y la política de privacidad')
       return
     }
 
@@ -151,7 +154,7 @@ export default function InviteOnboardingPage() {
 
       const data = await res.json()
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error || 'Failed to complete onboarding')
+        throw new Error(data?.error || 'No se pudo completar el onboarding')
       }
 
       const loginRes = await fetch('/api/auth/login', {
@@ -161,13 +164,13 @@ export default function InviteOnboardingPage() {
       })
       const loginData = await loginRes.json()
       if (!loginRes.ok || !loginData?.ok) {
-        throw new Error(loginData?.error || 'Profile completed but auto-login failed')
+        throw new Error(loginData?.error || 'Perfil completado, pero falló el inicio de sesión automático')
       }
 
-      toast.success('Welcome to Viventa!')
+      toast.success('¡Bienvenido a Viventa!')
       router.replace(loginData.redirect || '/dashboard')
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to complete invitation')
+      toast.error(err?.message || 'No se pudo completar la invitación')
     } finally {
       setSubmitting(false)
     }
@@ -178,7 +181,7 @@ export default function InviteOnboardingPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <FiLoader className="w-10 h-10 animate-spin text-[#00A676] mx-auto mb-3" />
-          <p className="text-gray-600">Validating invitation...</p>
+          <p className="text-gray-600">Validando invitación...</p>
         </div>
       </div>
     )
@@ -188,13 +191,13 @@ export default function InviteOnboardingPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-lg w-full bg-white border border-gray-200 rounded-xl p-6 text-center">
-          <h1 className="text-2xl font-bold text-[#0B2545] mb-3">Invalid Invitation</h1>
-          <p className="text-gray-600 mb-6">{error || 'Invitation not available'}</p>
+          <h1 className="text-2xl font-bold text-[#0B2545] mb-3">Invitación no válida</h1>
+          <p className="text-gray-600 mb-6">{error || 'La invitación no está disponible'}</p>
           <button
             onClick={() => router.push('/login')}
             className="px-4 py-2 bg-[#00A676] text-white rounded-lg"
           >
-            Go to Login
+            Ir a Iniciar sesión
           </button>
         </div>
       </div>
@@ -205,39 +208,39 @@ export default function InviteOnboardingPage() {
     <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-xl shadow-sm">
         <div className="p-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-[#0B2545]">Complete your Viventa profile</h1>
-          <p className="text-sm text-gray-600 mt-1">{invite.email} • Role: {roleMeta.label}</p>
-          <p className="text-xs text-gray-500 mt-1">Expires: {new Date(invite.expiresAt).toLocaleString()}</p>
+          <h1 className="text-2xl font-bold text-[#0B2545]">Completa tu perfil en Viventa</h1>
+          <p className="text-sm text-gray-600 mt-1">{invite.email} • Rol: {roleMeta.label}</p>
+          <p className="text-xs text-gray-500 mt-1">Vence: {new Date(invite.expiresAt).toLocaleString()}</p>
           <p className="text-xs text-[#0B2545] mt-2">{roleMeta.profileHint}</p>
         </div>
 
         <div className="px-6 pt-5">
           <div className="flex items-center gap-2 text-xs text-gray-600 mb-4">
             <span className={`${step >= 1 ? 'bg-[#00A676] text-white' : 'bg-gray-200'} rounded-full w-6 h-6 inline-flex items-center justify-center`}>1</span>
-            <span>Password</span>
+            <span>Contraseña</span>
             <span>•</span>
-            <span className={`${step >= 2 ? 'font-semibold text-[#0B2545]' : ''}`}>2 Profile</span>
+            <span className={`${step >= 2 ? 'font-semibold text-[#0B2545]' : ''}`}>2 Perfil</span>
             <span>•</span>
-            <span className={`${step >= 3 ? 'font-semibold text-[#0B2545]' : ''}`}>3 Terms</span>
+            <span className={`${step >= 3 ? 'font-semibold text-[#0B2545]' : ''}`}>3 Acuerdos</span>
           </div>
         </div>
 
         {step === 1 && (
           <div className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="invite-password">Set password</label>
-              <input id="invite-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Set password" />
+              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="invite-password">Crear contraseña</label>
+              <input id="invite-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Crear contraseña" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="invite-confirmPassword">Confirm password</label>
-              <input id="invite-confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Confirm password" />
+              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="invite-confirmPassword">Confirmar contraseña</label>
+              <input id="invite-confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Confirmar contraseña" />
             </div>
             <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-700 space-y-1">
-              <CheckLine ok={passwordChecks.min} label="At least 8 characters" />
-              <CheckLine ok={passwordChecks.upper} label="At least 1 uppercase letter" />
-              <CheckLine ok={passwordChecks.lower} label="At least 1 lowercase letter" />
-              <CheckLine ok={passwordChecks.num} label="At least 1 number" />
-              <CheckLine ok={passwordChecks.match} label="Passwords match" />
+              <CheckLine ok={passwordChecks.min} label="Mínimo 8 caracteres" />
+              <CheckLine ok={passwordChecks.upper} label="Al menos 1 letra mayúscula" />
+              <CheckLine ok={passwordChecks.lower} label="Al menos 1 letra minúscula" />
+              <CheckLine ok={passwordChecks.num} label="Al menos 1 número" />
+              <CheckLine ok={passwordChecks.match} label="Las contraseñas coinciden" />
             </div>
             <div className="flex justify-end">
               <button
@@ -245,7 +248,7 @@ export default function InviteOnboardingPage() {
                 onClick={() => setStep(2)}
                 className="px-4 py-2 rounded-lg bg-[#00A676] text-white disabled:opacity-50"
               >
-                Continue
+                Continuar
               </button>
             </div>
           </div>
@@ -254,27 +257,27 @@ export default function InviteOnboardingPage() {
         {step === 2 && (
           <div className="p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Phone" value={phone} onChange={setPhone} />
+              <Field label="Teléfono" value={phone} onChange={setPhone} />
               <Field label="WhatsApp" value={whatsapp} onChange={setWhatsapp} />
             </div>
-            <Field label="Profile Photo URL" value={photoURL} onChange={setPhotoURL} />
+            <Field label="URL de foto de perfil" value={photoURL} onChange={setPhotoURL} />
             <Field label="Bio" value={bio} onChange={setBio} />
 
             {invite.role === 'agent' && (
-              <Field label="Brokerage Name" value={brokerageName} onChange={setBrokerageName} />
+              <Field label="Nombre de la inmobiliaria" value={brokerageName} onChange={setBrokerageName} />
             )}
             {invite.role === 'broker' && (
-              <Field label="Brokerage Name" value={brokerageName} onChange={setBrokerageName} />
+              <Field label="Nombre de la inmobiliaria" value={brokerageName} onChange={setBrokerageName} />
             )}
             {invite.role === 'constructora' && (
-              <Field label="Company Info" value={companyInfo} onChange={setCompanyInfo} />
+              <Field label="Información de la empresa" value={companyInfo} onChange={setCompanyInfo} />
             )}
 
-            <Field label="License Number (Optional)" value={licenseNumber} onChange={setLicenseNumber} />
+            <Field label="Número de licencia (opcional)" value={licenseNumber} onChange={setLicenseNumber} />
 
             <div className="flex justify-between">
-              <button onClick={() => setStep(1)} className="px-4 py-2 rounded-lg border border-gray-300">Back</button>
-              <button onClick={() => setStep(3)} className="px-4 py-2 rounded-lg bg-[#00A676] text-white">Continue</button>
+              <button onClick={() => setStep(1)} className="px-4 py-2 rounded-lg border border-gray-300">Atrás</button>
+              <button onClick={() => setStep(3)} className="px-4 py-2 rounded-lg bg-[#00A676] text-white">Continuar</button>
             </div>
           </div>
         )}
@@ -283,16 +286,22 @@ export default function InviteOnboardingPage() {
           <div className="p-6 space-y-4">
             <label className="flex items-start gap-3 text-sm text-gray-700">
               <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="mt-1" />
-              <span>I accept Viventa platform terms and privacy policy.</span>
+              <span>
+                Acepto los{' '}
+                <a href="/terminos" target="_blank" rel="noreferrer" className="text-[#004AAD] hover:underline">Términos y Condiciones</a>
+                {' '}y la{' '}
+                <a href="/privacidad" target="_blank" rel="noreferrer" className="text-[#004AAD] hover:underline">Política de Privacidad</a>
+                {' '}de VIVENTA.
+              </span>
             </label>
             <div className="flex justify-between">
-              <button onClick={() => setStep(2)} className="px-4 py-2 rounded-lg border border-gray-300">Back</button>
+              <button onClick={() => setStep(2)} className="px-4 py-2 rounded-lg border border-gray-300">Atrás</button>
               <button
                 onClick={completeInvitation}
                 disabled={!termsAccepted || submitting}
                 className="px-4 py-2 rounded-lg bg-[#00A676] text-white disabled:opacity-50"
               >
-                {submitting ? 'Finishing...' : 'Complete & Enter Dashboard'}
+                {submitting ? 'Finalizando...' : 'Completar y entrar al panel'}
               </button>
             </div>
           </div>

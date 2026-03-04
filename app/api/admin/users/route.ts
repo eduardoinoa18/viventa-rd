@@ -33,16 +33,16 @@ async function sendInvitationEmail(params: {
     <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto;">
       <div style="background: linear-gradient(135deg, #0B2545 0%, #00A676 100%); color: #fff; padding: 28px; border-radius: 12px 12px 0 0;">
         <h1 style="margin: 0; font-size: 28px;">VIVENTA</h1>
-        <p style="margin: 8px 0 0 0; opacity: .95;">You've been invited to join the platform</p>
+        <p style="margin: 8px 0 0 0; opacity: .95;">Has sido invitado(a) a la plataforma</p>
       </div>
       <div style="border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; padding: 24px;">
-        <p style="margin: 0 0 12px 0; color: #111827;">Hi ${name},</p>
-        <p style="margin: 0 0 16px 0; color: #374151;">An admin has created your <strong>${roleLabel}</strong> account on VIVENTA.</p>
-        <p style="margin: 0 0 16px 0; color: #374151;">Click below to set your password and complete your profile.</p>
+        <p style="margin: 0 0 12px 0; color: #111827;">Hola ${name},</p>
+        <p style="margin: 0 0 16px 0; color: #374151;">Un administrador creó tu cuenta de <strong>${roleLabel}</strong> en VIVENTA.</p>
+        <p style="margin: 0 0 16px 0; color: #374151;">Haz clic abajo para crear tu contraseña y completar tu perfil.</p>
         <div style="text-align: center; margin: 24px 0;">
-          <a href="${inviteUrl}" style="display:inline-block;background:#00A676;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:700;">Complete Your Profile</a>
+          <a href="${inviteUrl}" style="display:inline-block;background:#00A676;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:700;">Completar mi perfil</a>
         </div>
-        <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">This link expires in ${expiresHours} hours.</p>
+        <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">Este enlace vence en ${expiresHours} horas.</p>
         <p style="margin: 0; color: #6b7280; font-size: 12px; word-break: break-all;">${inviteUrl}</p>
       </div>
     </div>
@@ -50,7 +50,7 @@ async function sendInvitationEmail(params: {
 
   await sendEmail({
     to: email,
-    subject: 'You\'ve been invited to Viventa',
+    subject: 'Invitación a tu cuenta en VIVENTA',
     html,
     from: 'noreply@viventa.com',
   })

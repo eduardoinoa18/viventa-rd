@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     if (!email || !name || !inviteType) {
       return NextResponse.json(
-        { ok: false, error: 'Missing required fields' },
+        { ok: false, error: 'Faltan campos requeridos' },
         { status: 400 }
       )
     }
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Validate invite type
     if (!['agent', 'broker', 'user'].includes(inviteType)) {
       return NextResponse.json(
-        { ok: false, error: 'Invalid invite type' },
+        { ok: false, error: 'Tipo de invitación inválido' },
         { status: 400 }
       )
     }
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const adminDb = getAdminDb()
     if (!adminDb) {
       return NextResponse.json(
-        { ok: false, error: 'Database not configured' },
+        { ok: false, error: 'Base de datos no configurada' },
         { status: 500 }
       )
     }
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     if (!existingUserSnap.empty) {
       return NextResponse.json(
-        { ok: false, error: 'This email is already registered in the system' },
+        { ok: false, error: 'Este correo ya está registrado en el sistema' },
         { status: 400 }
       )
     }
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     if (!existingInviteSnap.empty) {
       return NextResponse.json(
-        { ok: false, error: 'A pending invitation already exists for this email' },
+        { ok: false, error: 'Ya existe una invitación pendiente para este correo' },
         { status: 400 }
       )
     }
@@ -96,12 +96,12 @@ export async function POST(request: NextRequest) {
     // Prepare email content based on invite type
     const roleLabel =
       inviteType === 'agent'
-        ? 'Real Estate Agent'
+        ? 'Agente Inmobiliario'
         : inviteType === 'broker'
         ? 'Broker'
-        : 'User'
+        : 'Usuario'
 
-    const emailSubject = `You're Invited to Join VIVENTA as a ${roleLabel}`
+    const emailSubject = `Invitación para unirte a VIVENTA como ${roleLabel}`
     
     const emailHtml = `
       <!DOCTYPE html>
@@ -122,43 +122,43 @@ export async function POST(request: NextRequest) {
           <div class="container">
             <div class="header">
               <h1>🏠 VIVENTA</h1>
-              <p style="margin: 10px 0 0 0; font-size: 18px;">República Dominicana's Premier Real Estate Platform</p>
+              <p style="margin: 10px 0 0 0; font-size: 18px;">La plataforma inmobiliaria de República Dominicana</p>
             </div>
             
             <div class="content">
-              <h2>Hi ${name}! 👋</h2>
+              <h2>¡Hola ${name}! 👋</h2>
               
-              <p>You've been invited to join <strong>VIVENTA</strong> as a <span class="role-badge">${roleLabel}</span></p>
+              <p>Has sido invitado(a) a unirte a <strong>VIVENTA</strong> como <span class="role-badge">${roleLabel}</span></p>
               
               ${
                 message
                   ? `
               <div class="message-box">
-                <strong>Personal Message:</strong>
+                <strong>Mensaje personal:</strong>
                 <p style="margin: 10px 0 0 0;">${message}</p>
               </div>
               `
                   : ''
               }
               
-              <p><strong>What's next?</strong></p>
+              <p><strong>¿Qué sigue?</strong></p>
               <ul>
-                <li>Click the button below to accept your invitation</li>
-                <li>Complete your ${inviteType === 'user' ? 'profile' : 'professional application'}</li>
-                <li>Start ${
+                <li>Haz clic en el botón para aceptar tu invitación</li>
+                <li>Completa tu ${inviteType === 'user' ? 'perfil' : 'registro profesional'}</li>
+                <li>Empieza a ${
                   inviteType === 'user'
-                    ? 'exploring properties'
-                    : 'building your real estate business'
+                    ? 'explorar propiedades'
+                    : 'impulsar tu negocio inmobiliario'
                 }</li>
               </ul>
               
               <div style="text-align: center;">
-                <a href="${inviteLink}" class="button">Accept Invitation & Get Started</a>
+                <a href="${inviteLink}" class="button">Aceptar invitación y comenzar</a>
               </div>
               
               <p style="color: #666; font-size: 14px; margin-top: 30px;">
-                <strong>⏰ This invitation expires in 7 days</strong><br/>
-                If you can't click the button, copy and paste this link:<br/>
+                <strong>⏰ Esta invitación vence en 7 días</strong><br/>
+                Si no puedes hacer clic en el botón, copia y pega este enlace:<br/>
                 <code style="background: #e0e0e0; padding: 5px 10px; border-radius: 5px; font-size: 12px;">${inviteLink}</code>
               </p>
               
@@ -166,13 +166,13 @@ export async function POST(request: NextRequest) {
                 inviteType !== 'user'
                   ? `
               <div style="background: #e8f5f1; border: 1px solid #00A676; padding: 15px; border-radius: 8px; margin-top: 20px;">
-                <strong>Why Join VIVENTA?</strong>
+                <strong>¿Por qué unirte a VIVENTA?</strong>
                 <ul style="margin: 10px 0 0 0;">
-                  <li>Access to premium tools and resources</li>
-                  <li>Connect with qualified buyers and sellers</li>
-                  <li>Professional profile and listing management</li>
-                  <li>Analytics and performance tracking</li>
-                  <li>Growing network of real estate professionals</li>
+                  <li>Acceso a herramientas y recursos premium</li>
+                  <li>Conexión con compradores y vendedores calificados</li>
+                  <li>Gestión de perfil profesional y listados</li>
+                  <li>Analítica y seguimiento de rendimiento</li>
+                  <li>Red en crecimiento de profesionales inmobiliarios</li>
                 </ul>
               </div>
               `
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
             
             <div class="footer">
               <p>© ${new Date().getFullYear()} VIVENTA - República Dominicana</p>
-              <p>This is an automated invitation email. Please do not reply directly to this message.</p>
+              <p>Este es un correo automático de invitación. No respondas directamente a este mensaje.</p>
             </div>
           </div>
         </body>
@@ -205,12 +205,12 @@ export async function POST(request: NextRequest) {
       ok: true,
       inviteLink,
       invitationId: inviteRef.id,
-      message: 'Invitation sent successfully',
+      message: 'Invitación enviada correctamente',
     })
   } catch (error: any) {
     console.error('Error sending invitation:', error)
     return NextResponse.json(
-      { ok: false, error: error.message || 'Failed to send invitation' },
+      { ok: false, error: error.message || 'No se pudo enviar la invitación' },
       { status: 500 }
     )
   }

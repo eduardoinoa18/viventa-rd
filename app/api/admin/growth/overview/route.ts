@@ -163,6 +163,6 @@ export async function GET(req: NextRequest) {
     }
 
     console.error('[admin/growth/overview] error', error)
-    return NextResponse.json({ ok: false, error: 'Failed to load growth overview' }, { status: 500 })
+    return NextResponse.json({ ok: false, error: 'No se pudo cargar el resumen de crecimiento' }, { status: 500 })
   }
 }

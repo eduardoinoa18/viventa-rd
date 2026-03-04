@@ -20,13 +20,13 @@ export async function POST(req: NextRequest) {
     } = await req.json()
 
     if (!token || !password) {
-      return NextResponse.json({ ok: false, error: 'token and password are required' }, { status: 400 })
+      return NextResponse.json({ ok: false, error: 'token y contraseña son requeridos' }, { status: 400 })
     }
     if (!termsAccepted) {
-      return NextResponse.json({ ok: false, error: 'You must accept platform terms' }, { status: 400 })
+      return NextResponse.json({ ok: false, error: 'Debes aceptar los términos y la política de privacidad' }, { status: 400 })
     }
     if (String(password).length < 8) {
-      return NextResponse.json({ ok: false, error: 'Password must be at least 8 characters' }, { status: 400 })
+      return NextResponse.json({ ok: false, error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
     }
 
     const adminDb = getAdminDb()
@@ -37,31 +37,31 @@ export async function POST(req: NextRequest) {
 
     const inviteSnap = await adminDb.collection('invitations').where('token', '==', token).limit(1).get()
     if (inviteSnap.empty) {
-      return NextResponse.json({ ok: false, error: 'Invitation not found' }, { status: 404 })
+      return NextResponse.json({ ok: false, error: 'Invitación no encontrada' }, { status: 404 })
     }
 
     const inviteDoc = inviteSnap.docs[0]
     const invite = inviteDoc.data() as any
 
     if (invite.used || invite.status === 'accepted') {
-      return NextResponse.json({ ok: false, error: 'Invitation already used' }, { status: 409 })
+      return NextResponse.json({ ok: false, error: 'La invitación ya fue utilizada' }, { status: 409 })
     }
 
     const expiresAt = invite.expiresAt?.toDate?.() || new Date(invite.expiresAt)
     if (expiresAt.getTime() < Date.now()) {
       await inviteDoc.ref.update({ status: 'expired', updatedAt: new Date() })
-      return NextResponse.json({ ok: false, error: 'Invitation expired' }, { status: 410 })
+      return NextResponse.json({ ok: false, error: 'La invitación expiró' }, { status: 410 })
     }
 
     const userId = invite.userId as string
     if (!userId) {
-      return NextResponse.json({ ok: false, error: 'Invitation missing user' }, { status: 400 })
+      return NextResponse.json({ ok: false, error: 'La invitación no tiene usuario asociado' }, { status: 400 })
     }
 
     const userRef = adminDb.collection('users').doc(userId)
     const userSnap = await userRef.get()
     if (!userSnap.exists) {
-      return NextResponse.json({ ok: false, error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ ok: false, error: 'Usuario no encontrado' }, { status: 404 })
     }
 
     const userData = userSnap.data() as any
@@ -118,10 +118,10 @@ export async function POST(req: NextRequest) {
         email: invite.email,
         role: invite.role,
       },
-      message: 'Invitation completed successfully',
+      message: 'Invitación completada correctamente',
     })
   } catch (error: any) {
     console.error('[invitations/complete] error:', error)
-    return NextResponse.json({ ok: false, error: error?.message || 'Failed to complete invitation' }, { status: 500 })
+    return NextResponse.json({ ok: false, error: error?.message || 'No se pudo completar la invitación' }, { status: 500 })
   }
 }
