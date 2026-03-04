@@ -34,6 +34,17 @@ type BrokerDoc = {
   salesCount?: number
   reviewCount?: number
   activeSubscription?: boolean
+  slug?: string
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
 }
 
 export async function GET(req: NextRequest) {
@@ -74,6 +85,7 @@ export async function GET(req: NextRequest) {
 
         return {
           id: d.id,
+          slug: broker.slug || slugify(String(broker.company || broker.name || broker.displayName || d.id)),
           name: broker.name || broker.displayName || broker.company || 'Broker',
           company: broker.company || broker.displayName || broker.name || '',
           email: broker.email || '',

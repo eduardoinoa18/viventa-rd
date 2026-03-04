@@ -140,7 +140,7 @@ export default function BrokerCard({ broker }: { broker: any }) {
 
         {/* View Profile Link */}
         <Link
-          href={`/brokers/${broker.id}`}
+          href={`/broker/${broker.slug || broker.id}`}
           className="block w-full py-2 text-[#3BAFDA] font-semibold hover:text-[#2A9FC7] transition text-sm text-center"
         >
           Ver Perfil Completo →

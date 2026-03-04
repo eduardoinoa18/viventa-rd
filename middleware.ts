@@ -21,7 +21,7 @@ export async function middleware(req: NextRequest) {
   const publicRemoved = [
     '/properties', '/social', '/favorites', '/messages',
     '/notifications', '/onboarding', '/profesionales',
-    '/agent', '/broker'
+    '/agent'
   ]
   if (publicRemoved.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return NextResponse.redirect(new URL('/search', req.url), 308)
@@ -29,7 +29,7 @@ export async function middleware(req: NextRequest) {
 
   // ========== PUBLIC ROUTES (NEVER BLOCK) ==========
   const publicRoutes = [
-    '/', '/search', '/ciudad', '/listing', '/agents', '/brokers',
+    '/', '/search', '/ciudad', '/listing', '/agents', '/brokers', '/broker',
     '/contact', '/apply', '/signup', '/forgot-password', '/disclosures',
     '/login', '/verify-2fa'  // Auth routes must be public
   ]
