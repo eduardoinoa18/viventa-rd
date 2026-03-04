@@ -78,6 +78,7 @@ export default function ListingDetail(){
   const [loading, setLoading] = useState(true)
   const [currency, setCurrency] = useState<Currency>('USD')
   const [showInquiryForm, setShowInquiryForm] = useState(false)
+  const [inquiryCommunicationType, setInquiryCommunicationType] = useState<'more_info' | 'request_showing' | 'request_call'>('more_info')
   const [currentSession, setCurrentSession] = useState<any>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
   const [selectedModel, setSelectedModel] = useState<string>('all')
@@ -448,6 +449,17 @@ export default function ListingDetail(){
     : listing.representation === 'broker'
       ? 'Inmobiliaria'
       : 'Representante de la propiedad'
+  const normalizedAgentName = String(listing.agentName || '').trim().toLowerCase()
+  const normalizedOwnerRole = String(listing.ownerRole || '').trim().toLowerCase()
+  const isViventaManagedListing =
+    normalizedOwnerRole === 'master_admin' ||
+    normalizedOwnerRole === 'admin' ||
+    normalizedAgentName === 'agente viventa' ||
+    normalizedAgentName === 'viventa'
+  const agentDetailsHref = isViventaManagedListing
+    ? `/agente-viventa?listing=${encodeURIComponent(String(listing.id || ''))}`
+    : '/agents'
+  const agentDetailsCta = isViventaManagedListing ? 'Cómo funciona Agente VIVENTA →' : 'Ver perfil completo →'
   
   // Generate structured data for SEO
   const propertySchema = listing ? generatePropertySchema({
@@ -567,7 +579,7 @@ export default function ListingDetail(){
             </div>
           </div>
           <button
-            onClick={() => (isAuthenticated ? setShowInquiryForm(true) : requireAccountForDetails())}
+            onClick={() => (isAuthenticated ? (setInquiryCommunicationType('more_info'), setShowInquiryForm(true)) : requireAccountForDetails())}
             className="shrink-0 px-3 sm:px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold text-xs sm:text-sm whitespace-nowrap"
           >
             {isAuthenticated ? 'Contactar' : 'Crear cuenta'}
@@ -896,6 +908,7 @@ export default function ListingDetail(){
                                   type="button"
                                   onClick={() => {
                                     setSelectedUnitNumber(unit.unitNumber)
+                                    setInquiryCommunicationType('request_showing')
                                     setShowInquiryForm(true)
                                   }}
                                   className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold rounded-lg bg-[#0B2545] text-white hover:bg-[#143a66] whitespace-nowrap"
@@ -1095,13 +1108,16 @@ export default function ListingDetail(){
                   />
                   
                   <button
-                    onClick={() => (isAuthenticated ? setShowInquiryForm(true) : requireAccountForDetails())}
+                    onClick={() => (isAuthenticated ? (setInquiryCommunicationType('more_info'), setShowInquiryForm(true)) : requireAccountForDetails())}
                     className="w-full px-6 py-3 bg-[#0B2545] hover:bg-[#0B2545]/90 text-white rounded-lg font-medium transition-colors duration-200"
                   >
                     {isAuthenticated ? '📧 Enviar mensaje' : '🔒 Crear cuenta para contactar'}
                   </button>
                   
-                  <button className="w-full px-6 py-3 border-2 border-[#00A6A6] text-[#00A6A6] hover:bg-[#00A6A6] hover:text-white rounded-lg font-medium transition-colors duration-200">
+                  <button
+                    onClick={() => (isAuthenticated ? (setInquiryCommunicationType('request_call'), setShowInquiryForm(true)) : requireAccountForDetails())}
+                    className="w-full px-6 py-3 border-2 border-[#00A6A6] text-[#00A6A6] hover:bg-[#00A6A6] hover:text-white rounded-lg font-medium transition-colors duration-200"
+                  >
                     📞 Solicitar llamada
                   </button>
                 </div>
@@ -1161,16 +1177,19 @@ export default function ListingDetail(){
               </div>
               <div className="flex flex-col gap-2 w-full md:w-auto">
                 <button
-                  onClick={() => setShowInquiryForm(true)}
+                  onClick={() => {
+                    setInquiryCommunicationType('more_info')
+                    setShowInquiryForm(true)
+                  }}
                   className="w-full px-4 sm:px-6 py-2.5 sm:py-3 bg-[#00A676] hover:bg-[#008c5c] text-white rounded-lg font-semibold text-sm sm:text-base transition-colors"
                 >
                   Contactar Agente
                 </button>
                 <a
-                  href="/agents"
+                  href={agentDetailsHref}
                   className="text-xs sm:text-sm text-center text-[#00A6A6] hover:underline"
                 >
-                  Ver perfil completo →
+                  {agentDetailsCta}
                 </a>
               </div>
             </div>
@@ -1293,7 +1312,7 @@ export default function ListingDetail(){
             {isAuthenticated ? 'WhatsApp' : 'Crear cuenta'}
           </button>
           <button
-            onClick={() => (isAuthenticated ? setShowInquiryForm(true) : requireAccountForDetails())}
+            onClick={() => (isAuthenticated ? (setInquiryCommunicationType('more_info'), setShowInquiryForm(true)) : requireAccountForDetails())}
             className="flex-1 px-4 py-3 bg-[#0B2545] hover:bg-[#143a66] text-white rounded-lg font-semibold transition-colors"
           >
             {isAuthenticated ? 'Contactar' : 'Iniciar / Crear cuenta'}
@@ -1307,6 +1326,7 @@ export default function ListingDetail(){
           propertyTitle={listing.title}
           agentName={listing.agentName}
           agentEmail={listing.agentEmail}
+          initialCommunicationType={inquiryCommunicationType}
           selectedUnitNumber={selectedUnit?.unitNumber || ''}
           selectedUnitModel={selectedUnit?.modelType || ''}
           selectedUnitPrice={selectedUnit?.price || 0}

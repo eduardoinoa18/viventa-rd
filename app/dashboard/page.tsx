@@ -57,6 +57,20 @@ type BrokerDashboardKpi = {
   }
 }
 
+type BrokerTeamSummary = {
+  totalMembers?: number
+  activeMembers?: number
+  pendingMembers?: number
+}
+
+type BrokerTransactionsSummary = {
+  totalPipeline?: number
+  qualified?: number
+  negotiating?: number
+  won?: number
+  projectedValue?: number
+}
+
 function formatPrice(value?: number, currency: 'USD' | 'DOP' = 'USD') {
   if (!value || Number.isNaN(Number(value))) return 'Precio no disponible'
   return new Intl.NumberFormat('es-DO', {
@@ -78,6 +92,8 @@ export default function BuyerDashboardPage() {
   const [proListingsLoading, setProListingsLoading] = useState(false)
   const [proListingsError, setProListingsError] = useState('')
   const [brokerKpis, setBrokerKpis] = useState<BrokerDashboardKpi | null>(null)
+  const [brokerTeamSummary, setBrokerTeamSummary] = useState<BrokerTeamSummary | null>(null)
+  const [brokerTransactionsSummary, setBrokerTransactionsSummary] = useState<BrokerTransactionsSummary | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -142,18 +158,22 @@ export default function BuyerDashboardPage() {
         setProListingsLoading(true)
         setProListingsError('')
 
-        const [myRes, officeRes, marketRes, kpiRes] = await Promise.all([
+        const [myRes, officeRes, marketRes, kpiRes, teamRes, transactionsRes] = await Promise.all([
           fetch('/api/broker/listings/my?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/office?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/market?status=active', { cache: 'no-store' }),
           fetch('/api/broker/dashboard/overview', { cache: 'no-store' }),
+          fetch('/api/broker/team', { cache: 'no-store' }),
+          fetch('/api/broker/transactions', { cache: 'no-store' }),
         ])
 
-        const [myJson, officeJson, marketJson, kpiJson] = await Promise.all([
+        const [myJson, officeJson, marketJson, kpiJson, teamJson, transactionsJson] = await Promise.all([
           myRes.json().catch(() => ({})),
           officeRes.json().catch(() => ({})),
           marketRes.json().catch(() => ({})),
           kpiRes.json().catch(() => ({})),
+          teamRes.json().catch(() => ({})),
+          transactionsRes.json().catch(() => ({})),
         ])
 
         if (!active) return
@@ -181,6 +201,18 @@ export default function BuyerDashboardPage() {
         } else {
           setBrokerKpis(null)
         }
+
+        if (teamRes.ok) {
+          setBrokerTeamSummary(teamJson?.summary || null)
+        } else {
+          setBrokerTeamSummary(null)
+        }
+
+        if (transactionsRes.ok) {
+          setBrokerTransactionsSummary(transactionsJson?.summary || null)
+        } else {
+          setBrokerTransactionsSummary(null)
+        }
       } catch (error: any) {
         if (!active) return
         setProListingsError(error?.message || 'No se pudo cargar el panel profesional')
@@ -188,6 +220,8 @@ export default function BuyerDashboardPage() {
         setOfficeListings([])
         setMarketListings([])
         setBrokerKpis(null)
+        setBrokerTeamSummary(null)
+        setBrokerTransactionsSummary(null)
       } finally {
         if (active) setProListingsLoading(false)
       }
@@ -306,6 +340,53 @@ export default function BuyerDashboardPage() {
               {brokerKpis?.market && (
                 <div className="mt-3 text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg p-3">
                   Mercado {brokerKpis.market.dominantCity || 'RD'} • Mediana: {formatPrice(brokerKpis.market.medianPriceInArea, 'USD')} • Tendencia 30d: {brokerKpis.market.priceTrend30vsPrev30Pct || 0}%
+                </div>
+              )}
+
+              {(brokerTeamSummary || brokerTransactionsSummary) && (
+                <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-gray-100 bg-white p-3">
+                    <div className="text-xs text-gray-500">Team (Phase 4)</div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-sm">
+                      <div className="rounded bg-gray-50 p-2">
+                        <div className="text-[11px] text-gray-500">Total</div>
+                        <div className="font-bold text-[#0B2545]">{brokerTeamSummary?.totalMembers || 0}</div>
+                      </div>
+                      <div className="rounded bg-gray-50 p-2">
+                        <div className="text-[11px] text-gray-500">Activos</div>
+                        <div className="font-bold text-[#0B2545]">{brokerTeamSummary?.activeMembers || 0}</div>
+                      </div>
+                      <div className="rounded bg-gray-50 p-2">
+                        <div className="text-[11px] text-gray-500">Pendientes</div>
+                        <div className="font-bold text-[#0B2545]">{brokerTeamSummary?.pendingMembers || 0}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-gray-100 bg-white p-3">
+                    <div className="text-xs text-gray-500">Transactions (Phase 4)</div>
+                    <div className="mt-2 grid grid-cols-4 gap-2 text-sm">
+                      <div className="rounded bg-gray-50 p-2">
+                        <div className="text-[11px] text-gray-500">Pipeline</div>
+                        <div className="font-bold text-[#0B2545]">{brokerTransactionsSummary?.totalPipeline || 0}</div>
+                      </div>
+                      <div className="rounded bg-gray-50 p-2">
+                        <div className="text-[11px] text-gray-500">Qualified</div>
+                        <div className="font-bold text-[#0B2545]">{brokerTransactionsSummary?.qualified || 0}</div>
+                      </div>
+                      <div className="rounded bg-gray-50 p-2">
+                        <div className="text-[11px] text-gray-500">Negotiating</div>
+                        <div className="font-bold text-[#0B2545]">{brokerTransactionsSummary?.negotiating || 0}</div>
+                      </div>
+                      <div className="rounded bg-gray-50 p-2">
+                        <div className="text-[11px] text-gray-500">Won</div>
+                        <div className="font-bold text-[#0B2545]">{brokerTransactionsSummary?.won || 0}</div>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-600">
+                      Valor proyectado: {formatPrice(brokerTransactionsSummary?.projectedValue, 'USD')}
+                    </div>
+                  </div>
                 </div>
               )}
 

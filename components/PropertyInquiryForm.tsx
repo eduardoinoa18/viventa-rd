@@ -9,6 +9,7 @@ interface PropertyInquiryFormProps {
   propertyTitle: string
   agentName?: string
   agentEmail?: string
+  initialCommunicationType?: 'more_info' | 'request_showing' | 'request_call'
   selectedUnitNumber?: string
   selectedUnitModel?: string
   selectedUnitPrice?: number
@@ -21,6 +22,7 @@ export default function PropertyInquiryForm({
   propertyTitle, 
   agentName, 
   agentEmail,
+  initialCommunicationType = 'more_info',
   selectedUnitNumber,
   selectedUnitModel,
   selectedUnitPrice,
@@ -35,6 +37,7 @@ export default function PropertyInquiryForm({
     name: '',
     email: '',
     phone: '',
+    communicationType: initialCommunicationType,
     message: selectedUnitNumber
       ? `Hola, estoy interesado en la unidad ${selectedUnitNumber} de la propiedad ${propertyTitle}. Me gustaría obtener más información sobre disponibilidad y forma de reserva.`
       : `Hola, estoy interesado en la propiedad: ${propertyTitle}. Me gustaría obtener más información.`,
@@ -59,6 +62,7 @@ export default function PropertyInquiryForm({
           unitModelType: selectedUnitModel || '',
           unitPrice: selectedUnitPrice || null,
           unitSizeMt2: selectedUnitSizeMt2 || null,
+          communicationType: formData.communicationType,
           agentName,
           agentEmail,
           source: 'Property Detail Page'
@@ -79,6 +83,7 @@ export default function PropertyInquiryForm({
           propertyTitle,
           unitNumber: selectedUnitNumber || '',
           unitModelType: selectedUnitModel || '',
+          communicationType: formData.communicationType,
           preferredContact: formData.preferredContact,
           hasVisitDate: !!formData.visitDate
         },
@@ -170,6 +175,23 @@ export default function PropertyInquiryForm({
                 placeholder="809-555-1234"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Tipo de solicitud <span className="text-red-500">*</span>
+            </label>
+            <select
+              required
+              value={formData.communicationType}
+              onChange={(e) => setFormData({ ...formData, communicationType: e.target.value as 'more_info' | 'request_showing' | 'request_call' })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent transition-all appearance-none bg-white"
+              aria-label="Tipo de solicitud"
+            >
+              <option value="more_info">Más información</option>
+              <option value="request_showing">Solicitar showing / visita</option>
+              <option value="request_call">Solicitar llamada</option>
+            </select>
           </div>
 
           <div>

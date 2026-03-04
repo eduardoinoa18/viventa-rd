@@ -249,15 +249,15 @@ export default function ContactPage() {
                   </div>
                 </a>
 
-                <a href="tel:+18095551234" className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-green-50 transition-colors active:scale-98">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                   <div className="flex-shrink-0 w-10 h-10 bg-[#00A676] rounded-full flex items-center justify-center text-white">
                     <FiPhone />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 text-sm">Teléfono</h3>
-                    <p className="text-gray-600 text-sm">+1 (809) 555-1234</p>
+                    <p className="text-gray-600 text-sm">TBD</p>
                   </div>
-                </a>
+                </div>
               </div>
             </div>
 
@@ -269,8 +269,8 @@ export default function ContactPage() {
                 <div className="flex items-start gap-2">
                   <FiMapPin className="flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold">Oficina Central</p>
-                    <p className="opacity-90">Av. Winston Churchill, Santo Domingo, República Dominicana</p>
+                    <p className="font-semibold">Oficina</p>
+                    <p className="opacity-90">TBD</p>
                   </div>
                 </div>
 
@@ -292,12 +292,9 @@ export default function ContactPage() {
               <p className="text-sm text-gray-600 mb-4">
                 Nuestro equipo está listo para asistirte con cualquier consulta inmediata.
               </p>
-              <a 
-                href="tel:+18095551234" 
-                className="block text-center bg-[#00A676] text-white px-4 py-3 rounded-xl font-bold hover:bg-[#008F64] transition-colors active:scale-98"
-              >
-                Llamar ahora
-              </a>
+              <div className="block text-center bg-[#00A676] text-white px-4 py-3 rounded-xl font-bold opacity-80">
+                Teléfono: TBD
+              </div>
             </div>
           </div>
         </div>

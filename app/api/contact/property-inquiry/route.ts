@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       message,
       visitDate,
       preferredContact,
+      communicationType,
       propertyId,
       propertyTitle,
       unitNumber,
@@ -50,13 +51,12 @@ export async function POST(request: Request) {
     }
     const propertyData = propertySnap.data() as any
     const resolvedTitle = propertyData?.title || propertyTitle || 'Propiedad'
-    const resolvedAgentId = propertyData?.agentId
-    const resolvedAgentName = propertyData?.agentName || 'VIVENTA'
+    const resolvedAgentId = propertyData?.agentId || null
+    const resolvedAgentName = propertyData?.agentName || 'Agente VIVENTA'
     const resolvedAgentEmail = propertyData?.agentEmail || ''
-
-    if (!resolvedAgentId) {
-      return NextResponse.json({ ok: false, error: 'Property missing agent' }, { status: 400 })
-    }
+    const normalizedCommunicationType = ['more_info', 'request_showing', 'request_call'].includes(String(communicationType || '').trim())
+      ? String(communicationType).trim()
+      : 'more_info'
 
     const inquiryRef = await adminDb.collection('property_inquiries').add({
       name,
@@ -71,6 +71,7 @@ export async function POST(request: Request) {
       unitModelType: unitModelType || '',
       unitPrice: unitPrice ?? null,
       unitSizeMt2: unitSizeMt2 ?? null,
+      communicationType: normalizedCommunicationType,
       agentId: resolvedAgentId,
       agentName: resolvedAgentName,
       agentEmail: resolvedAgentEmail,
@@ -83,7 +84,14 @@ export async function POST(request: Request) {
     // Also push into centralized lead queue
     try {
       await ingestLead({
-        type: preferredContact === 'whatsapp' ? 'whatsapp' : visitDate ? 'showing' : 'request-info',
+        type:
+          normalizedCommunicationType === 'request_showing'
+            ? 'showing'
+            : normalizedCommunicationType === 'request_call'
+              ? 'request-info'
+              : preferredContact === 'whatsapp'
+                ? 'whatsapp'
+                : 'request-info',
         source: 'property',
         sourceId: propertyId,
         buyerName: name,
@@ -91,6 +99,7 @@ export async function POST(request: Request) {
         buyerPhone: phone,
         message,
         payload: {
+          communicationType: normalizedCommunicationType,
           preferredContact: preferredContact || 'email',
           visitDate: visitDate || null,
           unitNumber: unitNumber || '',
@@ -146,6 +155,10 @@ export async function POST(request: Request) {
                     <td style="padding: 10px 0; color: #333;">${phone}</td>
                   </tr>
                   <tr>
+                    <td style="padding: 10px 0; font-weight: bold; color: #666;">Tipo de solicitud:</td>
+                    <td style="padding: 10px 0; color: #333;">${normalizedCommunicationType === 'request_showing' ? 'Solicitar showing / visita' : normalizedCommunicationType === 'request_call' ? 'Solicitar llamada' : 'Más información'}</td>
+                  </tr>
+                  <tr>
                     <td style="padding: 10px 0; font-weight: bold; color: #666;">Contacto preferido:</td>
                     <td style="padding: 10px 0; color: #333;">${preferredContact === 'email' ? 'Email' : preferredContact === 'phone' ? 'Teléfono' : 'WhatsApp'}</td>
                   </tr>
@@ -197,7 +210,7 @@ export async function POST(request: Request) {
       for (const to of notifyEmails) {
         await sendEmail({ 
           to, 
-          subject: `🏠 Nueva Consulta: ${propertyTitle}`, 
+          subject: `🏠 Nueva Consulta: ${resolvedTitle}`,
           html,
           from: 'noreply@viventa.com',
           replyTo: email // Allow admin/agent to reply directly to the inquirer
@@ -218,7 +231,7 @@ export async function POST(request: Request) {
       await adminDb.collection('notifications').add({
         type: 'property_inquiry',
         title: 'Nueva consulta de propiedad',
-        body: `${name} consultó: ${propertyTitle}`,
+        body: `${name} consultó: ${resolvedTitle}`,
         icon: '/icons/icon-192x192.png',
         url: `/admin/leads?source=property_inquiry&id=${encodeURIComponent(inquiryRef.id)}`,
         refId: inquiryRef.id,
