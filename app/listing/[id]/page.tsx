@@ -552,9 +552,9 @@ export default function ListingDetail(){
       
       {/* Mobile Sticky Price Bar */}
       <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div>
-            <div className="text-2xl font-bold text-[#FF6B35] leading-none">
+        <div className="px-3 py-3 flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="text-xl sm:text-2xl font-bold text-[#FF6B35] leading-none break-words">
               {listing.inventoryMode === 'project' && rangePriceSource > 0
                 ? `Desde ${formatCurrency(primaryCurrency === 'USD' ? rangePriceUsd : rangePriceDop, { currency: primaryCurrency })}`
                 : formatCurrency(primaryPrice, { currency: primaryCurrency })}
@@ -562,24 +562,24 @@ export default function ListingDetail(){
             <div className="text-[11px] font-semibold uppercase tracking-wide text-[#0B2545] mt-1">
               Moneda: {priceCurrencyCode}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 break-words">
               {formatCurrency(secondaryPrice, { currency: secondaryCurrency })}
             </div>
           </div>
           <button
             onClick={() => (isAuthenticated ? setShowInquiryForm(true) : requireAccountForDetails())}
-            className="px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold text-sm whitespace-nowrap"
+            className="shrink-0 px-3 sm:px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold text-xs sm:text-sm whitespace-nowrap"
           >
             {isAuthenticated ? 'Contactar' : 'Crear cuenta'}
           </button>
         </div>
       </div>
 
-      <main className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
-        <div className="container mx-auto px-0 sm:px-4 py-0 sm:py-4 lg:py-8 max-w-7xl">
+      <main className="min-h-screen bg-gray-50 pb-20 lg:pb-0 overflow-x-hidden">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 lg:py-8 max-w-7xl">
           
           {/* Image Gallery - Full Width on Mobile */}
-          <div className="bg-white sm:rounded-xl shadow-sm overflow-hidden mb-4 sm:mb-6">
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4 sm:mb-6">
             <ImageGalleryCarousel 
               images={listing.images || []} 
               title={listing.title} 
@@ -588,11 +588,11 @@ export default function ListingDetail(){
 
           <div className="grid lg:grid-cols-3 gap-4 lg:gap-6">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-4 lg:space-y-6 px-4 sm:px-0">
+            <div className="lg:col-span-2 min-w-0 space-y-4 lg:space-y-6">
               
               {/* Property Title & Address - Mobile Optimized */}
               <div className="bg-white sm:rounded-xl shadow-sm p-4 sm:p-6">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#0B2545] mb-2">{listing.title}</h1>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#0B2545] mb-2 break-words">{listing.title}</h1>
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#0B2545] text-white">
                     {propertyTypeLabel}
@@ -603,7 +603,7 @@ export default function ListingDetail(){
                 </div>
                 <div className="flex items-center text-gray-600 text-sm sm:text-base mb-4">
                   <FaMapMarkerAlt className="mr-2 text-[#FF6B35] flex-shrink-0" />
-                  <span>{locationLabel || `${listing.city || 'N/D'} • ${listing.neighborhood || listing.sector || 'N/D'}`}</span>
+                  <span className="break-words">{locationLabel || `${listing.city || 'N/D'} • ${listing.neighborhood || listing.sector || 'N/D'}`}</span>
                 </div>
                 
                 {/* Price - Desktop Only (mobile has sticky bar) */}
@@ -701,7 +701,7 @@ export default function ListingDetail(){
               {/* Description - Early, easily scannable */}
               <div className="bg-white sm:rounded-xl shadow-sm p-4 sm:p-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-[#0B2545] mb-3">Descripción</h2>
-                <p className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-line">
+                <p className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-line break-words">
                   {listing.description || 'Sin descripción disponible'}
                 </p>
               </div>
@@ -719,7 +719,7 @@ export default function ListingDetail(){
                     {listing.features.map((feature: string, idx: number) => (
                       <div key={idx} className="flex items-center gap-2 text-gray-700 text-sm">
                         <div className="w-1.5 h-1.5 bg-[#00A676] rounded-full flex-shrink-0"></div>
-                        <span className="capitalize">{feature}</span>
+                        <span className="capitalize break-words">{feature}</span>
                       </div>
                     ))}
                   </div>
@@ -860,8 +860,8 @@ export default function ListingDetail(){
                     </div>
                   )}
 
-                  <div className="overflow-x-auto -mx-4 sm:mx-0 sm:border sm:border-gray-200 sm:rounded-lg">
-                    <table className="w-full min-w-[640px] text-xs sm:text-sm">
+                  <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:border sm:border-gray-200 sm:rounded-lg">
+                    <table className="w-full min-w-[560px] text-xs sm:text-sm">
                       <thead className="bg-gray-50 text-left text-gray-600">
                         <tr>
                           <th className="px-3 sm:px-4 py-2 sm:py-3 font-medium">Unidad</th>
@@ -1140,22 +1140,22 @@ export default function ListingDetail(){
           </div>
 
           {/* Agent/Company Attribution - Mobile Optimized */}
-          <div className="mt-8 sm:mt-12 bg-white sm:rounded-xl shadow-sm p-4 sm:p-6 lg:p-8 mx-4 sm:mx-0">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-gray-200">
-              <div className="flex items-center gap-3 sm:gap-4">
+          <div className="mt-8 sm:mt-12 bg-white rounded-xl shadow-sm p-4 sm:p-6 lg:p-8">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-gray-200 min-w-0">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-[#00A676] to-[#00A6A6] rounded-full flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl font-bold flex-shrink-0">
                   {listing.agentName ? listing.agentName.charAt(0).toUpperCase() : 'A'}
                 </div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-bold text-[#0B2545]">{listing.agentName || 'Agente VIVENTA'}</h3>
+                  <div className="min-w-0">
+                    <h3 className="text-lg sm:text-xl font-bold text-[#0B2545] break-words">{listing.agentName || 'Agente VIVENTA'}</h3>
                   <p className="text-sm sm:text-base text-gray-600">Agente Inmobiliario</p>
                   {(listing.professionalCode || listing.agentCode || listing.brokerCode || listing.constructoraCode) && (
-                    <p className="text-xs sm:text-sm text-emerald-700 mt-0.5">
+                    <p className="text-xs sm:text-sm text-emerald-700 mt-0.5 break-words">
                       Código verificado: <span className="font-mono font-semibold">{listing.professionalCode || listing.agentCode || listing.brokerCode || listing.constructoraCode}</span>
                     </p>
                   )}
                   {listing.agentEmail && (
-                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5">{listing.agentEmail}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5 break-all">{listing.agentEmail}</p>
                   )}
                 </div>
               </div>
@@ -1239,9 +1239,9 @@ export default function ListingDetail(){
                           rel="noopener noreferrer"
                           className="flex items-center justify-between p-2.5 sm:p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100"
                         >
-                          <div>
-                            <p className="font-medium text-xs sm:text-sm text-gray-800">{doc.name}</p>
-                            <p className="text-xs text-gray-500">{doc.type} • {doc.visibility}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium text-xs sm:text-sm text-gray-800 break-words">{doc.name}</p>
+                            <p className="text-xs text-gray-500 break-words">{doc.type} • {doc.visibility}</p>
                           </div>
                           <span className="text-[#00A676] text-xs sm:text-sm font-semibold whitespace-nowrap">Descargar →</span>
                         </a>

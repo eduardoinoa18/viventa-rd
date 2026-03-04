@@ -38,7 +38,7 @@ export default function ImageGalleryCarousel({ images, title }: Props) {
       {/* Main Gallery */}
       <div className="relative">
         {/* Main Image */}
-        <div className="relative h-96 md:h-[500px] rounded-xl overflow-hidden bg-gray-900 group">
+        <div className="relative h-64 sm:h-80 md:h-[500px] rounded-xl overflow-hidden bg-gray-900 group">
           <img
             src={images[currentIndex]}
             alt={`${title} - Image ${currentIndex + 1}`}

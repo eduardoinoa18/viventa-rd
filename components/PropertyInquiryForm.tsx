@@ -96,17 +96,17 @@ export default function PropertyInquiryForm({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-[#0B2545] to-[#00A676] text-white p-6 flex items-center justify-between rounded-t-2xl">
-          <div className="flex items-center gap-3">
+        <div className="sticky top-0 bg-gradient-to-r from-[#0B2545] to-[#00A676] text-white p-4 sm:p-6 flex items-center justify-between rounded-t-2xl gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
               <FiMail className="text-2xl" />
             </div>
-            <div>
-              <h2 className="text-xl font-bold">Consultar Propiedad</h2>
-              <p className="text-sm text-white/80">{agentName || 'Agente VIVENTA'}</p>
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold">Consultar Propiedad</h2>
+              <p className="text-xs sm:text-sm text-white/80 truncate">{agentName || 'Agente VIVENTA'}</p>
             </div>
           </div>
           <button
@@ -119,7 +119,7 @@ export default function PropertyInquiryForm({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
           <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
             <p className="text-sm text-blue-800 font-medium">{propertyTitle}</p>
             {unitContext && <p className="text-xs text-blue-700 mt-1">{unitContext}</p>}
@@ -190,8 +190,8 @@ export default function PropertyInquiryForm({
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Método de contacto preferido
             </label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4">
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
                 <input
                   type="radio"
                   name="preferredContact"
@@ -202,7 +202,7 @@ export default function PropertyInquiryForm({
                 />
                 <span className="text-sm text-gray-700">Email</span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
                 <input
                   type="radio"
                   name="preferredContact"
@@ -213,7 +213,7 @@ export default function PropertyInquiryForm({
                 />
                 <span className="text-sm text-gray-700">Teléfono</span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
                 <input
                   type="radio"
                   name="preferredContact"
@@ -241,7 +241,7 @@ export default function PropertyInquiryForm({
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
