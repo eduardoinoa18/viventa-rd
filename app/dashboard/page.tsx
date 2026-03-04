@@ -29,6 +29,34 @@ type ListingItem = {
   status?: string
 }
 
+type BrokerDashboardKpi = {
+  generatedAt?: string
+  performance?: {
+    totalActiveListings?: number
+    newListings30Days?: number
+    pendingListings?: number
+    closedListings30Days?: number
+    avgDaysOnMarket?: number
+    officeConversionRate?: number
+    leadToAppointmentRate?: number
+    leadToCloseRate?: number
+  }
+  leads?: {
+    leadsAssigned?: number
+    responseTimeAvgMinutes?: number
+    slaBreaches?: number
+    contactRate?: number
+    qualificationRate?: number
+  }
+  market?: {
+    dominantCity?: string
+    medianPriceInArea?: number
+    avgDomInMarket?: number
+    activeVsPendingRatio?: number
+    priceTrend30vsPrev30Pct?: number
+  }
+}
+
 function formatPrice(value?: number, currency: 'USD' | 'DOP' = 'USD') {
   if (!value || Number.isNaN(Number(value))) return 'Precio no disponible'
   return new Intl.NumberFormat('es-DO', {
@@ -49,6 +77,7 @@ export default function BuyerDashboardPage() {
   const [marketListings, setMarketListings] = useState<ListingItem[]>([])
   const [proListingsLoading, setProListingsLoading] = useState(false)
   const [proListingsError, setProListingsError] = useState('')
+  const [brokerKpis, setBrokerKpis] = useState<BrokerDashboardKpi | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -113,16 +142,18 @@ export default function BuyerDashboardPage() {
         setProListingsLoading(true)
         setProListingsError('')
 
-        const [myRes, officeRes, marketRes] = await Promise.all([
+        const [myRes, officeRes, marketRes, kpiRes] = await Promise.all([
           fetch('/api/broker/listings/my?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/office?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/market?status=active', { cache: 'no-store' }),
+          fetch('/api/broker/dashboard/overview', { cache: 'no-store' }),
         ])
 
-        const [myJson, officeJson, marketJson] = await Promise.all([
+        const [myJson, officeJson, marketJson, kpiJson] = await Promise.all([
           myRes.json().catch(() => ({})),
           officeRes.json().catch(() => ({})),
           marketRes.json().catch(() => ({})),
+          kpiRes.json().catch(() => ({})),
         ])
 
         if (!active) return
@@ -144,12 +175,19 @@ export default function BuyerDashboardPage() {
         } else {
           setMarketListings([])
         }
+
+        if (kpiRes.ok) {
+          setBrokerKpis(kpiJson || null)
+        } else {
+          setBrokerKpis(null)
+        }
       } catch (error: any) {
         if (!active) return
         setProListingsError(error?.message || 'No se pudo cargar el panel profesional')
         setMyListings([])
         setOfficeListings([])
         setMarketListings([])
+        setBrokerKpis(null)
       } finally {
         if (active) setProListingsLoading(false)
       }
@@ -222,6 +260,55 @@ export default function BuyerDashboardPage() {
                   <div className="text-lg font-bold text-[#0B2545]">{marketListings.length}</div>
                 </div>
               </div>
+
+              {brokerKpis?.performance && (
+                <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="rounded-lg bg-[#0B2545]/5 border border-[#0B2545]/10 p-3">
+                    <div className="text-xs text-gray-600">Nuevos (30d)</div>
+                    <div className="text-lg font-bold text-[#0B2545]">{brokerKpis.performance.newListings30Days || 0}</div>
+                  </div>
+                  <div className="rounded-lg bg-[#0B2545]/5 border border-[#0B2545]/10 p-3">
+                    <div className="text-xs text-gray-600">Cerrados (30d)</div>
+                    <div className="text-lg font-bold text-[#0B2545]">{brokerKpis.performance.closedListings30Days || 0}</div>
+                  </div>
+                  <div className="rounded-lg bg-[#0B2545]/5 border border-[#0B2545]/10 p-3">
+                    <div className="text-xs text-gray-600">DOM promedio</div>
+                    <div className="text-lg font-bold text-[#0B2545]">{brokerKpis.performance.avgDaysOnMarket || 0}</div>
+                  </div>
+                  <div className="rounded-lg bg-[#0B2545]/5 border border-[#0B2545]/10 p-3">
+                    <div className="text-xs text-gray-600">Conversión oficina</div>
+                    <div className="text-lg font-bold text-[#0B2545]">{brokerKpis.performance.officeConversionRate || 0}%</div>
+                  </div>
+                </div>
+              )}
+
+              {brokerKpis?.leads && (
+                <div className="mt-3 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="rounded-lg bg-[#00A676]/5 border border-[#00A676]/20 p-3">
+                    <div className="text-xs text-gray-600">Leads asignados</div>
+                    <div className="text-lg font-bold text-[#0B2545]">{brokerKpis.leads.leadsAssigned || 0}</div>
+                  </div>
+                  <div className="rounded-lg bg-[#00A676]/5 border border-[#00A676]/20 p-3">
+                    <div className="text-xs text-gray-600">Resp. promedio</div>
+                    <div className="text-lg font-bold text-[#0B2545]">{brokerKpis.leads.responseTimeAvgMinutes || 0} min</div>
+                  </div>
+                  <div className="rounded-lg bg-[#00A676]/5 border border-[#00A676]/20 p-3">
+                    <div className="text-xs text-gray-600">Contact rate</div>
+                    <div className="text-lg font-bold text-[#0B2545]">{brokerKpis.leads.contactRate || 0}%</div>
+                  </div>
+                  <div className="rounded-lg bg-[#00A676]/5 border border-[#00A676]/20 p-3">
+                    <div className="text-xs text-gray-600">Lead to close</div>
+                    <div className="text-lg font-bold text-[#0B2545]">{brokerKpis.performance?.leadToCloseRate || 0}%</div>
+                  </div>
+                </div>
+              )}
+
+              {brokerKpis?.market && (
+                <div className="mt-3 text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg p-3">
+                  Mercado {brokerKpis.market.dominantCity || 'RD'} • Mediana: {formatPrice(brokerKpis.market.medianPriceInArea, 'USD')} • Tendencia 30d: {brokerKpis.market.priceTrend30vsPrev30Pct || 0}%
+                </div>
+              )}
+
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link href="/master/listings" className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Gestionar listados</Link>
                 <Link href="/master/listings/create" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Crear listado</Link>
