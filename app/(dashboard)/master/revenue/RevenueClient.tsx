@@ -19,6 +19,27 @@ type RevenueOverview = {
   recentStripeEvents: Array<{ id: string; type: string; createdAt: string }>
 }
 
+type BillingPlan = {
+  id: string
+  name: string
+  interval: string
+  amount: number
+  currency: string
+  active: boolean
+  roleScope?: string[]
+}
+
+type SubscriptionRequest = {
+  id: string
+  name: string
+  email: string
+  role: string
+  planId: string
+  status: string
+  userId?: string | null
+  createCredentials?: boolean
+}
+
 const DEFAULT_DATA: RevenueOverview = {
   totals: {
     records: 0,
@@ -54,6 +75,32 @@ function formatRelative(value?: string) {
 export default function RevenueClient() {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<RevenueOverview>(DEFAULT_DATA)
+  const [plans, setPlans] = useState<BillingPlan[]>([])
+  const [requests, setRequests] = useState<SubscriptionRequest[]>([])
+  const [savingPlan, setSavingPlan] = useState(false)
+  const [savingRequest, setSavingRequest] = useState(false)
+
+  const [newPlan, setNewPlan] = useState({
+    name: '',
+    interval: 'monthly',
+    amount: 0,
+    currency: 'USD',
+    description: '',
+    stripePriceId: '',
+    active: true,
+  })
+
+  const [newRequest, setNewRequest] = useState({
+    name: '',
+    email: '',
+    role: 'agent',
+    planId: '',
+    notes: '',
+    createCredentials: true,
+    phone: '',
+    company: '',
+    contactPerson: '',
+  })
 
   const loadOverview = useCallback(async () => {
     try {
@@ -74,9 +121,96 @@ export default function RevenueClient() {
     }
   }, [])
 
+  const loadOperations = useCallback(async () => {
+    try {
+      const [plansRes, requestsRes] = await Promise.all([
+        fetch('/api/admin/revenue/plans'),
+        fetch('/api/admin/revenue/subscription-requests'),
+      ])
+
+      const [plansJson, requestsJson] = await Promise.all([plansRes.json(), requestsRes.json()])
+      if (plansRes.ok && plansJson?.ok && Array.isArray(plansJson.data)) setPlans(plansJson.data)
+      if (requestsRes.ok && requestsJson?.ok && Array.isArray(requestsJson.data)) setRequests(requestsJson.data)
+    } catch (error) {
+      console.error('load revenue operations error', error)
+    }
+  }, [])
+
+  async function createPlan() {
+    if (!newPlan.name.trim() || !newPlan.interval || newPlan.amount <= 0) {
+      toast.error('Plan name, interval, and amount are required')
+      return
+    }
+
+    setSavingPlan(true)
+    try {
+      const res = await fetch('/api/admin/revenue/plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newPlan,
+          roleScope: ['agent', 'broker', 'constructora'],
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json?.ok) {
+        toast.error(json.error || 'Failed to create plan')
+        return
+      }
+      toast.success('Subscription type created')
+      setNewPlan({ name: '', interval: 'monthly', amount: 0, currency: 'USD', description: '', stripePriceId: '', active: true })
+      await loadOperations()
+    } catch (error) {
+      console.error('create plan error', error)
+      toast.error('Failed to create plan')
+    } finally {
+      setSavingPlan(false)
+    }
+  }
+
+  async function createSubscriptionRequest() {
+    if (!newRequest.name.trim() || !newRequest.email.trim() || !newRequest.planId) {
+      toast.error('Name, email and plan are required')
+      return
+    }
+
+    setSavingRequest(true)
+    try {
+      const res = await fetch('/api/admin/revenue/subscription-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRequest),
+      })
+      const json = await res.json()
+      if (!res.ok || !json?.ok) {
+        toast.error(json.error || 'Failed to create request')
+        return
+      }
+      toast.success(newRequest.createCredentials ? 'Request created and credentials invitation sent' : 'Subscription request created')
+      setNewRequest({
+        name: '',
+        email: '',
+        role: 'agent',
+        planId: '',
+        notes: '',
+        createCredentials: true,
+        phone: '',
+        company: '',
+        contactPerson: '',
+      })
+      await loadOperations()
+    } catch (error) {
+      console.error('create subscription request error', error)
+      toast.error('Failed to create request')
+    } finally {
+      setSavingRequest(false)
+    }
+  }
+
   useEffect(() => {
     loadOverview()
-  }, [loadOverview])
+    loadOperations()
+  }, [loadOverview, loadOperations])
 
   const cards = [
     { label: 'Billing Records', value: data.totals.records, tone: 'text-[#0B2545]', icon: <FiDollarSign /> },
@@ -162,6 +296,87 @@ export default function RevenueClient() {
               </div>
             ))
           )}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Create Subscription Type</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input value={newPlan.name} onChange={(e) => setNewPlan((prev) => ({ ...prev, name: e.target.value }))} placeholder="Plan name" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <select value={newPlan.interval} onChange={(e) => setNewPlan((prev) => ({ ...prev, interval: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-lg text-sm" aria-label="Plan interval">
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+            <input type="number" value={newPlan.amount} onChange={(e) => setNewPlan((prev) => ({ ...prev, amount: Number(e.target.value || 0) }))} placeholder="Amount" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input value={newPlan.currency} onChange={(e) => setNewPlan((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))} placeholder="Currency" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input value={newPlan.stripePriceId} onChange={(e) => setNewPlan((prev) => ({ ...prev, stripePriceId: e.target.value }))} placeholder="Stripe Price ID (optional)" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
+            <input value={newPlan.description} onChange={(e) => setNewPlan((prev) => ({ ...prev, description: e.target.value }))} placeholder="Description" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
+          </div>
+          <button onClick={createPlan} disabled={savingPlan} className="px-4 py-2 rounded-lg bg-[#0B2545] text-white hover:bg-[#133a66] disabled:opacity-60 text-sm">
+            {savingPlan ? 'Creating...' : 'Create Plan'}
+          </button>
+
+          <div className="pt-2 border-t border-gray-100 space-y-2">
+            {plans.length === 0 ? (
+              <p className="text-xs text-gray-500">No subscription types created yet.</p>
+            ) : (
+              plans.slice(0, 6).map((plan) => (
+                <div key={plan.id} className="rounded-md border border-gray-200 px-3 py-2 text-xs text-gray-700 flex items-center justify-between gap-2">
+                  <span>{plan.name} • {plan.interval} • {plan.currency} {plan.amount}</span>
+                  <span className={`px-2 py-0.5 rounded-full ${plan.active ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'}`}>{plan.active ? 'active' : 'inactive'}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Send Subscription Request & Credentials</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input value={newRequest.name} onChange={(e) => setNewRequest((prev) => ({ ...prev, name: e.target.value }))} placeholder="Full name" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input value={newRequest.email} onChange={(e) => setNewRequest((prev) => ({ ...prev, email: e.target.value }))} placeholder="Email" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <select value={newRequest.role} onChange={(e) => setNewRequest((prev) => ({ ...prev, role: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-lg text-sm" aria-label="Role">
+              <option value="agent">Agent</option>
+              <option value="broker">Broker</option>
+              <option value="constructora">Constructora</option>
+            </select>
+            <select value={newRequest.planId} onChange={(e) => setNewRequest((prev) => ({ ...prev, planId: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-lg text-sm" aria-label="Plan">
+              <option value="">Select plan</option>
+              {plans.map((plan) => (
+                <option key={plan.id} value={plan.id}>{plan.name} ({plan.currency} {plan.amount})</option>
+              ))}
+            </select>
+            <input value={newRequest.phone} onChange={(e) => setNewRequest((prev) => ({ ...prev, phone: e.target.value }))} placeholder="Phone" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input value={newRequest.company} onChange={(e) => setNewRequest((prev) => ({ ...prev, company: e.target.value }))} placeholder="Company" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input value={newRequest.contactPerson} onChange={(e) => setNewRequest((prev) => ({ ...prev, contactPerson: e.target.value }))} placeholder="Contact person" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
+            <input value={newRequest.notes} onChange={(e) => setNewRequest((prev) => ({ ...prev, notes: e.target.value }))} placeholder="Internal notes" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={newRequest.createCredentials} onChange={(e) => setNewRequest((prev) => ({ ...prev, createCredentials: e.target.checked }))} />
+            Create credentials and send invite now
+          </label>
+          <button onClick={createSubscriptionRequest} disabled={savingRequest} className="px-4 py-2 rounded-lg bg-[#00A676] text-white hover:bg-[#008f60] disabled:opacity-60 text-sm">
+            {savingRequest ? 'Sending...' : 'Create Request'}
+          </button>
+
+          <div className="pt-2 border-t border-gray-100 space-y-2">
+            {requests.length === 0 ? (
+              <p className="text-xs text-gray-500">No subscription requests yet.</p>
+            ) : (
+              requests.slice(0, 8).map((req) => (
+                <div key={req.id} className="rounded-md border border-gray-200 px-3 py-2 text-xs text-gray-700">
+                  <div className="font-medium text-[#0B2545]">{req.name} • {req.role}</div>
+                  <div>{req.email}</div>
+                  <div className="mt-1 flex items-center justify-between">
+                    <span>Plan: {req.planId}</span>
+                    <span className={`px-2 py-0.5 rounded-full ${req.status === 'approved' ? 'bg-green-100 text-green-800' : req.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>{req.status}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </section>
     </div>

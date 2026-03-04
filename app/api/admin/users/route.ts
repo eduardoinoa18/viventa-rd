@@ -243,7 +243,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, email, phone, role, brokerage, company, contactPerson, criteria, sendInvite } = body
+    const { name, email, phone, role, brokerage, company, contactPerson, criteria, sendInvite, onboardingQuestionnaire, onboardingStatus } = body
 
     if (!name || !email || !role) {
       return NextResponse.json({ ok: false, error: 'name, email, and role required' }, { status: 400 })
@@ -278,6 +278,8 @@ export async function POST(req: NextRequest) {
       criteria: criteria || {},
       emailVerified: false,
       inviteUsed: false,
+      onboardingQuestionnaire: onboardingQuestionnaire && typeof onboardingQuestionnaire === 'object' ? onboardingQuestionnaire : {},
+      onboardingStatus: typeof onboardingStatus === 'string' && onboardingStatus.trim() ? onboardingStatus.trim() : 'discovery',
       createdAt: new Date(),
       updatedAt: new Date(),
     }
@@ -347,7 +349,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { id, status, role, name, phone, brokerage, company, email, disabled, emailVerified, verified, approved, forcePasswordReset, lifecycleReason } = body
+    const { id, status, role, name, phone, brokerage, company, email, disabled, emailVerified, verified, approved, forcePasswordReset, lifecycleReason, onboardingQuestionnaire, onboardingStatus } = body
     if (!id) return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
 
     const userRef = adminDb.collection('users').doc(id)
@@ -407,6 +409,8 @@ export async function PATCH(req: NextRequest) {
     if (typeof verified === 'boolean') updates.verified = verified
     if (typeof approved === 'boolean') updates.approved = approved
     if (typeof forcePasswordReset === 'boolean') updates.forcePasswordReset = forcePasswordReset
+    if (onboardingQuestionnaire && typeof onboardingQuestionnaire === 'object') updates.onboardingQuestionnaire = onboardingQuestionnaire
+    if (typeof onboardingStatus === 'string' && onboardingStatus.trim()) updates.onboardingStatus = onboardingStatus.trim()
 
     if (lifecycleTransition?.ok) {
       if (lifecycleTransition.nextStatus === 'suspended' || lifecycleTransition.nextStatus === 'archived') {

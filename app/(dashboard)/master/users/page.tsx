@@ -9,6 +9,7 @@ import CreateAgentModal from '@/components/admin/CreateAgentModal'
 import CreateConstructoraModal from '@/components/admin/CreateConstructoraModal'
 import CreateBuyerModal from '@/components/admin/CreateBuyerModal'
 import EditUserModal from '@/components/admin/EditUserModal'
+import OnboardingQuestionnaireModal from '@/components/admin/OnboardingQuestionnaireModal'
 
 type User = {
   id: string
@@ -29,6 +30,8 @@ type User = {
   createdAt?: any
   complianceReviewRequired?: boolean
   complianceReviewStatus?: string
+  onboardingQuestionnaire?: Record<string, any>
+  onboardingStatus?: string
 }
 
 type UsersOverview = {
@@ -65,6 +68,8 @@ export default function MasterUsersPage() {
   const [showBuyerModal, setShowBuyerModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false)
+  const [onboardingUser, setOnboardingUser] = useState<User | null>(null)
 
   // Stats
   const stats = useMemo(() => ({
@@ -627,6 +632,16 @@ export default function MasterUsersPage() {
                               Edit
                             </button>
                             <button
+                              onClick={() => {
+                                setOnboardingUser(user)
+                                setShowOnboardingModal(true)
+                              }}
+                              className="inline-flex items-center gap-2 px-3 py-2 text-cyan-700 bg-cyan-50 hover:bg-cyan-100 text-sm font-medium rounded-lg transition-colors"
+                              title="Open onboarding questionnaire"
+                            >
+                              Onboarding
+                            </button>
+                            <button
                               onClick={() => resetPassword(user)}
                               className="inline-flex items-center gap-2 px-3 py-2 text-violet-700 bg-violet-50 hover:bg-violet-100 text-sm font-medium rounded-lg transition-colors"
                               title="Generate password reset link"
@@ -702,6 +717,15 @@ export default function MasterUsersPage() {
         }}
         onSuccess={() => loadUsers()}
         user={editingUser}
+      />
+      <OnboardingQuestionnaireModal
+        isOpen={showOnboardingModal}
+        onClose={() => {
+          setShowOnboardingModal(false)
+          setOnboardingUser(null)
+        }}
+        onSaved={() => loadUsers()}
+        user={onboardingUser}
       />
     </div>
   )

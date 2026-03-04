@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 
 type PerfRow = {
   key: string
@@ -129,6 +130,11 @@ export default function OverviewClient() {
       </div>
 
       <section>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <Link href="/master/growth" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Growth Engine</Link>
+          <Link href="/master/data-quality" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Data Quality</Link>
+          <Link href="/master/marketplace-intelligence" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Marketplace Intelligence</Link>
+        </div>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Operational Health</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <MetricCard
