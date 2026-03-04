@@ -71,6 +71,22 @@ type BrokerTransactionsSummary = {
   projectedValue?: number
 }
 
+type BrokerTeamMember = {
+  id: string
+  name: string
+  role: string
+  status: string
+}
+
+type BrokerLeadItem = {
+  id: string
+  buyerName?: string
+  buyerEmail?: string
+  leadStage?: string
+  ownerAgentId?: string | null
+  createdAt?: string | null
+}
+
 function formatPrice(value?: number, currency: 'USD' | 'DOP' = 'USD') {
   if (!value || Number.isNaN(Number(value))) return 'Precio no disponible'
   return new Intl.NumberFormat('es-DO', {
@@ -94,6 +110,14 @@ export default function BuyerDashboardPage() {
   const [brokerKpis, setBrokerKpis] = useState<BrokerDashboardKpi | null>(null)
   const [brokerTeamSummary, setBrokerTeamSummary] = useState<BrokerTeamSummary | null>(null)
   const [brokerTransactionsSummary, setBrokerTransactionsSummary] = useState<BrokerTransactionsSummary | null>(null)
+  const [brokerTeamMembers, setBrokerTeamMembers] = useState<BrokerTeamMember[]>([])
+  const [brokerLeads, setBrokerLeads] = useState<BrokerLeadItem[]>([])
+  const [selectedLeadId, setSelectedLeadId] = useState('')
+  const [selectedAssignAgentId, setSelectedAssignAgentId] = useState('')
+  const [selectedLeadStage, setSelectedLeadStage] = useState('contacted')
+  const [leadActionReason, setLeadActionReason] = useState('')
+  const [leadActionStatus, setLeadActionStatus] = useState('')
+  const [leadActionLoading, setLeadActionLoading] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -158,22 +182,24 @@ export default function BuyerDashboardPage() {
         setProListingsLoading(true)
         setProListingsError('')
 
-        const [myRes, officeRes, marketRes, kpiRes, teamRes, transactionsRes] = await Promise.all([
+        const [myRes, officeRes, marketRes, kpiRes, teamRes, transactionsRes, leadsRes] = await Promise.all([
           fetch('/api/broker/listings/my?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/office?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/market?status=active', { cache: 'no-store' }),
           fetch('/api/broker/dashboard/overview', { cache: 'no-store' }),
           fetch('/api/broker/team', { cache: 'no-store' }),
           fetch('/api/broker/transactions', { cache: 'no-store' }),
+          fetch('/api/broker/leads?limit=20', { cache: 'no-store' }),
         ])
 
-        const [myJson, officeJson, marketJson, kpiJson, teamJson, transactionsJson] = await Promise.all([
+        const [myJson, officeJson, marketJson, kpiJson, teamJson, transactionsJson, leadsJson] = await Promise.all([
           myRes.json().catch(() => ({})),
           officeRes.json().catch(() => ({})),
           marketRes.json().catch(() => ({})),
           kpiRes.json().catch(() => ({})),
           teamRes.json().catch(() => ({})),
           transactionsRes.json().catch(() => ({})),
+          leadsRes.json().catch(() => ({})),
         ])
 
         if (!active) return
@@ -204,14 +230,26 @@ export default function BuyerDashboardPage() {
 
         if (teamRes.ok) {
           setBrokerTeamSummary(teamJson?.summary || null)
+          setBrokerTeamMembers(Array.isArray(teamJson?.members) ? teamJson.members : [])
         } else {
           setBrokerTeamSummary(null)
+          setBrokerTeamMembers([])
         }
 
         if (transactionsRes.ok) {
           setBrokerTransactionsSummary(transactionsJson?.summary || null)
         } else {
           setBrokerTransactionsSummary(null)
+        }
+
+        if (leadsRes.ok) {
+          const nextLeads = Array.isArray(leadsJson?.leads) ? leadsJson.leads : []
+          setBrokerLeads(nextLeads)
+          if (!selectedLeadId && nextLeads[0]?.id) {
+            setSelectedLeadId(nextLeads[0].id)
+          }
+        } else {
+          setBrokerLeads([])
         }
       } catch (error: any) {
         if (!active) return
@@ -222,6 +260,8 @@ export default function BuyerDashboardPage() {
         setBrokerKpis(null)
         setBrokerTeamSummary(null)
         setBrokerTransactionsSummary(null)
+        setBrokerTeamMembers([])
+        setBrokerLeads([])
       } finally {
         if (active) setProListingsLoading(false)
       }
@@ -231,7 +271,93 @@ export default function BuyerDashboardPage() {
     return () => {
       active = false
     }
-  }, [session])
+  }, [session, selectedLeadId])
+
+  async function refreshLeadOps() {
+    const [leadsRes, txRes] = await Promise.all([
+      fetch('/api/broker/leads?limit=20', { cache: 'no-store' }),
+      fetch('/api/broker/transactions', { cache: 'no-store' }),
+    ])
+
+    const leadsJson = await leadsRes.json().catch(() => ({}))
+    const txJson = await txRes.json().catch(() => ({}))
+
+    if (leadsRes.ok) {
+      const nextLeads = Array.isArray(leadsJson?.leads) ? leadsJson.leads : []
+      setBrokerLeads(nextLeads)
+      if (!selectedLeadId && nextLeads[0]?.id) {
+        setSelectedLeadId(nextLeads[0].id)
+      }
+    }
+
+    if (txRes.ok) {
+      setBrokerTransactionsSummary(txJson?.summary || null)
+    }
+  }
+
+  async function handleAssignLead() {
+    if (!selectedLeadId || !selectedAssignAgentId) {
+      setLeadActionStatus('Selecciona lead y agente para asignar.')
+      return
+    }
+
+    try {
+      setLeadActionLoading(true)
+      setLeadActionStatus('')
+      const res = await fetch('/api/broker/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'assign',
+          leadId: selectedLeadId,
+          ownerAgentId: selectedAssignAgentId,
+          reason: leadActionReason || 'manual_assignment',
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || 'No se pudo asignar el lead')
+      }
+      setLeadActionStatus('Lead asignado correctamente.')
+      await refreshLeadOps()
+    } catch (error: any) {
+      setLeadActionStatus(error?.message || 'No se pudo asignar el lead')
+    } finally {
+      setLeadActionLoading(false)
+    }
+  }
+
+  async function handleMoveLeadStage() {
+    if (!selectedLeadId || !selectedLeadStage) {
+      setLeadActionStatus('Selecciona lead y etapa para actualizar.')
+      return
+    }
+
+    try {
+      setLeadActionLoading(true)
+      setLeadActionStatus('')
+      const res = await fetch('/api/broker/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'stage',
+          leadId: selectedLeadId,
+          leadStage: selectedLeadStage,
+          reason: leadActionReason || 'manual_stage_update',
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || 'No se pudo mover la etapa')
+      }
+      setLeadActionStatus('Etapa del lead actualizada.')
+      await refreshLeadOps()
+    } catch (error: any) {
+      setLeadActionStatus(error?.message || 'No se pudo mover la etapa')
+    } finally {
+      setLeadActionLoading(false)
+    }
+  }
 
   const displayName = session?.name || 'Comprador'
   const isBuyerRole = session?.role === 'buyer' || session?.role === 'user'
@@ -389,6 +515,106 @@ export default function BuyerDashboardPage() {
                   </div>
                 </div>
               )}
+
+              <div className="mt-4 rounded-lg border border-gray-100 bg-white p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-[#0B2545]">Quick Actions (Phase 4.1)</h3>
+                  <span className="text-[11px] text-gray-500">Leads + Transactions</span>
+                </div>
+
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Lead</label>
+                    <select
+                      aria-label="Seleccionar lead"
+                      value={selectedLeadId}
+                      onChange={(e) => setSelectedLeadId(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    >
+                      <option value="">Seleccionar lead</option>
+                      {brokerLeads.map((lead) => (
+                        <option key={lead.id} value={lead.id}>
+                          {lead.buyerName || 'Lead'} • {lead.leadStage || 'new'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Razón (opcional)</label>
+                    <input
+                      value={leadActionReason}
+                      onChange={(e) => setLeadActionReason(e.target.value)}
+                      placeholder="Ej: balanceo de carga"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
+
+                  {session.role === 'broker' && (
+                    <>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Asignar a agente</label>
+                        <select
+                          aria-label="Seleccionar agente para asignación"
+                          value={selectedAssignAgentId}
+                          onChange={(e) => setSelectedAssignAgentId(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                        >
+                          <option value="">Seleccionar agente</option>
+                          {brokerTeamMembers
+                            .filter((member) => member.status === 'active')
+                            .map((member) => (
+                              <option key={member.id} value={member.id}>
+                                {member.name} ({member.role})
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                      <div className="flex items-end">
+                        <button
+                          type="button"
+                          onClick={handleAssignLead}
+                          disabled={leadActionLoading}
+                          className="w-full px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium disabled:opacity-50"
+                        >
+                          Asignar lead
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Mover etapa</label>
+                    <select
+                      aria-label="Seleccionar etapa del lead"
+                      value={selectedLeadStage}
+                      onChange={(e) => setSelectedLeadStage(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    >
+                      <option value="assigned">assigned</option>
+                      <option value="contacted">contacted</option>
+                      <option value="qualified">qualified</option>
+                      <option value="negotiating">negotiating</option>
+                      <option value="won">won</option>
+                      <option value="lost">lost</option>
+                    </select>
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={handleMoveLeadStage}
+                      disabled={leadActionLoading}
+                      className="w-full px-3 py-2 rounded-lg bg-[#00A676] text-white text-sm font-medium disabled:opacity-50"
+                    >
+                      Actualizar etapa
+                    </button>
+                  </div>
+                </div>
+
+                {leadActionStatus && (
+                  <p className="mt-2 text-xs text-gray-600">{leadActionStatus}</p>
+                )}
+              </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link href="/master/listings" className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Gestionar listados</Link>
