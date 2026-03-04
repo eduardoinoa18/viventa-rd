@@ -20,12 +20,35 @@ type SessionData = {
   name?: string
 }
 
+type ListingItem = {
+  id: string
+  title?: string
+  price?: number
+  currency?: 'USD' | 'DOP'
+  city?: string
+  status?: string
+}
+
+function formatPrice(value?: number, currency: 'USD' | 'DOP' = 'USD') {
+  if (!value || Number.isNaN(Number(value))) return 'Precio no disponible'
+  return new Intl.NumberFormat('es-DO', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(Number(value))
+}
+
 export default function BuyerDashboardPage() {
   const [session, setSession] = useState<SessionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [savedPropertyIds, setSavedPropertyIds] = useState<string[]>([])
   const [savedSearches, setSavedSearches] = useState<SavedSearchCriteria[]>([])
   const [savedProperties, setSavedProperties] = useState<any[]>([])
+  const [myListings, setMyListings] = useState<ListingItem[]>([])
+  const [officeListings, setOfficeListings] = useState<ListingItem[]>([])
+  const [marketListings, setMarketListings] = useState<ListingItem[]>([])
+  const [proListingsLoading, setProListingsLoading] = useState(false)
+  const [proListingsError, setProListingsError] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -81,8 +104,66 @@ export default function BuyerDashboardPage() {
     }
   }, [savedPropertyIds])
 
+  useEffect(() => {
+    if (!session || (session.role !== 'agent' && session.role !== 'broker')) return
+
+    let active = true
+    const loadProfessionalListings = async () => {
+      try {
+        setProListingsLoading(true)
+        setProListingsError('')
+
+        const [myRes, officeRes, marketRes] = await Promise.all([
+          fetch('/api/broker/listings/my?status=active', { cache: 'no-store' }),
+          fetch('/api/broker/listings/office?status=active', { cache: 'no-store' }),
+          fetch('/api/broker/listings/market?status=active', { cache: 'no-store' }),
+        ])
+
+        const [myJson, officeJson, marketJson] = await Promise.all([
+          myRes.json().catch(() => ({})),
+          officeRes.json().catch(() => ({})),
+          marketRes.json().catch(() => ({})),
+        ])
+
+        if (!active) return
+
+        if (!myRes.ok) {
+          throw new Error(myJson?.error || 'No se pudo cargar tus listados')
+        }
+
+        setMyListings(Array.isArray(myJson?.listings) ? myJson.listings : [])
+
+        if (officeRes.ok) {
+          setOfficeListings(Array.isArray(officeJson?.listings) ? officeJson.listings : [])
+        } else {
+          setOfficeListings([])
+        }
+
+        if (marketRes.ok) {
+          setMarketListings(Array.isArray(marketJson?.listings) ? marketJson.listings : [])
+        } else {
+          setMarketListings([])
+        }
+      } catch (error: any) {
+        if (!active) return
+        setProListingsError(error?.message || 'No se pudo cargar el panel profesional')
+        setMyListings([])
+        setOfficeListings([])
+        setMarketListings([])
+      } finally {
+        if (active) setProListingsLoading(false)
+      }
+    }
+
+    loadProfessionalListings()
+    return () => {
+      active = false
+    }
+  }, [session])
+
   const displayName = session?.name || 'Comprador'
   const isBuyerRole = session?.role === 'buyer' || session?.role === 'user'
+  const isProfessionalRole = session?.role === 'agent' || session?.role === 'broker'
 
   if (loading) {
     return (
@@ -108,6 +189,112 @@ export default function BuyerDashboardPage() {
             <Link href="/login?redirect=/dashboard" className="mt-4 inline-flex px-4 py-2 rounded-lg bg-[#00A676] text-white font-medium">
               Ir a iniciar sesión
             </Link>
+          </div>
+        </main>
+        <Footer />
+        <BottomNav />
+      </>
+    )
+  }
+
+  if (isProfessionalRole) {
+    const roleLabel = session.role === 'broker' ? 'Broker' : 'Agente'
+
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen bg-gray-50 pb-20 md:pb-8">
+          <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-5">
+            <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+              <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Panel profesional</h1>
+              <p className="text-sm text-gray-600 mt-1">Hola, {displayName}. Vista principal para {roleLabel.toLowerCase()} con tus listados, oficina y mercado.</p>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                  <div className="text-xs text-gray-500">Mis listados activos</div>
+                  <div className="text-lg font-bold text-[#0B2545]">{myListings.length}</div>
+                </div>
+                <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                  <div className="text-xs text-gray-500">Listados de oficina</div>
+                  <div className="text-lg font-bold text-[#0B2545]">{officeListings.length}</div>
+                </div>
+                <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                  <div className="text-xs text-gray-500">Oportunidades de mercado</div>
+                  <div className="text-lg font-bold text-[#0B2545]">{marketListings.length}</div>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link href="/master/listings" className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Gestionar listados</Link>
+                <Link href="/master/listings/create" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Crear listado</Link>
+              </div>
+            </section>
+
+            {proListingsLoading && (
+              <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-sm text-gray-600">
+                Cargando listados profesionales...
+              </section>
+            )}
+
+            {proListingsError && (
+              <section className="bg-white rounded-xl border border-red-100 shadow-sm p-4 text-sm text-red-700">
+                {proListingsError}
+              </section>
+            )}
+
+            <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h2 className="text-lg font-semibold text-[#0B2545]">Mis listados</h2>
+                <Link href="/master/listings" className="text-sm text-[#00A676] font-medium">Ver todos</Link>
+              </div>
+              {myListings.length === 0 ? (
+                <p className="text-sm text-gray-500">Aún no tienes listados activos.</p>
+              ) : (
+                <div className="space-y-2">
+                  {myListings.slice(0, 6).map((listing) => (
+                    <Link key={listing.id} href={`/listing/${listing.id}`} className="block rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors">
+                      <div className="text-sm font-semibold text-[#0B2545]">{listing.title || 'Listado sin título'}</div>
+                      <div className="text-xs text-gray-600 mt-1">{formatPrice(listing.price, listing.currency || 'USD')} • {listing.city || 'RD'} • {listing.status || 'active'}</div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h2 className="text-lg font-semibold text-[#0B2545]">Oficina</h2>
+              </div>
+              {officeListings.length === 0 ? (
+                <p className="text-sm text-gray-500">No hay listados de oficina disponibles o tu perfil aún no está asociado a una oficina.</p>
+              ) : (
+                <div className="space-y-2">
+                  {officeListings.slice(0, 6).map((listing) => (
+                    <Link key={listing.id} href={`/listing/${listing.id}`} className="block rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors">
+                      <div className="text-sm font-semibold text-[#0B2545]">{listing.title || 'Listado sin título'}</div>
+                      <div className="text-xs text-gray-600 mt-1">{formatPrice(listing.price, listing.currency || 'USD')} • {listing.city || 'RD'}</div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h2 className="text-lg font-semibold text-[#0B2545]">Mercado</h2>
+                <Link href="/search" className="text-sm text-[#00A676] font-medium">Explorar</Link>
+              </div>
+              {marketListings.length === 0 ? (
+                <p className="text-sm text-gray-500">No hay oportunidades de mercado para mostrar ahora mismo.</p>
+              ) : (
+                <div className="space-y-2">
+                  {marketListings.slice(0, 6).map((listing) => (
+                    <Link key={listing.id} href={`/listing/${listing.id}`} className="block rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors">
+                      <div className="text-sm font-semibold text-[#0B2545]">{listing.title || 'Listado sin título'}</div>
+                      <div className="text-xs text-gray-600 mt-1">{formatPrice(listing.price, listing.currency || 'USD')} • {listing.city || 'RD'}</div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
         </main>
         <Footer />

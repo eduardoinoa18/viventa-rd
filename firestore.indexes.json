@@ -21,6 +21,30 @@
         { "fieldPath": "conversationId", "mode": "ASCENDING" },
         { "fieldPath": "createdAt", "mode": "ASCENDING" }
       ]
+    },
+    {
+      "collectionId": "properties",
+      "fields": [
+        { "fieldPath": "brokerId", "mode": "ASCENDING" },
+        { "fieldPath": "status", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "properties",
+      "fields": [
+        { "fieldPath": "createdByUserId", "mode": "ASCENDING" },
+        { "fieldPath": "status", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "properties",
+      "fields": [
+        { "fieldPath": "createdByBrokerId", "mode": "ASCENDING" },
+        { "fieldPath": "status", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

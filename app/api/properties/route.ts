@@ -6,6 +6,10 @@ import { getSessionFromRequest } from '@/lib/auth/session'
 import { FieldValue } from 'firebase-admin/firestore'
 import type { Query } from 'firebase-admin/firestore'
 import { logger } from '@/lib/logger'
+import {
+  canMutateListing,
+  getListingAccessUserContext,
+} from '@/lib/listingOwnership'
 
 type PropertyStatus = 'active' | 'pending' | 'inactive' | 'sold'
 type ListingType = 'sale' | 'rent'
@@ -34,6 +38,11 @@ interface PropertyPayload {
   agentName?: string
   agentEmail?: string
   ownerRole?: 'agent' | 'broker' | 'constructora'
+  brokerId?: string
+  createdByUserId?: string
+  createdByBrokerId?: string
+  brokerageId?: string
+  brokerage_id?: string
   professionalCode?: string
   agentCode?: string
   brokerCode?: string
@@ -191,6 +200,9 @@ export async function POST(req: Request) {
       if (!(isAdmin || isPro)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
+      if (!uid) {
+        return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      }
       // Ensure agentId defaults to caller uid for pros
       const createData: PropertyPayload = { ...data }
       if (isPro && uid) {
@@ -201,31 +213,32 @@ export async function POST(req: Request) {
         delete createData.agentEmail
       }
       if (uid) {
-        const userSnap = await db.collection('users').doc(uid).get()
-        if (userSnap.exists) {
-          const userData = userSnap.data() as {
-            name?: string
-            displayName?: string
-            email?: string
-            role?: string
-            professionalCode?: string
-            agentCode?: string
-            brokerCode?: string
-            constructoraCode?: string
-          }
-          const code = userData?.professionalCode || userData?.agentCode || userData?.brokerCode || userData?.constructoraCode || ''
+        const userContext = await getListingAccessUserContext(db, uid, (role as any) || 'buyer')
+        const code = userContext.professionalCode
 
-          if (isPro && !code) {
-            return NextResponse.json({ error: 'Professional code required. This account must be approved before publishing listings.' }, { status: 403 })
-          }
+        if (isPro && !code) {
+          return NextResponse.json({ error: 'Professional code required. This account must be approved before publishing listings.' }, { status: 403 })
+        }
 
-          createData.agentName = userData?.name || userData?.displayName || userData?.email || createData.agentName
-          createData.agentEmail = userData?.email || createData.agentEmail
-          createData.ownerRole = (userData?.role as any) || (role as any)
-          createData.professionalCode = code || undefined
-          if (userData?.agentCode) createData.agentCode = userData.agentCode
-          if (userData?.brokerCode) createData.brokerCode = userData.brokerCode
-          if (userData?.constructoraCode) createData.constructoraCode = userData.constructoraCode
+        createData.agentName = userContext.name || userContext.email || createData.agentName
+        createData.agentEmail = userContext.email || createData.agentEmail
+        createData.ownerRole = (userContext.role as any) || (role as any)
+        createData.professionalCode = code || undefined
+        if (userContext.agentCode) createData.agentCode = userContext.agentCode
+        if (userContext.brokerCode) createData.brokerCode = userContext.brokerCode
+        if (userContext.constructoraCode) createData.constructoraCode = userContext.constructoraCode
+
+        if (!isAdmin) {
+          createData.createdByUserId = uid
+          if (userContext.role === 'broker' || userContext.role === 'agent') {
+            if (!userContext.officeId) {
+              return NextResponse.json({ error: 'Broker office assignment is required before publishing listings.' }, { status: 403 })
+            }
+            createData.brokerId = userContext.officeId
+            createData.createdByBrokerId = userContext.officeId
+            createData.brokerageId = userContext.officeId
+            createData.brokerage_id = userContext.officeId
+          }
         }
       }
       // default to active if not provided
@@ -295,11 +308,14 @@ export async function POST(req: Request) {
       }
       const { id, ...rest } = data
       if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
-      if (isPro && uid) {
-        // Pro users can only update their own listings
+      if (!isAdmin && isPro) {
+        if (!uid) {
+          return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+        }
+        const userContext = await getListingAccessUserContext(db, uid, (role as any) || 'buyer')
         const snap = await db.collection('properties').doc(id).get()
-        const ownerId = snap.exists ? (snap.data()?.agentId as string | undefined) : undefined
-        if (ownerId && ownerId !== uid) {
+        const listing = snap.exists ? (snap.data() as Record<string, unknown>) : null
+        if (!listing || !canMutateListing({ isAdmin, userContext, listing })) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
       }
@@ -308,6 +324,16 @@ export async function POST(req: Request) {
         delete updateData.agentId
         delete updateData.agentName
         delete updateData.agentEmail
+        delete updateData.ownerRole
+        delete updateData.professionalCode
+        delete updateData.agentCode
+        delete updateData.brokerCode
+        delete updateData.constructoraCode
+        delete updateData.createdByUserId
+        delete updateData.createdByBrokerId
+        delete updateData.brokerId
+        delete updateData.brokerageId
+        delete updateData.brokerage_id
       }
       if (typeof updateData.price === 'string') updateData.price = Number(updateData.price)
       if (typeof updateData.bedrooms === 'string') updateData.bedrooms = Number(updateData.bedrooms)
@@ -354,11 +380,14 @@ export async function POST(req: Request) {
       }
       const { id } = data
       if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
-      if (!isAdmin && isPro && uid) {
-        // Only admins can delete others' listings; pros can only delete their own
+      if (!isAdmin && isPro) {
+        if (!uid) {
+          return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+        }
+        const userContext = await getListingAccessUserContext(db, uid, (role as any) || 'buyer')
         const snap = await db.collection('properties').doc(id).get()
-        const ownerId = snap.exists ? (snap.data()?.agentId as string | undefined) : undefined
-        if (ownerId && ownerId !== uid) {
+        const listing = snap.exists ? (snap.data() as Record<string, unknown>) : null
+        if (!listing || !canMutateListing({ isAdmin, userContext, listing })) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
       }
