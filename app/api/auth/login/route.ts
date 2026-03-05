@@ -288,11 +288,13 @@ export async function POST(req: NextRequest) {
     }
 
     const redirectMap: Record<string, string> = {
+      master_admin: '/master',
+      admin: '/master',
       buyer: '/dashboard',
       user: '/dashboard',
-      agent: '/master/listings',
-      broker: '/master/listings',
-      constructora: '/master/listings',
+      agent: '/master',
+      broker: '/master',
+      constructora: '/master',
     }
 
     const response = NextResponse.json({

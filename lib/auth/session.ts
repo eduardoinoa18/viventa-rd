@@ -7,12 +7,36 @@
 import { cookies } from 'next/headers'
 import { getAdminAuth } from '../firebaseAdmin'
 
+export interface ImpersonationSessionMetadata {
+  active: boolean
+  adminId: string
+  adminEmail: string
+  startedAt: number
+}
+
 export interface UserSession {
   uid: string
   email: string | null
-  role: 'master_admin' | 'buyer' | 'agent' | 'broker' | 'constructora'
+  role: 'master_admin' | 'admin' | 'buyer' | 'user' | 'agent' | 'broker' | 'constructora'
   twoFactorVerified: boolean
+  impersonation: ImpersonationSessionMetadata | null
   customClaims: Record<string, any>
+}
+
+function extractImpersonation(decodedClaims: Record<string, any>): ImpersonationSessionMetadata | null {
+  const raw = decodedClaims?.impersonation
+  if (!raw || typeof raw !== 'object') return null
+
+  const active = raw.active === true
+  const adminId = String(raw.adminId || '').trim()
+  const adminEmail = String(raw.adminEmail || '').trim().toLowerCase()
+  const startedAt = Number(raw.startedAt || 0)
+
+  if (!active || !adminId || !adminEmail || !Number.isFinite(startedAt) || startedAt <= 0) {
+    return null
+  }
+
+  return { active, adminId, adminEmail, startedAt }
 }
 
 /**
@@ -42,6 +66,7 @@ export async function getServerSession(): Promise<UserSession | null> {
       email: decodedClaims.email || null,
       role: (decodedClaims.role as any) || 'buyer',
       twoFactorVerified: decodedClaims.twoFactorVerified === true,
+      impersonation: extractImpersonation(decodedClaims as Record<string, any>),
       customClaims: decodedClaims,
     }
   } catch (error) {
@@ -82,6 +107,7 @@ export async function getSessionFromRequest(req: Request): Promise<UserSession |
       email: decodedClaims.email || null,
       role: (decodedClaims.role as any) || 'buyer',
       twoFactorVerified: decodedClaims.twoFactorVerified === true,
+      impersonation: extractImpersonation(decodedClaims as Record<string, any>),
       customClaims: decodedClaims,
     }
   } catch {

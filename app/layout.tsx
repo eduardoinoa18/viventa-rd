@@ -9,6 +9,7 @@ import OfflineIndicator from '../components/OfflineIndicator'
 import Script from 'next/script'
 import PresenceManager from '../components/PresenceManager'
 import ConsoleErrorFilter from '../components/ConsoleErrorFilter'
+import ImpersonationBanner from '../components/ImpersonationBanner'
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com'),
@@ -104,6 +105,7 @@ export default function RootLayout({children}:{children:React.ReactNode}) {
   <PwaInstallPrompt />
   <OfflineIndicator />
   <PresenceManager />
+  <ImpersonationBanner />
         <ErrorBoundary>
           {children}
         </ErrorBoundary>

@@ -68,6 +68,19 @@ interface AutomationRun {
   timestamp: string | null
 }
 
+interface AutomationSafeguard {
+  cooldownSeconds: number
+  maxPerRun: number
+  remainingSeconds: number
+  lastRunAt: string | null
+  nextAllowedAt: string | null
+}
+
+interface AutomationSafeguards {
+  autoAssign: AutomationSafeguard
+  escalation: AutomationSafeguard
+}
+
 interface AgentOption {
   id: string
   name: string
@@ -179,6 +192,14 @@ function formatRunDuration(durationMs: number) {
   return `${(durationMs / 1000).toFixed(1)}s`
 }
 
+function formatCooldown(seconds: number | null | undefined) {
+  const value = Number(seconds || 0)
+  if (!value || value <= 0) return 'ready'
+  const mins = Math.floor(value / 60)
+  const secs = value % 60
+  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
+}
+
 function getRunStatusChip(status: string) {
   if (status === 'ok' || status === 'success') {
     return 'border-green-200 bg-green-50 text-green-700'
@@ -201,6 +222,7 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<LeadRecord[]>([])
   const [stats, setStats] = useState<LeadStats>(DEFAULT_STATS)
   const [automationRuns, setAutomationRuns] = useState<AutomationRun[]>([])
+  const [automationSafeguards, setAutomationSafeguards] = useState<AutomationSafeguards | null>(null)
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'table' | 'pipeline'>('table')
   const [selectedStages, setSelectedStages] = useState<LeadStage[]>([])
@@ -347,13 +369,46 @@ export default function LeadsPage() {
             )
           }
 
+          const fallbackStats = buildLocalStats(nextLeads)
+
+          try {
+            const automationRes = await fetch('/api/broker/leads/automation', { cache: 'no-store' })
+            const automationJson = await automationRes.json().catch(() => ({}))
+
+            if (automationRes.ok && automationJson?.ok && automationJson?.data) {
+              const metrics = automationJson.data
+              setStats({
+                ...fallbackStats,
+                total: Number(metrics.totalLeads || fallbackStats.total),
+                overdue: Number(metrics.overdue || fallbackStats.overdue),
+                metrics: {
+                  ...fallbackStats.metrics,
+                  totalLeads: Number(metrics.totalLeads || fallbackStats.metrics.totalLeads),
+                  autoAssignable: Number(metrics.autoAssignable || fallbackStats.metrics.autoAssignable),
+                  slaBreached: Number(metrics.overdue || fallbackStats.metrics.slaBreached),
+                  escalationsOpen: Number(metrics.escalationsOpen || 0),
+                  topBrokers: Array.isArray(metrics.topBrokers) ? metrics.topBrokers : [],
+                },
+              })
+              setAutomationRuns(Array.isArray(metrics.automationRuns) ? metrics.automationRuns : [])
+              setAutomationSafeguards((metrics.safeguards as AutomationSafeguards) || null)
+            } else {
+              setStats(fallbackStats)
+              setAutomationRuns([])
+              setAutomationSafeguards(null)
+            }
+          } catch {
+            setStats(fallbackStats)
+            setAutomationRuns([])
+            setAutomationSafeguards(null)
+          }
+
           setLeads(nextLeads)
-          setStats(buildLocalStats(nextLeads))
-          setAutomationRuns([])
         } else {
           setLeads(data.data.leads || [])
           setStats(data.data.stats || DEFAULT_STATS)
           setAutomationRuns(data.data.automationRuns || [])
+          setAutomationSafeguards(null)
         }
       } else {
         toast.error(data.error || 'Unable to load leads')
@@ -499,35 +554,60 @@ export default function LeadsPage() {
   }
 
   const handleRunAutoAssign = async () => {
-    if (isBrokerScoped) {
-      toast('Auto-assign is available for master admin only')
-      return
-    }
-    const candidates = leads
-      .filter((lead) => !lead.ownerAgentId && lead.leadStage === 'new')
-      .slice(0, 25)
-
-    if (candidates.length === 0) {
-      toast('No unassigned new leads available for auto-assign')
-      return
-    }
-
     try {
       setRunningAutoAssign(true)
-      const results = await Promise.all(
-        candidates.map(async (lead) => {
-          const response = await fetch('/api/admin/leads/auto-assign', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ leadId: lead.id }),
-          })
-          const data = await response.json().catch(() => ({ ok: false }))
-          return Boolean(response.ok && data.ok)
-        })
-      )
+      if (isBrokerScoped) {
+        const remaining = Number(automationSafeguards?.autoAssign?.remainingSeconds || 0)
+        if (remaining > 0) {
+          toast(`Auto-assign cooldown active: ${formatCooldown(remaining)}`)
+          return
+        }
 
-      const successCount = results.filter(Boolean).length
-      toast.success(`Auto-assigned ${successCount} of ${candidates.length} leads`)
+        const res = await fetch('/api/broker/leads/automation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'auto_assign', limit: Number(automationSafeguards?.autoAssign?.maxPerRun || 30) }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || !data?.ok) {
+          if (Number(data?.retryAfterSeconds || 0) > 0) {
+            toast(`Auto-assign cooldown active: ${formatCooldown(Number(data.retryAfterSeconds))}`)
+          } else {
+            toast.error(data?.error || 'Unable to run office auto-assign')
+          }
+          fetchLeads()
+          return
+        }
+
+        const assigned = Number(data?.data?.assigned || 0)
+        const scanned = Number(data?.data?.scanned || 0)
+        toast.success(assigned > 0 ? `Office auto-assigned ${assigned} of ${scanned} leads` : 'No eligible leads for office auto-assign')
+      } else {
+        const candidates = leads
+          .filter((lead) => !lead.ownerAgentId && lead.leadStage === 'new')
+          .slice(0, 25)
+
+        if (candidates.length === 0) {
+          toast('No unassigned new leads available for auto-assign')
+          return
+        }
+
+        const results = await Promise.all(
+          candidates.map(async (lead) => {
+            const response = await fetch('/api/admin/leads/auto-assign', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ leadId: lead.id }),
+            })
+            const data = await response.json().catch(() => ({ ok: false }))
+            return Boolean(response.ok && data.ok)
+          })
+        )
+
+        const successCount = results.filter(Boolean).length
+        toast.success(`Auto-assigned ${successCount} of ${candidates.length} leads`)
+      }
+
       fetchLeads()
     } catch (err) {
       console.error('Error running auto-assign:', err)
@@ -538,26 +618,50 @@ export default function LeadsPage() {
   }
 
   const handleRunEscalation = async () => {
-    if (isBrokerScoped) {
-      toast('SLA escalation run is available for master admin only')
-      return
-    }
     try {
       setRunningEscalation(true)
-      const res = await fetch('/api/admin/leads/escalate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limit: 250 }),
-      })
+      if (isBrokerScoped) {
+        const remaining = Number(automationSafeguards?.escalation?.remainingSeconds || 0)
+        if (remaining > 0) {
+          toast(`Escalation cooldown active: ${formatCooldown(remaining)}`)
+          return
+        }
 
-      const data = await res.json()
-      if (!res.ok || !data.ok) {
-        toast.error(data.error || 'Unable to run SLA escalation')
-        return
+        const res = await fetch('/api/broker/leads/automation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'escalate', limit: Number(automationSafeguards?.escalation?.maxPerRun || 150) }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || !data?.ok) {
+          if (Number(data?.retryAfterSeconds || 0) > 0) {
+            toast(`Escalation cooldown active: ${formatCooldown(Number(data.retryAfterSeconds))}`)
+          } else {
+            toast.error(data?.error || 'Unable to run office SLA escalation')
+          }
+          fetchLeads()
+          return
+        }
+
+        const escalated = Number(data?.data?.escalated || 0)
+        toast.success(escalated > 0 ? `Office escalation opened on ${escalated} leads` : 'No breached leads required office escalation')
+      } else {
+        const res = await fetch('/api/admin/leads/escalate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit: 250 }),
+        })
+
+        const data = await res.json()
+        if (!res.ok || !data.ok) {
+          toast.error(data.error || 'Unable to run SLA escalation')
+          return
+        }
+
+        const escalated = Number(data?.data?.escalated || 0)
+        toast.success(escalated > 0 ? `Escalated ${escalated} breached leads` : 'No leads required escalation')
       }
 
-      const escalated = Number(data?.data?.escalated || 0)
-      toast.success(escalated > 0 ? `Escalated ${escalated} breached leads` : 'No leads required escalation')
       fetchLeads()
     } catch (err) {
       console.error('Error running SLA escalation:', err)
@@ -718,6 +822,11 @@ export default function LeadsPage() {
     { label: 'Avg Response Time', value: formatAvgResponse(stats.metrics.avgResponseTimeMinutes), tone: 'text-[#0B2545]', hint: 'Assigned latency windowed 30d' },
   ]
 
+  const brokerAutoAssignCooldown = Number(automationSafeguards?.autoAssign?.remainingSeconds || 0)
+  const brokerEscalationCooldown = Number(automationSafeguards?.escalation?.remainingSeconds || 0)
+  const autoAssignDisabled = runningAutoAssign || (isBrokerScoped && brokerAutoAssignCooldown > 0)
+  const escalationDisabled = runningEscalation || (isBrokerScoped && brokerEscalationCooldown > 0)
+
   const handleViewLead = (lead: LeadRecord) => {
     if (lead.source === 'property' && lead.sourceId) {
       router.push(`/listing/${lead.sourceId}`)
@@ -820,8 +929,8 @@ export default function LeadsPage() {
 
       {isBrokerScoped && (
         <div className="rounded-lg border border-[#0B2545]/20 bg-[#0B2545]/5 px-4 py-3">
-          <div className="text-sm font-semibold text-[#0B2545]">Broker Admin Management · Phase 4.2</div>
-          <div className="text-xs text-gray-600 mt-1">Cola de leads por oficina con SLA badge y timeline operativo por lead.</div>
+          <div className="text-sm font-semibold text-[#0B2545]">Broker Admin Management · Phase 5</div>
+          <div className="text-xs text-gray-600 mt-1">Automatización por oficina activada con analítica local, SLA badges y timeline operativo.</div>
         </div>
       )}
 
@@ -854,26 +963,31 @@ export default function LeadsPage() {
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               onClick={handleRunAutoAssign}
-              disabled={runningAutoAssign}
+              disabled={autoAssignDisabled}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#0B2545] rounded-lg hover:bg-[#12355f] disabled:opacity-50"
             >
-              <FiZap /> {runningAutoAssign ? 'Running...' : 'Run auto-assign'}
+              <FiZap /> {runningAutoAssign ? 'Running...' : isBrokerScoped && brokerAutoAssignCooldown > 0 ? `Cooldown ${formatCooldown(brokerAutoAssignCooldown)}` : 'Run auto-assign'}
             </button>
             <button
               onClick={handleRunEscalation}
-              disabled={runningEscalation}
+              disabled={escalationDisabled}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50"
             >
-              {runningEscalation ? 'Running...' : 'Run SLA escalation'}
+              {runningEscalation ? 'Running...' : isBrokerScoped && brokerEscalationCooldown > 0 ? `Cooldown ${formatCooldown(brokerEscalationCooldown)}` : 'Run SLA escalation'}
             </button>
           </div>
+
+          {isBrokerScoped && automationSafeguards && (
+            <div className="mt-3 text-[11px] text-gray-600">
+              Auto-assign: max {automationSafeguards.autoAssign.maxPerRun}/run · cooldown {Math.floor(automationSafeguards.autoAssign.cooldownSeconds / 60)}m.
+              {' '}Escalation: max {automationSafeguards.escalation.maxPerRun}/run · cooldown {Math.floor(automationSafeguards.escalation.cooldownSeconds / 60)}m.
+            </div>
+          )}
 
           <div className="mt-4 border-t border-gray-100 pt-3">
             <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Recent automation activity</div>
             <div className="mt-2 space-y-2">
-              {isBrokerScoped ? (
-                <div className="text-xs text-gray-500">Automation jobs are managed centrally by master admin. Broker operations stay enabled for assign and stage changes.</div>
-              ) : automationRuns.length === 0 ? (
+              {automationRuns.length === 0 ? (
                 <div className="text-xs text-gray-500">No scheduled jobs have run yet.</div>
               ) : (
                 automationRuns.map((run) => (
@@ -895,7 +1009,7 @@ export default function LeadsPage() {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Top performing brokers</h2>
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">{isBrokerScoped ? 'Top performing team' : 'Top performing brokers'}</h2>
           <p className="text-xs text-gray-500 mt-1">Ranked by conversion rate and deal volume</p>
 
           <div className="mt-3 space-y-2">

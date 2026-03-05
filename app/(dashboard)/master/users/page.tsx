@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiSearch, FiFilter, FiMail, FiPhone, FiKey } from 'react-icons/fi'
+import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiSearch, FiFilter, FiMail, FiPhone, FiKey, FiLogIn } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import CreateBrokerModal from '@/components/admin/CreateBrokerModal'
 import CreateAgentModal from '@/components/admin/CreateAgentModal'
@@ -53,6 +53,11 @@ type UsersOverview = {
 }
 
 export default function MasterUsersPage() {
+  const [sessionRole, setSessionRole] = useState<string>('master_admin')
+  const [sessionUid, setSessionUid] = useState<string>('')
+  const [isImpersonating, setIsImpersonating] = useState(false)
+  const [impersonationAdminEmail, setImpersonationAdminEmail] = useState('')
+  const [sessionReady, setSessionReady] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [overview, setOverview] = useState<UsersOverview | null>(null)
   const [loading, setLoading] = useState(true)
@@ -70,6 +75,10 @@ export default function MasterUsersPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showOnboardingModal, setShowOnboardingModal] = useState(false)
   const [onboardingUser, setOnboardingUser] = useState<User | null>(null)
+  const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null)
+
+  const isBrokerView = sessionRole === 'broker'
+  const canViewPeople = sessionRole === 'master_admin' || sessionRole === 'admin' || sessionRole === 'broker'
 
   // Stats
   const stats = useMemo(() => ({
@@ -120,7 +129,30 @@ export default function MasterUsersPage() {
   }, [users, roleFilter, statusFilter, searchQuery])
 
   useEffect(() => {
-    loadUsers()
+    const init = async () => {
+      try {
+        const sessionRes = await fetch('/api/auth/session', { cache: 'no-store' })
+        const sessionJson = await sessionRes.json().catch(() => ({}))
+        const nextRole = String(sessionJson?.session?.role || 'master_admin')
+        const nextUid = String(sessionJson?.session?.uid || '')
+        const impersonation = sessionJson?.session?.impersonation
+        setSessionRole(nextRole)
+        setSessionUid(nextUid)
+        setIsImpersonating(Boolean(impersonation?.active))
+        setImpersonationAdminEmail(String(impersonation?.adminEmail || ''))
+        if (nextRole === 'master_admin' || nextRole === 'admin' || nextRole === 'broker') {
+          await loadUsers(nextRole)
+        } else {
+          setUsers([])
+          setOverview(null)
+          setLoading(false)
+        }
+      } finally {
+        setSessionReady(true)
+      }
+    }
+
+    init()
   }, [])
 
   const getUiErrorMessage = (status?: number) => {
@@ -129,10 +161,40 @@ export default function MasterUsersPage() {
     return 'No se pudo cargar la lista de usuarios.'
   }
 
-  async function loadUsers() {
+  async function loadUsers(currentRole: string = sessionRole) {
     setLoading(true)
     setError(null)
     try {
+      if (currentRole === 'broker') {
+        const teamRes = await fetch('/api/broker/team')
+        const teamJson = await teamRes.json().catch(() => ({}))
+        if (!teamRes.ok || !teamJson?.ok) {
+          const message = teamJson?.error || getUiErrorMessage(teamRes.status)
+          setError(message)
+          toast.error(message)
+          setUsers([])
+          setOverview(null)
+          return
+        }
+
+        const mappedTeam = Array.isArray(teamJson?.members)
+          ? teamJson.members.map((member: any) => ({
+              id: String(member.id || ''),
+              uid: String(member.id || ''),
+              name: String(member.name || member.email || 'Miembro'),
+              email: String(member.email || ''),
+              role: String(member.role || 'agent'),
+              status: String(member.status || 'active'),
+              brokerage: '',
+              company: '',
+            }))
+          : []
+
+        setUsers(mappedTeam)
+        setOverview(null)
+        return
+      }
+
       const [usersRes, overviewRes] = await Promise.all([
         fetch('/api/admin/users'),
         fetch('/api/admin/users/overview'),
@@ -348,6 +410,70 @@ export default function MasterUsersPage() {
     }
   }
 
+  async function loginAsUser(user: User) {
+    if (sessionRole !== 'master_admin') {
+      toast.error('Only master admin can use Login as user')
+      return
+    }
+
+    const targetId = String(user.uid || user.id || '')
+    if (!targetId) {
+      toast.error('User id is missing')
+      return
+    }
+
+    if (targetId === sessionUid) {
+      toast.error('You are already logged in as this user')
+      return
+    }
+
+    if (!confirm(`Login as ${user.name || user.email}? This will replace your current session.`)) return
+
+    setImpersonatingUserId(targetId)
+    try {
+      const res = await fetch('/api/admin/users/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: targetId }),
+      })
+
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        const message = json?.error?.message || json?.error || 'Failed to impersonate user'
+        toast.error(message)
+        return
+      }
+
+      toast.success(`Logged in as ${json?.impersonated?.name || user.name || user.email}`)
+      window.location.href = String(json?.redirect || '/dashboard')
+    } catch (error) {
+      console.error('login as user error', error)
+      toast.error('Failed to impersonate user')
+    } finally {
+      setImpersonatingUserId(null)
+    }
+  }
+
+  const isDangerousActionsLocked = isImpersonating
+
+  if (sessionReady && !canViewPeople) {
+    return (
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-4xl mx-auto p-8">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+            <h1 className="text-2xl font-bold text-amber-900">People management is restricted</h1>
+            <p className="mt-2 text-sm text-amber-800">
+              This module is available to admin and broker roles only. Your role should continue in dashboard operational flows.
+            </p>
+            <div className="mt-4">
+              <Link href="/dashboard" className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium hover:bg-[#12355f]">Go to My Dashboard</Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex-1 overflow-auto">
       <div className="max-w-7xl mx-auto p-8">
@@ -355,40 +481,81 @@ export default function MasterUsersPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">User Management</h1>
-              <p className="text-gray-600">Manage all users across the platform</p>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">{isBrokerView ? 'Team Management' : 'User Management'}</h1>
+              <p className="text-gray-600">
+                {isBrokerView
+                  ? 'Manage your office team and track onboarding progress'
+                  : 'Manage all users across the platform'}
+              </p>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowBrokerModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <FiUserPlus className="w-4 h-4" />
-                Broker
-              </button>
-              <button
-                onClick={() => setShowAgentModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <FiUserPlus className="w-4 h-4" />
-                Agent
-              </button>
-              <button
-                onClick={() => setShowConstructoraModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors"
-              >
-                <FiUserPlus className="w-4 h-4" />
-                Constructora
-              </button>
-              <button
-                onClick={() => setShowBuyerModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <FiUserPlus className="w-4 h-4" />
-                Buyer
-              </button>
+            {!isBrokerView && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowBrokerModal(true)}
+                  disabled={isDangerousActionsLocked}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <FiUserPlus className="w-4 h-4" />
+                  Broker
+                </button>
+                <button
+                  onClick={() => setShowAgentModal(true)}
+                  disabled={isDangerousActionsLocked}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <FiUserPlus className="w-4 h-4" />
+                  Agent
+                </button>
+                <button
+                  onClick={() => setShowConstructoraModal(true)}
+                  disabled={isDangerousActionsLocked}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  <FiUserPlus className="w-4 h-4" />
+                  Constructora
+                </button>
+                <button
+                  onClick={() => setShowBuyerModal(true)}
+                  disabled={isDangerousActionsLocked}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <FiUserPlus className="w-4 h-4" />
+                  Buyer
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {isDangerousActionsLocked && (
+          <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+            <div className="font-semibold">Admin actions are disabled while impersonating a user.</div>
+            <div className="mt-1">
+              Logged in as: <span className="font-medium">{impersonationAdminEmail || 'original admin'}</span>. Use <span className="font-medium">Stop Impersonation</span> to restore full admin controls.
             </div>
           </div>
+        )}
+
+        <div className="mb-6 rounded-lg border border-[#0B2545]/20 bg-[#0B2545]/5 p-4">
+          <div className="text-sm font-semibold text-[#0B2545]">
+            {isBrokerView ? 'Team Onboarding Flow' : 'People & Onboarding Flow'}
+          </div>
+          {isBrokerView ? (
+            <div className="mt-2 text-xs text-gray-700">
+              <span className="font-medium">Invited</span> → Completa acceso y perfil → <span className="font-medium">Active</span>. Usa “Onboarding” por usuario para revisar el cuestionario.
+            </div>
+          ) : (
+            <div className="mt-2 grid gap-2 text-xs text-gray-700 md:grid-cols-3">
+              <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2"><span className="font-semibold">Agent:</span> Application → Criteria review → Office assignment → Active</div>
+              <div className="rounded border border-purple-200 bg-purple-50 px-3 py-2"><span className="font-semibold">Broker:</span> Application → Compliance checks → Brokerage setup → Active</div>
+              <div className="rounded border border-orange-200 bg-orange-50 px-3 py-2"><span className="font-semibold">Constructora:</span> Application → Business verification → Project readiness → Active</div>
+            </div>
+          )}
+          {!isBrokerView && (
+            <div className="mt-2 text-xs text-gray-600">
+              Detailed intake and approval queue: <Link href="/master/applications" className="font-semibold text-[#0B2545] hover:underline">Applications</Link>
+            </div>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -458,11 +625,15 @@ export default function MasterUsersPage() {
         <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Quick Views</span>
-            <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'all' && statusFilter === 'all' ? 'border-[#0B2545] bg-[#0B2545] text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>All People</button>
+            <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'all' && statusFilter === 'all' ? 'border-[#0B2545] bg-[#0B2545] text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>{isBrokerView ? 'All Team' : 'All People'}</button>
             <button type="button" onClick={() => { setRoleFilter('agent'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'agent' ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Agents</button>
             <button type="button" onClick={() => { setRoleFilter('broker'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'broker' ? 'border-purple-600 bg-purple-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Brokers</button>
-            <button type="button" onClick={() => { setRoleFilter('constructora'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'constructora' ? 'border-orange-600 bg-orange-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Constructoras</button>
-            <button type="button" onClick={() => { setRoleFilter('buyer'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'buyer' ? 'border-green-600 bg-green-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Buyers</button>
+            {!isBrokerView && (
+              <>
+                <button type="button" onClick={() => { setRoleFilter('constructora'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'constructora' ? 'border-orange-600 bg-orange-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Constructoras</button>
+                <button type="button" onClick={() => { setRoleFilter('buyer'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'buyer' ? 'border-green-600 bg-green-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Buyers</button>
+              </>
+            )}
             <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('active') }} className={`text-xs px-3 py-1.5 rounded-lg border ${statusFilter === 'active' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Active</button>
             <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('inactive') }} className={`text-xs px-3 py-1.5 rounded-lg border ${statusFilter === 'inactive' ? 'border-red-600 bg-red-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Inactive</button>
             <button type="button" onClick={() => { setSearchQuery(''); setRoleFilter('all'); setStatusFilter('all') }} className="ml-auto text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Clear Filters</button>
@@ -489,8 +660,8 @@ export default function MasterUsersPage() {
                 <option value="all">All Roles</option>
                 <option value="agent">Agents</option>
                 <option value="broker">Brokers</option>
-                <option value="buyer">Buyers</option>
-                <option value="constructora">Constructoras</option>
+                {!isBrokerView && <option value="buyer">Buyers</option>}
+                {!isBrokerView && <option value="constructora">Constructoras</option>}
               </select>
               <select
                 value={statusFilter}
@@ -636,6 +807,7 @@ export default function MasterUsersPage() {
                                 setEditingUser(user)
                                 setShowEditModal(true)
                               }}
+                              disabled={isDangerousActionsLocked}
                               className="inline-flex items-center gap-2 px-3 py-2 text-blue-700 bg-blue-50 hover:bg-blue-100 text-sm font-medium rounded-lg transition-colors"
                               title="Edit user"
                             >
@@ -652,8 +824,20 @@ export default function MasterUsersPage() {
                             >
                               Onboarding
                             </button>
+                            {sessionRole === 'master_admin' && user.role !== 'master_admin' && (
+                              <button
+                                onClick={() => loginAsUser(user)}
+                                disabled={impersonatingUserId === (user.uid || user.id)}
+                                className="inline-flex items-center gap-2 px-3 py-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
+                                title="Login as this user"
+                              >
+                                <FiLogIn className="w-4 h-4" />
+                                {impersonatingUserId === (user.uid || user.id) ? 'Logging in...' : 'Login as'}
+                              </button>
+                            )}
                             <button
                               onClick={() => resetPassword(user)}
+                              disabled={isBrokerView || isDangerousActionsLocked}
                               className="inline-flex items-center gap-2 px-3 py-2 text-violet-700 bg-violet-50 hover:bg-violet-100 text-sm font-medium rounded-lg transition-colors"
                               title="Generate password reset link"
                             >
@@ -662,6 +846,7 @@ export default function MasterUsersPage() {
                             </button>
                             <button
                               onClick={() => forceComplianceCheck(user)}
+                              disabled={isBrokerView || isDangerousActionsLocked}
                               className="inline-flex items-center gap-2 px-3 py-2 text-orange-700 bg-orange-50 hover:bg-orange-100 text-sm font-medium rounded-lg transition-colors"
                               title="Force compliance check"
                             >
@@ -669,6 +854,7 @@ export default function MasterUsersPage() {
                             </button>
                             <button
                               onClick={() => toggleStatus(user.uid || user.id, isDisabled)}
+                              disabled={isBrokerView || isDangerousActionsLocked}
                               className={`inline-flex items-center gap-2 px-3 py-2 text-white text-sm font-medium rounded-lg transition-colors ${
                                 isDisabled
                                   ? 'bg-green-500 hover:bg-green-600'
@@ -681,6 +867,7 @@ export default function MasterUsersPage() {
                             </button>
                             <button
                               onClick={() => deleteUser(user.uid || user.id, user.name)}
+                              disabled={isBrokerView || isDangerousActionsLocked}
                               className="inline-flex items-center gap-2 px-3 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
                               title="Delete user"
                             >
@@ -700,26 +887,30 @@ export default function MasterUsersPage() {
       </div>
 
       {/* Role Creation Modals */}
-      <CreateBrokerModal
-        isOpen={showBrokerModal}
-        onClose={() => setShowBrokerModal(false)}
-        onSuccess={() => loadUsers()}
-      />
-      <CreateAgentModal
-        isOpen={showAgentModal}
-        onClose={() => setShowAgentModal(false)}
-        onSuccess={() => loadUsers()}
-      />
-      <CreateConstructoraModal
-        isOpen={showConstructoraModal}
-        onClose={() => setShowConstructoraModal(false)}
-        onSuccess={() => loadUsers()}
-      />
-      <CreateBuyerModal
-        isOpen={showBuyerModal}
-        onClose={() => setShowBuyerModal(false)}
-        onSuccess={() => loadUsers()}
-      />
+      {!isBrokerView && (
+        <>
+          <CreateBrokerModal
+            isOpen={showBrokerModal}
+            onClose={() => setShowBrokerModal(false)}
+            onSuccess={() => loadUsers()}
+          />
+          <CreateAgentModal
+            isOpen={showAgentModal}
+            onClose={() => setShowAgentModal(false)}
+            onSuccess={() => loadUsers()}
+          />
+          <CreateConstructoraModal
+            isOpen={showConstructoraModal}
+            onClose={() => setShowConstructoraModal(false)}
+            onSuccess={() => loadUsers()}
+          />
+          <CreateBuyerModal
+            isOpen={showBuyerModal}
+            onClose={() => setShowBuyerModal(false)}
+            onSuccess={() => loadUsers()}
+          />
+        </>
+      )}
       <EditUserModal
         isOpen={showEditModal}
         onClose={() => {

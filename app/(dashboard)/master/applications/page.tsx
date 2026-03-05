@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
 import { FiCheck, FiX, FiFilter, FiSearch, FiClock, FiAlertCircle, FiTrash2 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
@@ -60,10 +61,13 @@ const HARD_REQUIREMENT_OPTIONS = [
 ] as const
 
 export default function ApplicationsPage() {
+  const [sessionRole, setSessionRole] = useState<string>('')
+  const [authResolved, setAuthResolved] = useState(false)
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState('pending')
+  const [typeFilter, setTypeFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
@@ -98,6 +102,10 @@ export default function ApplicationsPage() {
       filtered = filtered.filter((app) => app.status === statusFilter)
     }
 
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter((app) => app.type === typeFilter)
+    }
+
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
@@ -115,7 +123,7 @@ export default function ApplicationsPage() {
       const bDate = new Date(b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt).getTime()
       return bDate - aDate
     })
-  }, [applications, statusFilter, searchQuery])
+  }, [applications, statusFilter, typeFilter, searchQuery])
 
   // Stats
   const stats = useMemo(() => ({
@@ -128,8 +136,28 @@ export default function ApplicationsPage() {
 
   // Load applications
   useEffect(() => {
+    const bootstrap = async () => {
+      try {
+        const sessionRes = await fetch('/api/auth/session', { cache: 'no-store' })
+        const sessionJson = await sessionRes.json().catch(() => ({}))
+        const role = String(sessionJson?.session?.role || '')
+        setSessionRole(role)
+      } finally {
+        setAuthResolved(true)
+      }
+    }
+
+    bootstrap()
+  }, [])
+
+  useEffect(() => {
+    if (!authResolved) return
+    if (sessionRole !== 'master_admin' && sessionRole !== 'admin') {
+      setLoading(false)
+      return
+    }
     loadApplications()
-  }, [statusFilter])
+  }, [statusFilter, authResolved, sessionRole])
 
   const getUiErrorMessage = (status?: number) => {
     if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente para revisar solicitudes.'
@@ -363,6 +391,27 @@ export default function ApplicationsPage() {
 
   const isPendingSelection = selectedApp?.status === 'pending'
 
+  const isAdminReviewer = sessionRole === 'master_admin' || sessionRole === 'admin'
+
+  if (authResolved && !isAdminReviewer) {
+    return (
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-4xl mx-auto p-8">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+            <h1 className="text-2xl font-bold text-amber-900">Applications Review is admin-only</h1>
+            <p className="mt-2 text-sm text-amber-800">
+              Broker/agent/constructora roles now follow the operational dashboard flow. Application intake and approvals stay with admin reviewers.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <Link href="/dashboard" className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium hover:bg-[#12355f]">Go to My Dashboard</Link>
+              <Link href="/master/leads" className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Go to Leads</Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex-1 overflow-auto">
       <div className="max-w-7xl mx-auto p-8">
@@ -370,6 +419,15 @@ export default function ApplicationsPage() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Professional Applications</h1>
           <p className="text-gray-600">Review and manage agent, broker, and constructora applications with criteria-based decisions</p>
+        </div>
+
+        <div className="mb-6 rounded-lg border border-[#0B2545]/20 bg-[#0B2545]/5 p-4">
+          <div className="text-sm font-semibold text-[#0B2545]">Onboarding Review Guide</div>
+          <div className="mt-2 grid grid-cols-1 gap-2 text-xs text-gray-700 md:grid-cols-3">
+            <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2"><span className="font-semibold">Agent:</span> verify identity, experience, readiness, then assign office.</div>
+            <div className="rounded border border-purple-200 bg-purple-50 px-3 py-2"><span className="font-semibold">Broker:</span> verify legal profile, compliance and operating structure before activation.</div>
+            <div className="rounded border border-orange-200 bg-orange-50 px-3 py-2"><span className="font-semibold">Constructora:</span> verify company docs, project readiness and publication governance.</div>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -423,6 +481,18 @@ export default function ApplicationsPage() {
             </div>
             <div className="flex items-center gap-2">
               <FiFilter className="w-5 h-5 text-gray-400" />
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Filter by applicant type"
+              >
+                <option value="all">All Types</option>
+                <option value="agent">Agent</option>
+                <option value="new-agent">New Agent</option>
+                <option value="broker">Broker</option>
+                <option value="constructora">Constructora</option>
+              </select>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}

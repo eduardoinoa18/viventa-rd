@@ -7,8 +7,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getMiddlewareSession } from './lib/auth/middleware-session'
 
+const PORTAL_ROLES = new Set(['master_admin', 'admin', 'agent', 'broker', 'constructora'])
+const BUYER_ROLES = new Set(['buyer', 'user'])
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+
+  // ========== AUTH ROUTES (SESSION-AWARE) ==========
+  if (pathname === '/login' || pathname === '/verify-2fa') {
+    const session = await getMiddlewareSession(req)
+
+    if (!session) {
+      return NextResponse.next()
+    }
+
+    if (pathname === '/verify-2fa' && session.role === 'master_admin' && !session.twoFactorVerified) {
+      return NextResponse.next()
+    }
+
+    if (session.role === 'master_admin') {
+      return NextResponse.redirect(new URL(session.twoFactorVerified ? '/master' : '/verify-2fa', req.url))
+    }
+
+    if (PORTAL_ROLES.has(session.role)) {
+      return NextResponse.redirect(new URL('/master', req.url))
+    }
+
+    if (BUYER_ROLES.has(session.role)) {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
+    }
+
+    return NextResponse.redirect(new URL('/search', req.url))
+  }
   
   // ========== LEGACY ROUTE REDIRECTS ==========
   if (pathname.startsWith('/properties/')) {
@@ -30,8 +60,7 @@ export async function middleware(req: NextRequest) {
   // ========== PUBLIC ROUTES (NEVER BLOCK) ==========
   const publicRoutes = [
     '/', '/search', '/ciudad', '/listing', '/agents', '/brokers', '/broker',
-    '/contact', '/apply', '/signup', '/forgot-password', '/disclosures',
-    '/login', '/verify-2fa'  // Auth routes must be public
+    '/contact', '/apply', '/signup', '/forgot-password', '/disclosures'
   ]
   
   if (publicRoutes.some(route => pathname === route || pathname.startsWith(`${route}/`))) {
@@ -53,11 +82,10 @@ export async function middleware(req: NextRequest) {
 
     if (!session) {
       console.log('  ❌ No session - redirecting to /login')
-      return NextResponse.redirect(new URL('/login?redirect=' + pathname, req.url))
+      return NextResponse.redirect(new URL('/login?next=' + encodeURIComponent(pathname), req.url))
     }
 
-    const portalRoles = new Set(['master_admin', 'admin', 'agent', 'broker', 'constructora'])
-    if (!portalRoles.has(session.role)) {
+    if (!PORTAL_ROLES.has(session.role)) {
       console.log('  ❌ Not a portal role - redirecting to /search')
       return NextResponse.redirect(new URL('/search', req.url))
     }
@@ -74,22 +102,14 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith('/dashboard')) {
     const session = await getMiddlewareSession(req)
     if (!session) {
-      return NextResponse.redirect(new URL('/login?redirect=' + pathname, req.url))
+      return NextResponse.redirect(new URL('/login?next=' + encodeURIComponent(pathname), req.url))
     }
 
-    const buyerRoles = new Set(['buyer', 'user'])
-    if (!buyerRoles.has(session.role)) {
+    if (!BUYER_ROLES.has(session.role)) {
       return NextResponse.redirect(new URL('/master', req.url))
     }
 
     return NextResponse.next()
-  }
-
-  // ========== GENERAL USER ROUTES ==========
-  const role = req.cookies.get('viventa_role')?.value
-  const isLoggedInUser = role && role !== 'master_admin'
-  if (isLoggedInUser && pathname === '/login') {
-    return NextResponse.redirect(new URL('/search', req.url))
   }
 
   return NextResponse.next()
