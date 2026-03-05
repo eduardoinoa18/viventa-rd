@@ -74,6 +74,7 @@ interface AgentOption {
   company?: string
   photoURL?: string
   role?: string
+  status?: string
 }
 
 const DEFAULT_METRICS: LeadMetrics = {
@@ -196,6 +197,7 @@ function mapPipelineStage(stage: LeadStage): PipelineStage {
 
 export default function LeadsPage() {
   const router = useRouter()
+  const [sessionRole, setSessionRole] = useState<string>('master_admin')
   const [leads, setLeads] = useState<LeadRecord[]>([])
   const [stats, setStats] = useState<LeadStats>(DEFAULT_STATS)
   const [automationRuns, setAutomationRuns] = useState<AutomationRun[]>([])
@@ -218,10 +220,68 @@ export default function LeadsPage() {
   const [runningEscalation, setRunningEscalation] = useState(false)
   const [showDuplicates, setShowDuplicates] = useState(false)
 
+  const isBrokerScoped = sessionRole === 'broker' || sessionRole === 'agent'
+
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const res = await fetch('/api/auth/session', { cache: 'no-store' })
+        const json = await res.json().catch(() => ({}))
+        if (res.ok && json?.ok && json?.session?.role) {
+          setSessionRole(String(json.session.role))
+        }
+      } catch {
+        setSessionRole('master_admin')
+      }
+    }
+
+    loadSession()
+  }, [])
+
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedSearch(searchInput.trim()), 250)
     return () => clearTimeout(timeout)
   }, [searchInput])
+
+  const buildLocalStats = useCallback((items: LeadRecord[]): LeadStats => {
+    const byStage: Record<LeadStage, number> = {
+      new: 0,
+      assigned: 0,
+      contacted: 0,
+      qualified: 0,
+      negotiating: 0,
+      won: 0,
+      lost: 0,
+      archived: 0,
+    }
+
+    for (const lead of items) {
+      byStage[lead.leadStage] = (byStage[lead.leadStage] || 0) + 1
+    }
+
+    const total = items.length
+    const won = items.filter((lead) => lead.leadStage === 'won').length
+    const unowned = items.filter((lead) => !lead.ownerAgentId).length
+    const overdue = items.filter((lead) => Boolean(lead.slaBreached)).length
+    const assignedFunnel = items.filter((lead) => ['assigned', 'contacted', 'qualified', 'negotiating', 'won', 'lost'].includes(lead.leadStage)).length
+
+    return {
+      total,
+      overdue,
+      unowned,
+      byStage,
+      metrics: {
+        totalLeads: total,
+        unassigned: unowned,
+        slaBreached: overdue,
+        conversionRate: assignedFunnel ? Number(((won / assignedFunnel) * 100).toFixed(1)) : null,
+        avgResponseTimeMinutes: 0,
+        escalationsOpen: 0,
+        autoAssignable: items.filter((lead) => !lead.ownerAgentId && lead.leadStage === 'new').length,
+        topBrokers: [],
+      },
+    }
+  }, [])
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -247,15 +307,54 @@ export default function LeadsPage() {
       if (slaOnly) params.set('sla', 'overdue')
       if (debouncedSearch) params.set('q', debouncedSearch)
 
-      const url = `/api/admin/leads/queue?${params.toString()}`
+      const url = isBrokerScoped
+        ? `/api/broker/leads?limit=200`
+        : `/api/admin/leads/queue?${params.toString()}`
 
       const res = await fetch(url)
       const data = await res.json()
 
       if (data.ok) {
-        setLeads(data.data.leads || [])
-        setStats(data.data.stats || DEFAULT_STATS)
-        setAutomationRuns(data.data.automationRuns || [])
+        if (isBrokerScoped) {
+          let nextLeads: LeadRecord[] = Array.isArray(data.leads) ? data.leads : []
+
+          if (selectedStages.length > 0) {
+            const stageSet = new Set(selectedStages)
+            nextLeads = nextLeads.filter((lead) => stageSet.has(lead.leadStage))
+          }
+
+          if (ownerFilter === 'unassigned') {
+            nextLeads = nextLeads.filter((lead) => !lead.ownerAgentId)
+          } else if (ownerFilter !== 'all') {
+            nextLeads = nextLeads.filter((lead) => String(lead.ownerAgentId || '') === ownerFilter)
+          }
+
+          if (sourceFilter !== 'all') {
+            nextLeads = nextLeads.filter((lead) => String(lead.source || '') === sourceFilter)
+          }
+
+          if (slaOnly) {
+            nextLeads = nextLeads.filter((lead) => Boolean(lead.slaBreached))
+          }
+
+          if (debouncedSearch) {
+            const q = debouncedSearch.toLowerCase()
+            nextLeads = nextLeads.filter((lead) =>
+              [lead.buyerName, lead.buyerEmail, lead.buyerPhone, lead.source]
+                .map((value) => String(value || '').toLowerCase())
+                .join(' ')
+                .includes(q)
+            )
+          }
+
+          setLeads(nextLeads)
+          setStats(buildLocalStats(nextLeads))
+          setAutomationRuns([])
+        } else {
+          setLeads(data.data.leads || [])
+          setStats(data.data.stats || DEFAULT_STATS)
+          setAutomationRuns(data.data.automationRuns || [])
+        }
       } else {
         toast.error(data.error || 'Unable to load leads')
       }
@@ -265,15 +364,22 @@ export default function LeadsPage() {
     } finally {
       setLoading(false)
     }
-  }, [selectedStages, ownerFilter, sourceFilter, fromDate, toDate, slaOnly, debouncedSearch])
+  }, [selectedStages, ownerFilter, sourceFilter, fromDate, toDate, slaOnly, debouncedSearch, isBrokerScoped, buildLocalStats])
 
   const fetchAgents = useCallback(async () => {
     try {
       setAgentsLoading(true)
-      const res = await fetch('/api/admin/users?limit=300')
+      const res = await fetch(isBrokerScoped ? '/api/broker/team' : '/api/admin/users?limit=300')
       const data = await res.json()
 
-      if (data.ok && Array.isArray(data.data)) {
+      if (isBrokerScoped) {
+        if (data.ok && Array.isArray(data.members)) {
+          setAgents(data.members.filter((user: AgentOption) => user.role === 'agent' || user.role === 'broker'))
+        } else {
+          setAgents([])
+          toast.error('Unable to load team members')
+        }
+      } else if (data.ok && Array.isArray(data.data)) {
         setAgents(data.data.filter((user: AgentOption) => user.role === 'agent' || user.role === 'broker'))
       } else {
         toast.error('Unable to load agents')
@@ -284,7 +390,7 @@ export default function LeadsPage() {
     } finally {
       setAgentsLoading(false)
     }
-  }, [])
+  }, [isBrokerScoped])
 
   useEffect(() => {
     fetchLeads()
@@ -298,13 +404,22 @@ export default function LeadsPage() {
     if (!selectedLeadId) return
 
     try {
-      const res = await fetch('/api/admin/leads/assign', {
-        method: 'POST',
+      const res = await fetch(isBrokerScoped ? '/api/broker/leads' : '/api/admin/leads/assign', {
+        method: isBrokerScoped ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          leadId: selectedLeadId,
-          agentId,
-          note: assignNote || undefined,
+          ...(isBrokerScoped
+            ? {
+                action: 'assign',
+                leadId: selectedLeadId,
+                ownerAgentId: agentId,
+                reason: assignNote || undefined,
+              }
+            : {
+                leadId: selectedLeadId,
+                agentId,
+                note: assignNote || undefined,
+              }),
         }),
       })
 
@@ -326,12 +441,20 @@ export default function LeadsPage() {
 
   const handleStageChange = async (lead: LeadRecord, nextStage: LeadStage) => {
     try {
-      const res = await fetch('/api/admin/leads/queue', {
+      const res = await fetch(isBrokerScoped ? '/api/broker/leads' : '/api/admin/leads/queue', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: lead.id,
-          leadStage: nextStage,
+          ...(isBrokerScoped
+            ? {
+                action: 'stage',
+                leadId: lead.id,
+                leadStage: nextStage,
+              }
+            : {
+                id: lead.id,
+                leadStage: nextStage,
+              }),
         }),
       })
 
@@ -349,6 +472,10 @@ export default function LeadsPage() {
   }
 
   const handleDeleteLead = async (leadId: string) => {
+    if (isBrokerScoped) {
+      toast.error('Delete is disabled for broker queue')
+      return
+    }
     if (!confirm('Are you sure you want to delete this lead?')) return
 
     try {
@@ -372,6 +499,10 @@ export default function LeadsPage() {
   }
 
   const handleRunAutoAssign = async () => {
+    if (isBrokerScoped) {
+      toast('Auto-assign is available for master admin only')
+      return
+    }
     const candidates = leads
       .filter((lead) => !lead.ownerAgentId && lead.leadStage === 'new')
       .slice(0, 25)
@@ -407,6 +538,10 @@ export default function LeadsPage() {
   }
 
   const handleRunEscalation = async () => {
+    if (isBrokerScoped) {
+      toast('SLA escalation run is available for master admin only')
+      return
+    }
     try {
       setRunningEscalation(true)
       const res = await fetch('/api/admin/leads/escalate', {
@@ -650,6 +785,27 @@ export default function LeadsPage() {
     )
   }
 
+  const renderSlaBadge = (lead: LeadRecord) => {
+    const tone = lead.slaBreached
+      ? 'border-red-200 bg-red-50 text-red-700'
+      : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold ${tone}`}>
+        <FiClock /> {formatSla(lead.secondsToBreach)}
+      </span>
+    )
+  }
+
+  const buildLeadTimeline = (lead: LeadRecord) => {
+    const events: string[] = []
+    if (lead.createdAt) events.push(`Creado ${formatRelative(lead.createdAt)}`)
+    if (lead.assignedAt) events.push(`Asignado ${formatRelative(lead.assignedAt)}`)
+    if (lead.stageChangedAt) events.push(`Etapa ${lead.leadStage} ${formatRelative(lead.stageChangedAt)}`)
+    if (events.length === 0 && lead.updatedAt) events.push(`Actualizado ${formatRelative(lead.updatedAt)}`)
+    return events.slice(0, 2)
+  }
+
   return (
     <div className="space-y-6 p-6 max-w-7xl">
       <div className="flex items-center justify-between">
@@ -661,6 +817,13 @@ export default function LeadsPage() {
           Refresh
         </button>
       </div>
+
+      {isBrokerScoped && (
+        <div className="rounded-lg border border-[#0B2545]/20 bg-[#0B2545]/5 px-4 py-3">
+          <div className="text-sm font-semibold text-[#0B2545]">Broker Admin Management · Phase 4.2</div>
+          <div className="text-xs text-gray-600 mt-1">Cola de leads por oficina con SLA badge y timeline operativo por lead.</div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
         {kpiCards.map((card) => (
@@ -708,7 +871,9 @@ export default function LeadsPage() {
           <div className="mt-4 border-t border-gray-100 pt-3">
             <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Recent automation activity</div>
             <div className="mt-2 space-y-2">
-              {automationRuns.length === 0 ? (
+              {isBrokerScoped ? (
+                <div className="text-xs text-gray-500">Automation jobs are managed centrally by master admin. Broker operations stay enabled for assign and stage changes.</div>
+              ) : automationRuns.length === 0 ? (
                 <div className="text-xs text-gray-500">No scheduled jobs have run yet.</div>
               ) : (
                 automationRuns.map((run) => (
@@ -954,9 +1119,7 @@ export default function LeadsPage() {
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold capitalize ${stageColor[lead.leadStage]}`}>
                             {lead.leadStage}
                           </span>
-                          <div className={`inline-flex items-center gap-1 text-[11px] font-semibold ${lead.slaBreached ? 'text-red-700' : 'text-gray-700'}`}>
-                            <FiClock /> {formatSla(lead.secondsToBreach)}
-                          </div>
+                          {renderSlaBadge(lead)}
                         </div>
 
                         <div className="text-xs text-gray-600">
@@ -965,6 +1128,11 @@ export default function LeadsPage() {
                         </div>
 
                         <div className="text-[11px] text-gray-500">Last activity: {formatRelative(lead.lastActivityAt || lead.updatedAt)}</div>
+                        <div className="space-y-0.5">
+                          {buildLeadTimeline(lead).map((event) => (
+                            <div key={`${lead.id}-${event}`} className="text-[11px] text-gray-500">• {event}</div>
+                          ))}
+                        </div>
 
                         <div className="flex flex-wrap gap-2">
                           {!ownerId && (
@@ -1029,12 +1197,15 @@ export default function LeadsPage() {
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">{renderOwner(lead)}</td>
                       <td className="px-4 py-4 whitespace-nowrap">
-                        <div className={`inline-flex items-center gap-1 text-xs font-semibold ${lead.slaBreached ? 'text-red-700' : 'text-gray-700'}`}>
-                          <FiClock /> {formatSla(lead.secondsToBreach)}
-                        </div>
+                        {renderSlaBadge(lead)}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-600">
-                        {formatRelative(lead.lastActivityAt || lead.updatedAt)}
+                      <td className="px-4 py-4 text-xs text-gray-600">
+                        <div>{formatRelative(lead.lastActivityAt || lead.updatedAt)}</div>
+                        <div className="mt-1 space-y-0.5">
+                          {buildLeadTimeline(lead).map((event) => (
+                            <div key={`table-${lead.id}-${event}`} className="text-[11px] text-gray-500">• {event}</div>
+                          ))}
+                        </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm">
                         <div className="flex flex-wrap gap-2">
@@ -1053,12 +1224,14 @@ export default function LeadsPage() {
                             View
                           </button>
                           {renderMoveStage(lead)}
-                          <button
-                            onClick={() => handleDeleteLead(lead.id)}
-                            className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100"
-                          >
-                            Delete
-                          </button>
+                          {!isBrokerScoped && (
+                            <button
+                              onClick={() => handleDeleteLead(lead.id)}
+                              className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

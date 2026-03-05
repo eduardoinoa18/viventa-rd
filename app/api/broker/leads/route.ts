@@ -5,6 +5,8 @@ import { getListingAccessUserContext } from '@/lib/listingOwnership'
 import {
   normalizeLeadStage,
   ownerRequiredForStage,
+  secondsToSlaDue,
+  isSlaBreached,
   stageSlaDueAt,
   stageToLegacyStatus,
   validateLeadStageTransition,
@@ -25,6 +27,22 @@ function toMillis(value: any): number {
   }
   const parsed = new Date(value)
   return Number.isFinite(parsed.getTime()) ? parsed.getTime() : 0
+}
+
+function toDate(value: any): Date | null {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value?.toDate === 'function') {
+    const date = value.toDate()
+    return date instanceof Date ? date : null
+  }
+  const parsed = new Date(value)
+  return Number.isFinite(parsed.getTime()) ? parsed : null
+}
+
+function toIso(value: any): string | null {
+  const parsed = toDate(value)
+  return parsed ? parsed.toISOString() : null
 }
 
 function extractOwnerAgentId(lead: Record<string, any>): string {
@@ -84,6 +102,13 @@ export async function GET(req: Request) {
       })
       .map((lead) => {
         const stage = normalizeLeadStage(lead.leadStage, lead.status)
+        const stageSlaDueAtValue = toDate(lead.stageSlaDueAt)
+        const createdAt = toIso(lead.createdAt)
+        const updatedAt = toIso(lead.updatedAt)
+        const assignedAt = toIso(lead.assignedAt || lead.ownerAssignedAt)
+        const stageChangedAt = toIso(lead.stageChangedAt)
+        const slaBreached = isSlaBreached(stage, stageSlaDueAtValue)
+        const secondsToBreach = secondsToSlaDue(stageSlaDueAtValue)
         return {
           id: lead.id,
           buyerName: safeText(lead.buyerName || lead.name || lead.fullName || 'Lead'),
@@ -93,8 +118,14 @@ export async function GET(req: Request) {
           status: stageToLegacyStatus(stage),
           ownerAgentId: extractOwnerAgentId(lead) || null,
           source: safeText(lead.source || 'property'),
-          createdAt: lead.createdAt || null,
-          updatedAt: lead.updatedAt || null,
+          createdAt,
+          updatedAt,
+          assignedAt,
+          stageChangedAt,
+          stageSlaDueAt: stageSlaDueAtValue ? stageSlaDueAtValue.toISOString() : null,
+          slaBreached,
+          secondsToBreach,
+          lastActivityAt: updatedAt || stageChangedAt || assignedAt || createdAt,
         }
       })
       .sort((a, b) => toMillis(b.updatedAt) - toMillis(a.updatedAt) || toMillis(b.createdAt) - toMillis(a.createdAt))
