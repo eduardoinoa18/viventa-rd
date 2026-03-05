@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { FiGrid, FiUsers, FiUser, FiHome, FiSettings, FiPlusSquare, FiClipboard, FiTarget, FiActivity, FiChevronLeft, FiCpu, FiDollarSign, FiShield, FiTrendingUp, FiMap } from 'react-icons/fi'
 import { getSession } from '@/lib/authSession'
+import BrandLogo from './BrandLogo'
 
 export default function AdminSidebar() {
   const pathname = usePathname()
@@ -49,7 +50,14 @@ export default function AdminSidebar() {
   return (
     <aside className={`${collapsed ? 'w-16' : 'w-64'} bg-gradient-to-b from-white to-gray-50 border-r border-gray-200 min-h-screen p-3 transition-all duration-300 shadow-lg`}>
       <div className="flex items-center justify-between mb-4 px-2">
-        {!collapsed && <div className="text-sm font-bold text-[#0B2545] tracking-wide">ADMIN PORTAL</div>}
+        {!collapsed ? (
+          <div className="flex items-center gap-2 min-w-0">
+            <BrandLogo className="h-7 w-auto" />
+            <div className="text-xs font-bold text-[#0B2545] tracking-wide truncate">ADMIN PORTAL</div>
+          </div>
+        ) : (
+          <BrandLogo iconOnly className="h-7 w-7" />
+        )}
         <button 
           onClick={toggleCollapsed} 
           className="p-2 rounded-lg hover:bg-gradient-to-r hover:from-[#00A676] hover:to-[#008F64] hover:text-white text-gray-600 transition-all duration-200 hover:shadow-md" 

@@ -5,6 +5,7 @@ import { getSession, clearSession } from '../lib/authSession'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { FiBell, FiX, FiCheck } from 'react-icons/fi'
+import BrandLogo from './BrandLogo'
 import { db } from '../lib/firebaseClient'
 import { collection, query, where, orderBy, limit, getDocs, updateDoc, doc, arrayUnion } from 'firebase/firestore'
 
@@ -110,10 +111,8 @@ export default function AdminTopbar() {
     <header className="sticky top-0 z-20 bg-white border-b shadow-sm">
       <div className="container mx-auto flex items-center justify-between p-3">
         <Link href="/admin" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#00A676] rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-xl">V</span>
-          </div>
-          <div className="text-lg font-semibold text-[#0B2545]">VIVENTA — Admin</div>
+          <BrandLogo className="h-9 w-auto" />
+          <div className="text-lg font-semibold text-[#0B2545]">Admin</div>
         </Link>
         <div className="flex items-center gap-4">
           {/* Online count */}

@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import LocaleSwitcher from './LocaleSwitcher'
 import CurrencySwitcher from './CurrencySwitcher'
 import NotificationCenter from './NotificationCenter'
+import BrandLogo from './BrandLogo'
 import { useEffect, useState } from 'react'
 import { getSession, clearSession } from '../lib/authSession'
 import { FiMenu, FiX, FiLogOut, FiUser, FiHelpCircle } from 'react-icons/fi'
@@ -32,7 +33,7 @@ export default function Header() {
       <header className="sticky top-0 z-50 bg-gradient-to-r from-white to-viventa-sand/20 shadow-md border-b border-viventa-turquoise/10">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center">
-            <img src="/logo.svg" alt="VIVENTA" className="h-10 sm:h-12 md:h-14" />
+            <BrandLogo className="h-10 w-auto sm:h-12 md:h-14" priority />
           </Link>
           <nav className="space-x-4 lg:space-x-6 hidden md:flex text-sm lg:text-base">
             <Link href="/" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Inicio</Link>
@@ -64,7 +65,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-gradient-to-r from-white to-viventa-sand/20 shadow-md border-b border-viventa-turquoise/10">
       <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center">
-          <img src="/logo.svg" alt="VIVENTA" className="h-10 sm:h-12 md:h-14" />
+          <BrandLogo className="h-10 w-auto sm:h-12 md:h-14" priority />
         </Link>
         <nav className="space-x-4 lg:space-x-6 hidden md:flex text-sm lg:text-base">
           {!session ? (

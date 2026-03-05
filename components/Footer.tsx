@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import BrandLogo from './BrandLogo'
 
 export default function Footer() {
   const buildSha = (process.env.NEXT_PUBLIC_BUILD_SHA || 'local').slice(0, 7)
@@ -23,7 +24,7 @@ export default function Footer() {
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center">
-            <img src="/logo.svg" alt="VIVENTA" className="h-8 md:h-10" />
+            <BrandLogo className="h-8 w-auto md:h-10" />
           </div>
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-center">
             {links.map(l => (
