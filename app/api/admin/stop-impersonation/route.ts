@@ -68,13 +68,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: `Original admin account is ${adminStatus}` }, { status: 403 })
     }
 
-    await adminAuth.setCustomUserClaims(impersonation.adminId, {
-      role: 'master_admin',
-      status: adminStatus,
-      twoFactorVerified: true,
-      impersonation: null,
-      lastUpdated: Date.now(),
-    })
+    const backupCookie = req.cookies.get('__session_admin_backup')?.value || ''
+    let restoredSessionCookie = ''
+
+    if (backupCookie) {
+      const backupClaims = await adminAuth.verifySessionCookie(backupCookie, true)
+      const backupRole = String(backupClaims.role || '')
+      const backupUid = String(backupClaims.uid || backupClaims.sub || '')
+      const backup2fa = backupClaims.twoFactorVerified === true
+
+      if (backupRole !== 'master_admin' || backupUid !== impersonation.adminId || !backup2fa) {
+        return NextResponse.json({ ok: false, error: 'Invalid admin backup session' }, { status: 403 })
+      }
+
+      restoredSessionCookie = backupCookie
+    }
 
     await adminDb.collection('audit_logs').add({
       action: 'ADMIN_IMPERSONATION_ENDED',
@@ -92,9 +100,27 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date(),
     })
 
-    const customToken = await adminAuth.createCustomToken(impersonation.adminId)
-    const tokenData = await signInWithCustomToken(apiKey, customToken)
-    const { value: sessionCookie, options } = await createSessionCookie(tokenData.idToken)
+    let cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
+      maxAge: 5 * 24 * 60 * 60,
+      path: '/',
+    }
+
+    if (!restoredSessionCookie) {
+      const customToken = await adminAuth.createCustomToken(impersonation.adminId, {
+        role: 'master_admin',
+        status: adminStatus,
+        twoFactorVerified: true,
+        impersonation: null,
+        lastUpdated: Date.now(),
+      })
+      const tokenData = await signInWithCustomToken(apiKey, customToken)
+      const { value: sessionCookie, options } = await createSessionCookie(tokenData.idToken)
+      restoredSessionCookie = sessionCookie
+      cookieOptions = options
+    }
 
     const response = NextResponse.json({
       ok: true,
@@ -106,7 +132,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    response.cookies.set('__session', sessionCookie, options)
+    response.cookies.set('__session', restoredSessionCookie, cookieOptions)
     response.cookies.set('viventa_role', 'master_admin', {
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
@@ -121,6 +147,7 @@ export async function POST(req: NextRequest) {
     })
     response.cookies.delete('viventa_impersonating')
     response.cookies.delete('viventa_impersonated_by')
+    response.cookies.delete('__session_admin_backup')
 
     return response
   } catch (error: any) {

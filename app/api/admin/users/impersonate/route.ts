@@ -37,6 +37,7 @@ async function signInWithCustomToken(apiKey: string, token: string) {
 export async function POST(req: NextRequest) {
   try {
     const admin = await requireMasterAdmin(req)
+    const adminSessionCookie = req.cookies.get('__session')?.value || ''
     const body = await req.json().catch(() => ({}))
     const userId = String(body?.userId || '').trim()
 
@@ -84,15 +85,6 @@ export async function POST(req: NextRequest) {
       startedAt,
     }
 
-    await adminAuth.setCustomUserClaims(userId, {
-      role,
-      status,
-      twoFactorVerified: role !== 'master_admin',
-      impersonatedBy: admin.uid,
-      impersonation: impersonationMetadata,
-      lastUpdated: Date.now(),
-    })
-
     await adminDb.collection('audit_logs').add({
       action: 'ADMIN_IMPERSONATION_STARTED',
       actor: admin.uid,
@@ -110,7 +102,14 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date(),
     })
 
-    const customToken = await adminAuth.createCustomToken(userId)
+    const customToken = await adminAuth.createCustomToken(userId, {
+      role,
+      status,
+      twoFactorVerified: role !== 'master_admin',
+      impersonatedBy: admin.uid,
+      impersonation: impersonationMetadata,
+      lastUpdated: Date.now(),
+    })
     const tokenData = await signInWithCustomToken(apiKey, customToken)
     const { value: sessionCookie, options } = await createSessionCookie(tokenData.idToken)
 
@@ -136,6 +135,15 @@ export async function POST(req: NextRequest) {
     })
 
     response.cookies.set('__session', sessionCookie, options)
+    if (adminSessionCookie) {
+      response.cookies.set('__session_admin_backup', adminSessionCookie, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 24,
+        path: '/',
+      })
+    }
     response.cookies.set('viventa_role', role, {
       path: '/',
       maxAge: 60 * 60 * 24 * 7,

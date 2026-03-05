@@ -4,6 +4,9 @@ Last updated: 2026-02-27
 Owner: Master Admin Product/Operations
 Scope: Beta execution with Paraiso Inmobiliario + controlled marketplace model
 
+Continuous execution tracker:
+- [PLATFORM-CONTINUOUS-IMPROVEMENT-PIPELINE.md](docs/PLATFORM-CONTINUOUS-IMPROVEMENT-PIPELINE.md)
+
 ## Latest Execution Update
 
 ### P0.2 started (Control Center v1)
@@ -38,6 +41,18 @@ Scope: Beta execution with Paraiso Inmobiliario + controlled marketplace model
 - Added escalation flags in stream payload (`escalated`, `escalationLevel`).
 - Added reassignment policy scaffold in stream payload (manual/suggest/broker fallback/escalation log toggles).
 - Added assignment/reassignment audit records in `lead_assignment_logs`.
+
+### Latest platform hardening (2026-03-05)
+- Master Admin impersonation hardened end-to-end:
+  - start + stop endpoints
+  - session metadata propagation
+  - global impersonation warning banner
+  - audit logs for start/stop
+  - dangerous admin actions disabled while impersonating
+- Master Admin User Activity Timeline v1 added:
+  - endpoint with pagination/filtering
+  - profile timeline panel under `/master/users/[id]`
+  - merged feed from `activity_logs` + `analytics_events`
 
 ## 1) Reality Check (Done vs Pending)
 

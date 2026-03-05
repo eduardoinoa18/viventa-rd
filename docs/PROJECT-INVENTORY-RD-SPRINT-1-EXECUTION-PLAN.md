@@ -1,5 +1,8 @@
 # Sprint 1 Execution Plan — Project Inventory RD
 
+Seguimiento continuo de plataforma (estado global de cobertura/prioridades):
+- [PLATFORM-CONTINUOUS-IMPROVEMENT-PIPELINE.md](docs/PLATFORM-CONTINUOUS-IMPROVEMENT-PIPELINE.md)
+
 ## Objetivo del sprint
 
 Completar EPIC-01 y EPIC-02 del backlog de inventario RD:

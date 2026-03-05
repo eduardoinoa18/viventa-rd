@@ -18,9 +18,22 @@ type LeadItem = {
 
 type ActivityItem = {
   id: string
+  source?: 'activity_logs' | 'analytics_events'
+  eventType?: string
   type: string
   action: string
   timestamp: string | null
+  metadata?: Record<string, unknown>
+}
+
+type ActivityTimelineResponse = {
+  data: ActivityItem[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    hasMore: boolean
+  }
 }
 
 type PerformanceResponse = {
@@ -104,6 +117,15 @@ export default function MasterUserDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<PerformanceResponse | null>(null)
+  const [timelineLoading, setTimelineLoading] = useState(false)
+  const [timelineError, setTimelineError] = useState<string | null>(null)
+  const [timelineItems, setTimelineItems] = useState<ActivityItem[]>([])
+  const [timelinePage, setTimelinePage] = useState(1)
+  const [timelineHasMore, setTimelineHasMore] = useState(false)
+  const [timelineTotal, setTimelineTotal] = useState(0)
+  const [timelineEventType, setTimelineEventType] = useState('all')
+
+  const timelinePageSize = 12
 
   const loadDetails = useCallback(async () => {
     if (!userId) return
@@ -137,6 +159,61 @@ export default function MasterUserDetailPage() {
   useEffect(() => {
     loadDetails()
   }, [loadDetails])
+
+  const loadTimeline = useCallback(async () => {
+    if (!userId) return
+
+    try {
+      setTimelineLoading(true)
+      setTimelineError(null)
+
+      const search = new URLSearchParams({
+        page: String(timelinePage),
+        limit: String(timelinePageSize),
+      })
+      if (timelineEventType && timelineEventType !== 'all') {
+        search.set('eventType', timelineEventType)
+      }
+
+      const res = await fetch(`/api/admin/users/${userId}/activity?${search.toString()}`, {
+        method: 'GET',
+        cache: 'no-store',
+      })
+
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        const message = json?.error || 'No se pudo cargar el timeline de actividad'
+        setTimelineError(message)
+        setTimelineItems([])
+        return
+      }
+
+      const payload = json as ActivityTimelineResponse
+      setTimelineItems(Array.isArray(payload.data) ? payload.data : [])
+      setTimelineHasMore(Boolean(payload.pagination?.hasMore))
+      setTimelineTotal(Number(payload.pagination?.total || 0))
+    } catch (err) {
+      console.error('user activity timeline load error', err)
+      setTimelineError('No se pudo cargar el timeline de actividad')
+      setTimelineItems([])
+    } finally {
+      setTimelineLoading(false)
+    }
+  }, [timelineEventType, timelinePage, timelinePageSize, userId])
+
+  useEffect(() => {
+    loadTimeline()
+  }, [loadTimeline])
+
+  const timelineEventOptions = [
+    { value: 'all', label: 'All events' },
+    { value: 'login', label: 'Login' },
+    { value: 'property_view', label: 'Property view' },
+    { value: 'whatsapp_click', label: 'WhatsApp click' },
+    { value: 'lead_created', label: 'Lead created' },
+    { value: 'reservation_started', label: 'Reservation started' },
+    { value: 'reservation_completed', label: 'Reservation completed' },
+  ]
 
   const headerSubtitle = useMemo(() => {
     if (!data) return ''
@@ -264,18 +341,64 @@ export default function MasterUserDetailPage() {
                 <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-semibold text-[#0B2545]">
                   <FiBarChart2 /> Activity Trail
                 </h2>
-                {data.recent.activity.length === 0 ? (
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <select
+                    value={timelineEventType}
+                    onChange={(event) => {
+                      setTimelineEventType(event.target.value)
+                      setTimelinePage(1)
+                    }}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+                    aria-label="Filter activity by event type"
+                  >
+                    {timelineEventOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <span className="text-xs text-gray-500">Total events: {timelineTotal}</span>
+                </div>
+
+                {timelineLoading ? (
+                  <p className="text-sm text-gray-500">Loading activity timeline...</p>
+                ) : timelineError ? (
+                  <p className="text-sm text-red-600">{timelineError}</p>
+                ) : timelineItems.length === 0 ? (
                   <p className="text-sm text-gray-500">No activity events found for this user.</p>
                 ) : (
-                  <div className="space-y-3">
-                    {data.recent.activity.map((activity) => (
-                      <div key={activity.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
-                        <p className="font-semibold text-gray-800">{activity.action || 'event'}</p>
-                        <p className="text-gray-600">{activity.type || 'system'}</p>
-                        <p className="text-xs text-gray-500">{formatDate(activity.timestamp)}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    <div className="space-y-3">
+                      {timelineItems.map((activity) => (
+                        <div key={activity.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+                          <p className="font-semibold text-gray-800">{activity.eventType || activity.action || 'event'}</p>
+                          <p className="text-gray-600">{activity.action || activity.type || 'system'} • {activity.source || 'activity'}</p>
+                          <p className="text-xs text-gray-500">{formatDate(activity.timestamp)}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setTimelinePage((current) => Math.max(1, current - 1))}
+                        disabled={timelinePage <= 1 || timelineLoading}
+                        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs text-gray-500">Page {timelinePage}</span>
+                      <button
+                        type="button"
+                        onClick={() => setTimelinePage((current) => current + 1)}
+                        disabled={!timelineHasMore || timelineLoading}
+                        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             </section>
