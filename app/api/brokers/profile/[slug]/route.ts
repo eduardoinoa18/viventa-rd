@@ -103,6 +103,9 @@ export async function GET(_: Request, context: { params: { slug: string } }) {
     if (safeText(broker.status) !== 'active' || broker.approved !== true) {
       return NextResponse.json({ ok: false, error: 'Broker profile unavailable' }, { status: 404 })
     }
+    if (broker.publicProfileEnabled === false) {
+      return NextResponse.json({ ok: false, error: 'Broker profile unavailable' }, { status: 404 })
+    }
 
     const listingQueries = [
       db.collection('properties').where('brokerId', '==', brokerDoc.id).limit(1200).get(),

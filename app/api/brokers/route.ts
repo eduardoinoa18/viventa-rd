@@ -35,6 +35,7 @@ type BrokerDoc = {
   reviewCount?: number
   activeSubscription?: boolean
   slug?: string
+  publicProfileEnabled?: boolean
 }
 
 function slugify(value: string): string {
@@ -107,6 +108,7 @@ export async function GET(req: NextRequest) {
           status: broker.status || '',
           approved: Boolean(broker.approved),
           emailVerified: Boolean(broker.emailVerified || broker.verified),
+          publicProfileEnabled: broker.publicProfileEnabled !== false,
           rankingScore: calculateProfessionalRankingScore({
             rating,
             reviewsCount,
@@ -119,7 +121,7 @@ export async function GET(req: NextRequest) {
           }),
         }
       })
-      .filter((u) => u.status === 'active' && u.approved)
+      .filter((u) => u.status === 'active' && u.approved && u.publicProfileEnabled)
 
     return NextResponse.json({ ok: true, data })
   } catch (error: any) {

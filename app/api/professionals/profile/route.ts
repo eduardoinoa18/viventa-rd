@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { getSessionFromRequest } from '@/lib/auth/session'
 
 function getAuthInfo(req: NextRequest) {
   const role = req.cookies.get('viventa_role')?.value as string | undefined
@@ -30,12 +31,17 @@ const ALLOWED_FIELDS = new Set([
   'teamSize',
   'markets',
   'city',
-  'phone'
+  'phone',
+  'publicProfileEnabled',
+  'slug'
 ])
 
 export async function GET(req: NextRequest) {
   try {
-    const { role, uid } = getAuthInfo(req)
+    const session = await getSessionFromRequest(req)
+    const legacy = getAuthInfo(req)
+    const role = session?.role || legacy.role
+    const uid = session?.uid || legacy.uid
     if (!canEdit(role) || !uid) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
     const db = getAdminDb()
     if (!db) return NextResponse.json({ ok: false, error: 'DB unavailable' }, { status: 500 })
@@ -62,6 +68,8 @@ export async function GET(req: NextRequest) {
       markets: data.markets || '',
       city: data.city || '',
       phone: data.phone || '',
+      publicProfileEnabled: data.publicProfileEnabled !== false,
+      slug: data.slug || '',
       professionalCode: data.professionalCode || '',
       role: data.role || '',
       name: data.name || ''
@@ -74,7 +82,10 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { role, uid } = getAuthInfo(req)
+    const session = await getSessionFromRequest(req)
+    const legacy = getAuthInfo(req)
+    const role = session?.role || legacy.role
+    const uid = session?.uid || legacy.uid
     if (!canEdit(role) || !uid) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
     const db = getAdminDb()
     if (!db) return NextResponse.json({ ok: false, error: 'DB unavailable' }, { status: 500 })
@@ -95,6 +106,8 @@ export async function PATCH(req: NextRequest) {
         ) {
           const parsed = Number(value)
           updates[key] = Number.isFinite(parsed) ? Math.max(0, parsed) : 0
+        } else if (key === 'publicProfileEnabled') {
+          updates[key] = value !== false
         } else if (typeof value === 'string') {
           updates[key] = value.trim().slice(0, 2000)
         } else {

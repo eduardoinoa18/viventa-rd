@@ -31,6 +31,7 @@ export default async function LegacyBrokerIdPage({ params }: { params: { id: str
 
   const data = doc.data() || {}
   if (safeText(data.role).toLowerCase() !== 'broker') notFound()
+  if (safeText(data.status).toLowerCase() !== 'active' || data.approved !== true || data.publicProfileEnabled === false) notFound()
 
   const slug =
     safeText(data.slug) ||

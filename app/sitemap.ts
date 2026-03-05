@@ -83,11 +83,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         collection(db, 'users'),
         where('role', '==', 'agent'),
         where('status', '==', 'active'),
+        where('approved', '==', true),
         limit(500)
       )
       const agentsSnap = await getDocs(agentsQ)
       
-      agentPages = agentsSnap.docs.map((doc: any) => {
+      agentPages = agentsSnap.docs
+      .filter((doc: any) => {
+        const data = doc.data() || {}
+        return data.publicProfileEnabled !== false
+      })
+      .map((doc: any) => {
         const data = doc.data()
         return {
           url: `${baseUrl}/agents/${doc.id}`,
@@ -112,11 +118,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         collection(db, 'users'),
         where('role', '==', 'broker'),
         where('status', '==', 'active'),
+        where('approved', '==', true),
         limit(500)
       )
       const brokersSnap = await getDocs(brokersQ)
       
-      brokerPages = brokersSnap.docs.map((doc: any) => {
+      brokerPages = brokersSnap.docs
+      .filter((doc: any) => {
+        const data = doc.data() || {}
+        return data.publicProfileEnabled !== false
+      })
+      .map((doc: any) => {
         const data = doc.data()
         return {
           url: `${baseUrl}/brokers/${doc.id}`,

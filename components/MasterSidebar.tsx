@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { FiGrid, FiUsers, FiHome, FiBarChart2, FiClipboard, FiTarget, FiInbox } from 'react-icons/fi'
+import BrandLogo from './BrandLogo'
 
 const navigation = [
   { href: '/master', label: 'Overview', icon: FiGrid },
@@ -28,7 +29,7 @@ export default function MasterSidebar() {
     <aside className="w-64 bg-[#0B2545] text-white min-h-screen flex flex-col">
       {/* Header */}
       <div className="p-6 border-b border-white/10">
-        <h1 className="text-2xl font-bold">VIVENTA</h1>
+        <BrandLogo className="h-8 w-auto" />
         <p className="text-sm text-white/60 mt-1">Master Control</p>
       </div>
 

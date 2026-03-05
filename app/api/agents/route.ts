@@ -28,6 +28,7 @@ type AgentDoc = {
   reviewCount?: number
   yearsExperience?: number
   activeSubscription?: boolean
+  publicProfileEnabled?: boolean
 }
 
 type AgentPublic = {
@@ -46,6 +47,7 @@ type AgentPublic = {
   status: string
   approved: boolean
   emailVerified: boolean
+  publicProfileEnabled: boolean
   rankingScore: number
 }
 
@@ -101,6 +103,7 @@ export async function GET(req: NextRequest) {
           status: user.status || '',
           approved: Boolean(user.approved),
           emailVerified: Boolean(user.emailVerified || user.verified),
+          publicProfileEnabled: user.publicProfileEnabled !== false,
           rankingScore: calculateProfessionalRankingScore({
             rating,
             reviewsCount,
@@ -113,7 +116,7 @@ export async function GET(req: NextRequest) {
           }),
         }
       })
-      .filter((u) => u.status === 'active' && u.approved)
+      .filter((u) => u.status === 'active' && u.approved && u.publicProfileEnabled)
 
     return NextResponse.json({ ok: true, data })
   } catch (error: any) {

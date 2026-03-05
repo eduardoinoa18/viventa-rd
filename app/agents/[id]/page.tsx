@@ -21,7 +21,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
           setAgent(null)
         } else {
           const data = snap.data()
-          if (data.role !== 'agent' || data.status !== 'active') {
+          if (data.role !== 'agent' || data.status !== 'active' || data.approved !== true || data.publicProfileEnabled === false) {
             setAgent(null)
           } else {
             setAgent({

@@ -406,6 +406,11 @@ export default function BuyerDashboardPage() {
             <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
               <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Panel profesional</h1>
               <p className="text-sm text-gray-600 mt-1">Hola, {displayName}. Vista principal para {roleLabel.toLowerCase()} con tus listados, oficina y mercado.</p>
+              <div className="mt-3">
+                <Link href="/dashboard/settings" className="inline-flex px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-semibold hover:bg-[#133a66] transition-colors">
+                  Editar perfil público
+                </Link>
+              </div>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                   <div className="text-xs text-gray-500">Mis listados activos</div>

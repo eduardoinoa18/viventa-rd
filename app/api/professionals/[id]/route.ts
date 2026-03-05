@@ -43,6 +43,7 @@ type ProfessionalDoc = {
   activeListings?: number
   teamSize?: number
   agents?: number
+  publicProfileEnabled?: boolean
 }
 
 function toArray(value: string[] | string | undefined): string[] {
@@ -69,6 +70,10 @@ export async function GET(_: Request, context: { params: { id: string } }) {
     }
 
     if (data.status !== 'active' || data.approved !== true) {
+      return NextResponse.json({ ok: false, error: 'Profile unavailable' }, { status: 404 })
+    }
+
+    if (data.publicProfileEnabled === false) {
       return NextResponse.json({ ok: false, error: 'Profile unavailable' }, { status: 404 })
     }
 
