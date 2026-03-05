@@ -9,6 +9,7 @@ import {
   type ReservationStatus,
 } from '@/types/project-inventory'
 import { ProjectInventoryError } from '@/lib/projectInventory/errors'
+import type { ProjectInventoryErrorCode } from '@/lib/projectInventory/errors'
 
 const PROJECT_STATUS_SET = new Set<string>(PROJECT_STATUSES)
 const PROJECT_PUBLISH_MODE_SET = new Set<string>(PROJECT_PUBLISH_MODES)
@@ -174,7 +175,7 @@ export function assertProjectStatusTransition(currentStatus: unknown, nextStatus
   const result = validateProjectStatusTransition({ currentStatus, nextStatus })
   if (!result.ok) {
     throw new ProjectInventoryError({
-      code: result.code,
+      code: result.code as ProjectInventoryErrorCode,
       message: result.error,
       metadata: {
         currentStatus: result.currentStatus,
@@ -190,7 +191,7 @@ export function assertProjectUnitStatusTransition(currentStatus: unknown, nextSt
   const result = validateProjectUnitStatusTransition({ currentStatus, nextStatus })
   if (!result.ok) {
     throw new ProjectInventoryError({
-      code: result.code,
+      code: result.code as ProjectInventoryErrorCode,
       message: result.error,
       metadata: {
         currentStatus: result.currentStatus,
@@ -206,7 +207,7 @@ export function assertReservationStatusTransition(currentStatus: unknown, nextSt
   const result = validateReservationStatusTransition({ currentStatus, nextStatus })
   if (!result.ok) {
     throw new ProjectInventoryError({
-      code: result.code,
+      code: result.code as ProjectInventoryErrorCode,
       message: result.error,
       metadata: {
         currentStatus: result.currentStatus,
