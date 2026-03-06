@@ -764,8 +764,8 @@ export default function BuyerDashboardPage() {
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <Link href="/master/listings" className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Gestionar listados</Link>
-                <Link href="/master/listings/create" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Crear listado</Link>
+                <Link href="/dashboard/listings" className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Gestionar listados</Link>
+                <Link href="/dashboard/listings/create" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Crear listado</Link>
                 {session.role === 'broker' && (
                   <Link href="/api/broker/mls?limit=50" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">MLS interno (API)</Link>
                 )}
@@ -787,7 +787,7 @@ export default function BuyerDashboardPage() {
             <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h2 className="text-lg font-semibold text-[#0B2545]">Mis listados</h2>
-                <Link href="/master/listings" className="text-sm text-[#00A676] font-medium">Ver todos</Link>
+                <Link href="/dashboard/listings" className="text-sm text-[#00A676] font-medium">Ver todos</Link>
               </div>
               {myListings.length === 0 ? (
                 <p className="text-sm text-gray-500">Aún no tienes listados activos.</p>
