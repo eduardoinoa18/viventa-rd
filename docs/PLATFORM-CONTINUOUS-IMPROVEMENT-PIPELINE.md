@@ -79,12 +79,18 @@ Related implementation/docs:
 1. Complete Project Inventory Sprint 1 backend scope (`INV-003` to `INV-008`).
 2. Add timeline enrichment events for reservation lifecycle (`reservation_started`, `reservation_completed`).
 3. Add admin guardrails in APIs for impersonated sessions (server-side enforcement mirrors UI lock).
+4. Start DR operating-model lane (`DEM-011` to `DEM-014`):
+	- Broker Admin OS (RD office reality)
+	- Agent portal finalization
+	- Constructora workspace finalization
+	- Master-admin-first permission inheritance enforcement
 
 ## Next 3–4 cycles (P1)
 
 1. Reservations transactional engine (`INV-009` to `INV-012`).
 2. Reservation expiry + counters reconciliation (`INV-013`, `INV-014`).
 3. Broker operations dashboard alignment with inventory KPIs.
+4. DR transaction and commission traceability hardening (split/referral support + full audit path).
 
 ## Strategic backlog (P2)
 

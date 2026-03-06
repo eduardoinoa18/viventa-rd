@@ -292,9 +292,9 @@ export async function POST(req: NextRequest) {
       admin: '/master',
       buyer: '/dashboard',
       user: '/dashboard',
-      agent: '/master',
-      broker: '/master',
-      constructora: '/master',
+      agent: '/dashboard',
+      broker: '/dashboard',
+      constructora: '/dashboard',
     }
 
     const response = NextResponse.json({

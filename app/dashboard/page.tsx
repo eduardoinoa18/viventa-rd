@@ -69,6 +69,59 @@ type BrokerTransactionsSummary = {
   negotiating?: number
   won?: number
   projectedValue?: number
+  pendingCommissions?: number
+  paidCommissions?: number
+  monthlyProjection?: number
+  stages?: {
+    lead?: number
+    showing?: number
+    oferta?: number
+    enNegociacion?: number
+    contratoFirmado?: number
+    cierre?: number
+    completado?: number
+  }
+}
+
+type AgentDashboardOverview = {
+  summary?: {
+    activeListings?: number
+    soldLast30Days?: number
+    leadsAssigned?: number
+    newLeadsLast30Days?: number
+    leadsWon?: number
+    pipelineOpen?: number
+    leadToCloseRate?: number
+    avgResponseMinutes?: number
+  }
+  recentActivity?: Array<{
+    id: string
+    type: string
+    title: string
+    status: string
+    at?: string | null
+  }>
+}
+
+type ConstructoraDashboardOverview = {
+  summary?: {
+    totalProjects?: number
+    activeProjects?: number
+    totalUnits?: number
+    availableUnits?: number
+    reservedUnits?: number
+    soldUnits?: number
+    inProcessUnits?: number
+  }
+  topCities?: Array<{ city: string; projects: number }>
+  recentProjects?: Array<{
+    id: string
+    name: string
+    city?: string
+    status?: string
+    availableUnits?: number
+    totalUnits?: number
+  }>
 }
 
 type BrokerTeamMember = {
@@ -118,6 +171,8 @@ export default function BuyerDashboardPage() {
   const [leadActionReason, setLeadActionReason] = useState('')
   const [leadActionStatus, setLeadActionStatus] = useState('')
   const [leadActionLoading, setLeadActionLoading] = useState(false)
+  const [agentOverview, setAgentOverview] = useState<AgentDashboardOverview | null>(null)
+  const [constructoraOverview, setConstructoraOverview] = useState<ConstructoraDashboardOverview | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -251,6 +306,18 @@ export default function BuyerDashboardPage() {
         } else {
           setBrokerLeads([])
         }
+
+        if (session.role === 'agent') {
+          const agentOverviewRes = await fetch('/api/agent/dashboard/overview', { cache: 'no-store' })
+          const agentOverviewJson = await agentOverviewRes.json().catch(() => ({}))
+          if (agentOverviewRes.ok && agentOverviewJson?.ok) {
+            setAgentOverview(agentOverviewJson)
+          } else {
+            setAgentOverview(null)
+          }
+        } else {
+          setAgentOverview(null)
+        }
       } catch (error: any) {
         if (!active) return
         setProListingsError(error?.message || 'No se pudo cargar el panel profesional')
@@ -262,6 +329,7 @@ export default function BuyerDashboardPage() {
         setBrokerTransactionsSummary(null)
         setBrokerTeamMembers([])
         setBrokerLeads([])
+        setAgentOverview(null)
       } finally {
         if (active) setProListingsLoading(false)
       }
@@ -272,6 +340,39 @@ export default function BuyerDashboardPage() {
       active = false
     }
   }, [session, selectedLeadId])
+
+  useEffect(() => {
+    if (!session || session.role !== 'constructora') return
+
+    let active = true
+    const loadConstructoraOverview = async () => {
+      try {
+        setProListingsLoading(true)
+        setProListingsError('')
+
+        const res = await fetch('/api/constructora/dashboard/overview', { cache: 'no-store' })
+        const json = await res.json().catch(() => ({}))
+        if (!active) return
+
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.error || 'No se pudo cargar el panel de constructora')
+        }
+
+        setConstructoraOverview(json)
+      } catch (error: any) {
+        if (!active) return
+        setConstructoraOverview(null)
+        setProListingsError(error?.message || 'No se pudo cargar el panel de constructora')
+      } finally {
+        if (active) setProListingsLoading(false)
+      }
+    }
+
+    loadConstructoraOverview()
+    return () => {
+      active = false
+    }
+  }, [session])
 
   async function refreshLeadOps() {
     const [leadsRes, txRes] = await Promise.all([
@@ -362,6 +463,7 @@ export default function BuyerDashboardPage() {
   const displayName = session?.name || 'Comprador'
   const isBuyerRole = session?.role === 'buyer' || session?.role === 'user'
   const isProfessionalRole = session?.role === 'agent' || session?.role === 'broker'
+  const isConstructoraRole = session?.role === 'constructora'
 
   if (loading) {
     return (
@@ -517,6 +619,46 @@ export default function BuyerDashboardPage() {
                     <div className="mt-2 text-xs text-gray-600">
                       Valor proyectado: {formatPrice(brokerTransactionsSummary?.projectedValue, 'USD')}
                     </div>
+                    {session.role === 'broker' && (
+                      <div className="mt-2 grid grid-cols-3 gap-2 text-sm">
+                        <div className="rounded bg-gray-50 p-2">
+                          <div className="text-[11px] text-gray-500">Com. pendiente</div>
+                          <div className="font-bold text-[#0B2545]">{formatPrice(brokerTransactionsSummary?.pendingCommissions, 'USD')}</div>
+                        </div>
+                        <div className="rounded bg-gray-50 p-2">
+                          <div className="text-[11px] text-gray-500">Com. pagada</div>
+                          <div className="font-bold text-[#0B2545]">{formatPrice(brokerTransactionsSummary?.paidCommissions, 'USD')}</div>
+                        </div>
+                        <div className="rounded bg-gray-50 p-2">
+                          <div className="text-[11px] text-gray-500">Proyección mes</div>
+                          <div className="font-bold text-[#0B2545]">{formatPrice(brokerTransactionsSummary?.monthlyProjection, 'USD')}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {session.role === 'agent' && agentOverview?.summary && (
+                <div className="mt-4 rounded-lg border border-gray-100 bg-white p-3">
+                  <div className="text-xs text-gray-500">Rendimiento personal (Agente)</div>
+                  <div className="mt-2 grid grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
+                    <div className="rounded bg-gray-50 p-2">
+                      <div className="text-[11px] text-gray-500">Activos</div>
+                      <div className="font-bold text-[#0B2545]">{agentOverview.summary.activeListings || 0}</div>
+                    </div>
+                    <div className="rounded bg-gray-50 p-2">
+                      <div className="text-[11px] text-gray-500">Nuevos leads 30d</div>
+                      <div className="font-bold text-[#0B2545]">{agentOverview.summary.newLeadsLast30Days || 0}</div>
+                    </div>
+                    <div className="rounded bg-gray-50 p-2">
+                      <div className="text-[11px] text-gray-500">Leads ganados</div>
+                      <div className="font-bold text-[#0B2545]">{agentOverview.summary.leadsWon || 0}</div>
+                    </div>
+                    <div className="rounded bg-gray-50 p-2">
+                      <div className="text-[11px] text-gray-500">Resp. promedio</div>
+                      <div className="font-bold text-[#0B2545]">{agentOverview.summary.avgResponseMinutes || 0} min</div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -624,6 +766,9 @@ export default function BuyerDashboardPage() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link href="/master/listings" className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Gestionar listados</Link>
                 <Link href="/master/listings/create" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Crear listado</Link>
+                {session.role === 'broker' && (
+                  <Link href="/api/broker/mls?limit=50" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">MLS interno (API)</Link>
+                )}
               </div>
             </section>
 
@@ -694,6 +839,83 @@ export default function BuyerDashboardPage() {
                 </div>
               )}
             </section>
+          </div>
+        </main>
+        <Footer />
+        <BottomNav />
+      </>
+    )
+  }
+
+  if (isConstructoraRole) {
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen bg-gray-50 pb-20 md:pb-8">
+          <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-5">
+            <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+              <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Panel de Constructora</h1>
+              <p className="text-sm text-gray-600 mt-1">Hola, {displayName}. Controla proyectos, inventario y reservas con enfoque RD.</p>
+              <div className="mt-3">
+                <Link href="/dashboard/settings" className="inline-flex px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-semibold hover:bg-[#133a66] transition-colors">
+                  Editar perfil público
+                </Link>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                  <div className="text-xs text-gray-500">Proyectos activos</div>
+                  <div className="text-lg font-bold text-[#0B2545]">{constructoraOverview?.summary?.activeProjects || 0}</div>
+                </div>
+                <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                  <div className="text-xs text-gray-500">Unidades disponibles</div>
+                  <div className="text-lg font-bold text-[#0B2545]">{constructoraOverview?.summary?.availableUnits || 0}</div>
+                </div>
+                <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                  <div className="text-xs text-gray-500">Unidades reservadas</div>
+                  <div className="text-lg font-bold text-[#0B2545]">{constructoraOverview?.summary?.reservedUnits || 0}</div>
+                </div>
+                <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                  <div className="text-xs text-gray-500">Unidades vendidas</div>
+                  <div className="text-lg font-bold text-[#0B2545]">{constructoraOverview?.summary?.soldUnits || 0}</div>
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h2 className="text-lg font-semibold text-[#0B2545]">Proyectos recientes</h2>
+                <Link href="/constructoras" className="text-sm text-[#00A676] font-medium">Vista pública</Link>
+              </div>
+              {!constructoraOverview?.recentProjects?.length ? (
+                <p className="text-sm text-gray-500">No hay proyectos vinculados a tu constructora todavía.</p>
+              ) : (
+                <div className="space-y-2">
+                  {constructoraOverview.recentProjects.map((project) => (
+                    <Link key={project.id} href={`/projects/${project.id}`} className="block rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors">
+                      <div className="text-sm font-semibold text-[#0B2545]">{project.name}</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {project.city || 'RD'} • {project.availableUnits || 0}/{project.totalUnits || 0} unidades disponibles
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {constructoraOverview?.topCities?.length ? (
+              <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+                <h2 className="text-lg font-semibold text-[#0B2545] mb-3">Huella por ciudad</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {constructoraOverview.topCities.map((item) => (
+                    <div key={item.city} className="rounded-lg border border-gray-200 p-3">
+                      <div className="text-sm font-semibold text-[#0B2545]">{item.city}</div>
+                      <div className="text-xs text-gray-600">{item.projects} proyecto(s)</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </div>
         </main>
         <Footer />

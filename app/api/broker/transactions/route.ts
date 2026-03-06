@@ -9,6 +9,33 @@ function safeText(value: unknown): string {
   return String(value ?? '').trim().toLowerCase()
 }
 
+function toNumber(value: unknown): number {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function normalizeTransactionStage(stageValue: unknown, statusValue: unknown): string {
+  const stage = safeText(stageValue)
+  if (stage) return stage
+  const status = safeText(statusValue)
+  if (status === 'won' || status === 'closed' || status === 'completado') return 'completado'
+  if (status === 'negotiating') return 'en_negociacion'
+  if (status === 'qualified') return 'oferta'
+  if (status === 'contacted') return 'showing'
+  return 'lead'
+}
+
+function sumCommission(record: Record<string, any>): number {
+  return (
+    toNumber(record.commissionAmount) ||
+    toNumber(record.totalCommission) ||
+    toNumber(record.potentialCommission) ||
+    toNumber(record.potentialValue) ||
+    toNumber(record.dealValue) ||
+    0
+  )
+}
+
 export async function GET(req: Request) {
   try {
     const db = getAdminDb()
@@ -51,18 +78,53 @@ export async function GET(req: Request) {
         return officeAgentIds.has(owner) || leadOffice === context.officeId
       })
 
+    const stageCounts = {
+      lead: 0,
+      showing: 0,
+      oferta: 0,
+      enNegociacion: 0,
+      contratoFirmado: 0,
+      cierre: 0,
+      completado: 0,
+    }
+
+    let pendingCommissions = 0
+    let paidCommissions = 0
+    let projectedCommissions = 0
+
+    for (const lead of leads) {
+      const stage = normalizeTransactionStage(lead.leadStage, lead.status)
+      const commissionValue = sumCommission(lead)
+
+      if (stage === 'lead') stageCounts.lead++
+      else if (stage === 'showing' || stage === 'visita' || stage === 'visita_programada' || stage === 'visita_realizada') stageCounts.showing++
+      else if (stage === 'oferta' || stage === 'offer') stageCounts.oferta++
+      else if (stage === 'en_negociacion' || stage === 'negotiating') stageCounts.enNegociacion++
+      else if (stage === 'contrato_firmado' || stage === 'contract') stageCounts.contratoFirmado++
+      else if (stage === 'cierre' || stage === 'closing') stageCounts.cierre++
+      else if (stage === 'completado' || stage === 'won' || stage === 'closed') stageCounts.completado++
+
+      const commissionStatus = safeText((lead as any).commissionStatus)
+      if (commissionStatus === 'paid' || commissionStatus === 'pagada') {
+        paidCommissions += commissionValue
+      } else if (commissionValue > 0 && stage !== 'completado') {
+        pendingCommissions += commissionValue
+      }
+
+      if (stage === 'oferta' || stage === 'en_negociacion' || stage === 'contrato_firmado' || stage === 'cierre') {
+        projectedCommissions += commissionValue
+      }
+    }
+
     const totalPipeline = leads.length
-    const won = leads.filter((lead) => safeText(lead.leadStage || lead.status) === 'won').length
-    const negotiating = leads.filter((lead) => safeText(lead.leadStage) === 'negotiating').length
+    const won = stageCounts.completado
+    const negotiating = stageCounts.enNegociacion
     const qualified = leads.filter((lead) => {
       const stage = safeText(lead.leadStage)
       return stage === 'qualified' || stage === 'negotiating' || stage === 'won'
     }).length
 
-    const projectedValue = leads.reduce((sum, lead) => {
-      const value = Number(lead.potentialCommission || lead.potentialValue || lead.dealValue || 0)
-      return sum + (Number.isFinite(value) ? value : 0)
-    }, 0)
+    const projectedValue = leads.reduce((sum, lead) => sum + sumCommission(lead), 0)
 
     return NextResponse.json({
       ok: true,
@@ -73,6 +135,10 @@ export async function GET(req: Request) {
         negotiating,
         won,
         projectedValue: Number(projectedValue.toFixed(2)),
+        pendingCommissions: Number(pendingCommissions.toFixed(2)),
+        paidCommissions: Number(paidCommissions.toFixed(2)),
+        monthlyProjection: Number(projectedCommissions.toFixed(2)),
+        stages: stageCounts,
       },
     })
   } catch (error: any) {

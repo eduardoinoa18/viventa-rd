@@ -7,6 +7,7 @@ Scope: Beta execution with Paraiso Inmobiliario + controlled marketplace model
 Continuous execution tracker:
 - [PLATFORM-CONTINUOUS-IMPROVEMENT-PIPELINE.md](docs/PLATFORM-CONTINUOUS-IMPROVEMENT-PIPELINE.md)
 - [PLATFORM-DEMAND-COVERAGE-BOARD.md](docs/PLATFORM-DEMAND-COVERAGE-BOARD.md)
+- [BROKER-ADMIN-PORTAL-RD.md](docs/BROKER-ADMIN-PORTAL-RD.md)
 
 ## Latest Execution Update
 
@@ -107,6 +108,39 @@ These rules are now part of product direction:
 ---
 
 ## 3) Priority Backlog (Execution Order)
+
+## P0.RD — Dominican Republic Operating Model Lock (new)
+
+### P0.RD.1 Master-admin-first permission inheritance
+- Master Admin defines every capability once.
+- Broker/Agent/Constructora dashboards consume scoped subsets by role.
+- Server-side enforcement of office/project ownership boundaries is mandatory.
+
+### P0.RD.2 Broker Admin OS (DR operations)
+- Deliver broker command center aligned with RD operations:
+  - office production
+  - team load
+  - lead assignment velocity
+  - reserve-before-contract visibility
+- Include WhatsApp-first lead handling and internal notes timeline.
+
+### P0.RD.3 Agent Portal finalization
+- Finalize personal execution cockpit:
+  - assigned leads
+  - personal listings
+  - transaction stages
+  - response-time SLA visibility
+- Keep agent permissions strictly personal scope (no cross-office visibility).
+
+### P0.RD.4 Constructora workspace finalization
+- Finalize constructora control of projects/units and reservations.
+- Maintain clean handoff to broker/agent selling layer without exposing global data.
+- Ensure reservation lifecycle and inventory counters remain consistent.
+
+### P0.RD.5 DR transaction + commission traceability
+- Support stages used in RD closing reality (including reservation step).
+- Add split/referral commission trace fields.
+- Ensure every transition is auditable from lead to close.
 
 ## P0 — Immediate Foundation (must close first)
 

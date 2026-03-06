@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getMiddlewareSession } from './lib/auth/middleware-session'
 
 const PORTAL_ROLES = new Set(['master_admin', 'admin', 'agent', 'broker', 'constructora'])
+const PROFESSIONAL_ROLES = new Set(['agent', 'broker', 'constructora'])
 const BUYER_ROLES = new Set(['buyer', 'user'])
 
 export async function middleware(req: NextRequest) {
@@ -27,6 +28,10 @@ export async function middleware(req: NextRequest) {
 
     if (session.role === 'master_admin') {
       return NextResponse.redirect(new URL(session.twoFactorVerified ? '/master' : '/verify-2fa', req.url))
+    }
+
+    if (PROFESSIONAL_ROLES.has(session.role)) {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
     if (PORTAL_ROLES.has(session.role)) {
@@ -50,8 +55,7 @@ export async function middleware(req: NextRequest) {
 
   const publicRemoved = [
     '/properties', '/social', '/favorites', '/messages',
-    '/notifications', '/onboarding', '/profesionales',
-    '/agent'
+    '/notifications', '/onboarding', '/profesionales'
   ]
   if (publicRemoved.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return NextResponse.redirect(new URL('/search', req.url), 308)
@@ -105,8 +109,8 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/login?next=' + encodeURIComponent(pathname), req.url))
     }
 
-    if (!BUYER_ROLES.has(session.role)) {
-      return NextResponse.redirect(new URL('/master', req.url))
+    if (!BUYER_ROLES.has(session.role) && !PROFESSIONAL_ROLES.has(session.role)) {
+      return NextResponse.redirect(new URL('/search', req.url))
     }
 
     return NextResponse.next()

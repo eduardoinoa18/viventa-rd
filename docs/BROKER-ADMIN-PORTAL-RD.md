@@ -539,3 +539,22 @@ Si se ejecuta correctamente, Viventa se vuelve el sistema operativo de la oficin
 ## Nota estratégica final
 
 Viventa en RD debe reemplazar la operación fragmentada (Excel + WhatsApp desordenado + herramientas separadas) por un único sistema operativo de oficina orientado a ejecución diaria.
+
+---
+
+## Integración con ruta activa de ejecución
+
+Este blueprint queda incorporado al execution pipeline como base obligatoria para:
+
+- `DEM-011` Broker Admin RD
+- `DEM-012` Agent Portal RD
+- `DEM-013` Constructora RD
+- `DEM-014` Permissions Core
+
+Regla operativa de implementación:
+
+1. Todo feature nuevo se diseña desde `master_admin` y se hereda por rol con permisos reducidos.
+2. Todo endpoint broker/agent/constructora debe aplicar aislamiento server-side por oficina/proyecto.
+3. Todo flujo de transacción debe soportar la secuencia operativa RD con reserva previa.
+4. Todo módulo de leads debe contemplar contacto WhatsApp-first y trazabilidad de seguimiento.
+5. Todo cambio debe actualizar estado en `docs/PLATFORM-DEMAND-COVERAGE-BOARD.md` antes de cierre.
