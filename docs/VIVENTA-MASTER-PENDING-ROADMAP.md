@@ -6,6 +6,7 @@ Scope: Beta execution with Paraiso Inmobiliario + controlled marketplace model
 
 Continuous execution tracker:
 - [PLATFORM-CONTINUOUS-IMPROVEMENT-PIPELINE.md](docs/PLATFORM-CONTINUOUS-IMPROVEMENT-PIPELINE.md)
+- [PLATFORM-DEMAND-COVERAGE-BOARD.md](docs/PLATFORM-DEMAND-COVERAGE-BOARD.md)
 
 ## Latest Execution Update
 

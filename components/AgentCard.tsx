@@ -125,7 +125,7 @@ export default function AgentCard({ agent }: { agent: any }) {
 
         {/* View Profile Link */}
         <Link
-          href={`/agents/${agent.id}`}
+          href={`/agent/${agent.slug || agent.id}`}
           className="block w-full py-2 text-[#3BAFDA] font-semibold hover:text-[#2A9FC7] transition text-sm"
         >
           Ver Perfil Completo →

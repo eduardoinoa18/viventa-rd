@@ -5,6 +5,16 @@ import { calculateProfessionalRankingScore } from '@/lib/professionalRanking'
 
 export const dynamic = 'force-dynamic'
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+}
+
 type AgentDoc = {
   name?: string
   displayName?: string
@@ -29,10 +39,12 @@ type AgentDoc = {
   yearsExperience?: number
   activeSubscription?: boolean
   publicProfileEnabled?: boolean
+  slug?: string
 }
 
 type AgentPublic = {
   id: string
+  slug: string
   name: string
   email: string
   phone: string
@@ -89,6 +101,7 @@ export async function GET(req: NextRequest) {
 
         return {
           id: d.id,
+          slug: user.slug || slugify(String(user.name || user.displayName || d.id)),
           name: user.name || user.displayName || 'Agente',
           email: user.email || '',
           phone: user.phone || '',

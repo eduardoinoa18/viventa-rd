@@ -24,6 +24,16 @@ function initFirebase() {
   return getFirestore()
 }
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com'
   
@@ -95,8 +105,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
       .map((doc: any) => {
         const data = doc.data()
+        const slug = data.slug || slugify(String(data.name || data.displayName || doc.id))
         return {
-          url: `${baseUrl}/agents/${doc.id}`,
+          url: `${baseUrl}/agent/${slug}`,
           lastModified: data.updatedAt?.toDate() || new Date(),
           changeFrequency: 'monthly' as const,
           priority: 0.7,

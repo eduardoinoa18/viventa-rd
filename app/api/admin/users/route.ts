@@ -351,7 +351,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { id, status, role, name, phone, brokerage, company, email, disabled, emailVerified, verified, approved, forcePasswordReset, lifecycleReason, onboardingQuestionnaire, onboardingStatus } = body
+    const { id, status, role, name, phone, brokerage, company, email, disabled, emailVerified, verified, approved, publicProfileEnabled, forcePasswordReset, lifecycleReason, onboardingQuestionnaire, onboardingStatus } = body
     if (!id) return NextResponse.json({ ok: false, error: 'id required' }, { status: 400 })
 
     const userRef = adminDb.collection('users').doc(id)
@@ -410,6 +410,7 @@ export async function PATCH(req: NextRequest) {
     if (typeof emailVerified === 'boolean') updates.emailVerified = emailVerified
     if (typeof verified === 'boolean') updates.verified = verified
     if (typeof approved === 'boolean') updates.approved = approved
+    if (typeof publicProfileEnabled === 'boolean') updates.publicProfileEnabled = publicProfileEnabled
     if (typeof forcePasswordReset === 'boolean') updates.forcePasswordReset = forcePasswordReset
     if (onboardingQuestionnaire && typeof onboardingQuestionnaire === 'object') updates.onboardingQuestionnaire = onboardingQuestionnaire
     if (typeof onboardingStatus === 'string' && onboardingStatus.trim()) updates.onboardingStatus = onboardingStatus.trim()

@@ -14,6 +14,9 @@ Keep every strategic request tracked in one operating list with clear status:
 
 No initiative is considered complete unless it is captured here and linked to implementation artifacts.
 
+Demand board (single source of truth):
+- `docs/PLATFORM-DEMAND-COVERAGE-BOARD.md`
+
 ---
 
 ## Coverage Tracker (What has already been delivered)

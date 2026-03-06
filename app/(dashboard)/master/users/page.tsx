@@ -32,6 +32,7 @@ type User = {
   complianceReviewStatus?: string
   onboardingQuestionnaire?: Record<string, any>
   onboardingStatus?: string
+  publicProfileEnabled?: boolean
 }
 
 type UsersOverview = {
@@ -272,6 +273,35 @@ export default function MasterUsersPage() {
     } catch (e) {
       console.error('Failed to delete user', e)
       toast.error('Failed to delete user')
+    }
+  }
+
+  async function togglePublicProfile(user: User) {
+    const uid = user.uid || user.id
+    const nextValue = user.publicProfileEnabled === false
+    const actionLabel = nextValue ? 'show' : 'hide'
+    if (!confirm(`Do you want to ${actionLabel} this profile publicly?`)) return
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: uid,
+          publicProfileEnabled: nextValue,
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        toast.error(json?.error || 'Failed to update public profile visibility')
+        return
+      }
+
+      toast.success(nextValue ? 'Public profile enabled' : 'Public profile hidden')
+      loadUsers()
+    } catch (error) {
+      console.error('Failed to toggle public profile visibility', error)
+      toast.error('Failed to update public profile visibility')
     }
   }
 
@@ -718,6 +748,8 @@ export default function MasterUsersPage() {
                     const isDisabled = user.disabled || user.status === 'inactive' || user.status === 'suspended'
                     const isInvited = user.status === 'invited'
                     const risk = getRiskMeta(user)
+                    const isProfessional = user.role === 'agent' || user.role === 'broker' || user.role === 'constructora'
+                    const isPublicProfileEnabled = user.publicProfileEnabled !== false
                     
                     return (
                       <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${isDisabled ? 'opacity-60' : ''}`}>
@@ -852,6 +884,20 @@ export default function MasterUsersPage() {
                             >
                               Compliance
                             </button>
+                            {isProfessional && (
+                              <button
+                                onClick={() => togglePublicProfile(user)}
+                                disabled={isBrokerView || isDangerousActionsLocked}
+                                className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                  isPublicProfileEnabled
+                                    ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                                    : 'text-slate-700 bg-slate-100 hover:bg-slate-200'
+                                }`}
+                                title={isPublicProfileEnabled ? 'Hide public profile' : 'Show public profile'}
+                              >
+                                {isPublicProfileEnabled ? 'Public: ON' : 'Public: OFF'}
+                              </button>
+                            )}
                             <button
                               onClick={() => toggleStatus(user.uid || user.id, isDisabled)}
                               disabled={isBrokerView || isDangerousActionsLocked}
