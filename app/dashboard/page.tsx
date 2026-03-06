@@ -135,7 +135,16 @@ type BrokerLeadItem = {
   id: string
   buyerName?: string
   buyerEmail?: string
+  buyerPhone?: string
   leadStage?: string
+  slaStatus?: 'breached' | 'due_soon' | 'healthy'
+  slaBreached?: boolean
+  secondsToBreach?: number | null
+  stageSlaDueAt?: string | null
+  followUpAt?: string | null
+  nextActionNote?: string
+  priority?: 'low' | 'normal' | 'high'
+  lastActivityAt?: string | null
   ownerAgentId?: string | null
   createdAt?: string | null
 }
@@ -147,6 +156,21 @@ function formatPrice(value?: number, currency: 'USD' | 'DOP' = 'USD') {
     currency,
     maximumFractionDigits: 0,
   }).format(Number(value))
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  if (!Number.isFinite(parsed.getTime())) return '—'
+  return parsed.toLocaleString('es-DO', { hour12: false })
+}
+
+function toInputDateTime(value?: string | null) {
+  if (!value) return ''
+  const parsed = new Date(value)
+  if (!Number.isFinite(parsed.getTime())) return ''
+  const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 16)
 }
 
 export default function BuyerDashboardPage() {
@@ -171,6 +195,11 @@ export default function BuyerDashboardPage() {
   const [leadActionReason, setLeadActionReason] = useState('')
   const [leadActionStatus, setLeadActionStatus] = useState('')
   const [leadActionLoading, setLeadActionLoading] = useState(false)
+  const [leadFollowUpAt, setLeadFollowUpAt] = useState('')
+  const [leadNextActionNote, setLeadNextActionNote] = useState('')
+  const [leadPriority, setLeadPriority] = useState<'low' | 'normal' | 'high'>('normal')
+  const [automationLoading, setAutomationLoading] = useState(false)
+  const [automationStatus, setAutomationStatus] = useState('')
   const [agentOverview, setAgentOverview] = useState<AgentDashboardOverview | null>(null)
   const [constructoraOverview, setConstructoraOverview] = useState<ConstructoraDashboardOverview | null>(null)
 
@@ -460,10 +489,98 @@ export default function BuyerDashboardPage() {
     }
   }
 
+  async function handleSaveFollowUp() {
+    if (!selectedLeadId) {
+      setLeadActionStatus('Selecciona un lead para guardar seguimiento.')
+      return
+    }
+
+    try {
+      setLeadActionLoading(true)
+      setLeadActionStatus('')
+      const res = await fetch('/api/broker/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'followup',
+          leadId: selectedLeadId,
+          followUpAt: leadFollowUpAt ? new Date(leadFollowUpAt).toISOString() : null,
+          nextActionNote: leadNextActionNote,
+          priority: leadPriority,
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || 'No se pudo guardar el seguimiento')
+      }
+      setLeadActionStatus('Seguimiento CRM guardado correctamente.')
+      await refreshLeadOps()
+    } catch (error: any) {
+      setLeadActionStatus(error?.message || 'No se pudo guardar el seguimiento')
+    } finally {
+      setLeadActionLoading(false)
+    }
+  }
+
+  async function handleRunFollowupReminders() {
+    if (session?.role !== 'broker') {
+      setAutomationStatus('Solo brokers pueden ejecutar recordatorios automáticos.')
+      return
+    }
+
+    try {
+      setAutomationLoading(true)
+      setAutomationStatus('')
+      const res = await fetch('/api/broker/leads/automation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'followup_reminders', limit: 100 }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || 'No se pudieron ejecutar recordatorios')
+      }
+
+      const reminded = Number(json?.data?.reminded || 0)
+      setAutomationStatus(
+        reminded > 0
+          ? `Recordatorios enviados: ${reminded}`
+          : 'No había seguimientos vencidos pendientes de recordatorio.'
+      )
+      await refreshLeadOps()
+    } catch (error: any) {
+      setAutomationStatus(error?.message || 'No se pudieron ejecutar recordatorios')
+    } finally {
+      setAutomationLoading(false)
+    }
+  }
+
+  const selectedLead = brokerLeads.find((lead) => lead.id === selectedLeadId) || null
+
+  useEffect(() => {
+    if (!selectedLead) {
+      setLeadFollowUpAt('')
+      setLeadNextActionNote('')
+      setLeadPriority('normal')
+      return
+    }
+
+    setLeadFollowUpAt(toInputDateTime(selectedLead.followUpAt || null))
+    setLeadNextActionNote(selectedLead.nextActionNote || '')
+    setLeadPriority(selectedLead.priority || 'normal')
+  }, [selectedLeadId, brokerLeads])
+
   const displayName = session?.name || 'Comprador'
   const isBuyerRole = session?.role === 'buyer' || session?.role === 'user'
   const isProfessionalRole = session?.role === 'agent' || session?.role === 'broker'
   const isConstructoraRole = session?.role === 'constructora'
+  const breachedLeadsCount = brokerLeads.filter((lead) => lead.slaStatus === 'breached' || lead.slaBreached).length
+  const dueSoonLeadsCount = brokerLeads.filter((lead) => lead.slaStatus === 'due_soon').length
+  const followUpDueCount = brokerLeads.filter((lead) => {
+    if (!lead.followUpAt) return false
+    const due = new Date(lead.followUpAt)
+    return Number.isFinite(due.getTime()) && due.getTime() <= Date.now()
+  }).length
 
   if (loading) {
     return (
@@ -669,6 +786,39 @@ export default function BuyerDashboardPage() {
                   <span className="text-[11px] text-gray-500">Leads + Transactions</span>
                 </div>
 
+                {session.role === 'broker' && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleRunFollowupReminders}
+                      disabled={automationLoading}
+                      className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545] disabled:opacity-50"
+                    >
+                      {automationLoading ? 'Ejecutando recordatorios...' : 'Enviar recordatorios vencidos'}
+                    </button>
+                    {automationStatus ? <p className="text-xs text-gray-600">{automationStatus}</p> : null}
+                  </div>
+                )}
+
+                <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                  <div className="rounded bg-gray-50 p-2">
+                    <div className="text-[11px] text-gray-500">Leads activos</div>
+                    <div className="font-bold text-[#0B2545]">{brokerLeads.length}</div>
+                  </div>
+                  <div className="rounded bg-red-50 p-2 border border-red-100">
+                    <div className="text-[11px] text-red-600">SLA vencido</div>
+                    <div className="font-bold text-[#0B2545]">{breachedLeadsCount}</div>
+                  </div>
+                  <div className="rounded bg-amber-50 p-2 border border-amber-100">
+                    <div className="text-[11px] text-amber-700">SLA &lt; 24h</div>
+                    <div className="font-bold text-[#0B2545]">{dueSoonLeadsCount}</div>
+                  </div>
+                  <div className="rounded bg-blue-50 p-2 border border-blue-100">
+                    <div className="text-[11px] text-blue-700">Seguimientos vencidos</div>
+                    <div className="font-bold text-[#0B2545]">{followUpDueCount}</div>
+                  </div>
+                </div>
+
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Lead</label>
@@ -758,6 +908,71 @@ export default function BuyerDashboardPage() {
                   </div>
                 </div>
 
+                {selectedLead && (
+                  <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                    <div className="text-xs text-gray-500">Ficha rápida CRM</div>
+                    <div className="mt-1 text-sm font-semibold text-[#0B2545]">{selectedLead.buyerName || 'Lead'}</div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {selectedLead.buyerEmail || 'Sin email'}
+                      {selectedLead.buyerPhone ? ` • ${selectedLead.buyerPhone}` : ''}
+                    </div>
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
+                      <div>Etapa: <span className="font-medium text-[#0B2545]">{selectedLead.leadStage || 'new'}</span></div>
+                      <div>SLA: <span className="font-medium text-[#0B2545]">{selectedLead.slaStatus || 'healthy'}</span></div>
+                      <div>Vence SLA: <span className="font-medium text-[#0B2545]">{formatDateTime(selectedLead.stageSlaDueAt)}</span></div>
+                      <div>Última actividad: <span className="font-medium text-[#0B2545]">{formatDateTime(selectedLead.lastActivityAt)}</span></div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Próximo seguimiento</label>
+                        <input
+                          type="datetime-local"
+                          title="Fecha y hora del próximo seguimiento"
+                          placeholder="Selecciona fecha y hora"
+                          value={leadFollowUpAt}
+                          onChange={(e) => setLeadFollowUpAt(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Prioridad</label>
+                        <select
+                          title="Prioridad del lead"
+                          value={leadPriority}
+                          onChange={(e) => setLeadPriority(e.target.value as 'low' | 'normal' | 'high')}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                        >
+                          <option value="low">Baja</option>
+                          <option value="normal">Normal</option>
+                          <option value="high">Alta</option>
+                        </select>
+                      </div>
+                      <div className="flex items-end">
+                        <button
+                          type="button"
+                          onClick={handleSaveFollowUp}
+                          disabled={leadActionLoading}
+                          className="w-full px-3 py-2 rounded-lg bg-[#133a66] text-white text-sm font-medium disabled:opacity-50"
+                        >
+                          Guardar seguimiento
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-2">
+                      <label className="block text-xs text-gray-600 mb-1">Próxima acción</label>
+                      <textarea
+                        value={leadNextActionNote}
+                        onChange={(e) => setLeadNextActionNote(e.target.value)}
+                        rows={2}
+                        placeholder="Ej: confirmar visita este viernes"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {leadActionStatus && (
                   <p className="mt-2 text-xs text-gray-600">{leadActionStatus}</p>
                 )}
@@ -766,6 +981,9 @@ export default function BuyerDashboardPage() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link href="/dashboard/listings" className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Gestionar listados</Link>
                 <Link href="/dashboard/listings/create" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Crear listado</Link>
+                <Link href="/messages" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Mensajes</Link>
+                <Link href="/notifications" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Notificaciones</Link>
+                <Link href="/dashboard/billing" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Facturación</Link>
                 {session.role === 'broker' && (
                   <Link href="/api/broker/mls?limit=50" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">MLS interno (API)</Link>
                 )}
@@ -860,6 +1078,11 @@ export default function BuyerDashboardPage() {
                 <Link href="/dashboard/settings" className="inline-flex px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-semibold hover:bg-[#133a66] transition-colors">
                   Editar perfil público
                 </Link>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Link href="/messages" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Mensajes</Link>
+                  <Link href="/notifications" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Notificaciones</Link>
+                  <Link href="/dashboard/billing" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Facturación</Link>
+                </div>
               </div>
 
               <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -951,10 +1174,11 @@ export default function BuyerDashboardPage() {
       <main className="min-h-screen bg-gray-50 pb-20 md:pb-8">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-5">
           <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sticky top-20 z-20">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               <Link href="/search" className="text-center px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Buscar</Link>
               <Link href="/favorites" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Favoritos</Link>
               <Link href="/messages" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Mensajes</Link>
+              <Link href="/notifications" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Alertas</Link>
               <Link href="/contact" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Ayuda</Link>
             </div>
           </section>

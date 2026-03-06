@@ -9,7 +9,7 @@ const LONG_TEXT = 'Excelente propiedad con acabados de primera, ubicación cént
 test.describe('Admin Create Listing (E2E mock)', () => {
   test('creates listing with mocked upload and submission', async ({ page }) => {
     // Bypass protection via ?e2e=1 (ProtectedClient honors this in E2E mode)
-    await page.goto('/admin/properties/create?e2e=1')
+    await page.goto('/master/listings/create?e2e=1')
 
     // Form heading
     await expect(page.getByTestId('create-heading')).toBeVisible()
@@ -30,6 +30,6 @@ test.describe('Admin Create Listing (E2E mock)', () => {
     await page.getByTestId('create-submit').click()
 
     // Expect redirect to properties list
-    await page.waitForURL('**/admin/properties*', { timeout: 10000 })
+    await page.waitForURL('**/master/listings*', { timeout: 10000 })
   })
 })

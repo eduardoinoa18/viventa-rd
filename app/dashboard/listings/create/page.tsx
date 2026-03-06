@@ -17,6 +17,15 @@ type CreateForm = {
   bedrooms: string
   bathrooms: string
   area: string
+  parking: string
+  maintenanceFee: string
+  address: string
+  lat: string
+  lng: string
+  coverImage: string
+  promoVideoUrl: string
+  imagesText: string
+  status: 'active' | 'pending'
 }
 
 export default function CreateProfessionalListingPage() {
@@ -36,6 +45,15 @@ export default function CreateProfessionalListingPage() {
     bedrooms: '1',
     bathrooms: '1',
     area: '',
+    parking: '0',
+    maintenanceFee: '',
+    address: '',
+    lat: '',
+    lng: '',
+    coverImage: '',
+    promoVideoUrl: '',
+    imagesText: '',
+    status: 'active',
   })
 
   function update<K extends keyof CreateForm>(key: K, value: CreateForm[K]) {
@@ -48,6 +66,11 @@ export default function CreateProfessionalListingPage() {
 
     if (!form.title || !form.description || !form.price || !form.city || !form.neighborhood) {
       setError('Completa título, descripción, precio, ciudad y sector.')
+      return
+    }
+
+    if ((form.lat && !form.lng) || (!form.lat && form.lng)) {
+      setError('Si completas coordenadas, incluye latitud y longitud.')
       return
     }
 
@@ -67,10 +90,22 @@ export default function CreateProfessionalListingPage() {
           location: form.location || `${form.neighborhood}, ${form.city}`,
           propertyType: form.propertyType,
           listingType: form.listingType,
-          status: 'active',
+          status: form.status,
           bedrooms: Number(form.bedrooms || 0),
           bathrooms: Number(form.bathrooms || 0),
           area: Number(form.area || 0),
+          parking: Number(form.parking || 0),
+          maintenanceFee: form.maintenanceFee ? Number(form.maintenanceFee) : undefined,
+          maintenanceFeeCurrency: form.currency,
+          address: form.address || form.location || undefined,
+          lat: form.lat ? Number(form.lat) : undefined,
+          lng: form.lng ? Number(form.lng) : undefined,
+          coverImage: form.coverImage || undefined,
+          promoVideoUrl: form.promoVideoUrl || undefined,
+          images: form.imagesText
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean),
         }),
       })
 
@@ -103,20 +138,20 @@ export default function CreateProfessionalListingPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <label className="block text-xs text-gray-600 mb-1">Título</label>
-                <input value={form.title} onChange={(e) => update('title', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Título del listado" placeholder="Ej: Apartamento moderno en Naco" value={form.title} onChange={(e) => update('title', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs text-gray-600 mb-1">Descripción</label>
-                <textarea value={form.description} onChange={(e) => update('description', e.target.value)} rows={4} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <textarea title="Descripción del listado" placeholder="Describe detalles clave, amenidades y beneficios" value={form.description} onChange={(e) => update('description', e.target.value)} rows={4} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
 
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Precio</label>
-                <input value={form.price} onChange={(e) => update('price', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Precio" placeholder="250000" value={form.price} onChange={(e) => update('price', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Moneda</label>
-                <select value={form.currency} onChange={(e) => update('currency', e.target.value as 'USD' | 'DOP')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                <select title="Moneda" value={form.currency} onChange={(e) => update('currency', e.target.value as 'USD' | 'DOP')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                   <option value="USD">USD</option>
                   <option value="DOP">DOP</option>
                 </select>
@@ -124,25 +159,34 @@ export default function CreateProfessionalListingPage() {
 
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Ciudad</label>
-                <input value={form.city} onChange={(e) => update('city', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Ciudad" placeholder="Santo Domingo" value={form.city} onChange={(e) => update('city', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Sector</label>
-                <input value={form.neighborhood} onChange={(e) => update('neighborhood', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Sector" placeholder="Naco" value={form.neighborhood} onChange={(e) => update('neighborhood', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-xs text-gray-600 mb-1">Ubicación textual</label>
-                <input value={form.location} onChange={(e) => update('location', e.target.value)} placeholder="Ej: Naco, Santo Domingo" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Ubicación textual" value={form.location} onChange={(e) => update('location', e.target.value)} placeholder="Ej: Naco, Santo Domingo" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
 
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Tipo de propiedad</label>
-                <input value={form.propertyType} onChange={(e) => update('propertyType', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <select title="Tipo de propiedad" value={form.propertyType} onChange={(e) => update('propertyType', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                  <option value="apartment">Apartamento</option>
+                  <option value="house">Casa</option>
+                  <option value="penthouse">Penthouse</option>
+                  <option value="villa">Villa</option>
+                  <option value="office">Oficina</option>
+                  <option value="commercial">Comercial</option>
+                  <option value="land">Solar/Terreno</option>
+                  <option value="project">Proyecto</option>
+                </select>
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Operación</label>
-                <select value={form.listingType} onChange={(e) => update('listingType', e.target.value as 'sale' | 'rent')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                <select title="Tipo de operación" value={form.listingType} onChange={(e) => update('listingType', e.target.value as 'sale' | 'rent')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                   <option value="sale">Venta</option>
                   <option value="rent">Alquiler</option>
                 </select>
@@ -150,15 +194,56 @@ export default function CreateProfessionalListingPage() {
 
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Habitaciones</label>
-                <input value={form.bedrooms} onChange={(e) => update('bedrooms', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Habitaciones" placeholder="3" value={form.bedrooms} onChange={(e) => update('bedrooms', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Baños</label>
-                <input value={form.bathrooms} onChange={(e) => update('bathrooms', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Baños" placeholder="2" value={form.bathrooms} onChange={(e) => update('bathrooms', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Área (m²)</label>
-                <input value={form.area} onChange={(e) => update('area', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Área en metros cuadrados" placeholder="120" value={form.area} onChange={(e) => update('area', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Parqueos</label>
+                <input title="Cantidad de parqueos" placeholder="2" value={form.parking} onChange={(e) => update('parking', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Estado inicial</label>
+                <select title="Estado inicial del listado" value={form.status} onChange={(e) => update('status', e.target.value as 'active' | 'pending')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                  <option value="active">Activo</option>
+                  <option value="pending">Pendiente</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Mantenimiento ({form.currency})</label>
+                <input title="Costo de mantenimiento" placeholder="150" value={form.maintenanceFee} onChange={(e) => update('maintenanceFee', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-gray-600 mb-1">Dirección</label>
+                <input title="Dirección" value={form.address} onChange={(e) => update('address', e.target.value)} placeholder="Dirección exacta (opcional)" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Latitud</label>
+                <input title="Latitud" value={form.lat} onChange={(e) => update('lat', e.target.value)} inputMode="decimal" placeholder="18.4861" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Longitud</label>
+                <input title="Longitud" value={form.lng} onChange={(e) => update('lng', e.target.value)} inputMode="decimal" placeholder="-69.9312" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-gray-600 mb-1">URL imagen principal</label>
+                <input title="Imagen principal" value={form.coverImage} onChange={(e) => update('coverImage', e.target.value)} placeholder="https://..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-gray-600 mb-1">URLs de imágenes (separadas por coma)</label>
+                <textarea title="Galería de imágenes" value={form.imagesText} onChange={(e) => update('imagesText', e.target.value)} rows={3} placeholder="https://img1..., https://img2..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-gray-600 mb-1">Video promocional (YouTube/Vimeo)</label>
+                <input title="Video promocional" value={form.promoVideoUrl} onChange={(e) => update('promoVideoUrl', e.target.value)} placeholder="https://..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
             </div>
 

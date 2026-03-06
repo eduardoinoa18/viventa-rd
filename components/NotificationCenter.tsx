@@ -352,7 +352,7 @@ export default function NotificationCenter({ userId }: { userId: string }) {
                         const session = getSession()
                         const role = session?.role || 'user'
                         // Use provided url or route to role-appropriate notifications page
-                        const fallback = role === 'master_admin' ? '/admin' : '/search'
+                        const fallback = role === 'master_admin' ? '/master' : '/search'
                         const target = notification.url || fallback
                         router.push(target)
                       }}

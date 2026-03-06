@@ -16,12 +16,12 @@ export default function BottomNav() {
   }, [])
 
   // Don't show on admin pages, special pages, or auth pages
-  if (!mounted || pathname?.startsWith('/admin') || pathname?.startsWith('/onboarding') || pathname === '/login' || pathname === '/signup') {
+  if (!mounted || pathname?.startsWith('/master') || pathname?.startsWith('/onboarding') || pathname === '/login' || pathname === '/signup') {
     return null
   }
 
   // Build nav items based on auth state
-  const adminHome = session?.role === 'master_admin' ? '/admin' : '/search'
+  const adminHome = session?.role === 'master_admin' ? '/master' : '/search'
 
   const isBuyer = session?.role === 'buyer' || session?.role === 'user'
 
@@ -89,7 +89,7 @@ export default function BottomNav() {
                 name: 'Admin',
                 icon: FiUser,
                 path: adminHome,
-                active: pathname?.startsWith('/admin')
+                active: pathname?.startsWith('/master')
               }
             : {
                 name: 'Contacto',

@@ -38,10 +38,10 @@ export default function ProfesionalesLanding() {
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-              <Link href="/agent/login" className="inline-flex items-center gap-2 px-6 py-3 bg-white/90 text-[#004AAD] font-semibold rounded-xl hover:bg-white transition-colors">
+              <Link href="/login?role=agent" className="inline-flex items-center gap-2 px-6 py-3 bg-white/90 text-[#004AAD] font-semibold rounded-xl hover:bg-white transition-colors">
                 <FiLogIn /> Portal de Agentes
               </Link>
-              <Link href="/broker/login" className="inline-flex items-center gap-2 px-6 py-3 bg-white/90 text-[#00A6A6] font-semibold rounded-xl hover:bg-white transition-colors">
+              <Link href="/login?role=broker" className="inline-flex items-center gap-2 px-6 py-3 bg-white/90 text-[#00A6A6] font-semibold rounded-xl hover:bg-white transition-colors">
                 <FiLogIn /> Portal de Brókers
               </Link>
             </div>
@@ -498,7 +498,7 @@ export default function ProfesionalesLanding() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {/* Agent Portal Card */}
-              <Link href="/agent/login" className="group">
+              <Link href="/login?role=agent" className="group">
                 <div className="bg-white rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-[#004AAD]">
                   <div className="flex items-center gap-4 mb-6">
                     <div className="w-16 h-16 bg-gradient-to-br from-[#004AAD] to-[#0066cc] rounded-2xl flex items-center justify-center shadow-lg">
@@ -523,7 +523,7 @@ export default function ProfesionalesLanding() {
               </Link>
 
               {/* Broker Portal Card */}
-              <Link href="/broker/login" className="group">
+              <Link href="/login?role=broker" className="group">
                 <div className="bg-white rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-[#00A6A6]">
                   <div className="flex items-center gap-4 mb-6">
                     <div className="w-16 h-16 bg-gradient-to-br from-[#00A6A6] to-[#00C896] rounded-2xl flex items-center justify-center shadow-lg">

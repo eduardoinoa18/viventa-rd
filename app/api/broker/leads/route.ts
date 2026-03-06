@@ -49,6 +49,13 @@ function extractOwnerAgentId(lead: Record<string, any>): string {
   return safeText(lead.ownerAgentId || lead.assignedTo || lead.assignedTo?.uid)
 }
 
+function normalizePriority(value: unknown): 'low' | 'normal' | 'high' {
+  const text = safeText(value).toLowerCase()
+  if (text === 'low') return 'low'
+  if (text === 'high') return 'high'
+  return 'normal'
+}
+
 async function getOfficeAgentIds(db: FirebaseFirestore.Firestore, officeId: string, currentUid: string) {
   const [byBrokerId, byBrokerageId] = await Promise.all([
     db.collection('users').where('brokerId', '==', officeId).limit(400).get(),
@@ -103,12 +110,14 @@ export async function GET(req: Request) {
       .map((lead) => {
         const stage = normalizeLeadStage(lead.leadStage, lead.status)
         const stageSlaDueAtValue = toDate(lead.stageSlaDueAt)
+        const followUpAtValue = toDate(lead.followUpAt || lead.nextFollowUpAt)
         const createdAt = toIso(lead.createdAt)
         const updatedAt = toIso(lead.updatedAt)
         const assignedAt = toIso(lead.assignedAt || lead.ownerAssignedAt)
         const stageChangedAt = toIso(lead.stageChangedAt)
         const slaBreached = isSlaBreached(stage, stageSlaDueAtValue)
         const secondsToBreach = secondsToSlaDue(stageSlaDueAtValue)
+        const slaStatus = slaBreached ? 'breached' : (secondsToBreach !== null && secondsToBreach <= 24 * 60 * 60 ? 'due_soon' : 'healthy')
         return {
           id: lead.id,
           buyerName: safeText(lead.buyerName || lead.name || lead.fullName || 'Lead'),
@@ -124,7 +133,11 @@ export async function GET(req: Request) {
           stageChangedAt,
           stageSlaDueAt: stageSlaDueAtValue ? stageSlaDueAtValue.toISOString() : null,
           slaBreached,
+          slaStatus,
           secondsToBreach,
+          followUpAt: followUpAtValue ? followUpAtValue.toISOString() : null,
+          nextActionNote: safeText(lead.nextActionNote || lead.followUpNote),
+          priority: normalizePriority(lead.priority),
           lastActivityAt: updatedAt || stageChangedAt || assignedAt || createdAt,
         }
       })
@@ -162,7 +175,7 @@ export async function PATCH(req: Request) {
     if (!leadId) {
       return NextResponse.json({ ok: false, error: 'leadId is required' }, { status: 400 })
     }
-    if (action !== 'assign' && action !== 'stage') {
+    if (action !== 'assign' && action !== 'stage' && action !== 'followup') {
       return NextResponse.json({ ok: false, error: 'Invalid action' }, { status: 400 })
     }
 
@@ -216,6 +229,47 @@ export async function PATCH(req: Request) {
 
       await leadRef.set(updateData, { merge: true })
       return NextResponse.json({ ok: true, action: 'assign', leadId, ownerAgentId: nextOwner, leadStage: nextStage })
+    }
+
+    if (action === 'followup') {
+      if (context.role === 'agent' && (!currentOwner || currentOwner !== context.uid)) {
+        return NextResponse.json({ ok: false, error: 'Agents can only update their own leads' }, { status: 403 })
+      }
+
+      const followUpAtInput = safeText(body.followUpAt)
+      const nextActionNote = safeText(body.nextActionNote)
+      const priority = normalizePriority(body.priority)
+
+      let followUpAt: Date | null = null
+      if (followUpAtInput) {
+        const parsed = new Date(followUpAtInput)
+        if (!Number.isFinite(parsed.getTime())) {
+          return NextResponse.json({ ok: false, error: 'followUpAt is invalid' }, { status: 400 })
+        }
+        followUpAt = parsed
+      }
+
+      await leadRef.set(
+        {
+          followUpAt,
+          nextFollowUpAt: followUpAt,
+          nextActionNote,
+          followUpNote: nextActionNote,
+          priority,
+          followUpUpdatedAt: now,
+          followUpUpdatedBy: context.uid,
+          updatedAt: now,
+        },
+        { merge: true }
+      )
+
+      return NextResponse.json({
+        ok: true,
+        action: 'followup',
+        leadId,
+        followUpAt: followUpAt ? followUpAt.toISOString() : null,
+        priority,
+      })
     }
 
     const requestedStageRaw = safeText(body.leadStage)

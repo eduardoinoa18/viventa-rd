@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { db, auth } from '../../../lib/firebaseClient'
 import { doc, updateDoc, increment } from 'firebase/firestore'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Head from 'next/head'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
@@ -73,6 +73,7 @@ export default function ListingDetail(){
   usePageViewTracking()
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const id = params?.id
   const [listing,setListing] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -523,6 +524,9 @@ export default function ListingDetail(){
   const publicMapLink = `https://www.google.com/maps?q=${mapQuery}`
   const publicMapEmbed = `https://www.google.com/maps?q=${mapQuery}&output=embed`
   const authRedirectTarget = `/listing/${encodeURIComponent(String(listing.id || ''))}`
+  const sharedByName = (searchParams?.get('sharedByName') || '').trim()
+  const sharedByRole = (searchParams?.get('sharedByRole') || '').trim()
+  const hasShareAttribution = Boolean(sharedByName)
 
   function requireAccountForDetails() {
     router.push(`/signup?next=${encodeURIComponent(authRedirectTarget)}`)
@@ -589,6 +593,14 @@ export default function ListingDetail(){
 
       <main className="min-h-screen bg-gray-50 pb-20 lg:pb-0 overflow-x-hidden">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 lg:py-8 max-w-7xl">
+          {hasShareAttribution ? (
+            <div className="mb-4 rounded-xl border border-[#B8E6D2] bg-[#F0FBF6] px-4 py-3">
+              <p className="text-sm text-[#0B2545]">
+                Compartido por <span className="font-semibold">{sharedByName}</span>
+                {sharedByRole ? <span className="text-gray-600"> • {sharedByRole}</span> : null}
+              </p>
+            </div>
+          ) : null}
           
           {/* Image Gallery - Full Width on Mobile */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4 sm:mb-6">

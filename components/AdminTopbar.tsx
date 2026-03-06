@@ -110,7 +110,7 @@ export default function AdminTopbar() {
   return (
     <header className="sticky top-0 z-20 bg-white border-b shadow-sm">
       <div className="container mx-auto flex items-center justify-between p-3">
-        <Link href="/admin" className="flex items-center gap-3">
+        <Link href="/master" className="flex items-center gap-3">
           <BrandLogo className="h-9 w-auto" />
           <div className="text-lg font-semibold text-[#0B2545]">Admin</div>
         </Link>

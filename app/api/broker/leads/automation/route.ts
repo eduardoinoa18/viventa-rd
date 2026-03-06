@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Timestamp } from 'firebase-admin/firestore'
+import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
@@ -15,6 +15,7 @@ export const dynamic = 'force-dynamic'
 
 const AUTO_ASSIGN_JOB = 'scheduledLeadAutoAssign'
 const ESCALATION_JOB = 'scheduledLeadSlaEscalation'
+const FOLLOWUP_REMINDER_JOB = 'scheduledLeadFollowupReminder'
 
 const AUTO_ASSIGN_MAX_PER_RUN = 40
 const AUTO_ASSIGN_DEFAULT_LIMIT = 30
@@ -23,6 +24,11 @@ const AUTO_ASSIGN_COOLDOWN_SECONDS = 180
 const ESCALATION_MAX_PER_RUN = 200
 const ESCALATION_DEFAULT_LIMIT = 150
 const ESCALATION_COOLDOWN_SECONDS = 300
+
+const FOLLOWUP_REMINDER_MAX_PER_RUN = 200
+const FOLLOWUP_REMINDER_DEFAULT_LIMIT = 100
+const FOLLOWUP_REMINDER_COOLDOWN_SECONDS = 300
+const FOLLOWUP_REMINDER_REPEAT_HOURS = 6
 
 function safeText(value: unknown): string {
   return String(value ?? '').trim()
@@ -42,6 +48,19 @@ function toDate(value: any): Date | null {
 function toIso(value: any): string | null {
   const parsed = toDate(value)
   return parsed ? parsed.toISOString() : null
+}
+
+function isFollowUpDueNow(value: any): boolean {
+  const followUpAt = toDate(value)
+  if (!followUpAt) return false
+  return followUpAt.getTime() <= Date.now()
+}
+
+function canSendReminderAgain(lastSentAtValue: any): boolean {
+  const lastSentAt = toDate(lastSentAtValue)
+  if (!lastSentAt) return true
+  const nextAllowed = lastSentAt.getTime() + FOLLOWUP_REMINDER_REPEAT_HOURS * 60 * 60 * 1000
+  return Date.now() >= nextAllowed
 }
 
 function resolveRequestedLimit(value: unknown, fallback: number, maxLimit: number): number {
@@ -142,6 +161,11 @@ export async function GET(req: Request) {
       if (isLeadTerminalStage(stage)) return false
       return isSlaBreached(stage, toDate(lead.stageSlaDueAt))
     }).length
+    const followUpDueCount = leads.filter((lead) => {
+      const stage = normalizeLeadStage(lead.leadStage, lead.status)
+      if (isLeadTerminalStage(stage)) return false
+      return isFollowUpDueNow(lead.followUpAt || lead.nextFollowUpAt)
+    }).length
 
     const openEscalations = leads.filter((lead) => safeText(lead.escalationStatus).toLowerCase() === 'open').length
     const autoAssignable = leads.filter((lead) => !extractOwnerAgentId(lead) && normalizeLeadStage(lead.leadStage, lead.status) === 'new').length
@@ -211,8 +235,10 @@ export async function GET(req: Request) {
 
     const latestAutoAssign = automationRuns.find((run) => run.job === AUTO_ASSIGN_JOB)
     const latestEscalation = automationRuns.find((run) => run.job === ESCALATION_JOB)
+    const latestFollowupReminder = automationRuns.find((run) => run.job === FOLLOWUP_REMINDER_JOB)
     const autoAssignLastRunAt = toDate(latestAutoAssign?.timestamp)
     const escalationLastRunAt = toDate(latestEscalation?.timestamp)
+    const followupLastRunAt = toDate(latestFollowupReminder?.timestamp)
 
     return NextResponse.json({
       ok: true,
@@ -220,12 +246,14 @@ export async function GET(req: Request) {
         totalLeads: leads.length,
         autoAssignable,
         overdue: overdueCount,
+        followUpDue: followUpDueCount,
         escalationsOpen: openEscalations,
         topBrokers,
         automationRuns,
         safeguards: {
           autoAssign: buildSafeguardMeta(autoAssignLastRunAt, AUTO_ASSIGN_COOLDOWN_SECONDS, AUTO_ASSIGN_MAX_PER_RUN),
           escalation: buildSafeguardMeta(escalationLastRunAt, ESCALATION_COOLDOWN_SECONDS, ESCALATION_MAX_PER_RUN),
+          followupReminder: buildSafeguardMeta(followupLastRunAt, FOLLOWUP_REMINDER_COOLDOWN_SECONDS, FOLLOWUP_REMINDER_MAX_PER_RUN),
         },
       },
     })
@@ -253,15 +281,32 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}))
     const action = safeText(body.action).toLowerCase()
-    if (action !== 'auto_assign' && action !== 'escalate') {
+    if (action !== 'auto_assign' && action !== 'escalate' && action !== 'followup_reminders') {
       return NextResponse.json({ ok: false, error: 'Invalid automation action' }, { status: 400 })
     }
 
     const isAutoAssignAction = action === 'auto_assign'
-    const currentJob = isAutoAssignAction ? AUTO_ASSIGN_JOB : ESCALATION_JOB
-    const cooldownSeconds = isAutoAssignAction ? AUTO_ASSIGN_COOLDOWN_SECONDS : ESCALATION_COOLDOWN_SECONDS
-    const maxPerRun = isAutoAssignAction ? AUTO_ASSIGN_MAX_PER_RUN : ESCALATION_MAX_PER_RUN
-    const defaultLimit = isAutoAssignAction ? AUTO_ASSIGN_DEFAULT_LIMIT : ESCALATION_DEFAULT_LIMIT
+    const isEscalationAction = action === 'escalate'
+    const currentJob = isAutoAssignAction
+      ? AUTO_ASSIGN_JOB
+      : isEscalationAction
+        ? ESCALATION_JOB
+        : FOLLOWUP_REMINDER_JOB
+    const cooldownSeconds = isAutoAssignAction
+      ? AUTO_ASSIGN_COOLDOWN_SECONDS
+      : isEscalationAction
+        ? ESCALATION_COOLDOWN_SECONDS
+        : FOLLOWUP_REMINDER_COOLDOWN_SECONDS
+    const maxPerRun = isAutoAssignAction
+      ? AUTO_ASSIGN_MAX_PER_RUN
+      : isEscalationAction
+        ? ESCALATION_MAX_PER_RUN
+        : FOLLOWUP_REMINDER_MAX_PER_RUN
+    const defaultLimit = isAutoAssignAction
+      ? AUTO_ASSIGN_DEFAULT_LIMIT
+      : isEscalationAction
+        ? ESCALATION_DEFAULT_LIMIT
+        : FOLLOWUP_REMINDER_DEFAULT_LIMIT
 
     const latestRun = await getLatestRunForJob(db, context.officeId, currentJob)
     const remainingSeconds = remainingCooldownSeconds(toDate(latestRun?.createdAt), cooldownSeconds)
@@ -395,6 +440,88 @@ export async function POST(req: Request) {
           assigned,
           leadIds: assignedLeadIds,
         },
+      })
+    }
+
+    if (action === 'followup_reminders') {
+      const reminderCandidates = leads
+        .filter((lead) => {
+          const stage = normalizeLeadStage(lead.leadStage, lead.status)
+          if (isLeadTerminalStage(stage)) return false
+
+          if (!isFollowUpDueNow(lead.followUpAt || lead.nextFollowUpAt)) return false
+
+          const ownerUid = extractOwnerAgentId(lead)
+          if (!ownerUid) return false
+          if (!officeAgentIds.has(ownerUid)) return false
+
+          return canSendReminderAgain(lead.followUpReminderSentAt)
+        })
+        .slice(0, requestedLimit)
+
+      let reminded = 0
+      const remindedLeadIds: string[] = []
+      for (const lead of reminderCandidates) {
+        const ownerUid = extractOwnerAgentId(lead)
+        const stage = normalizeLeadStage(lead.leadStage, lead.status)
+        const buyerName = safeText(lead.buyerName || lead.name || lead.fullName || 'Lead')
+
+        await db.collection('notifications').add({
+          userId: ownerUid,
+          type: 'lead_followup_reminder',
+          title: 'Seguimiento pendiente de lead',
+          body: `${buyerName} requiere seguimiento (${stage}).`,
+          url: '/dashboard',
+          data: {
+            leadId: lead.id,
+            source: 'broker_followup_automation',
+            officeId: context.officeId,
+          },
+          read: false,
+          createdAt: now,
+          sentAt: null,
+        })
+
+        await db.collection('leads').doc(lead.id).set(
+          {
+            followUpReminderSentAt: now,
+            followUpReminderSentBy: context.uid,
+            followUpReminderStatus: 'sent',
+            followUpReminderSentTo: ownerUid,
+            followUpReminderCount: FieldValue.increment(1),
+            updatedAt: now,
+          },
+          { merge: true }
+        )
+
+        reminded += 1
+        remindedLeadIds.push(lead.id)
+      }
+
+      await db.collection('office_automation_runs').add({
+        officeId: context.officeId,
+        actorUid: context.uid,
+        actorRole: context.role,
+        job: FOLLOWUP_REMINDER_JOB,
+        status: 'success',
+        scanned: reminderCandidates.length,
+        assigned: 0,
+        escalated: 0,
+        reminded,
+        requestedLimit,
+        effectiveLimit: requestedLimit,
+        durationMs: Date.now() - startedAt,
+        createdAt: now,
+      })
+
+      return NextResponse.json({
+        ok: true,
+        data: {
+          scanned: reminderCandidates.length,
+          reminded,
+          leadIds: remindedLeadIds,
+        },
+        message: reminded > 0 ? 'Follow-up reminders sent' : 'No overdue follow-up reminders required sending',
       })
     }
 

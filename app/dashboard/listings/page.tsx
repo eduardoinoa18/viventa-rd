@@ -6,6 +6,7 @@ import Link from 'next/link'
 type SessionData = {
   uid: string
   role: string
+  name?: string
 }
 
 type Listing = {
@@ -46,6 +47,7 @@ export default function ProfessionalListingsPage() {
   const [error, setError] = useState('')
   const [myListings, setMyListings] = useState<Listing[]>([])
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'sold' | 'inactive'>('all')
+  const [shareStatus, setShareStatus] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -95,6 +97,22 @@ export default function ProfessionalListingsPage() {
     [myListings]
   )
 
+  async function shareListing(listingId: string) {
+    if (!session) return
+    const roleLabel = session.role === 'broker' ? 'Broker' : session.role === 'agent' ? 'Agente' : 'Profesional'
+    const senderName = encodeURIComponent(session.name || 'Profesional Viventa')
+    const senderRole = encodeURIComponent(roleLabel)
+    const shareUrl = `${window.location.origin}/listing/${encodeURIComponent(listingId)}?sharedByName=${senderName}&sharedByRole=${senderRole}`
+
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setShareStatus('Enlace copiado con atribución del profesional.')
+      window.setTimeout(() => setShareStatus(''), 2500)
+    } catch {
+      setShareStatus('No se pudo copiar el enlace. Puedes copiarlo manualmente desde la barra del navegador.')
+    }
+  }
+
   if (loading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-600">Cargando listados...</div>
   }
@@ -139,6 +157,9 @@ export default function ProfessionalListingsPage() {
         )}
 
         <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+          {shareStatus ? (
+            <p className="mb-3 text-xs text-[#0B2545] bg-[#E8F4FF] border border-[#CFE8FF] rounded-lg px-3 py-2">{shareStatus}</p>
+          ) : null}
           {!sortedListings.length ? (
             <div className="text-sm text-gray-500">
               No tienes listados para este filtro.{' '}
@@ -147,22 +168,27 @@ export default function ProfessionalListingsPage() {
           ) : (
             <div className="space-y-2">
               {sortedListings.map((listing) => (
-                <Link
-                  key={listing.id}
-                  href={`/listing/${listing.id}`}
-                  className="block rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors"
-                >
+                <div key={listing.id} className="rounded-lg border border-gray-200 p-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
+                    <Link href={`/listing/${listing.id}`} className="min-w-0 flex-1 hover:text-[#00A676] transition-colors">
                       <div className="text-sm font-semibold text-[#0B2545]">{listing.title || 'Listado sin título'}</div>
                       <div className="text-xs text-gray-600 mt-1">
                         {(listing.city || 'RD')}{listing.neighborhood ? `, ${listing.neighborhood}` : ''} • {listing.status || 'active'}
                       </div>
+                    </Link>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-[#0B2545]">{formatPrice(listing.price, listing.currency || 'USD')}</div>
+                      <button
+                        type="button"
+                        onClick={() => shareListing(listing.id)}
+                        className="mt-2 text-xs px-2 py-1 rounded-md border border-gray-200 text-[#0B2545] hover:bg-gray-50"
+                      >
+                        Compartir
+                      </button>
                     </div>
-                    <div className="text-sm font-semibold text-[#0B2545]">{formatPrice(listing.price, listing.currency || 'USD')}</div>
                   </div>
                   {listing.listingId ? <div className="text-[11px] text-gray-500 mt-1">{listing.listingId}</div> : null}
-                </Link>
+                </div>
               ))}
             </div>
           )}
