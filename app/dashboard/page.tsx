@@ -149,6 +149,40 @@ type BrokerLeadItem = {
   createdAt?: string | null
 }
 
+type BrokerAutomationRun = {
+  id: string
+  job: string
+  status: string
+  scanned: number
+  assigned: number
+  escalated: number
+  reminded?: number
+  durationMs: number
+  timestamp?: string | null
+}
+
+type BrokerAutomationSafeguard = {
+  cooldownSeconds: number
+  maxPerRun: number
+  remainingSeconds: number
+  lastRunAt?: string | null
+  nextAllowedAt?: string | null
+}
+
+type BrokerAutomationOverview = {
+  totalLeads?: number
+  autoAssignable?: number
+  overdue?: number
+  followUpDue?: number
+  escalationsOpen?: number
+  automationRuns?: BrokerAutomationRun[]
+  safeguards?: {
+    autoAssign?: BrokerAutomationSafeguard
+    escalation?: BrokerAutomationSafeguard
+    followupReminder?: BrokerAutomationSafeguard
+  }
+}
+
 function formatPrice(value?: number, currency: 'USD' | 'DOP' = 'USD') {
   if (!value || Number.isNaN(Number(value))) return 'Precio no disponible'
   return new Intl.NumberFormat('es-DO', {
@@ -200,6 +234,7 @@ export default function BuyerDashboardPage() {
   const [leadPriority, setLeadPriority] = useState<'low' | 'normal' | 'high'>('normal')
   const [automationLoading, setAutomationLoading] = useState(false)
   const [automationStatus, setAutomationStatus] = useState('')
+  const [brokerAutomationOverview, setBrokerAutomationOverview] = useState<BrokerAutomationOverview | null>(null)
   const [agentOverview, setAgentOverview] = useState<AgentDashboardOverview | null>(null)
   const [constructoraOverview, setConstructoraOverview] = useState<ConstructoraDashboardOverview | null>(null)
 
@@ -266,7 +301,7 @@ export default function BuyerDashboardPage() {
         setProListingsLoading(true)
         setProListingsError('')
 
-        const [myRes, officeRes, marketRes, kpiRes, teamRes, transactionsRes, leadsRes] = await Promise.all([
+        const [myRes, officeRes, marketRes, kpiRes, teamRes, transactionsRes, leadsRes, automationRes] = await Promise.all([
           fetch('/api/broker/listings/my?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/office?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/market?status=active', { cache: 'no-store' }),
@@ -274,9 +309,10 @@ export default function BuyerDashboardPage() {
           fetch('/api/broker/team', { cache: 'no-store' }),
           fetch('/api/broker/transactions', { cache: 'no-store' }),
           fetch('/api/broker/leads?limit=20', { cache: 'no-store' }),
+          fetch('/api/broker/leads/automation', { cache: 'no-store' }),
         ])
 
-        const [myJson, officeJson, marketJson, kpiJson, teamJson, transactionsJson, leadsJson] = await Promise.all([
+        const [myJson, officeJson, marketJson, kpiJson, teamJson, transactionsJson, leadsJson, automationJson] = await Promise.all([
           myRes.json().catch(() => ({})),
           officeRes.json().catch(() => ({})),
           marketRes.json().catch(() => ({})),
@@ -284,6 +320,7 @@ export default function BuyerDashboardPage() {
           teamRes.json().catch(() => ({})),
           transactionsRes.json().catch(() => ({})),
           leadsRes.json().catch(() => ({})),
+          automationRes.json().catch(() => ({})),
         ])
 
         if (!active) return
@@ -336,6 +373,12 @@ export default function BuyerDashboardPage() {
           setBrokerLeads([])
         }
 
+        if (automationRes.ok && automationJson?.ok) {
+          setBrokerAutomationOverview((automationJson?.data || null) as BrokerAutomationOverview | null)
+        } else {
+          setBrokerAutomationOverview(null)
+        }
+
         if (session.role === 'agent') {
           const agentOverviewRes = await fetch('/api/agent/dashboard/overview', { cache: 'no-store' })
           const agentOverviewJson = await agentOverviewRes.json().catch(() => ({}))
@@ -358,6 +401,7 @@ export default function BuyerDashboardPage() {
         setBrokerTransactionsSummary(null)
         setBrokerTeamMembers([])
         setBrokerLeads([])
+        setBrokerAutomationOverview(null)
         setAgentOverview(null)
       } finally {
         if (active) setProListingsLoading(false)
@@ -404,13 +448,15 @@ export default function BuyerDashboardPage() {
   }, [session])
 
   async function refreshLeadOps() {
-    const [leadsRes, txRes] = await Promise.all([
+      const [leadsRes, txRes, automationRes] = await Promise.all([
       fetch('/api/broker/leads?limit=20', { cache: 'no-store' }),
       fetch('/api/broker/transactions', { cache: 'no-store' }),
+        fetch('/api/broker/leads/automation', { cache: 'no-store' }),
     ])
 
     const leadsJson = await leadsRes.json().catch(() => ({}))
     const txJson = await txRes.json().catch(() => ({}))
+      const automationJson = await automationRes.json().catch(() => ({}))
 
     if (leadsRes.ok) {
       const nextLeads = Array.isArray(leadsJson?.leads) ? leadsJson.leads : []
@@ -422,6 +468,10 @@ export default function BuyerDashboardPage() {
 
     if (txRes.ok) {
       setBrokerTransactionsSummary(txJson?.summary || null)
+    }
+
+    if (automationRes.ok && automationJson?.ok) {
+      setBrokerAutomationOverview((automationJson?.data || null) as BrokerAutomationOverview | null)
     }
   }
 
@@ -522,7 +572,7 @@ export default function BuyerDashboardPage() {
     }
   }
 
-  async function handleRunFollowupReminders() {
+  async function runBrokerAutomation(action: 'auto_assign' | 'escalate' | 'followup_reminders', limit: number) {
     if (session?.role !== 'broker') {
       setAutomationStatus('Solo brokers pueden ejecutar recordatorios automáticos.')
       return
@@ -534,25 +584,46 @@ export default function BuyerDashboardPage() {
       const res = await fetch('/api/broker/leads/automation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'followup_reminders', limit: 100 }),
+        body: JSON.stringify({ action, limit }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
         throw new Error(json?.error || 'No se pudieron ejecutar recordatorios')
       }
 
-      const reminded = Number(json?.data?.reminded || 0)
-      setAutomationStatus(
-        reminded > 0
-          ? `Recordatorios enviados: ${reminded}`
-          : 'No había seguimientos vencidos pendientes de recordatorio.'
-      )
+      if (action === 'auto_assign') {
+        const assigned = Number(json?.data?.assigned || 0)
+        setAutomationStatus(assigned > 0 ? `Leads auto-asignados: ${assigned}` : 'No había leads nuevos para auto-asignar.')
+      } else if (action === 'escalate') {
+        const escalated = Number(json?.data?.escalated || 0)
+        setAutomationStatus(escalated > 0 ? `Leads escalados: ${escalated}` : 'No había leads vencidos para escalar.')
+      } else {
+        const reminded = Number(json?.data?.reminded || 0)
+        setAutomationStatus(
+          reminded > 0
+            ? `Recordatorios enviados: ${reminded}`
+            : 'No había seguimientos vencidos pendientes de recordatorio.'
+        )
+      }
+
       await refreshLeadOps()
     } catch (error: any) {
       setAutomationStatus(error?.message || 'No se pudieron ejecutar recordatorios')
     } finally {
       setAutomationLoading(false)
     }
+  }
+
+  async function handleRunAutoAssign() {
+    await runBrokerAutomation('auto_assign', 30)
+  }
+
+  async function handleRunEscalations() {
+    await runBrokerAutomation('escalate', 120)
+  }
+
+  async function handleRunFollowupReminders() {
+    await runBrokerAutomation('followup_reminders', 100)
   }
 
   const selectedLead = brokerLeads.find((lead) => lead.id === selectedLeadId) || null
@@ -581,6 +652,9 @@ export default function BuyerDashboardPage() {
     const due = new Date(lead.followUpAt)
     return Number.isFinite(due.getTime()) && due.getTime() <= Date.now()
   }).length
+  const recentAutomationRuns = Array.isArray(brokerAutomationOverview?.automationRuns)
+    ? brokerAutomationOverview.automationRuns.slice(0, 4)
+    : []
 
   if (loading) {
     return (
@@ -790,6 +864,22 @@ export default function BuyerDashboardPage() {
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <button
                       type="button"
+                      onClick={handleRunAutoAssign}
+                      disabled={automationLoading}
+                      className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545] disabled:opacity-50"
+                    >
+                      {automationLoading ? 'Ejecutando...' : 'Auto-asignar nuevos'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRunEscalations}
+                      disabled={automationLoading}
+                      className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545] disabled:opacity-50"
+                    >
+                      {automationLoading ? 'Ejecutando...' : 'Escalar SLA vencidos'}
+                    </button>
+                    <button
+                      type="button"
                       onClick={handleRunFollowupReminders}
                       disabled={automationLoading}
                       className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545] disabled:opacity-50"
@@ -797,6 +887,46 @@ export default function BuyerDashboardPage() {
                       {automationLoading ? 'Ejecutando recordatorios...' : 'Enviar recordatorios vencidos'}
                     </button>
                     {automationStatus ? <p className="text-xs text-gray-600">{automationStatus}</p> : null}
+                  </div>
+                )}
+
+                {session.role === 'broker' && brokerAutomationOverview && (
+                  <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                    <div className="rounded bg-gray-50 p-2 border border-gray-100">
+                      <div className="text-[11px] text-gray-500">Auto-asignables</div>
+                      <div className="font-bold text-[#0B2545]">{brokerAutomationOverview.autoAssignable || 0}</div>
+                    </div>
+                    <div className="rounded bg-red-50 p-2 border border-red-100">
+                      <div className="text-[11px] text-red-600">Overdue SLA</div>
+                      <div className="font-bold text-[#0B2545]">{brokerAutomationOverview.overdue || 0}</div>
+                    </div>
+                    <div className="rounded bg-blue-50 p-2 border border-blue-100">
+                      <div className="text-[11px] text-blue-700">Follow-up due</div>
+                      <div className="font-bold text-[#0B2545]">{brokerAutomationOverview.followUpDue || 0}</div>
+                    </div>
+                    <div className="rounded bg-amber-50 p-2 border border-amber-100">
+                      <div className="text-[11px] text-amber-700">Escalaciones abiertas</div>
+                      <div className="font-bold text-[#0B2545]">{brokerAutomationOverview.escalationsOpen || 0}</div>
+                    </div>
+                  </div>
+                )}
+
+                {session.role === 'broker' && brokerAutomationOverview?.safeguards && (
+                  <div className="mt-2 text-[11px] text-gray-600 rounded-lg border border-gray-100 bg-gray-50 p-2">
+                    Cooldowns • Auto-assign: {brokerAutomationOverview.safeguards.autoAssign?.remainingSeconds || 0}s • Escalación: {brokerAutomationOverview.safeguards.escalation?.remainingSeconds || 0}s • Reminder: {brokerAutomationOverview.safeguards.followupReminder?.remainingSeconds || 0}s
+                  </div>
+                )}
+
+                {session.role === 'broker' && recentAutomationRuns.length > 0 && (
+                  <div className="mt-2 rounded-lg border border-gray-100 bg-white p-2">
+                    <div className="text-[11px] text-gray-500">Últimas ejecuciones</div>
+                    <div className="mt-1 space-y-1">
+                      {recentAutomationRuns.map((run) => (
+                        <div key={run.id} className="text-xs text-gray-600 rounded bg-gray-50 px-2 py-1">
+                          {run.job} • scanned: {run.scanned} • assigned: {run.assigned} • escalated: {run.escalated} • reminded: {run.reminded || 0} • {formatDateTime(run.timestamp || null)}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

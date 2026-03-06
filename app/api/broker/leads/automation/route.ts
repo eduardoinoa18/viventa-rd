@@ -228,6 +228,7 @@ export async function GET(req: Request) {
         scanned: Number(run.scanned || 0),
         assigned: Number(run.assigned || 0),
         escalated: Number(run.escalated || 0),
+        reminded: Number(run.reminded || 0),
         durationMs: Number(run.durationMs || 0),
         timestamp: toIso(run.createdAt),
       }
