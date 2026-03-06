@@ -289,6 +289,31 @@ function saveSchedulerLastRuns(next: Partial<Record<BrokerAutomationJobKey, numb
   window.localStorage.setItem(BROKER_SCHEDULER_LAST_RUNS_KEY, JSON.stringify(next))
 }
 
+async function loadSchedulerConfigFromServer(): Promise<BrokerSchedulerConfig | null> {
+  try {
+    const res = await fetch('/api/broker/leads/automation/scheduler', { cache: 'no-store' })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok || !json?.ok || !json?.config) return null
+    return json.config as BrokerSchedulerConfig
+  } catch {
+    return null
+  }
+}
+
+async function saveSchedulerConfigToServer(config: BrokerSchedulerConfig): Promise<boolean> {
+  try {
+    const res = await fetch('/api/broker/leads/automation/scheduler', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config }),
+    })
+    const json = await res.json().catch(() => ({}))
+    return Boolean(res.ok && json?.ok)
+  } catch {
+    return false
+  }
+}
+
 function formatPrice(value?: number, currency: 'USD' | 'DOP' = 'USD') {
   if (!value || Number.isNaN(Number(value))) return 'Precio no disponible'
   return new Intl.NumberFormat('es-DO', {
@@ -344,6 +369,7 @@ export default function BuyerDashboardPage() {
   const [schedulerConfig, setSchedulerConfig] = useState<BrokerSchedulerConfig>(DEFAULT_BROKER_SCHEDULER_CONFIG)
   const [schedulerRunning, setSchedulerRunning] = useState(false)
   const [schedulerStatus, setSchedulerStatus] = useState('')
+  const [schedulerSyncLoading, setSchedulerSyncLoading] = useState(false)
   const [agentOverview, setAgentOverview] = useState<AgentDashboardOverview | null>(null)
   const [constructoraOverview, setConstructoraOverview] = useState<ConstructoraDashboardOverview | null>(null)
 
@@ -525,7 +551,31 @@ export default function BuyerDashboardPage() {
 
   useEffect(() => {
     if (session?.role !== 'broker') return
-    setSchedulerConfig(loadSchedulerConfigFromStorage())
+
+    let active = true
+    const loadSchedulerConfig = async () => {
+      setSchedulerSyncLoading(true)
+      const localConfig = loadSchedulerConfigFromStorage()
+      const serverConfig = await loadSchedulerConfigFromServer()
+      if (!active) return
+
+      if (serverConfig) {
+        setSchedulerConfig(serverConfig)
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(BROKER_SCHEDULER_CONFIG_KEY, JSON.stringify(serverConfig))
+        }
+        setSchedulerStatus('Scheduler sincronizado desde configuración de oficina.')
+      } else {
+        setSchedulerConfig(localConfig)
+        setSchedulerStatus('Usando configuración local del scheduler.')
+      }
+      setSchedulerSyncLoading(false)
+    }
+
+    loadSchedulerConfig()
+    return () => {
+      active = false
+    }
   }, [session?.role])
 
   useEffect(() => {
@@ -815,6 +865,21 @@ export default function BuyerDashboardPage() {
 
   async function handleRunFollowupReminders() {
     await runBrokerAutomation('followup_reminders', 100)
+  }
+
+  async function handleSaveSchedulerConfig() {
+    if (session?.role !== 'broker') return
+    try {
+      setSchedulerSyncLoading(true)
+      const ok = await saveSchedulerConfigToServer(schedulerConfig)
+      if (ok) {
+        setSchedulerStatus('Scheduler guardado para toda la oficina.')
+      } else {
+        setSchedulerStatus('No se pudo guardar en servidor. Configuración local conservada.')
+      }
+    } finally {
+      setSchedulerSyncLoading(false)
+    }
   }
 
   function updateSchedulerJob(job: BrokerAutomationJobKey, patch: Partial<BrokerSchedulerJobConfig>) {
@@ -1245,6 +1310,14 @@ export default function BuyerDashboardPage() {
                         className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545] disabled:opacity-50"
                       >
                         {schedulerRunning ? 'Ejecutando scheduler...' : 'Ejecutar scheduler ahora'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveSchedulerConfig}
+                        disabled={schedulerSyncLoading}
+                        className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545] disabled:opacity-50"
+                      >
+                        {schedulerSyncLoading ? 'Guardando...' : 'Guardar para oficina'}
                       </button>
                       {schedulerStatus ? <span className="text-xs text-gray-600">{schedulerStatus}</span> : null}
                     </div>
