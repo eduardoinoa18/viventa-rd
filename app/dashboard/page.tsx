@@ -183,6 +183,112 @@ type BrokerAutomationOverview = {
   }
 }
 
+type BrokerAutomationJobKey = 'auto_assign' | 'escalate' | 'followup_reminders'
+
+type BrokerSchedulerJobConfig = {
+  enabled: boolean
+  intervalMinutes: number
+  limit: number
+}
+
+type BrokerSchedulerConfig = {
+  enabled: boolean
+  windowStart: string
+  windowEnd: string
+  jobs: Record<BrokerAutomationJobKey, BrokerSchedulerJobConfig>
+}
+
+const BROKER_SCHEDULER_CONFIG_KEY = 'broker_automation_scheduler_v1'
+const BROKER_SCHEDULER_LAST_RUNS_KEY = 'broker_automation_scheduler_last_runs_v1'
+
+const DEFAULT_BROKER_SCHEDULER_CONFIG: BrokerSchedulerConfig = {
+  enabled: false,
+  windowStart: '08:00',
+  windowEnd: '20:00',
+  jobs: {
+    auto_assign: { enabled: true, intervalMinutes: 15, limit: 30 },
+    escalate: { enabled: true, intervalMinutes: 30, limit: 120 },
+    followup_reminders: { enabled: true, intervalMinutes: 20, limit: 100 },
+  },
+}
+
+function parseHourMinute(value: string): number | null {
+  const text = String(value || '').trim()
+  const parts = text.split(':')
+  if (parts.length !== 2) return null
+  const hour = Number(parts[0])
+  const minute = Number(parts[1])
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) return null
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null
+  return hour * 60 + minute
+}
+
+function isInsideSchedulerWindow(now: Date, startTime: string, endTime: string): boolean {
+  const start = parseHourMinute(startTime)
+  const end = parseHourMinute(endTime)
+  if (start === null || end === null) return true
+
+  const current = now.getHours() * 60 + now.getMinutes()
+  if (start <= end) {
+    return current >= start && current <= end
+  }
+  return current >= start || current <= end
+}
+
+function loadSchedulerConfigFromStorage(): BrokerSchedulerConfig {
+  if (typeof window === 'undefined') return DEFAULT_BROKER_SCHEDULER_CONFIG
+  try {
+    const raw = window.localStorage.getItem(BROKER_SCHEDULER_CONFIG_KEY)
+    if (!raw) return DEFAULT_BROKER_SCHEDULER_CONFIG
+    const parsed = JSON.parse(raw) as Partial<BrokerSchedulerConfig>
+    return {
+      enabled: Boolean(parsed?.enabled),
+      windowStart: typeof parsed?.windowStart === 'string' ? parsed.windowStart : DEFAULT_BROKER_SCHEDULER_CONFIG.windowStart,
+      windowEnd: typeof parsed?.windowEnd === 'string' ? parsed.windowEnd : DEFAULT_BROKER_SCHEDULER_CONFIG.windowEnd,
+      jobs: {
+        auto_assign: {
+          enabled: Boolean(parsed?.jobs?.auto_assign?.enabled ?? DEFAULT_BROKER_SCHEDULER_CONFIG.jobs.auto_assign.enabled),
+          intervalMinutes: Math.max(5, Number(parsed?.jobs?.auto_assign?.intervalMinutes || DEFAULT_BROKER_SCHEDULER_CONFIG.jobs.auto_assign.intervalMinutes)),
+          limit: Math.max(1, Number(parsed?.jobs?.auto_assign?.limit || DEFAULT_BROKER_SCHEDULER_CONFIG.jobs.auto_assign.limit)),
+        },
+        escalate: {
+          enabled: Boolean(parsed?.jobs?.escalate?.enabled ?? DEFAULT_BROKER_SCHEDULER_CONFIG.jobs.escalate.enabled),
+          intervalMinutes: Math.max(5, Number(parsed?.jobs?.escalate?.intervalMinutes || DEFAULT_BROKER_SCHEDULER_CONFIG.jobs.escalate.intervalMinutes)),
+          limit: Math.max(1, Number(parsed?.jobs?.escalate?.limit || DEFAULT_BROKER_SCHEDULER_CONFIG.jobs.escalate.limit)),
+        },
+        followup_reminders: {
+          enabled: Boolean(parsed?.jobs?.followup_reminders?.enabled ?? DEFAULT_BROKER_SCHEDULER_CONFIG.jobs.followup_reminders.enabled),
+          intervalMinutes: Math.max(5, Number(parsed?.jobs?.followup_reminders?.intervalMinutes || DEFAULT_BROKER_SCHEDULER_CONFIG.jobs.followup_reminders.intervalMinutes)),
+          limit: Math.max(1, Number(parsed?.jobs?.followup_reminders?.limit || DEFAULT_BROKER_SCHEDULER_CONFIG.jobs.followup_reminders.limit)),
+        },
+      },
+    }
+  } catch {
+    return DEFAULT_BROKER_SCHEDULER_CONFIG
+  }
+}
+
+function loadSchedulerLastRuns(): Partial<Record<BrokerAutomationJobKey, number>> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = window.localStorage.getItem(BROKER_SCHEDULER_LAST_RUNS_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as Partial<Record<BrokerAutomationJobKey, number>>
+    return {
+      auto_assign: Number(parsed?.auto_assign || 0),
+      escalate: Number(parsed?.escalate || 0),
+      followup_reminders: Number(parsed?.followup_reminders || 0),
+    }
+  } catch {
+    return {}
+  }
+}
+
+function saveSchedulerLastRuns(next: Partial<Record<BrokerAutomationJobKey, number>>) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(BROKER_SCHEDULER_LAST_RUNS_KEY, JSON.stringify(next))
+}
+
 function formatPrice(value?: number, currency: 'USD' | 'DOP' = 'USD') {
   if (!value || Number.isNaN(Number(value))) return 'Precio no disponible'
   return new Intl.NumberFormat('es-DO', {
@@ -235,6 +341,9 @@ export default function BuyerDashboardPage() {
   const [automationLoading, setAutomationLoading] = useState(false)
   const [automationStatus, setAutomationStatus] = useState('')
   const [brokerAutomationOverview, setBrokerAutomationOverview] = useState<BrokerAutomationOverview | null>(null)
+  const [schedulerConfig, setSchedulerConfig] = useState<BrokerSchedulerConfig>(DEFAULT_BROKER_SCHEDULER_CONFIG)
+  const [schedulerRunning, setSchedulerRunning] = useState(false)
+  const [schedulerStatus, setSchedulerStatus] = useState('')
   const [agentOverview, setAgentOverview] = useState<AgentDashboardOverview | null>(null)
   const [constructoraOverview, setConstructoraOverview] = useState<ConstructoraDashboardOverview | null>(null)
 
@@ -415,6 +524,17 @@ export default function BuyerDashboardPage() {
   }, [session, selectedLeadId])
 
   useEffect(() => {
+    if (session?.role !== 'broker') return
+    setSchedulerConfig(loadSchedulerConfigFromStorage())
+  }, [session?.role])
+
+  useEffect(() => {
+    if (session?.role !== 'broker') return
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(BROKER_SCHEDULER_CONFIG_KEY, JSON.stringify(schedulerConfig))
+  }, [session?.role, schedulerConfig])
+
+  useEffect(() => {
     if (!session || session.role !== 'constructora') return
 
     let active = true
@@ -572,10 +692,15 @@ export default function BuyerDashboardPage() {
     }
   }
 
-  async function runBrokerAutomation(action: 'auto_assign' | 'escalate' | 'followup_reminders', limit: number) {
+  async function runBrokerAutomation(
+    action: BrokerAutomationJobKey,
+    limit: number,
+    options?: { silent?: boolean }
+  ): Promise<{ ok: boolean; processed: number }> {
+    const silent = Boolean(options?.silent)
     if (session?.role !== 'broker') {
-      setAutomationStatus('Solo brokers pueden ejecutar recordatorios automáticos.')
-      return
+      if (!silent) setAutomationStatus('Solo brokers pueden ejecutar recordatorios automáticos.')
+      return { ok: false, processed: 0 }
     }
 
     try {
@@ -593,24 +718,90 @@ export default function BuyerDashboardPage() {
 
       if (action === 'auto_assign') {
         const assigned = Number(json?.data?.assigned || 0)
-        setAutomationStatus(assigned > 0 ? `Leads auto-asignados: ${assigned}` : 'No había leads nuevos para auto-asignar.')
+        if (!silent) {
+          setAutomationStatus(assigned > 0 ? `Leads auto-asignados: ${assigned}` : 'No había leads nuevos para auto-asignar.')
+        }
+        await refreshLeadOps()
+        return { ok: true, processed: assigned }
       } else if (action === 'escalate') {
         const escalated = Number(json?.data?.escalated || 0)
-        setAutomationStatus(escalated > 0 ? `Leads escalados: ${escalated}` : 'No había leads vencidos para escalar.')
+        if (!silent) {
+          setAutomationStatus(escalated > 0 ? `Leads escalados: ${escalated}` : 'No había leads vencidos para escalar.')
+        }
+        await refreshLeadOps()
+        return { ok: true, processed: escalated }
       } else {
         const reminded = Number(json?.data?.reminded || 0)
-        setAutomationStatus(
-          reminded > 0
-            ? `Recordatorios enviados: ${reminded}`
-            : 'No había seguimientos vencidos pendientes de recordatorio.'
-        )
+        if (!silent) {
+          setAutomationStatus(
+            reminded > 0
+              ? `Recordatorios enviados: ${reminded}`
+              : 'No había seguimientos vencidos pendientes de recordatorio.'
+          )
+        }
+        await refreshLeadOps()
+        return { ok: true, processed: reminded }
       }
-
-      await refreshLeadOps()
     } catch (error: any) {
-      setAutomationStatus(error?.message || 'No se pudieron ejecutar recordatorios')
+      if (!silent) setAutomationStatus(error?.message || 'No se pudieron ejecutar recordatorios')
+      return { ok: false, processed: 0 }
     } finally {
       setAutomationLoading(false)
+    }
+  }
+
+  async function runSchedulerTick(manual = false) {
+    if (session?.role !== 'broker') return
+    if (schedulerRunning) return
+
+    const now = new Date()
+    if (!manual && !schedulerConfig.enabled) return
+    if (!manual && !isInsideSchedulerWindow(now, schedulerConfig.windowStart, schedulerConfig.windowEnd)) {
+      setSchedulerStatus(`Scheduler fuera de ventana (${schedulerConfig.windowStart} - ${schedulerConfig.windowEnd}).`)
+      return
+    }
+
+    const lastRuns = loadSchedulerLastRuns()
+    const dueJobs: Array<{ job: BrokerAutomationJobKey; limit: number }> = []
+    const candidates: BrokerAutomationJobKey[] = ['auto_assign', 'escalate', 'followup_reminders']
+
+    for (const job of candidates) {
+      const cfg = schedulerConfig.jobs[job]
+      if (!cfg?.enabled) continue
+      const intervalMs = Math.max(5, Number(cfg.intervalMinutes || 5)) * 60 * 1000
+      const lastRunMs = Number(lastRuns[job] || 0)
+      if (manual || now.getTime() - lastRunMs >= intervalMs) {
+        dueJobs.push({ job, limit: Math.max(1, Number(cfg.limit || 1)) })
+      }
+    }
+
+    if (dueJobs.length === 0) {
+      setSchedulerStatus('Scheduler activo: sin jobs vencidos por intervalo.')
+      return
+    }
+
+    setSchedulerRunning(true)
+    const nextRuns = { ...lastRuns }
+    try {
+      let totalProcessed = 0
+      for (const item of dueJobs) {
+        const result = await runBrokerAutomation(item.job, item.limit, { silent: true })
+        if (result.ok) {
+          nextRuns[item.job] = Date.now()
+          totalProcessed += result.processed
+        }
+      }
+
+      saveSchedulerLastRuns(nextRuns)
+      setSchedulerStatus(
+        manual
+          ? `Scheduler ejecutado manualmente (${dueJobs.length} job(s), procesados: ${totalProcessed}).`
+          : `Scheduler automático (${dueJobs.length} job(s), procesados: ${totalProcessed}).`
+      )
+    } catch (error: any) {
+      setSchedulerStatus(error?.message || 'No se pudo ejecutar el scheduler automático.')
+    } finally {
+      setSchedulerRunning(false)
     }
   }
 
@@ -624,6 +815,19 @@ export default function BuyerDashboardPage() {
 
   async function handleRunFollowupReminders() {
     await runBrokerAutomation('followup_reminders', 100)
+  }
+
+  function updateSchedulerJob(job: BrokerAutomationJobKey, patch: Partial<BrokerSchedulerJobConfig>) {
+    setSchedulerConfig((prev) => ({
+      ...prev,
+      jobs: {
+        ...prev.jobs,
+        [job]: {
+          ...prev.jobs[job],
+          ...patch,
+        },
+      },
+    }))
   }
 
   const selectedLead = brokerLeads.find((lead) => lead.id === selectedLeadId) || null
@@ -655,6 +859,24 @@ export default function BuyerDashboardPage() {
   const recentAutomationRuns = Array.isArray(brokerAutomationOverview?.automationRuns)
     ? brokerAutomationOverview.automationRuns.slice(0, 4)
     : []
+
+  useEffect(() => {
+    if (session?.role !== 'broker' || !schedulerConfig.enabled) return
+
+    let active = true
+    const tick = async () => {
+      if (!active) return
+      await runSchedulerTick(false)
+    }
+
+    tick()
+    const intervalId = window.setInterval(tick, 60 * 1000)
+
+    return () => {
+      active = false
+      window.clearInterval(intervalId)
+    }
+  }, [session?.role, schedulerConfig])
 
   if (loading) {
     return (
@@ -926,6 +1148,105 @@ export default function BuyerDashboardPage() {
                           {run.job} • scanned: {run.scanned} • assigned: {run.assigned} • escalated: {run.escalated} • reminded: {run.reminded || 0} • {formatDateTime(run.timestamp || null)}
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {session.role === 'broker' && (
+                  <div className="mt-3 rounded-lg border border-gray-100 bg-white p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-semibold text-[#0B2545]">Scheduler automático</div>
+                        <div className="text-[11px] text-gray-500">Ejecución cíclica de auto-assign, escalación y reminders (respetando cooldown API).</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSchedulerConfig((prev) => ({ ...prev, enabled: !prev.enabled }))}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${schedulerConfig.enabled ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'bg-white text-[#0B2545] border-gray-200'}`}
+                      >
+                        {schedulerConfig.enabled ? 'Scheduler ON' : 'Scheduler OFF'}
+                      </button>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Ventana inicio</label>
+                        <input
+                          type="time"
+                          title="Hora de inicio del scheduler"
+                          aria-label="Hora de inicio del scheduler"
+                          value={schedulerConfig.windowStart}
+                          onChange={(e) => setSchedulerConfig((prev) => ({ ...prev, windowStart: e.target.value || '08:00' }))}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Ventana fin</label>
+                        <input
+                          type="time"
+                          title="Hora de fin del scheduler"
+                          aria-label="Hora de fin del scheduler"
+                          value={schedulerConfig.windowEnd}
+                          onChange={(e) => setSchedulerConfig((prev) => ({ ...prev, windowEnd: e.target.value || '20:00' }))}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+                      {([
+                        { key: 'auto_assign' as const, label: 'Auto-assign' },
+                        { key: 'escalate' as const, label: 'Escalación' },
+                        { key: 'followup_reminders' as const, label: 'Reminder' },
+                      ]).map((item) => {
+                        const cfg = schedulerConfig.jobs[item.key]
+                        return (
+                          <div key={item.key} className="rounded border border-gray-100 bg-gray-50 p-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-medium text-[#0B2545]">{item.label}</span>
+                              <input
+                                type="checkbox"
+                                title={`Habilitar ${item.label}`}
+                                aria-label={`Habilitar ${item.label}`}
+                                checked={cfg.enabled}
+                                onChange={(e) => updateSchedulerJob(item.key, { enabled: e.target.checked })}
+                              />
+                            </div>
+                            <div className="mt-2 grid grid-cols-2 gap-2">
+                              <input
+                                type="number"
+                                min={5}
+                                value={cfg.intervalMinutes}
+                                onChange={(e) => updateSchedulerJob(item.key, { intervalMinutes: Math.max(5, Number(e.target.value || 5)) })}
+                                className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs"
+                                title="Intervalo en minutos"
+                                placeholder="min"
+                              />
+                              <input
+                                type="number"
+                                min={1}
+                                value={cfg.limit}
+                                onChange={(e) => updateSchedulerJob(item.key, { limit: Math.max(1, Number(e.target.value || 1)) })}
+                                className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs"
+                                title="Límite por corrida"
+                                placeholder="limit"
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => runSchedulerTick(true)}
+                        disabled={schedulerRunning || automationLoading}
+                        className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545] disabled:opacity-50"
+                      >
+                        {schedulerRunning ? 'Ejecutando scheduler...' : 'Ejecutar scheduler ahora'}
+                      </button>
+                      {schedulerStatus ? <span className="text-xs text-gray-600">{schedulerStatus}</span> : null}
                     </div>
                   </div>
                 )}
