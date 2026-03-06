@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getMiddlewareSession } from './lib/auth/middleware-session'
 
-const PORTAL_ROLES = new Set(['master_admin', 'admin', 'agent', 'broker', 'constructora'])
+const ADMIN_ROLES = new Set(['master_admin', 'admin'])
 const PROFESSIONAL_ROLES = new Set(['agent', 'broker', 'constructora'])
 const BUYER_ROLES = new Set(['buyer', 'user'])
 
@@ -34,7 +34,7 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
-    if (PORTAL_ROLES.has(session.role)) {
+    if (ADMIN_ROLES.has(session.role)) {
       return NextResponse.redirect(new URL('/master', req.url))
     }
 
@@ -89,9 +89,9 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/login?next=' + encodeURIComponent(pathname), req.url))
     }
 
-    if (!PORTAL_ROLES.has(session.role)) {
-      console.log('  ❌ Not a portal role - redirecting to /search')
-      return NextResponse.redirect(new URL('/search', req.url))
+    if (!ADMIN_ROLES.has(session.role)) {
+      console.log('  ❌ Not an admin role - redirecting to /dashboard')
+      return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
     if (session.role === 'master_admin' && !session.twoFactorVerified) {

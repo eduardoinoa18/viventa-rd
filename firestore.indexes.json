@@ -45,6 +45,105 @@
         { "fieldPath": "status", "mode": "ASCENDING" },
         { "fieldPath": "createdAt", "mode": "DESCENDING" }
       ]
+    },
+    {
+      "collectionId": "projects",
+      "fields": [
+        { "fieldPath": "status", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "projects",
+      "fields": [
+        { "fieldPath": "publishMode", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "projects",
+      "fields": [
+        { "fieldPath": "developerId", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "projects",
+      "fields": [
+        { "fieldPath": "brokerageId", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "projects",
+      "fields": [
+        { "fieldPath": "location.city", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "units",
+      "fields": [
+        { "fieldPath": "status", "mode": "ASCENDING" },
+        { "fieldPath": "unitCode", "mode": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "units",
+      "fields": [
+        { "fieldPath": "phase", "mode": "ASCENDING" },
+        { "fieldPath": "unitCode", "mode": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "units",
+      "fields": [
+        { "fieldPath": "price", "mode": "ASCENDING" },
+        { "fieldPath": "unitCode", "mode": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionId": "project_inventory_events",
+      "fields": [
+        { "fieldPath": "projectId", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "project_inventory_events",
+      "fields": [
+        { "fieldPath": "projectId", "mode": "ASCENDING" },
+        { "fieldPath": "unitId", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "project_inventory_events",
+      "fields": [
+        { "fieldPath": "reservationId", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "project_inventory_events",
+      "fields": [
+        { "fieldPath": "eventType", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "project_inventory_events",
+      "fields": [
+        { "fieldPath": "actorUid", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "project_inventory_events",
+      "fields": [
+        { "fieldPath": "officeId", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

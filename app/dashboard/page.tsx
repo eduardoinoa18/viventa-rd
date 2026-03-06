@@ -925,23 +925,25 @@ export default function BuyerDashboardPage() {
   }
 
   if (!isBuyerRole) {
-    return (
-      <>
-        <Header />
-        <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-md w-full text-center">
-            <h1 className="text-xl font-semibold text-[#0B2545]">Este panel es para compradores</h1>
-            <p className="text-gray-600 text-sm mt-2">Tu cuenta profesional usa el panel maestro.</p>
-            <Link href="/master" className="mt-4 inline-flex px-4 py-2 rounded-lg bg-[#0B2545] text-white font-medium">
-              Ir al panel maestro
-            </Link>
-          </div>
-        </main>
-        <Footer />
-        <BottomNav />
-      </>
-    )
-  }
+  // Fallback: Unknown role (should not happen with proper auth)
+  return (
+    <>
+      <Header />
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-md w-full text-center">
+          <h1 className="text-xl font-semibold text-[#0B2545]">Rol no reconocido</h1>
+          <p className="text-gray-600 text-sm mt-2">Tu cuenta tiene un rol que no está configurado para este panel. Contacta a soporte.</p>
+          <div className="mt-4 text-xs text-gray-500">Rol: {session.role}</div>
+          <Link href="/search" className="mt-4 inline-flex px-4 py-2 rounded-lg bg-[#0B2545] text-white font-medium">
+            Ir a búsqueda
+          </Link>
+        </div>
+      </main>
+      <Footer />
+      <BottomNav />
+    </>
+  )
+}
 
   return (
     <>

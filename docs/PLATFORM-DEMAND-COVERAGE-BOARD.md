@@ -26,7 +26,7 @@ Single source of truth to ensure every demand/request is captured, prioritized, 
 | DEM-006 | Governance | Admin control to hide/show public professional profile | DONE | Fullstack | `app/(dashboard)/master/users/page.tsx`, `app/api/admin/users/route.ts` |
 | DEM-007 | Security | Impersonation safe start/stop + audit + lockouts | DONE | Backend | `app/api/admin/users/impersonate/route.ts`, `app/api/admin/stop-impersonation/route.ts` |
 | DEM-008 | Oversight | User activity timeline in master profile | DONE | Fullstack | `app/api/admin/users/[id]/activity/route.ts` |
-| DEM-009 | Inventory RD | Sprint 1 backend closure (`INV-003` to `INV-008`) | IN_PROGRESS | Backend | `docs/PROJECT-INVENTORY-RD-SPRINT-1-EXECUTION-PLAN.md` |
+| DEM-009 | Inventory RD | Sprint 1 backend closure (`INV-003` to `INV-008`) | DONE | Backend | `docs/PROJECT-INVENTORY-RD-SPRINT-1-EXECUTION-PLAN.md`, `app/api/broker/projects/route.ts`, `app/api/admin/projects/route.ts` |
 | DEM-010 | Routing Ops | Lead routing control center hardening completion | NEXT | Fullstack | `app/api/admin/control/stream/route.ts` |
 | DEM-011 | Broker Admin RD | Broker OS DR reality model execution (office ops, MLS interno, pipeline, comisiones, documentos) | DONE | Fullstack | `docs/BROKER-OS-ARCHITECTURE.md`, `app/dashboard/page.tsx`, `app/api/broker/dashboard/overview/route.ts`, `app/api/broker/mls/route.ts`, `app/api/broker/transactions/route.ts` |
 | DEM-012 | Agent Portal RD | Agent dashboard finalization (personal production, leads, listings, activity, transactions) | DONE | Fullstack | `app/dashboard/page.tsx`, `app/api/agent/dashboard/overview/route.ts` |
