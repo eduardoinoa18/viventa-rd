@@ -342,7 +342,7 @@ export default function ConstructorasLanding() {
               {/* Basic Plan */}
               <div className="bg-white rounded-3xl shadow-2xl p-10">
                 <h3 className="text-2xl font-bold mb-4 text-[#0B2545]">Proyecto Individual</h3>
-                <div className="text-4xl font-bold text-orange-600 mb-6">Desde $XXX/mes</div>
+                <div className="text-4xl font-bold text-orange-600 mb-6">Precio bajo consulta</div>
                 <ul className="space-y-4 mb-8">
                   <li className="flex items-start gap-3">
                     <FiZap className="text-orange-600 text-xl mt-1 flex-shrink-0" />
@@ -376,7 +376,7 @@ export default function ConstructorasLanding() {
                   ⭐ MÁS POPULAR
                 </div>
                 <h3 className="text-2xl font-bold mb-4 mt-2">Multi-Proyecto</h3>
-                <div className="text-4xl font-bold mb-6">Desde $XXX/mes</div>
+                <div className="text-4xl font-bold mb-6">Plan empresarial a medida</div>
                 <ul className="space-y-4 mb-8">
                   <li className="flex items-start gap-3">
                     <FiZap className="text-yellow-300 text-xl mt-1 flex-shrink-0" />

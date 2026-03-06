@@ -255,7 +255,7 @@ export default function ContactPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 text-sm">Teléfono</h3>
-                    <p className="text-gray-600 text-sm">TBD</p>
+                    <p className="text-gray-600 text-sm">+1 (809) 555-VIVENTA</p>
                   </div>
                 </div>
               </div>
@@ -270,7 +270,7 @@ export default function ContactPage() {
                   <FiMapPin className="flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold">Oficina</p>
-                    <p className="opacity-90">TBD</p>
+                    <p className="opacity-90">Santo Domingo, República Dominicana</p>
                   </div>
                 </div>
 
@@ -293,7 +293,7 @@ export default function ContactPage() {
                 Nuestro equipo está listo para asistirte con cualquier consulta inmediata.
               </p>
               <div className="block text-center bg-[#00A676] text-white px-4 py-3 rounded-xl font-bold opacity-80">
-                Teléfono: TBD
+                Teléfono: +1 (809) 555-VIVENTA
               </div>
             </div>
           </div>
