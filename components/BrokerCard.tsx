@@ -7,6 +7,7 @@ export default function BrokerCard({ broker }: { broker: any }) {
   const brokerCode = broker.brokerCode || ''
   const languages = broker.languages || 'Español'
   const yearsExp = broker.yearsExperience || broker.years || 0
+  const profileIdentifier = encodeURIComponent(String(broker.slug || broker.id || '').trim())
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden group">
@@ -140,7 +141,7 @@ export default function BrokerCard({ broker }: { broker: any }) {
 
         {/* View Profile Link */}
         <Link
-          href={`/broker/${broker.slug || broker.id}`}
+          href={profileIdentifier ? `/broker/${profileIdentifier}` : '/brokers'}
           className="block w-full py-2 text-[#3BAFDA] font-semibold hover:text-[#2A9FC7] transition text-sm text-center"
         >
           Ver Perfil Completo →

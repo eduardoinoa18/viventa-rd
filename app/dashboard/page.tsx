@@ -976,6 +976,29 @@ export default function BuyerDashboardPage() {
   }
 
   if (isProfessionalRole) {
+    if (session.role === 'broker') {
+      return (
+        <>
+          <Header />
+          <main className="min-h-screen bg-gray-50 pb-20 md:pb-8">
+            <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+              <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Panel de Broker</h1>
+                <p className="text-sm text-gray-600 mt-1">Tu operación ahora está organizada en pestañas y páginas separadas estilo Master Admin.</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link href="/dashboard/broker/overview" className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Abrir Broker Workspace</Link>
+                  <Link href="/dashboard/listings/create" className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Crear listado</Link>
+                  <Link href="/brokers" className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Ver directorio brokers</Link>
+                </div>
+              </section>
+            </div>
+          </main>
+          <Footer />
+          <BottomNav />
+        </>
+      )
+    }
+
     const roleLabel = session.role === 'broker' ? 'Broker' : 'Agente'
 
     return (
@@ -1698,9 +1721,10 @@ export default function BuyerDashboardPage() {
       <main className="min-h-screen bg-gray-50 pb-20 md:pb-8">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-5">
           <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sticky top-20 z-20">
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
               <Link href="/search" className="text-center px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Buscar</Link>
               <Link href="/favorites" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Favoritos</Link>
+              <Link href="/brokers" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Brokers</Link>
               <Link href="/messages" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Mensajes</Link>
               <Link href="/notifications" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Alertas</Link>
               <Link href="/contact" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Ayuda</Link>
