@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiSearch, FiFilter, FiMail, FiPhone, FiKey, FiLogIn } from 'react-icons/fi'
+import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiSearch, FiFilter, FiMail, FiPhone, FiKey, FiLogIn, FiMenu, FiChevronDown } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import CreateBrokerModal from '@/components/admin/CreateBrokerModal'
 import CreateAgentModal from '@/components/admin/CreateAgentModal'
@@ -80,6 +80,13 @@ export default function MasterUsersPage() {
 
   const isBrokerView = sessionRole === 'broker'
   const canViewPeople = sessionRole === 'master_admin' || sessionRole === 'admin' || sessionRole === 'broker'
+  const masterOpsLinks = [
+    { href: '/master/offices', label: 'Offices' },
+    { href: '/master/users', label: 'People' },
+    { href: '/master/buyers', label: 'Buyers' },
+    { href: '/master/applications', label: 'Applications' },
+    { href: '/master/leads', label: 'Leads' },
+  ]
 
   // Stats
   const stats = useMemo(() => ({
@@ -519,39 +526,94 @@ export default function MasterUsersPage() {
               </p>
             </div>
             {!isBrokerView && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowBrokerModal(true)}
-                  disabled={isDangerousActionsLocked}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  <FiUserPlus className="w-4 h-4" />
-                  Broker
-                </button>
-                <button
-                  onClick={() => setShowAgentModal(true)}
-                  disabled={isDangerousActionsLocked}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <FiUserPlus className="w-4 h-4" />
-                  Agent
-                </button>
-                <button
-                  onClick={() => setShowConstructoraModal(true)}
-                  disabled={isDangerousActionsLocked}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors"
-                >
-                  <FiUserPlus className="w-4 h-4" />
-                  Constructora
-                </button>
-                <button
-                  onClick={() => setShowBuyerModal(true)}
-                  disabled={isDangerousActionsLocked}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <FiUserPlus className="w-4 h-4" />
-                  Buyer
-                </button>
+              <div className="flex items-center gap-2">
+                <details className="relative">
+                  <summary className="list-none inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 [&::-webkit-details-marker]:hidden">
+                    <FiMenu className="h-4 w-4" />
+                    Master Modules
+                    <FiChevronDown className="h-4 w-4" />
+                  </summary>
+                  <div className="absolute right-0 z-20 mt-2 w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
+                    {masterOpsLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </details>
+
+                <details className="relative">
+                  <summary className="list-none inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#0B2545] px-4 py-2 text-sm font-medium text-white hover:bg-[#12355f] [&::-webkit-details-marker]:hidden">
+                    <FiUserPlus className="h-4 w-4" />
+                    People Actions
+                    <FiChevronDown className="h-4 w-4" />
+                  </summary>
+                  <div className="absolute right-0 z-20 mt-2 w-64 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
+                    <button
+                      onClick={(event) => {
+                        setShowBrokerModal(true)
+                        const menu = event.currentTarget.closest('details')
+                        menu?.removeAttribute('open')
+                      }}
+                      disabled={isDangerousActionsLocked}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-purple-700 hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <FiUserPlus className="h-4 w-4" />
+                      Create Broker
+                    </button>
+                    <button
+                      onClick={(event) => {
+                        setShowAgentModal(true)
+                        const menu = event.currentTarget.closest('details')
+                        menu?.removeAttribute('open')
+                      }}
+                      disabled={isDangerousActionsLocked}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <FiUserPlus className="h-4 w-4" />
+                      Create Agent
+                    </button>
+                    <button
+                      onClick={(event) => {
+                        setShowConstructoraModal(true)
+                        const menu = event.currentTarget.closest('details')
+                        menu?.removeAttribute('open')
+                      }}
+                      disabled={isDangerousActionsLocked}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-orange-700 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <FiUserPlus className="h-4 w-4" />
+                      Create Constructora
+                    </button>
+                    <button
+                      onClick={(event) => {
+                        setShowBuyerModal(true)
+                        const menu = event.currentTarget.closest('details')
+                        menu?.removeAttribute('open')
+                      }}
+                      disabled={isDangerousActionsLocked}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <FiUserPlus className="h-4 w-4" />
+                      Create Buyer
+                    </button>
+                    <div className="my-1 border-t border-gray-100" />
+                    <button
+                      onClick={(event) => {
+                        loadUsers()
+                        const menu = event.currentTarget.closest('details')
+                        menu?.removeAttribute('open')
+                      }}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Refresh people list
+                    </button>
+                  </div>
+                </details>
               </div>
             )}
           </div>

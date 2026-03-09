@@ -401,6 +401,13 @@ export default function BuyerDashboardPage() {
   }, [session])
 
   useEffect(() => {
+    if (session?.role !== 'broker') return
+    if (typeof window === 'undefined') return
+    if (window.location.pathname !== '/dashboard') return
+    window.location.replace('/dashboard/broker/overview')
+  }, [session?.role])
+
+  useEffect(() => {
     if (!savedPropertyIds.length) {
       setSavedProperties([])
       return
@@ -980,17 +987,13 @@ export default function BuyerDashboardPage() {
       return (
         <>
           <Header />
-          <main className="min-h-screen bg-gray-50 pb-20 md:pb-8">
-            <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
-              <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Panel de Broker</h1>
-                <p className="text-sm text-gray-600 mt-1">Tu operación ahora está organizada en pestañas y páginas separadas estilo Master Admin.</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link href="/dashboard/broker/overview" className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Abrir Broker Workspace</Link>
-                  <Link href="/dashboard/listings/create" className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Crear listado</Link>
-                  <Link href="/brokers" className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Ver directorio brokers</Link>
-                </div>
-              </section>
+          <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 max-w-md w-full text-center">
+              <h1 className="text-xl font-semibold text-[#0B2545]">Redirigiendo al Broker Workspace...</h1>
+              <p className="text-sm text-gray-600 mt-2">Usamos un único portal de broker para mantener toda la operación actualizada.</p>
+              <Link href="/dashboard/broker/overview" className="mt-4 inline-flex px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">
+                Ir ahora
+              </Link>
             </div>
           </main>
           <Footer />
