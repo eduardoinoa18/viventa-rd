@@ -9,6 +9,7 @@ import { sendEmail } from '@/lib/emailService'
 import { FieldValue } from 'firebase-admin/firestore'
 import { getOfficeSeatQuotaStatus, resolveOfficeId, safeText, syncOfficeSeatUsage } from '@/lib/officeSubscriptionQuota'
 import { buildQuotaErrorResponse } from '@/lib/quotaResponses'
+import { findExistingBrokerAdminForOffice, resolveBrokerOfficeReference } from '@/lib/brokerAdminMvp'
 
 function generateRandomPassword(length: number = 12): string {
   const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
@@ -52,6 +53,38 @@ export async function POST(req: NextRequest) {
     const normalizedRole = safeText(role).toLowerCase()
     const officeLookupRef = safeText(brokerageId) || safeText(company)
     const officeId = normalizedRole === 'agent' ? await resolveOfficeId(adminDb, officeLookupRef) : ''
+
+    if (normalizedRole === 'broker') {
+      const brokerOfficeRef = resolveBrokerOfficeReference({ company, brokerage: brokerageId })
+      if (!brokerOfficeRef) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'company is required when approving a broker admin',
+            code: 'BROKER_OFFICE_REFERENCE_REQUIRED',
+          },
+          { status: 400 }
+        )
+      }
+
+      const existingBrokerAdmin = await findExistingBrokerAdminForOffice(adminDb, brokerOfficeRef)
+      if (existingBrokerAdmin) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'This office/company already has a broker admin in MVP mode.',
+            code: 'BROKER_ADMIN_ALREADY_EXISTS',
+            officeReference: brokerOfficeRef,
+            brokerAdmin: {
+              id: existingBrokerAdmin.id,
+              name: existingBrokerAdmin.name,
+              email: existingBrokerAdmin.email,
+            },
+          },
+          { status: 409 }
+        )
+      }
+    }
 
     if (normalizedRole === 'agent') {
       const quotaStatus = await getOfficeSeatQuotaStatus(adminDb, officeId, {

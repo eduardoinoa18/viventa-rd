@@ -8,6 +8,7 @@ import { adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
 import { logAdminAction } from '@/lib/logAdminAction'
 import { getOfficeSeatQuotaStatus, resolveOfficeId, safeText, syncOfficeSeatUsage } from '@/lib/officeSubscriptionQuota'
 import { buildQuotaErrorResponse } from '@/lib/quotaResponses'
+import { findExistingBrokerAdminForOffice, resolveBrokerOfficeReference } from '@/lib/brokerAdminMvp'
 
 // Generate a unique professional code
 function generateProfessionalCode(role: string): string {
@@ -62,6 +63,34 @@ export async function POST(request: NextRequest) {
 
     const normalizedRole = safeText(role).toLowerCase()
     let officeId = ''
+    if (normalizedRole === 'broker') {
+      const brokerOfficeRef = resolveBrokerOfficeReference({ company, brokerage })
+      if (!brokerOfficeRef) {
+        return NextResponse.json(
+          { ok: false, error: 'company is required when creating a broker admin', code: 'BROKER_OFFICE_REFERENCE_REQUIRED' },
+          { status: 400 }
+        )
+      }
+
+      const existingBrokerAdmin = await findExistingBrokerAdminForOffice(adminDb, brokerOfficeRef)
+      if (existingBrokerAdmin) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'This office/company already has a broker admin in MVP mode.',
+            code: 'BROKER_ADMIN_ALREADY_EXISTS',
+            officeReference: brokerOfficeRef,
+            brokerAdmin: {
+              id: existingBrokerAdmin.id,
+              name: existingBrokerAdmin.name,
+              email: existingBrokerAdmin.email,
+            },
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     if (normalizedRole === 'agent') {
       officeId = await resolveOfficeId(adminDb, brokerage || company)
       const quotaStatus = await getOfficeSeatQuotaStatus(adminDb, officeId, {

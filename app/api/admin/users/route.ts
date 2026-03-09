@@ -12,6 +12,7 @@ import { ensureProfessionalCode } from '@/lib/professionalCodes'
 import { getPublicAppUrl } from '@/lib/publicAppUrl'
 import { getOfficeSeatQuotaStatus, resolveOfficeId, safeText, syncOfficeSeatUsage } from '@/lib/officeSubscriptionQuota'
 import { buildQuotaErrorResponse } from '@/lib/quotaResponses'
+import { findExistingBrokerAdminForOffice, resolveBrokerOfficeReference } from '@/lib/brokerAdminMvp'
 
 export const dynamic = 'force-dynamic'
 
@@ -255,10 +256,43 @@ export async function POST(req: NextRequest) {
 
     const normalizedEmail = String(email).trim().toLowerCase()
     const normalizedRole = safeText(role).toLowerCase()
+    const allowedCreateRoles = new Set(['user', 'buyer', 'agent', 'broker', 'admin', 'master_admin', 'constructora'])
+    if (!allowedCreateRoles.has(normalizedRole)) {
+      return NextResponse.json({ ok: false, error: 'Invalid role', code: 'INVALID_ROLE' }, { status: 400 })
+    }
+
     const requestedOfficeRef = safeText(brokerage)
     const resolvedOfficeId = normalizedRole === 'agent'
       ? await resolveOfficeId(adminDb, requestedOfficeRef)
       : ''
+
+    if (normalizedRole === 'broker') {
+      const brokerOfficeRef = resolveBrokerOfficeReference({ company, brokerage })
+      if (!brokerOfficeRef) {
+        return NextResponse.json(
+          { ok: false, error: 'company is required when creating a broker admin', code: 'BROKER_OFFICE_REFERENCE_REQUIRED' },
+          { status: 400 }
+        )
+      }
+
+      const existingBrokerAdmin = await findExistingBrokerAdminForOffice(adminDb, brokerOfficeRef)
+      if (existingBrokerAdmin) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'This office/company already has a broker admin in MVP mode.',
+            code: 'BROKER_ADMIN_ALREADY_EXISTS',
+            officeReference: brokerOfficeRef,
+            brokerAdmin: {
+              id: existingBrokerAdmin.id,
+              name: existingBrokerAdmin.name,
+              email: existingBrokerAdmin.email,
+            },
+          },
+          { status: 409 }
+        )
+      }
+    }
 
     if (normalizedRole === 'agent') {
       if (!requestedOfficeRef) {
@@ -420,6 +454,41 @@ export async function PATCH(req: NextRequest) {
             role: existingData?.role,
           })
         : null
+
+    const nextRole = safeText(role || existingData?.role).toLowerCase()
+    const brokerProfileChanged = typeof role !== 'undefined' || typeof company !== 'undefined' || typeof brokerage !== 'undefined'
+    if (nextRole === 'broker' && brokerProfileChanged) {
+      const brokerOfficeRef = resolveBrokerOfficeReference({
+        company: typeof company !== 'undefined' ? company : existingData?.company,
+        brokerage: typeof brokerage !== 'undefined' ? brokerage : existingData?.brokerage,
+        officeId: existingData?.officeId,
+      })
+
+      if (!brokerOfficeRef) {
+        return NextResponse.json(
+          { ok: false, error: 'Broker admin requires company/office reference', code: 'BROKER_OFFICE_REFERENCE_REQUIRED' },
+          { status: 400 }
+        )
+      }
+
+      const existingBrokerAdmin = await findExistingBrokerAdminForOffice(adminDb, brokerOfficeRef, id)
+      if (existingBrokerAdmin) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'This office/company already has a broker admin in MVP mode.',
+            code: 'BROKER_ADMIN_ALREADY_EXISTS',
+            officeReference: brokerOfficeRef,
+            brokerAdmin: {
+              id: existingBrokerAdmin.id,
+              name: existingBrokerAdmin.name,
+              email: existingBrokerAdmin.email,
+            },
+          },
+          { status: 409 }
+        )
+      }
+    }
 
     if (lifecycleTransition && !lifecycleTransition.ok) {
       return NextResponse.json(

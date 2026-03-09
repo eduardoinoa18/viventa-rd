@@ -12,6 +12,7 @@ import { ensureProfessionalCode } from '@/lib/professionalCodes'
 import { getPublicAppUrl } from '@/lib/publicAppUrl'
 import { getOfficeSeatQuotaStatus, resolveOfficeId, safeText, syncOfficeSeatUsage } from '@/lib/officeSubscriptionQuota'
 import { buildQuotaErrorResponse } from '@/lib/quotaResponses'
+import { findExistingBrokerAdminForOffice, resolveBrokerOfficeReference } from '@/lib/brokerAdminMvp'
 export const dynamic = 'force-dynamic'
 
 type AppType = 'agent' | 'new-agent' | 'broker' | 'constructora'
@@ -148,6 +149,41 @@ export async function PATCH(req: NextRequest) {
 
         // Upsert user profile in Firestore (Admin)
         const role = type === 'broker' ? 'broker' : type === 'constructora' ? 'constructora' : 'agent'
+        if (role === 'broker') {
+          const brokerOfficeRef = resolveBrokerOfficeReference({
+            company: appData.company,
+            brokerage: appData.brokerage || appData.brokerageId,
+          })
+          if (!brokerOfficeRef) {
+            return NextResponse.json(
+              {
+                ok: false,
+                error: 'company is required when approving a broker admin',
+                code: 'BROKER_OFFICE_REFERENCE_REQUIRED',
+              },
+              { status: 400 }
+            )
+          }
+
+          const existingBrokerAdmin = await findExistingBrokerAdminForOffice(adminDb, brokerOfficeRef, uid)
+          if (existingBrokerAdmin) {
+            return NextResponse.json(
+              {
+                ok: false,
+                error: 'This office/company already has a broker admin in MVP mode.',
+                code: 'BROKER_ADMIN_ALREADY_EXISTS',
+                officeReference: brokerOfficeRef,
+                brokerAdmin: {
+                  id: existingBrokerAdmin.id,
+                  name: existingBrokerAdmin.name,
+                  email: existingBrokerAdmin.email,
+                },
+              },
+              { status: 409 }
+            )
+          }
+        }
+
         const officeLookupRef = safeText(appData.brokerageId) || safeText(appData.company)
         const officeId = role === 'agent' ? await resolveOfficeId(adminDb, officeLookupRef) : ''
         if (role === 'agent') {
