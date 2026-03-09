@@ -15,7 +15,13 @@ interface MapQuotaErrorOptions {
   fallbackMessage: string
 }
 
-export function mapOfficeQuotaError(payload: QuotaApiErrorPayload, options: MapQuotaErrorOptions): string {
+export interface QuotaUiIssue {
+  message: string
+  ctaHref?: string
+  ctaLabel?: string
+}
+
+export function mapOfficeQuotaIssue(payload: QuotaApiErrorPayload, options: MapQuotaErrorOptions): QuotaUiIssue {
   const { context, fallbackMessage } = options
   const code = String(payload?.code || '').trim().toUpperCase()
   const used = Number(payload?.quota?.used)
@@ -23,38 +29,68 @@ export function mapOfficeQuotaError(payload: QuotaApiErrorPayload, options: MapQ
   const hasQuota = Number.isFinite(used) && Number.isFinite(limit)
 
   if (code === 'OFFICE_SUBSCRIPTION_INACTIVE') {
-    return 'La suscripción de la oficina está inactiva. Reactívala para continuar.'
+    return {
+      message: 'La suscripción de la oficina está inactiva. Reactívala para continuar.',
+      ctaHref: context === 'listing' ? '/dashboard/billing' : '/master/offices',
+      ctaLabel: 'Ver suscripción',
+    }
   }
 
   if (code === 'OFFICE_ASSIGNMENT_REQUIRED') {
-    return 'La cuenta no tiene oficina asignada. Asigna una oficina antes de continuar.'
+    return {
+      message: 'La cuenta no tiene oficina asignada. Asigna una oficina antes de continuar.',
+      ctaHref: context === 'listing' ? '/dashboard/settings' : '/master/users',
+      ctaLabel: 'Gestionar asignación',
+    }
   }
 
   if (code === 'OFFICE_NOT_FOUND') {
-    return 'No se encontró la oficina asociada. Verifica la asignación de oficina.'
+    return {
+      message: 'No se encontró la oficina asociada. Verifica la asignación de oficina.',
+      ctaHref: context === 'listing' ? '/dashboard/settings' : '/master/offices',
+      ctaLabel: 'Revisar oficinas',
+    }
   }
 
   if (code === 'OFFICE_LISTINGS_LIMIT_REACHED') {
-    if (hasQuota) {
-      return `La oficina alcanzó el límite de publicaciones (${used}/${limit}). Archiva listados activos o mejora tu plan.`
+    return {
+      message: hasQuota
+        ? `La oficina alcanzó el límite de publicaciones (${used}/${limit}). Archiva listados activos o mejora tu plan.`
+        : 'La oficina alcanzó el límite de publicaciones. Archiva listados activos o mejora tu plan.',
+      ctaHref: '/dashboard/billing',
+      ctaLabel: 'Mejorar plan',
     }
-    return 'La oficina alcanzó el límite de publicaciones. Archiva listados activos o mejora tu plan.'
   }
 
   if (code === 'OFFICE_AGENT_LIMIT_REACHED') {
-    if (hasQuota) {
-      return `La oficina alcanzó el límite de agentes (${used}/${limit}). Libera cupos o mejora tu plan.`
+    return {
+      message: hasQuota
+        ? `La oficina alcanzó el límite de agentes (${used}/${limit}). Libera cupos o mejora tu plan.`
+        : 'La oficina alcanzó el límite de agentes. Libera cupos o mejora tu plan.',
+      ctaHref: '/master/offices',
+      ctaLabel: 'Gestionar plan',
     }
-    return 'La oficina alcanzó el límite de agentes. Libera cupos o mejora tu plan.'
   }
 
   if (context === 'listing' && code.startsWith('OFFICE_')) {
-    return 'No se pudo publicar el listado por restricciones de la oficina.'
+    return {
+      message: 'No se pudo publicar el listado por restricciones de la oficina.',
+      ctaHref: '/dashboard/billing',
+      ctaLabel: 'Ver facturación',
+    }
   }
 
   if (context === 'agent-seat' && code.startsWith('OFFICE_')) {
-    return 'No se pudo crear/aprobar el agente por restricciones de la oficina.'
+    return {
+      message: 'No se pudo crear/aprobar el agente por restricciones de la oficina.',
+      ctaHref: '/master/offices',
+      ctaLabel: 'Revisar oficina',
+    }
   }
 
-  return String(payload?.error || '').trim() || fallbackMessage
+  return { message: String(payload?.error || '').trim() || fallbackMessage }
+}
+
+export function mapOfficeQuotaError(payload: QuotaApiErrorPayload, options: MapQuotaErrorOptions): string {
+  return mapOfficeQuotaIssue(payload, options).message
 }

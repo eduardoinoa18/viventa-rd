@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { FiCheck, FiX, FiFilter, FiSearch, FiClock, FiAlertCircle, FiTrash2 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
-import { mapOfficeQuotaError } from '@/lib/quotaUiMessages'
+import { mapOfficeQuotaIssue } from '@/lib/quotaUiMessages'
 
 interface Application {
   id: string
@@ -74,6 +74,7 @@ export default function ApplicationsPage() {
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
   const [reviewNotes, setReviewNotes] = useState('')
   const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewQuotaIssue, setReviewQuotaIssue] = useState<{ message: string; ctaHref?: string; ctaLabel?: string } | null>(null)
   const [rejectionReason, setRejectionReason] = useState<RejectionReasonCode | ''>('')
   const [failedRequirements, setFailedRequirements] = useState<string[]>([])
   const [reviewCriteria, setReviewCriteria] = useState<ReviewCriteria>({
@@ -214,6 +215,7 @@ export default function ApplicationsPage() {
       documentationComplete: Boolean(app.reviewCriteria?.documentationComplete),
       readinessSignal: Boolean(app.reviewCriteria?.readinessSignal),
     })
+    setReviewQuotaIssue(null)
     setShowReviewModal(true)
   }
 
@@ -223,6 +225,7 @@ export default function ApplicationsPage() {
     setReviewNotes('')
     setRejectionReason('')
     setFailedRequirements([])
+    setReviewQuotaIssue(null)
   }
 
   function toggleFailedRequirement(key: string) {
@@ -258,6 +261,7 @@ export default function ApplicationsPage() {
     }
 
     setProcessingId(selectedApp.id)
+    setReviewQuotaIssue(null)
     try {
       const endpoint = selectedApp.source === 'subscription_request'
         ? '/api/admin/revenue/subscription-requests'
@@ -302,12 +306,12 @@ export default function ApplicationsPage() {
         closeReview()
         loadApplications()
       } else {
-        toast.error(
-          mapOfficeQuotaError(json || {}, {
-            context: 'agent-seat',
-            fallbackMessage: 'Failed to update application review',
-          })
-        )
+        const issue = mapOfficeQuotaIssue(json || {}, {
+          context: 'agent-seat',
+          fallbackMessage: 'Failed to update application review',
+        })
+        toast.error(issue.message)
+        setReviewQuotaIssue(issue)
       }
     } catch (e) {
       console.error('Failed to update application review', e)
@@ -714,6 +718,19 @@ export default function ApplicationsPage() {
                 Review score: <strong>{reviewScore}</strong> • Recommendation: <strong>{reviewRecommendation.replace('_', ' ')}</strong>
               </p>
             </div>
+
+            {reviewQuotaIssue ? (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <p>{reviewQuotaIssue.message}</p>
+                {reviewQuotaIssue.ctaHref && reviewQuotaIssue.ctaLabel ? (
+                  <div className="mt-1">
+                    <Link href={reviewQuotaIssue.ctaHref} className="font-medium text-red-800 underline">
+                      {reviewQuotaIssue.ctaLabel}
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <textarea
               value={reviewNotes}

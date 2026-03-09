@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { uploadMultipleImages, validateImageFiles } from '@/lib/storageService'
-import { mapOfficeQuotaError } from '@/lib/quotaUiMessages'
+import { mapOfficeQuotaIssue } from '@/lib/quotaUiMessages'
 
 type CreateForm = {
   title: string
@@ -37,6 +37,7 @@ export default function CreateProfessionalListingPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [error, setError] = useState('')
+  const [errorCta, setErrorCta] = useState<{ href: string; label: string } | null>(null)
   const [form, setForm] = useState<CreateForm>({
     title: '',
     description: '',
@@ -71,15 +72,18 @@ export default function CreateProfessionalListingPage() {
     const total = uploadedImages.length + incoming.length
     if (total > 20) {
       setError('Máximo 20 imágenes por listado.')
+      setErrorCta(null)
       return
     }
     const validation = validateImageFiles(incoming)
     if (!validation.valid) {
       setError(validation.errors[0] || 'Archivos inválidos')
+      setErrorCta(null)
       return
     }
     setSelectedFiles(incoming)
     setError('')
+    setErrorCta(null)
   }
 
   async function uploadSelectedFiles() {
@@ -91,6 +95,7 @@ export default function CreateProfessionalListingPage() {
     try {
       setUploading(true)
       setError('')
+      setErrorCta(null)
       const folder = `listing_images/pro_${Date.now()}`
       const urls = await uploadMultipleImages(selectedFiles, folder)
       setUploadedImages((prev) => [...prev, ...urls])
@@ -100,6 +105,7 @@ export default function CreateProfessionalListingPage() {
       }
     } catch (uploadError: any) {
       setError(uploadError?.message || 'No se pudieron subir las imágenes')
+      setErrorCta(null)
     } finally {
       setUploading(false)
     }
@@ -115,14 +121,17 @@ export default function CreateProfessionalListingPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setErrorCta(null)
 
     if (!form.title || !form.description || !form.price || !form.city || !form.neighborhood) {
       setError('Completa título, descripción, precio, ciudad y sector.')
+      setErrorCta(null)
       return
     }
 
     if ((form.lat && !form.lng) || (!form.lat && form.lng)) {
       setError('Si completas coordenadas, incluye latitud y longitud.')
+      setErrorCta(null)
       return
     }
 
@@ -166,17 +175,19 @@ export default function CreateProfessionalListingPage() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.success) {
-        throw new Error(
-          mapOfficeQuotaError(json || {}, {
-            context: 'listing',
-            fallbackMessage: 'No se pudo crear el listado',
-          })
-        )
+        const issue = mapOfficeQuotaIssue(json || {}, {
+          context: 'listing',
+          fallbackMessage: 'No se pudo crear el listado',
+        })
+        setError(issue.message)
+        setErrorCta(issue.ctaHref && issue.ctaLabel ? { href: issue.ctaHref, label: issue.ctaLabel } : null)
+        return
       }
 
       router.push(`/listing/${json.id}`)
     } catch (submitError: any) {
       setError(submitError?.message || 'No se pudo crear el listado')
+      setErrorCta(null)
     } finally {
       setSaving(false)
     }
@@ -344,7 +355,18 @@ export default function CreateProfessionalListingPage() {
               </div>
             </div>
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <p>{error}</p>
+                {errorCta ? (
+                  <div className="mt-2">
+                    <Link href={errorCta.href} className="inline-flex text-sm font-medium text-red-800 underline">
+                      {errorCta.label}
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="flex items-center gap-2">
               <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium disabled:opacity-50">

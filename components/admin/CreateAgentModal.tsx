@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { FiX, FiUserPlus } from 'react-icons/fi'
 import toast from 'react-hot-toast'
-import { mapOfficeQuotaError } from '@/lib/quotaUiMessages'
+import { mapOfficeQuotaIssue } from '@/lib/quotaUiMessages'
 
 interface CreateAgentModalProps {
   isOpen: boolean
@@ -21,6 +22,8 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
   const [loading, setLoading] = useState(false)
   const [brokers, setBrokers] = useState<Broker[]>([])
   const [loadingBrokers, setLoadingBrokers] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [submitErrorCta, setSubmitErrorCta] = useState<{ href: string; label: string } | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -69,6 +72,8 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
       return
     }
 
+    setSubmitError('')
+    setSubmitErrorCta(null)
     setLoading(true)
     try {
       const res = await fetch('/api/admin/users', {
@@ -86,12 +91,13 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
 
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        toast.error(
-          mapOfficeQuotaError(json || {}, {
-            context: 'agent-seat',
-            fallbackMessage: 'Failed to create agent',
-          })
-        )
+        const issue = mapOfficeQuotaIssue(json || {}, {
+          context: 'agent-seat',
+          fallbackMessage: 'Failed to create agent',
+        })
+        toast.error(issue.message)
+        setSubmitError(issue.message)
+        setSubmitErrorCta(issue.ctaHref && issue.ctaLabel ? { href: issue.ctaHref, label: issue.ctaLabel } : null)
         return
       }
 
@@ -102,6 +108,8 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
     } catch (error) {
       console.error('Error creating agent:', error)
       toast.error('Failed to create agent')
+      setSubmitError('Failed to create agent')
+      setSubmitErrorCta(null)
     } finally {
       setLoading(false)
     }
@@ -207,6 +215,19 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
               {loading ? 'Creating...' : 'Create Agent'}
             </button>
           </div>
+
+          {submitError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p>{submitError}</p>
+              {submitErrorCta ? (
+                <div className="mt-1">
+                  <Link href={submitErrorCta.href} className="font-medium underline text-red-800">
+                    {submitErrorCta.label}
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </form>
       </div>
     </div>
