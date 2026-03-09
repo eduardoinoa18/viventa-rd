@@ -252,3 +252,73 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'Failed to create transaction' }, { status: 500 })
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    const db = getAdminDb()
+    if (!db) return NextResponse.json({ ok: false, error: 'Server config error' }, { status: 500 })
+
+    const session = await getSessionFromRequest(req)
+    if (!session?.uid) return NextResponse.json({ ok: false, error: 'Authentication required' }, { status: 401 })
+
+    const context = await getListingAccessUserContext(db, session.uid, (session.role as any) || 'buyer')
+    if (context.role !== 'broker' && context.role !== 'agent') {
+      return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
+    }
+    if (!context.officeId) {
+      return NextResponse.json({ ok: false, error: 'Broker office assignment required' }, { status: 403 })
+    }
+
+    const body = await req.json().catch(() => ({}))
+    const id = String(body.id || '').trim()
+    if (!id) {
+      return NextResponse.json({ ok: false, error: 'id is required' }, { status: 400 })
+    }
+
+    const txRef = db.collection('transactions').doc(id)
+    const txSnap = await txRef.get()
+    if (!txSnap.exists) {
+      return NextResponse.json({ ok: false, error: 'Transaction not found' }, { status: 404 })
+    }
+
+    const tx = txSnap.data() as Record<string, any>
+    if (String(tx.officeId || '') !== context.officeId) {
+      return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (context.role === 'agent') {
+      const ownerAgentId = String(tx.agentId || '').trim()
+      if (ownerAgentId && ownerAgentId !== context.uid) {
+        return NextResponse.json({ ok: false, error: 'Agents can only update their own transactions' }, { status: 403 })
+      }
+    }
+
+    const update: Record<string, any> = {
+      updatedAt: new Date(),
+      updatedBy: context.uid,
+    }
+
+    if (body.stage !== undefined) {
+      update.stage = normalizePipelineStage(body.stage)
+    }
+
+    if (body.notes !== undefined) {
+      update.notes = String(body.notes || '').trim() || null
+    }
+
+    if (body.commissionStatus !== undefined) {
+      const nextStatus = safeText(body.commissionStatus)
+      if (!['pending', 'paid', 'pagada'].includes(nextStatus)) {
+        return NextResponse.json({ ok: false, error: 'Invalid commissionStatus' }, { status: 400 })
+      }
+      update.commissionStatus = nextStatus === 'pagada' ? 'paid' : nextStatus
+    }
+
+    await txRef.set(update, { merge: true })
+    const saved = await txRef.get()
+    return NextResponse.json({ ok: true, transaction: { id, ...(saved.data() || {}) } })
+  } catch (error: any) {
+    console.error('[api/broker/transactions] PATCH error', error)
+    return NextResponse.json({ ok: false, error: 'Failed to update transaction' }, { status: 500 })
+  }
+}
