@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiSearch, FiFilter, FiMail, FiPhone, FiKey, FiLogIn, FiMenu, FiChevronDown } from 'react-icons/fi'
+import { FiUserPlus, FiEdit, FiUserX, FiUserCheck, FiTrash2, FiSearch, FiFilter, FiMail, FiPhone, FiKey, FiLogIn, FiMenu, FiChevronDown, FiMoreVertical } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import CreateBrokerModal from '@/components/admin/CreateBrokerModal'
 import CreateAgentModal from '@/components/admin/CreateAgentModal'
@@ -878,110 +878,142 @@ export default function MasterUsersPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex gap-2 justify-end">
-                            <Link
-                              href={`/master/users/${user.id}`}
-                              className="inline-flex items-center gap-2 px-3 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 text-sm font-medium rounded-lg transition-colors"
-                              title="View user performance"
-                            >
-                              View
-                            </Link>
-                            {isInvited && (
-                              <button
-                                onClick={() => resendInvite(user.id)}
-                                className="inline-flex items-center gap-2 px-3 py-2 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 text-sm font-medium rounded-lg transition-colors"
-                                title="Resend invite"
-                              >
-                                <FiMail className="w-4 h-4" />
-                                Resend Invite
-                              </button>
-                            )}
-                            <button
-                              onClick={() => {
-                                setEditingUser(user)
-                                setShowEditModal(true)
-                              }}
-                              disabled={isDangerousActionsLocked}
-                              className="inline-flex items-center gap-2 px-3 py-2 text-blue-700 bg-blue-50 hover:bg-blue-100 text-sm font-medium rounded-lg transition-colors"
-                              title="Edit user"
-                            >
-                              <FiEdit className="w-4 h-4" />
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => {
-                                setOnboardingUser(user)
-                                setShowOnboardingModal(true)
-                              }}
-                              className="inline-flex items-center gap-2 px-3 py-2 text-cyan-700 bg-cyan-50 hover:bg-cyan-100 text-sm font-medium rounded-lg transition-colors"
-                              title="Open onboarding questionnaire"
-                            >
-                              Onboarding
-                            </button>
-                            {sessionRole === 'master_admin' && user.role !== 'master_admin' && (
-                              <button
-                                onClick={() => loginAsUser(user)}
-                                disabled={impersonatingUserId === (user.uid || user.id)}
-                                className="inline-flex items-center gap-2 px-3 py-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
-                                title="Login as this user"
-                              >
-                                <FiLogIn className="w-4 h-4" />
-                                {impersonatingUserId === (user.uid || user.id) ? 'Logging in...' : 'Login as'}
-                              </button>
-                            )}
-                            <button
-                              onClick={() => resetPassword(user)}
-                              disabled={isBrokerView || isDangerousActionsLocked}
-                              className="inline-flex items-center gap-2 px-3 py-2 text-violet-700 bg-violet-50 hover:bg-violet-100 text-sm font-medium rounded-lg transition-colors"
-                              title="Generate password reset link"
-                            >
-                              <FiKey className="w-4 h-4" />
-                              Reset PW
-                            </button>
-                            <button
-                              onClick={() => forceComplianceCheck(user)}
-                              disabled={isBrokerView || isDangerousActionsLocked}
-                              className="inline-flex items-center gap-2 px-3 py-2 text-orange-700 bg-orange-50 hover:bg-orange-100 text-sm font-medium rounded-lg transition-colors"
-                              title="Force compliance check"
-                            >
-                              Compliance
-                            </button>
-                            {isProfessional && (
-                              <button
-                                onClick={() => togglePublicProfile(user)}
-                                disabled={isBrokerView || isDangerousActionsLocked}
-                                className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                                  isPublicProfileEnabled
-                                    ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
-                                    : 'text-slate-700 bg-slate-100 hover:bg-slate-200'
-                                }`}
-                                title={isPublicProfileEnabled ? 'Hide public profile' : 'Show public profile'}
-                              >
-                                {isPublicProfileEnabled ? 'Public: ON' : 'Public: OFF'}
-                              </button>
-                            )}
-                            <button
-                              onClick={() => toggleStatus(user.uid || user.id, isDisabled)}
-                              disabled={isBrokerView || isDangerousActionsLocked}
-                              className={`inline-flex items-center gap-2 px-3 py-2 text-white text-sm font-medium rounded-lg transition-colors ${
-                                isDisabled
-                                  ? 'bg-green-500 hover:bg-green-600'
-                                  : 'bg-yellow-500 hover:bg-yellow-600'
-                              }`}
-                              title={isDisabled ? 'Enable user' : 'Disable user'}
-                            >
-                              {isDisabled ? <FiUserCheck className="w-4 h-4" /> : <FiUserX className="w-4 h-4" />}
-                              {isDisabled ? 'Enable' : 'Disable'}
-                            </button>
-                            <button
-                              onClick={() => deleteUser(user.uid || user.id, user.name)}
-                              disabled={isBrokerView || isDangerousActionsLocked}
-                              className="inline-flex items-center gap-2 px-3 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
-                              title="Delete user"
-                            >
-                              <FiTrash2 className="w-4 h-4" />
-                              Delete
-                            </button>
+                          <div className="flex justify-end">
+                            <details className="relative">
+                              <summary className="list-none inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 [&::-webkit-details-marker]:hidden">
+                                <FiMoreVertical className="w-4 h-4" />
+                                Actions
+                                <FiChevronDown className="w-4 h-4" />
+                              </summary>
+                              <div className="absolute right-0 z-20 mt-2 w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
+                                <Link
+                                  href={`/master/users/${user.id}`}
+                                  onClick={(event) => {
+                                    const menu = event.currentTarget.closest('details')
+                                    menu?.removeAttribute('open')
+                                  }}
+                                  className="block rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                                >
+                                  View profile
+                                </Link>
+                                {isInvited && (
+                                  <button
+                                    onClick={(event) => {
+                                      resendInvite(user.id)
+                                      const menu = event.currentTarget.closest('details')
+                                      menu?.removeAttribute('open')
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-indigo-700 hover:bg-indigo-50"
+                                  >
+                                    <FiMail className="w-4 h-4" />
+                                    Resend Invite
+                                  </button>
+                                )}
+                                <button
+                                  onClick={(event) => {
+                                    setEditingUser(user)
+                                    setShowEditModal(true)
+                                    const menu = event.currentTarget.closest('details')
+                                    menu?.removeAttribute('open')
+                                  }}
+                                  disabled={isDangerousActionsLocked}
+                                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  <FiEdit className="w-4 h-4" />
+                                  Edit user
+                                </button>
+                                <button
+                                  onClick={(event) => {
+                                    setOnboardingUser(user)
+                                    setShowOnboardingModal(true)
+                                    const menu = event.currentTarget.closest('details')
+                                    menu?.removeAttribute('open')
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-cyan-700 hover:bg-cyan-50"
+                                >
+                                  Onboarding
+                                </button>
+                                {sessionRole === 'master_admin' && user.role !== 'master_admin' && (
+                                  <button
+                                    onClick={(event) => {
+                                      loginAsUser(user)
+                                      const menu = event.currentTarget.closest('details')
+                                      menu?.removeAttribute('open')
+                                    }}
+                                    disabled={impersonatingUserId === (user.uid || user.id)}
+                                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    <FiLogIn className="w-4 h-4" />
+                                    {impersonatingUserId === (user.uid || user.id) ? 'Logging in...' : 'Login as'}
+                                  </button>
+                                )}
+                                <button
+                                  onClick={(event) => {
+                                    resetPassword(user)
+                                    const menu = event.currentTarget.closest('details')
+                                    menu?.removeAttribute('open')
+                                  }}
+                                  disabled={isBrokerView || isDangerousActionsLocked}
+                                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-violet-700 hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  <FiKey className="w-4 h-4" />
+                                  Reset password
+                                </button>
+                                <button
+                                  onClick={(event) => {
+                                    forceComplianceCheck(user)
+                                    const menu = event.currentTarget.closest('details')
+                                    menu?.removeAttribute('open')
+                                  }}
+                                  disabled={isBrokerView || isDangerousActionsLocked}
+                                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-orange-700 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  Compliance check
+                                </button>
+                                {isProfessional && (
+                                  <button
+                                    onClick={(event) => {
+                                      togglePublicProfile(user)
+                                      const menu = event.currentTarget.closest('details')
+                                      menu?.removeAttribute('open')
+                                    }}
+                                    disabled={isBrokerView || isDangerousActionsLocked}
+                                    className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
+                                      isPublicProfileEnabled
+                                        ? 'text-emerald-700 hover:bg-emerald-50'
+                                        : 'text-slate-700 hover:bg-slate-100'
+                                    }`}
+                                  >
+                                    {isPublicProfileEnabled ? 'Public profile: ON' : 'Public profile: OFF'}
+                                  </button>
+                                )}
+                                <button
+                                  onClick={(event) => {
+                                    toggleStatus(user.uid || user.id, isDisabled)
+                                    const menu = event.currentTarget.closest('details')
+                                    menu?.removeAttribute('open')
+                                  }}
+                                  disabled={isBrokerView || isDangerousActionsLocked}
+                                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {isDisabled ? <FiUserCheck className="w-4 h-4" /> : <FiUserX className="w-4 h-4" />}
+                                  {isDisabled ? 'Enable user' : 'Disable user'}
+                                </button>
+                                <div className="my-1 border-t border-gray-100" />
+                                <button
+                                  onClick={(event) => {
+                                    deleteUser(user.uid || user.id, user.name)
+                                    const menu = event.currentTarget.closest('details')
+                                    menu?.removeAttribute('open')
+                                  }}
+                                  disabled={isBrokerView || isDangerousActionsLocked}
+                                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  <FiTrash2 className="w-4 h-4" />
+                                  Delete user
+                                </button>
+                              </div>
+                            </details>
                           </div>
                         </td>
                       </tr>
