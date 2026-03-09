@@ -1,186 +1,248 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    function isSignedIn() { return request.auth != null; }
-    function getUserRole() { 
-      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role 
-        : null; 
-    }
-    function isAdmin() { return getUserRole() in ['master_admin','admin']; }
-    function isBrokerAdmin() { return getUserRole() == 'broker_admin'; }
-    function isMasterAdmin() { return getUserRole() == 'master_admin'; }
-    function isElevated() { return isAdmin() || isBrokerAdmin(); }
-    function isAgentOrAbove() { return isSignedIn() && (getUserRole() in ['agent','admin','broker_admin','master_admin']); }
-    function isOwnerOrAdmin() { return isSignedIn() && (resource.data.createdBy == request.auth.uid || isAdmin() || isBrokerAdmin()); }
 
-    match /marketing_leads/{doc} { 
-      allow create: if true; 
-      allow read: if isAdmin(); 
+    function isSignedIn() { return request.auth != null; }
+    function userDocPath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function hasUserDoc() { return isSignedIn() && exists(userDocPath()); }
+    function userData() { return hasUserDoc() ? get(userDocPath()).data : null; }
+    function role() { return hasUserDoc() ? userData().role : null; }
+
+    function isMasterAdmin() { return role() == 'master_admin'; }
+    function isPlatformAdmin() { return role() == 'admin'; }
+    function isAdmin() { return isMasterAdmin() || isPlatformAdmin(); }
+    function isBroker() { return role() == 'broker'; }
+    function isAgent() { return role() == 'agent'; }
+    function isConstructora() { return role() == 'constructora'; }
+    function isProfessional() { return role() in ['agent', 'broker', 'constructora']; }
+
+    function userOfficeId() {
+      return !hasUserDoc()
+        ? ''
+        : (userData().officeId != null && userData().officeId != ''
+          ? userData().officeId
+          : (userData().brokerageId != null && userData().brokerageId != ''
+            ? userData().brokerageId
+            : (userData().brokerId != null && userData().brokerId != '' ? userData().brokerId : '')));
+    }
+
+    function sameOfficeByValue(officeId) {
+      return isSignedIn() && officeId != null && officeId != '' && userOfficeId() == officeId;
+    }
+
+    function canReadPublicListing() {
+      return resource.data.status == 'active' && !(('mlsOnly' in resource.data) && resource.data.mlsOnly == true);
+    }
+
+    function canReadOfficeListing() {
+      return isSignedIn() && (
+        isAdmin() ||
+        resource.data.createdByUserId == request.auth.uid ||
+        resource.data.agentId == request.auth.uid ||
+        sameOfficeByValue(resource.data.brokerId) ||
+        sameOfficeByValue(resource.data.brokerageId) ||
+        sameOfficeByValue(resource.data.createdByBrokerId)
+      );
     }
 
     match /users/{userId} {
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId ||
+        isAdmin() ||
+        (isBroker() && (
+          sameOfficeByValue(resource.data.officeId) ||
+          sameOfficeByValue(resource.data.brokerageId) ||
+          sameOfficeByValue(resource.data.brokerId)
+        ))
+      );
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+      );
       allow delete: if isMasterAdmin();
     }
 
-    match /invites/{inviteId} {
-      allow create: if isSignedIn() && isAdmin();
-      allow read, update, delete: if isSignedIn() && isAdmin();
+    match /broker_offices/{officeId} {
+      allow read: if isSignedIn() && (isAdmin() || userOfficeId() == officeId);
+      allow create, delete: if isAdmin();
+      allow update: if isSignedIn() && (isAdmin() || (isBroker() && userOfficeId() == officeId));
     }
 
     match /applications/{appId} {
-      allow get: if isSignedIn() && (request.auth.uid == resource.data.userId || isElevated());
-      allow list: if isElevated();
+      allow get: if isSignedIn() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow list: if isAdmin();
       allow create: if true;
-      allow update: if isElevated();
-      allow delete: if isMasterAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /properties/{propertyId} {
-      allow read: if true;
-      allow create: if isAgentOrAbove();
-      allow update: if isSignedIn() && (resource.data.agentId == request.auth.uid || isAdmin());
+      allow read: if canReadPublicListing() || canReadOfficeListing();
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (isConstructora() && request.resource.data.createdByUserId == request.auth.uid) ||
+        ((isAgent() || isBroker()) &&
+          request.resource.data.createdByUserId == request.auth.uid &&
+          userOfficeId() != '' &&
+          request.resource.data.brokerId == userOfficeId() &&
+          request.resource.data.brokerageId == userOfficeId() &&
+          request.resource.data.createdByBrokerId == userOfficeId())
+      );
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.createdByUserId == request.auth.uid ||
+        (isBroker() && sameOfficeByValue(resource.data.brokerId))
+      );
+      allow delete: if isSignedIn() && (isAdmin() || resource.data.createdByUserId == request.auth.uid);
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        sameOfficeByValue(resource.data.officeId) ||
+        resource.data.agentId == request.auth.uid ||
+        resource.data.createdBy == request.auth.uid
+      );
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        ((isAgent() || isBroker()) && request.resource.data.officeId == userOfficeId() && request.resource.data.createdBy == request.auth.uid)
+      );
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (isBroker() && sameOfficeByValue(resource.data.officeId)) ||
+        resource.data.createdBy == request.auth.uid
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /leads/{leadId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.ownerAgentId == request.auth.uid ||
+        sameOfficeByValue(resource.data.officeId) ||
+        sameOfficeByValue(resource.data.brokerId) ||
+        sameOfficeByValue(resource.data.brokerageId)
+      );
+      allow create: if true;
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (isBroker() && (
+          sameOfficeByValue(resource.data.officeId) ||
+          sameOfficeByValue(resource.data.brokerId) ||
+          sameOfficeByValue(resource.data.brokerageId)
+        )) ||
+        (isAgent() && resource.data.ownerAgentId == request.auth.uid)
+      );
       allow delete: if isAdmin();
     }
 
     match /notifications/{notificationId} {
-      allow read: if isSignedIn() && (
-        resource.data.userId == request.auth.uid || 
-        (resource.data.audience && getUserRole() in resource.data.audience) ||
-        resource.data.audience && 'all' in resource.data.audience ||
-        isElevated()
-      );
+      allow read: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isElevated());
+      allow update: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
       allow delete: if isAdmin();
-    }
-
-    match /contact_submissions/{submissionId} {
-      allow read: if isElevated();
-      allow create: if true;
-      allow update: if isElevated();
-      allow delete: if isAdmin();
-    }
-
-    match /property_inquiries/{inquiryId} {
-      allow read: if isElevated() || (isSignedIn() && resource.data.agentId == request.auth.uid);
-      allow create: if true;
-      allow update: if isElevated();
-      allow delete: if isAdmin();
-    }
-
-    match /billing_customers/{customerId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
-    }
-
-    match /billing_subscriptions/{subscriptionId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
-    }
-
-    match /billing_invoices/{invoiceId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
-    }
-
-    match /brokerages/{bId} {
-      allow read: if true;
-      allow create, update, delete: if isElevated();
-    }
-
-    match /counters/{doc} {
-      allow read: if isElevated();
-      allow write: if isElevated();
-    }
-
-    match /audit_logs/{logId} {
-      allow create: if isElevated();
-      allow read: if isElevated();
-      allow update, delete: if false;
-    }
-
-    match /activity_logs/{logId} {
-      allow create: if true;
-      allow read, list: if isElevated();
-      allow update, delete: if false;
-    }
-
-    match /leads/{leadId} {
-      allow read, list: if isElevated();
-      allow create: if isSignedIn();
-      allow update, delete: if isAdmin();
     }
 
     match /messages/{messageId} {
-      allow read, list: if isSignedIn();
+      allow read, update: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.senderId == request.auth.uid ||
+        resource.data.receiverId == request.auth.uid ||
+        (resource.data.participantIds is list && request.auth.uid in resource.data.participantIds)
+      );
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid || isElevated());
       allow delete: if isAdmin();
     }
 
     match /conversations/{conversationId} {
-      allow read, list: if isSignedIn();
+      allow read, update: if isSignedIn() && (
+        isAdmin() ||
+        (resource.data.participantIds is list && request.auth.uid in resource.data.participantIds)
+      );
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
       allow delete: if isAdmin();
+    }
+
+    match /property_inquiries/{inquiryId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.agentId == request.auth.uid ||
+        resource.data.userId == request.auth.uid ||
+        sameOfficeByValue(resource.data.brokerId) ||
+        sameOfficeByValue(resource.data.brokerageId)
+      );
+      allow create: if true;
+      allow update, delete: if isAdmin();
     }
 
     match /favorites/{favoriteId} {
-      allow read: if isSignedIn() && (request.auth.uid == favoriteId.split('_')[0] || isAdmin());
-      allow write: if isSignedIn();
+      allow read, create, update, delete: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
     }
 
     match /saved_searches/{searchId} {
-      allow read, write: if isSignedIn();
+      allow read, create, update, delete: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
     }
 
-    match /waitlist_social/{waitlistId} {
-      allow read: if isElevated();
-      allow create: if true;
-      allow update: if isElevated();
-      allow delete: if isAdmin();
-    }
-
-    match /waitlist_platform/{waitlistId} {
-      allow read: if isElevated();
-      allow create: if true;
-      allow update: if isElevated();
-      allow delete: if isAdmin();
-    }
-
-    match /admin_roles/{roleId} {
-      allow read, list: if isAdmin();
-      allow create, update, delete: if isMasterAdmin();
-    }
-
-    match /admin_invitations/{invitationId} {
-      allow read, list: if isAdmin();
-      allow create, update, delete: if isMasterAdmin();
-    }
-
-    match /search_trends/{trendId} {
-      allow read, list: if isAdmin();
-      allow create, update: if true;
-    }
-
-    match /tickets/{ticketId} {
-      allow read, list: if isElevated();
-      allow create: if isSignedIn();
-      allow update: if isElevated();
-    }
-
-    match /settings/{settingId} {
+    match /projects/{projectId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update, delete: if isSignedIn() && (isAdmin() || isConstructora() || isBroker());
+
+      match /units/{unitId} {
+        allow read: if true;
+        allow create, update, delete: if isSignedIn() && (isAdmin() || isConstructora() || isBroker());
+      }
+    }
+
+    match /project_inventory_events/{eventId} {
+      allow read: if isSignedIn() && (isAdmin() || sameOfficeByValue(resource.data.officeId));
+      allow create: if isSignedIn() && (isAdmin() || (isProfessional() && request.resource.data.officeId == userOfficeId()));
+      allow update, delete: if isAdmin();
+    }
+
+    match /activity_logs/{logId} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /analytics_events/{eventId} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /billing/{billingId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /stripe_events/{eventId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /office_automation_settings/{officeId} {
+      allow read, update: if isSignedIn() && (isAdmin() || (isBroker() && userOfficeId() == officeId));
+      allow create: if isSignedIn() && (isAdmin() || (isBroker() && request.resource.id == userOfficeId()));
+      allow delete: if isAdmin();
+    }
+
+    match /office_automation_runs/{runId} {
+      allow read: if isSignedIn() && (isAdmin() || sameOfficeByValue(resource.data.officeId));
+      allow create: if isSignedIn() && (isAdmin() || (isProfessional() && request.resource.data.officeId == userOfficeId()));
+      allow update, delete: if isAdmin();
+    }
+
+    match /office_crm_tasks/{taskId} {
+      allow read, create, update: if isSignedIn() && (isAdmin() || sameOfficeByValue(resource.data.officeId) || request.resource.data.officeId == userOfficeId());
+      allow delete: if isAdmin();
+    }
+
+    match /office_crm_events/{eventId} {
+      allow read, create, update: if isSignedIn() && (isAdmin() || sameOfficeByValue(resource.data.officeId) || request.resource.data.officeId == userOfficeId());
+      allow delete: if isAdmin();
     }
 
     match /{document=**} {
-      allow read: if false;
+      allow read, write: if false;
     }
   }
 }

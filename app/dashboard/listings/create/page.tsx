@@ -21,6 +21,16 @@ type CreateForm = {
   area: string
   parking: string
   maintenanceFee: string
+  deslindadoStatus: 'deslindado' | 'en-proceso' | 'sin-deslinde' | 'desconocido'
+  furnishedStatus: 'amueblado' | 'semi-amueblado' | 'sin-amueblar'
+  hoaIncludedItems: string
+  mlsOnly: boolean
+  cobrokeCommissionPercent: string
+  showingInstructions: string
+  brokerNotes: string
+  privateContactName: string
+  privateContactPhone: string
+  privateContactEmail: string
   address: string
   lat: string
   lng: string
@@ -53,6 +63,16 @@ export default function CreateProfessionalListingPage() {
     area: '',
     parking: '0',
     maintenanceFee: '',
+    deslindadoStatus: 'desconocido',
+    furnishedStatus: 'sin-amueblar',
+    hoaIncludedItems: '',
+    mlsOnly: false,
+    cobrokeCommissionPercent: '',
+    showingInstructions: '',
+    brokerNotes: '',
+    privateContactName: '',
+    privateContactPhone: '',
+    privateContactEmail: '',
     address: '',
     lat: '',
     lng: '',
@@ -158,6 +178,19 @@ export default function CreateProfessionalListingPage() {
           parking: Number(form.parking || 0),
           maintenanceFee: form.maintenanceFee ? Number(form.maintenanceFee) : undefined,
           maintenanceFeeCurrency: form.currency,
+          deslindadoStatus: form.deslindadoStatus,
+          furnishedStatus: form.furnishedStatus,
+          hoaIncludedItems: form.hoaIncludedItems
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean),
+          mlsOnly: form.mlsOnly,
+          cobrokeCommissionPercent: form.cobrokeCommissionPercent ? Number(form.cobrokeCommissionPercent) : undefined,
+          showingInstructions: form.showingInstructions || undefined,
+          brokerNotes: form.brokerNotes || undefined,
+          privateContactName: form.privateContactName || undefined,
+          privateContactPhone: form.privateContactPhone || undefined,
+          privateContactEmail: form.privateContactEmail || undefined,
           address: form.address || form.location || undefined,
           lat: form.lat ? Number(form.lat) : undefined,
           lng: form.lng ? Number(form.lng) : undefined,
@@ -289,6 +322,65 @@ export default function CreateProfessionalListingPage() {
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Mantenimiento ({form.currency})</label>
                 <input title="Costo de mantenimiento" placeholder="150" value={form.maintenanceFee} onChange={(e) => update('maintenanceFee', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Estado deslinde</label>
+                <select title="Estado de deslinde" value={form.deslindadoStatus} onChange={(e) => update('deslindadoStatus', e.target.value as CreateForm['deslindadoStatus'])} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                  <option value="desconocido">Desconocido</option>
+                  <option value="deslindado">Deslindado</option>
+                  <option value="en-proceso">En proceso</option>
+                  <option value="sin-deslinde">Sin deslinde</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Amueblado</label>
+                <select title="Estado amueblado" value={form.furnishedStatus} onChange={(e) => update('furnishedStatus', e.target.value as CreateForm['furnishedStatus'])} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                  <option value="sin-amueblar">Sin amueblar</option>
+                  <option value="semi-amueblado">Semi-amueblado</option>
+                  <option value="amueblado">Amueblado</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-gray-600 mb-1">HOA incluye (separado por comas)</label>
+                <input title="HOA incluye" value={form.hoaIncludedItems} onChange={(e) => update('hoaIncludedItems', e.target.value)} placeholder="Seguridad, piscina, gimnasio" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+              </div>
+
+              <div className="sm:col-span-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-xs text-gray-700 font-medium">Datos MLS profesionales</label>
+                  <label className="inline-flex items-center gap-2 text-xs text-gray-700">
+                    <input type="checkbox" checked={form.mlsOnly} onChange={(e) => update('mlsOnly', e.target.checked)} />
+                    Solo MLS (no público)
+                  </label>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Co-broke comisión (%)</label>
+                    <input title="Comisión co-broke" value={form.cobrokeCommissionPercent} onChange={(e) => update('cobrokeCommissionPercent', e.target.value)} placeholder="3" inputMode="decimal" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Contacto privado (nombre)</label>
+                    <input title="Contacto privado nombre" value={form.privateContactName} onChange={(e) => update('privateContactName', e.target.value)} placeholder="Nombre" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Contacto privado (teléfono)</label>
+                    <input title="Contacto privado teléfono" value={form.privateContactPhone} onChange={(e) => update('privateContactPhone', e.target.value)} placeholder="809..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Contacto privado (email)</label>
+                    <input title="Contacto privado email" value={form.privateContactEmail} onChange={(e) => update('privateContactEmail', e.target.value)} placeholder="broker@..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs text-gray-600 mb-1">Instrucciones de showing</label>
+                    <textarea title="Instrucciones de showing" value={form.showingInstructions} onChange={(e) => update('showingInstructions', e.target.value)} rows={2} placeholder="Coordinar con 24h de antelación..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs text-gray-600 mb-1">Notas privadas del broker</label>
+                    <textarea title="Notas privadas" value={form.brokerNotes} onChange={(e) => update('brokerNotes', e.target.value)} rows={2} placeholder="Notas visibles solo para profesionales" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  </div>
+                </div>
               </div>
 
               <div className="sm:col-span-2">

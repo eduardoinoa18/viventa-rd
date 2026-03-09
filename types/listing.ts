@@ -18,6 +18,9 @@ export type PropertyType =
   | 'penthouse'
   | 'villa';
 
+export type DeslindadoStatus = 'deslindado' | 'en-proceso' | 'sin-deslinde' | 'desconocido';
+export type FurnishedStatus = 'amueblado' | 'semi-amueblado' | 'sin-amueblar';
+
 export interface Listing {
   id: string;
   listingId?: string;
@@ -48,6 +51,16 @@ export interface Listing {
   maintenanceFee?: number;
   maintenanceFeeCurrency?: 'DOP' | 'USD';
   maintenanceInfo?: string;
+  deslindadoStatus?: DeslindadoStatus;
+  furnishedStatus?: FurnishedStatus;
+  hoaIncludedItems?: string[];
+  mlsOnly?: boolean;
+  cobrokeCommissionPercent?: number;
+  showingInstructions?: string;
+  brokerNotes?: string;
+  privateContactName?: string;
+  privateContactPhone?: string;
+  privateContactEmail?: string;
 
   inventoryMode?: 'single' | 'project';
   totalUnits?: number;

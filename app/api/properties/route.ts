@@ -56,6 +56,16 @@ interface PropertyPayload {
   maintenanceFee?: number
   maintenanceFeeCurrency?: 'USD' | 'DOP'
   maintenanceInfo?: string
+  deslindadoStatus?: 'deslindado' | 'en-proceso' | 'sin-deslinde' | 'desconocido'
+  furnishedStatus?: 'amueblado' | 'semi-amueblado' | 'sin-amueblar'
+  hoaIncludedItems?: string[]
+  mlsOnly?: boolean
+  cobrokeCommissionPercent?: number
+  showingInstructions?: string
+  brokerNotes?: string
+  privateContactName?: string
+  privateContactPhone?: string
+  privateContactEmail?: string
   inventoryMode?: 'single' | 'project'
   totalUnits?: number
   availableUnits?: number
@@ -123,6 +133,15 @@ function validatePayload(action: string, data: PropertyPayload) {
   }
   if (data.maintenanceFee !== undefined && Number.isNaN(Number(data.maintenanceFee))) {
     errors.push('maintenanceFee must be a number')
+  }
+  if (data.cobrokeCommissionPercent !== undefined && Number.isNaN(Number(data.cobrokeCommissionPercent))) {
+    errors.push('cobrokeCommissionPercent must be a number')
+  }
+  if (
+    data.cobrokeCommissionPercent !== undefined &&
+    (Number(data.cobrokeCommissionPercent) < 0 || Number(data.cobrokeCommissionPercent) > 100)
+  ) {
+    errors.push('cobrokeCommissionPercent must be between 0 and 100')
   }
   if (data.totalUnits !== undefined && Number.isNaN(Number(data.totalUnits))) {
     errors.push('totalUnits must be a number')
@@ -265,6 +284,9 @@ export async function POST(req: Request) {
       if (typeof createData.totalUnits === 'string') createData.totalUnits = Number(createData.totalUnits)
       if (typeof createData.availableUnits === 'string') createData.availableUnits = Number(createData.availableUnits)
       if (typeof createData.soldUnits === 'string') createData.soldUnits = Number(createData.soldUnits)
+      if (typeof createData.cobrokeCommissionPercent === 'string') {
+        createData.cobrokeCommissionPercent = Number(createData.cobrokeCommissionPercent)
+      }
       if (createData.inventoryMode === 'project') {
         const totalUnits = Number(createData.totalUnits || 0)
         const availableUnits = Number(createData.availableUnits || 0)

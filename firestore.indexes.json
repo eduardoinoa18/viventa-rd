@@ -144,6 +144,22 @@
         { "fieldPath": "officeId", "mode": "ASCENDING" },
         { "fieldPath": "createdAt", "mode": "DESCENDING" }
       ]
+    },
+    {
+      "collectionId": "transactions",
+      "fields": [
+        { "fieldPath": "officeId", "mode": "ASCENDING" },
+        { "fieldPath": "stage", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "transactions",
+      "fields": [
+        { "fieldPath": "officeId", "mode": "ASCENDING" },
+        { "fieldPath": "agentId", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
