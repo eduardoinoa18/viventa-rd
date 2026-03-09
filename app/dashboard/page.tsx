@@ -999,6 +999,29 @@ export default function BuyerDashboardPage() {
       )
     }
 
+    if (session.role === 'agent') {
+      return (
+        <>
+          <Header />
+          <main className="min-h-screen bg-gray-50 pb-20 md:pb-8">
+            <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+              <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Panel de Agente</h1>
+                <p className="text-sm text-gray-600 mt-1">Tu operación ahora está organizada en pestañas y páginas separadas estilo Master Admin.</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link href="/dashboard/agent/overview" className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Abrir Agent Workspace</Link>
+                  <Link href="/dashboard/listings/create" className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Crear listado</Link>
+                  <Link href="/agents" className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Ver directorio agentes</Link>
+                </div>
+              </section>
+            </div>
+          </main>
+          <Footer />
+          <BottomNav />
+        </>
+      )
+    }
+
     const roleLabel = session.role === 'broker' ? 'Broker' : 'Agente'
 
     return (
@@ -1603,6 +1626,29 @@ export default function BuyerDashboardPage() {
                   ))}
                 </div>
               )}
+            </section>
+          </div>
+        </main>
+        <Footer />
+        <BottomNav />
+      </>
+    )
+  }
+
+  if (session.role === 'constructora') {
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen bg-gray-50 pb-20 md:pb-8">
+          <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+            <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Panel de Constructora</h1>
+              <p className="text-sm text-gray-600 mt-1">Tu operación ahora está organizada en pestañas y páginas separadas estilo Master Admin.</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link href="/dashboard/constructora/overview" className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Abrir Constructora Workspace</Link>
+                <Link href="/dashboard/listings/create" className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Crear listado</Link>
+                <Link href="/constructoras" className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Ver directorio constructoras</Link>
+              </div>
             </section>
           </div>
         </main>
