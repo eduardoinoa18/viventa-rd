@@ -1,5 +1,6 @@
 import { requirePortalAccess } from '@/lib/auth/guards'
 import AdminSidebar from '@/components/AdminSidebar'
+import MasterPanelTopbar from '@/components/MasterPanelTopbar'
 
 export default async function MasterLayout({
   children,
@@ -12,6 +13,7 @@ export default async function MasterLayout({
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
       <main className="flex-1">
+        <MasterPanelTopbar />
         {children}
       </main>
     </div>

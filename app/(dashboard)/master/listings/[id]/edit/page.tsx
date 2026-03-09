@@ -336,6 +336,16 @@ export default function EditPropertyPage() {
         maintenanceFee: Number(form.maintenanceFee || 0),
         maintenanceFeeCurrency: form.maintenanceFeeCurrency || 'USD',
         maintenanceInfo: form.maintenanceInfo?.trim() || '',
+        deslindadoStatus: form.deslindadoStatus || 'desconocido',
+        furnishedStatus: form.furnishedStatus || 'sin-amueblar',
+        hoaIncludedItems: Array.isArray(form.hoaIncludedItems) ? form.hoaIncludedItems : [],
+        mlsOnly: Boolean(form.mlsOnly),
+        cobrokeCommissionPercent: Number(form.cobrokeCommissionPercent || 0),
+        showingInstructions: String(form.showingInstructions || '').trim(),
+        brokerNotes: String(form.brokerNotes || '').trim(),
+        privateContactName: String(form.privateContactName || '').trim(),
+        privateContactPhone: String(form.privateContactPhone || '').trim(),
+        privateContactEmail: String(form.privateContactEmail || '').trim(),
         inventoryMode: form.inventoryMode || 'single',
         totalUnits: Number(form.totalUnits || 1),
         availableUnits: Number(form.availableUnits || 1),
@@ -504,6 +514,16 @@ export default function EditPropertyPage() {
         maintenanceFee: Number(form.maintenanceFee || 0),
         maintenanceFeeCurrency: form.maintenanceFeeCurrency || 'USD',
         maintenanceInfo: form.maintenanceInfo?.trim() || '',
+        deslindadoStatus: form.deslindadoStatus || 'desconocido',
+        furnishedStatus: form.furnishedStatus || 'sin-amueblar',
+        hoaIncludedItems: Array.isArray(form.hoaIncludedItems) ? form.hoaIncludedItems : [],
+        mlsOnly: Boolean(form.mlsOnly),
+        cobrokeCommissionPercent: Number(form.cobrokeCommissionPercent || 0),
+        showingInstructions: String(form.showingInstructions || '').trim(),
+        brokerNotes: String(form.brokerNotes || '').trim(),
+        privateContactName: String(form.privateContactName || '').trim(),
+        privateContactPhone: String(form.privateContactPhone || '').trim(),
+        privateContactEmail: String(form.privateContactEmail || '').trim(),
         inventoryMode: form.inventoryMode || 'single',
         totalUnits: Number(form.totalUnits || 1),
         availableUnits: Number(form.availableUnits || 1),
@@ -1105,6 +1125,120 @@ export default function EditPropertyPage() {
                       value={form.maintenanceInfo || ''}
                       onChange={e=>setForm({...form, maintenanceInfo: e.target.value})}
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Estado de deslinde</label>
+                    <select
+                      title="Estado de deslinde"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      value={form.deslindadoStatus || 'desconocido'}
+                      onChange={e=>setForm({...form, deslindadoStatus: e.target.value})}
+                    >
+                      <option value="desconocido">Desconocido</option>
+                      <option value="deslindado">Deslindado</option>
+                      <option value="en-proceso">En proceso</option>
+                      <option value="sin-deslinde">Sin deslinde</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Estado amueblado</label>
+                    <select
+                      title="Estado amueblado"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      value={form.furnishedStatus || 'sin-amueblar'}
+                      onChange={e=>setForm({...form, furnishedStatus: e.target.value})}
+                    >
+                      <option value="sin-amueblar">Sin amueblar</option>
+                      <option value="semi-amueblado">Semi-amueblado</option>
+                      <option value="amueblado">Amueblado</option>
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">HOA incluye (separado por comas)</label>
+                    <input
+                      title="HOA incluye"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                      value={Array.isArray(form.hoaIncludedItems) ? form.hoaIncludedItems.join(', ') : ''}
+                      onChange={e=>setForm({...form, hoaIncludedItems: e.target.value.split(',').map(item => item.trim()).filter(Boolean)})}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <label className="text-sm font-semibold text-[#0B2545]">Datos MLS profesionales</label>
+                      <label className="inline-flex items-center gap-2 text-xs text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(form.mlsOnly)}
+                          onChange={(e)=>setForm({...form, mlsOnly: e.target.checked})}
+                        />
+                        Solo MLS (no público)
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Co-broke comisión (%)</label>
+                        <input
+                          title="Co-broke comisión"
+                          type="number"
+                          min={0}
+                          max={100}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          value={Number(form.cobrokeCommissionPercent || 0)}
+                          onChange={e=>setForm({...form, cobrokeCommissionPercent: Number(e.target.value || 0)})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Contacto privado (nombre)</label>
+                        <input
+                          title="Contacto privado nombre"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          value={form.privateContactName || ''}
+                          onChange={e=>setForm({...form, privateContactName: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Contacto privado (teléfono)</label>
+                        <input
+                          title="Contacto privado teléfono"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          value={form.privateContactPhone || ''}
+                          onChange={e=>setForm({...form, privateContactPhone: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Contacto privado (email)</label>
+                        <input
+                          title="Contacto privado email"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          value={form.privateContactEmail || ''}
+                          onChange={e=>setForm({...form, privateContactEmail: e.target.value})}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Instrucciones de showing</label>
+                        <textarea
+                          title="Instrucciones de showing"
+                          rows={2}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          value={form.showingInstructions || ''}
+                          onChange={e=>setForm({...form, showingInstructions: e.target.value})}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Notas privadas del broker</label>
+                        <textarea
+                          title="Notas privadas del broker"
+                          rows={2}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676]"
+                          value={form.brokerNotes || ''}
+                          onChange={e=>setForm({...form, brokerNotes: e.target.value})}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="md:col-span-2">

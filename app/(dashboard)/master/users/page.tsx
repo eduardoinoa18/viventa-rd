@@ -10,6 +10,7 @@ import CreateConstructoraModal from '@/components/admin/CreateConstructoraModal'
 import CreateBuyerModal from '@/components/admin/CreateBuyerModal'
 import EditUserModal from '@/components/admin/EditUserModal'
 import OnboardingQuestionnaireModal from '@/components/admin/OnboardingQuestionnaireModal'
+import NotificationCenter from '@/components/NotificationCenter'
 
 type User = {
   id: string
@@ -86,6 +87,10 @@ export default function MasterUsersPage() {
     { href: '/master/buyers', label: 'Buyers' },
     { href: '/master/applications', label: 'Applications' },
     { href: '/master/leads', label: 'Leads' },
+    { href: '/master/listings', label: 'Listings' },
+    { href: '/master/activity', label: 'Activity' },
+    { href: '/master/analytics', label: 'Analytics' },
+    { href: '/master/settings', label: 'Settings' },
   ]
 
   // Stats
@@ -527,6 +532,7 @@ export default function MasterUsersPage() {
             </div>
             {!isBrokerView && (
               <div className="flex items-center gap-2">
+                {sessionUid ? <NotificationCenter userId={sessionUid} /> : null}
                 <details className="relative">
                   <summary className="list-none inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 [&::-webkit-details-marker]:hidden">
                     <FiMenu className="h-4 w-4" />
@@ -618,6 +624,25 @@ export default function MasterUsersPage() {
             )}
           </div>
         </div>
+
+        {!isBrokerView && (
+          <div className="mb-6 overflow-x-auto rounded-lg border border-gray-200 bg-white p-2">
+            <div className="flex min-w-max items-center gap-2">
+              {masterOpsLinks.map((link) => {
+                const active = link.href === '/master/users'
+                return (
+                  <Link
+                    key={`tab-${link.href}`}
+                    href={link.href}
+                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${active ? 'bg-[#0B2545] text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}
+                  >
+                    {link.label}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {isDangerousActionsLocked && (
           <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">

@@ -45,6 +45,16 @@ export interface Property {
   maintenanceFee?: number
   maintenanceFeeCurrency?: 'USD' | 'DOP'
   maintenanceInfo?: string
+  deslindadoStatus?: 'deslindado' | 'en-proceso' | 'sin-deslinde' | 'desconocido'
+  furnishedStatus?: 'amueblado' | 'semi-amueblado' | 'sin-amueblar'
+  hoaIncludedItems?: string[]
+  mlsOnly?: boolean
+  cobrokeCommissionPercent?: number
+  showingInstructions?: string
+  brokerNotes?: string
+  privateContactName?: string
+  privateContactPhone?: string
+  privateContactEmail?: string
   inventoryMode?: 'single' | 'project'
   totalUnits?: number
   availableUnits?: number

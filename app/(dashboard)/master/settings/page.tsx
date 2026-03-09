@@ -114,6 +114,38 @@ export default function MasterSettingsPage() {
     }
   }
 
+  const applyPreset = (preset: 'open' | 'controlled' | 'maintenance') => {
+    if (preset === 'open') {
+      setForm((prev) => ({
+        ...prev,
+        maintenanceMode: false,
+        allowRegistration: true,
+        allowAgentApplications: true,
+        allowBrokerApplications: true,
+      }))
+      return
+    }
+
+    if (preset === 'controlled') {
+      setForm((prev) => ({
+        ...prev,
+        maintenanceMode: false,
+        allowRegistration: false,
+        allowAgentApplications: true,
+        allowBrokerApplications: false,
+      }))
+      return
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      maintenanceMode: true,
+      allowRegistration: false,
+      allowAgentApplications: false,
+      allowBrokerApplications: false,
+    }))
+  }
+
   if (loading) {
     return (
       <main className="p-4 sm:p-6 bg-gray-50 min-h-screen">
@@ -129,6 +161,34 @@ export default function MasterSettingsPage() {
           <h1 className="text-2xl font-bold text-[#0B2545]">Settings</h1>
           <p className="text-sm text-gray-600 mt-1">Configuración operativa del portal maestro.</p>
         </div>
+
+        <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-3">
+          <h2 className="text-lg font-semibold text-[#0B2545]">Operational profiles</h2>
+          <p className="text-sm text-gray-600">Aplica una base rápida y luego ajusta detalles antes de guardar.</p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => applyPreset('open')}
+              className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              Open growth
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset('controlled')}
+              className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              Controlled intake
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset('maintenance')}
+              className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              Maintenance lock
+            </button>
+          </div>
+        </section>
 
         <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-4">
           <h2 className="text-lg font-semibold text-[#0B2545]">General</h2>
