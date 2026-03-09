@@ -13,9 +13,28 @@ type SummaryState = {
   projectedValue: number
 }
 
+type OfficeProfile = {
+  id: string
+  name?: string
+  officeCode?: string
+  brokerageName?: string
+  city?: string
+  province?: string
+  status?: string
+  subscription?: {
+    plan?: string
+    status?: string
+    agentsLimit?: number
+    listingsLimit?: number
+    seatsUsed?: number
+    currentPeriodEnd?: string | null
+  }
+}
+
 export default function BrokerOverviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [office, setOffice] = useState<OfficeProfile | null>(null)
   const [summary, setSummary] = useState<SummaryState>({
     myListings: 0,
     officeListings: 0,
@@ -35,20 +54,22 @@ export default function BrokerOverviewPage() {
         setLoading(true)
         setError('')
 
-        const [myRes, officeRes, marketRes, automationRes, txRes] = await Promise.all([
+        const [myRes, officeRes, marketRes, automationRes, txRes, officeProfileRes] = await Promise.all([
           fetch('/api/broker/listings/my?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/office?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/market?status=active', { cache: 'no-store' }),
           fetch('/api/broker/leads/automation', { cache: 'no-store' }),
           fetch('/api/broker/transactions', { cache: 'no-store' }),
+          fetch('/api/broker/office', { cache: 'no-store' }),
         ])
 
-        const [myJson, officeJson, marketJson, automationJson, txJson] = await Promise.all([
+        const [myJson, officeJson, marketJson, automationJson, txJson, officeProfileJson] = await Promise.all([
           myRes.json().catch(() => ({})),
           officeRes.json().catch(() => ({})),
           marketRes.json().catch(() => ({})),
           automationRes.json().catch(() => ({})),
           txRes.json().catch(() => ({})),
+          officeProfileRes.json().catch(() => ({})),
         ])
 
         if (!active) return
@@ -63,9 +84,16 @@ export default function BrokerOverviewPage() {
           pipeline: Number(txJson?.summary?.totalPipeline || 0),
           projectedValue: Number(txJson?.summary?.projectedValue || 0),
         })
+
+        if (officeProfileRes.ok && officeProfileJson?.ok) {
+          setOffice((officeProfileJson?.office || null) as OfficeProfile | null)
+        } else {
+          setOffice(null)
+        }
       } catch (loadError: any) {
         if (!active) return
         setError(loadError?.message || 'No se pudo cargar el overview')
+        setOffice(null)
       } finally {
         if (active) setLoading(false)
       }
@@ -92,6 +120,22 @@ export default function BrokerOverviewPage() {
         <Metric label="Pipeline" value={summary.pipeline} />
         <Metric label="Proyección" value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.projectedValue || 0)} />
       </div>
+
+      {office ? (
+        <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3">
+          <div className="text-xs text-gray-500">Office Subscription</div>
+          <div className="mt-1 text-sm font-semibold text-[#0B2545]">{office.name || 'Office'} ({office.officeCode || 'N/A'})</div>
+          <div className="text-xs text-gray-600 mt-1">
+            {office.brokerageName || 'Sin brokerage'} • {office.city || '—'}{office.province ? `, ${office.province}` : ''}
+          </div>
+          <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600">
+            <div className="rounded bg-white border border-gray-100 p-2">Plan: <span className="font-medium text-[#0B2545]">{office.subscription?.plan || 'basic'}</span></div>
+            <div className="rounded bg-white border border-gray-100 p-2">Estado: <span className="font-medium text-[#0B2545]">{office.subscription?.status || 'active'}</span></div>
+            <div className="rounded bg-white border border-gray-100 p-2">Agents: <span className="font-medium text-[#0B2545]">{Number(office.subscription?.seatsUsed || 0)} / {Number(office.subscription?.agentsLimit || 0)}</span></div>
+            <div className="rounded bg-white border border-gray-100 p-2">Listings: <span className="font-medium text-[#0B2545]">{Number(office.subscription?.listingsLimit || 0)}</span></div>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }
