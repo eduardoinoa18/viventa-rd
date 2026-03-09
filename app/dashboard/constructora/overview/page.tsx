@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 type OverviewState = {
@@ -67,7 +68,8 @@ export default function ConstructoraOverviewPage() {
 
   return (
     <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
-      <h2 className="text-lg font-semibold text-[#0B2545]">Overview de constructora</h2>
+      <h2 className="text-lg font-semibold text-[#0B2545]">Dashboard de constructora</h2>
+      <p className="mt-1 text-sm text-gray-600">Vista ejecutiva de proyectos, inventario y reservas para la operación diaria.</p>
       {loading ? <p className="mt-2 text-sm text-gray-600">Cargando métricas...</p> : null}
       {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
       <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
@@ -78,6 +80,12 @@ export default function ConstructoraOverviewPage() {
         <Metric label="Reservadas" value={summary.reservedUnits} />
         <Metric label="Vendidas" value={summary.soldUnits} />
         <Metric label="En proceso" value={summary.inProcessUnits} />
+      </div>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <Link href="/dashboard/constructora/projects" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Ir a Proyectos</Link>
+        <Link href="/dashboard/constructora/units" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Ir a Unidades</Link>
+        <Link href="/dashboard/constructora/reservations" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Ir a Reservas</Link>
       </div>
     </section>
   )

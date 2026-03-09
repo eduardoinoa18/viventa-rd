@@ -17,9 +17,11 @@ export default function ConstructoraDashboardLayout({ children }: { children: Re
               </div>
               <Link href="/dashboard" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Volver</Link>
             </div>
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 text-sm">
-              <Link href="/dashboard/constructora/overview" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Overview</Link>
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-2 text-sm">
+              <Link href="/dashboard/constructora/overview" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Dashboard</Link>
               <Link href="/dashboard/constructora/projects" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Proyectos</Link>
+              <Link href="/dashboard/constructora/units" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Unidades</Link>
+              <Link href="/dashboard/constructora/reservations" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Reservas</Link>
               <Link href="/constructoras" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Directorio</Link>
               <Link href="/dashboard/listings" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Listings</Link>
               <Link href="/dashboard/listings/create" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Crear</Link>
