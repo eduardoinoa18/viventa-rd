@@ -209,6 +209,13 @@ export default function MasterListingsPage() {
   }
 
   const selectedCount = Object.values(selected).filter(Boolean).length
+  const hasActiveFilters = statusFilter !== 'all' || intelligencePreset !== 'all' || searchQuery.trim().length > 0
+
+  function clearFilters() {
+    setStatusFilter('all')
+    setIntelligencePreset('all')
+    setSearchQuery('')
+  }
 
   return (
     <main className="p-3 sm:p-6 bg-gray-50 min-h-screen">
@@ -226,6 +233,14 @@ export default function MasterListingsPage() {
             >
               <FiPlusSquare /> Nueva Propiedad
             </Link>
+          </div>
+
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Link href="/master/leads" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Leads</Link>
+            <Link href="/master/applications" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Applications</Link>
+            <Link href="/master/users" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">People</Link>
+            <Link href="/master/inbox" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Inbox</Link>
+            <Link href="/master/settings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Settings</Link>
           </div>
 
           {/* Stats Cards */}
@@ -252,6 +267,24 @@ export default function MasterListingsPage() {
             onViewModeChange={setViewMode}
           />
         </div>
+
+        {hasActiveFilters && (
+          <div className="mb-4 rounded-lg border border-gray-200 bg-white p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Active filters</span>
+              {statusFilter !== 'all' && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">Status: {statusFilter}</span>}
+              {intelligencePreset !== 'all' && <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">Preset: {intelligencePreset.replace(/_/g, ' ')}</span>}
+              {searchQuery.trim() && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">Search: “{searchQuery.trim()}”</span>}
+              <button
+                onClick={clearFilters}
+                className="ml-auto inline-flex items-center rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                title="Clear all filters"
+              >
+                Clear all
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Bulk Actions Toolbar */}
         <div className="mb-4">

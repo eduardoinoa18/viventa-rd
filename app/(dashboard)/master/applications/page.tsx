@@ -95,6 +95,8 @@ export default function ApplicationsPage() {
     return 'decline'
   }, [reviewScore])
 
+  const hasActiveFilters = statusFilter !== 'all' || typeFilter !== 'all' || searchQuery.trim().length > 0
+
   // Filtered applications
   const filteredApplications = useMemo(() => {
     let filtered = applications
@@ -217,6 +219,12 @@ export default function ApplicationsPage() {
     })
     setReviewQuotaIssue(null)
     setShowReviewModal(true)
+  }
+
+  function clearFilters() {
+    setStatusFilter('all')
+    setTypeFilter('all')
+    setSearchQuery('')
   }
 
   function closeReview() {
@@ -431,6 +439,14 @@ export default function ApplicationsPage() {
           <p className="text-gray-600">Review and manage agent, broker, and constructora applications with criteria-based decisions</p>
         </div>
 
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Link href="/master/leads" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Leads</Link>
+          <Link href="/master/listings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Listings</Link>
+          <Link href="/master/users" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">People</Link>
+          <Link href="/master/inbox" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Inbox</Link>
+          <Link href="/master/settings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Settings</Link>
+        </div>
+
         <div className="mb-6 rounded-lg border border-[#0B2545]/20 bg-[#0B2545]/5 p-4">
           <div className="text-sm font-semibold text-[#0B2545]">Onboarding Review Guide</div>
           <div className="mt-2 grid grid-cols-1 gap-2 text-xs text-gray-700 md:grid-cols-3">
@@ -517,6 +533,22 @@ export default function ApplicationsPage() {
               </select>
             </div>
           </div>
+
+          {hasActiveFilters && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Active filters</span>
+              {statusFilter !== 'all' && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">Status: {statusFilter.replace('_', ' ')}</span>}
+              {typeFilter !== 'all' && <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">Type: {typeFilter}</span>}
+              {searchQuery.trim() && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">Search: “{searchQuery.trim()}”</span>}
+              <button
+                onClick={clearFilters}
+                className="ml-auto inline-flex items-center rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                title="Clear all filters"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Applications Table */}
