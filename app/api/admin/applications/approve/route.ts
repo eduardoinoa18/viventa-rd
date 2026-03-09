@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin'
 import { sendEmail } from '@/lib/emailService'
 import { FieldValue } from 'firebase-admin/firestore'
+import { getOfficeSeatQuotaStatus, resolveOfficeId, safeText, syncOfficeSeatUsage } from '@/lib/officeSubscriptionQuota'
+import { buildQuotaErrorResponse } from '@/lib/quotaResponses'
 
 function generateRandomPassword(length: number = 12): string {
   const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
@@ -25,7 +27,7 @@ function generateAgentCode(role: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { applicationId, email, name, role, phone, company } = await req.json()
+    const { applicationId, email, name, role, phone, company, brokerageId } = await req.json()
 
     if (!applicationId || !email || !name || !role) {
       return NextResponse.json(
@@ -45,6 +47,28 @@ export async function POST(req: NextRequest) {
         { error: 'Admin SDK not configured' },
         { status: 500 }
       )
+    }
+
+    const normalizedRole = safeText(role).toLowerCase()
+    const officeLookupRef = safeText(brokerageId) || safeText(company)
+    const officeId = normalizedRole === 'agent' ? await resolveOfficeId(adminDb, officeLookupRef) : ''
+
+    if (normalizedRole === 'agent') {
+      const quotaStatus = await getOfficeSeatQuotaStatus(adminDb, officeId, {
+        requireOffice: true,
+        missingOfficeCode: 'OFFICE_ASSIGNMENT_REQUIRED',
+        missingOfficeMessage: 'Broker office assignment is required to approve an agent.',
+        notFoundCode: 'OFFICE_NOT_FOUND',
+        notFoundMessage: 'The selected office was not found.',
+      })
+      if (!quotaStatus.ok) {
+        return buildQuotaErrorResponse({
+          status: quotaStatus,
+          fallbackError: 'Office seat quota exceeded',
+          fallbackCode: 'OFFICE_AGENT_LIMIT_REACHED',
+          officeId: officeId || null,
+        })
+      }
     }
 
     // Create Firebase Auth user
@@ -85,10 +109,22 @@ export async function POST(req: NextRequest) {
         activeListings: 0,
         totalSales: 0,
         rating: 0,
-        verified: true
+        verified: true,
+        ...(normalizedRole === 'agent' && officeId
+          ? {
+              brokerId: officeId,
+              brokerageId: officeId,
+              brokerage_id: officeId,
+              officeId,
+            }
+          : {})
       }
       
       await adminDb.collection('users').doc(authUser.uid).set(userData)
+
+      if (normalizedRole === 'agent' && officeId) {
+        await syncOfficeSeatUsage(adminDb, officeId)
+      }
       
       // ALSO create duplicate in agents or brokers collection for easier querying
       const targetCollection = role === 'agent' ? 'agents' : 'brokers'

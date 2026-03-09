@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { uploadMultipleImages, validateImageFiles } from '@/lib/storageService'
+import { mapOfficeQuotaError } from '@/lib/quotaUiMessages'
 
 type CreateForm = {
   title: string
@@ -165,7 +166,12 @@ export default function CreateProfessionalListingPage() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.success) {
-        throw new Error(json?.error || 'No se pudo crear el listado')
+        throw new Error(
+          mapOfficeQuotaError(json || {}, {
+            context: 'listing',
+            fallbackMessage: 'No se pudo crear el listado',
+          })
+        )
       }
 
       router.push(`/listing/${json.id}`)

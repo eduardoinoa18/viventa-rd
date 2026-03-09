@@ -6,6 +6,8 @@ import { logActivity } from '@/lib/activityLogger'
 import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
 import { adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
 import { logAdminAction } from '@/lib/logAdminAction'
+import { getOfficeSeatQuotaStatus, resolveOfficeId, safeText, syncOfficeSeatUsage } from '@/lib/officeSubscriptionQuota'
+import { buildQuotaErrorResponse } from '@/lib/quotaResponses'
 
 // Generate a unique professional code
 function generateProfessionalCode(role: string): string {
@@ -56,6 +58,28 @@ export async function POST(request: NextRequest) {
         { error: 'Firebase Admin SDK not initialized' },
         { status: 500 }
       )
+    }
+
+    const normalizedRole = safeText(role).toLowerCase()
+    let officeId = ''
+    if (normalizedRole === 'agent') {
+      officeId = await resolveOfficeId(adminDb, brokerage || company)
+      const quotaStatus = await getOfficeSeatQuotaStatus(adminDb, officeId, {
+        requireOffice: true,
+        missingOfficeCode: 'OFFICE_ASSIGNMENT_REQUIRED',
+        missingOfficeMessage: 'Broker office assignment is required to create an agent.',
+        notFoundCode: 'OFFICE_NOT_FOUND',
+        notFoundMessage: 'The selected office was not found.',
+      })
+      if (!quotaStatus.ok) {
+        return buildQuotaErrorResponse({
+          status: quotaStatus,
+          fallbackError: 'Office seat quota exceeded',
+          fallbackCode: 'OFFICE_AGENT_LIMIT_REACHED',
+          officeId: officeId || null,
+          includeOk: true,
+        })
+      }
     }
 
     // Check if email already exists
@@ -133,9 +157,21 @@ export async function POST(request: NextRequest) {
       // Metadata
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      ...(normalizedRole === 'agent' && officeId
+        ? {
+            brokerId: officeId,
+            brokerageId: officeId,
+            brokerage_id: officeId,
+            officeId,
+          }
+        : {}),
     }
 
     await adminDb.collection('users').doc(userRecord.uid).set(userData)
+
+    if (normalizedRole === 'agent' && officeId) {
+      await syncOfficeSeatUsage(adminDb, officeId)
+    }
 
     // Log activity
     await logActivity({

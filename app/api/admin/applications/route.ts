@@ -10,6 +10,8 @@ import { adminErrorResponse, handleAdminError } from '@/lib/adminErrors'
 import { logAdminAction } from '@/lib/logAdminAction'
 import { ensureProfessionalCode } from '@/lib/professionalCodes'
 import { getPublicAppUrl } from '@/lib/publicAppUrl'
+import { getOfficeSeatQuotaStatus, resolveOfficeId, safeText, syncOfficeSeatUsage } from '@/lib/officeSubscriptionQuota'
+import { buildQuotaErrorResponse } from '@/lib/quotaResponses'
 export const dynamic = 'force-dynamic'
 
 type AppType = 'agent' | 'new-agent' | 'broker' | 'constructora'
@@ -146,6 +148,27 @@ export async function PATCH(req: NextRequest) {
 
         // Upsert user profile in Firestore (Admin)
         const role = type === 'broker' ? 'broker' : type === 'constructora' ? 'constructora' : 'agent'
+        const officeLookupRef = safeText(appData.brokerageId) || safeText(appData.company)
+        const officeId = role === 'agent' ? await resolveOfficeId(adminDb, officeLookupRef) : ''
+        if (role === 'agent') {
+          const quotaStatus = await getOfficeSeatQuotaStatus(adminDb, officeId, {
+            requireOffice: true,
+            missingOfficeCode: 'OFFICE_ASSIGNMENT_REQUIRED',
+            missingOfficeMessage: 'Broker office assignment is required to approve an agent.',
+            notFoundCode: 'OFFICE_NOT_FOUND',
+            notFoundMessage: 'The selected office was not found.',
+          })
+          if (!quotaStatus.ok) {
+            return buildQuotaErrorResponse({
+              status: quotaStatus,
+              fallbackError: 'Office seat quota exceeded',
+              fallbackCode: 'OFFICE_AGENT_LIMIT_REACHED',
+              officeId: officeId || null,
+              includeOk: true,
+            })
+          }
+        }
+
         const existingUserSnap = await adminDb.collection('users').doc(uid).get()
         const ensured = await ensureProfessionalCode({
           adminDb,
@@ -169,8 +192,18 @@ export async function PATCH(req: NextRequest) {
         if (appData.company) payload.brokerage = appData.company
         if (appData.company) payload.company = appData.company
         if (appData.contactPerson) payload.contactPerson = appData.contactPerson
+        if (role === 'agent' && officeId) {
+          payload.brokerId = officeId
+          payload.brokerageId = officeId
+          payload.brokerage_id = officeId
+          payload.officeId = officeId
+        }
 
         await adminDb.collection('users').doc(uid).set(payload, { merge: true })
+
+        if (role === 'agent' && officeId) {
+          await syncOfficeSeatUsage(adminDb, officeId)
+        }
 
         // Build password setup link (fallback to our custom flow if admin reset link not available)
         try {

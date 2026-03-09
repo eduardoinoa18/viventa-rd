@@ -6,6 +6,8 @@ import { getSessionFromRequest } from '@/lib/auth/session'
 import { FieldValue } from 'firebase-admin/firestore'
 import type { Query } from 'firebase-admin/firestore'
 import { logger } from '@/lib/logger'
+import { getOfficeListingQuotaStatus } from '@/lib/officeSubscriptionQuota'
+import { buildQuotaErrorResponse } from '@/lib/quotaResponses'
 import {
   canMutateListing,
   getListingAccessUserContext,
@@ -234,6 +236,16 @@ export async function POST(req: Request) {
             if (!userContext.officeId) {
               return NextResponse.json({ error: 'Broker office assignment is required before publishing listings.' }, { status: 403 })
             }
+
+            const quotaStatus = await getOfficeListingQuotaStatus(db, userContext.officeId)
+            if (!quotaStatus.ok) {
+              return buildQuotaErrorResponse({
+                status: quotaStatus,
+                fallbackError: 'Office listing quota exceeded',
+                fallbackCode: 'OFFICE_LISTINGS_LIMIT_REACHED',
+              })
+            }
+
             createData.brokerId = userContext.officeId
             createData.createdByBrokerId = userContext.officeId
             createData.brokerageId = userContext.officeId

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { FiX, FiUserPlus } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import { mapOfficeQuotaError } from '@/lib/quotaUiMessages'
 
 interface CreateAgentModalProps {
   isOpen: boolean
@@ -85,7 +86,12 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
 
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        toast.error(json.error || 'Failed to create agent')
+        toast.error(
+          mapOfficeQuotaError(json || {}, {
+            context: 'agent-seat',
+            fallbackMessage: 'Failed to create agent',
+          })
+        )
         return
       }
 

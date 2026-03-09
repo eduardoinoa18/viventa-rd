@@ -10,6 +10,8 @@ import { validateLifecycleTransition } from '@/lib/userLifecycle'
 import crypto from 'crypto'
 import { ensureProfessionalCode } from '@/lib/professionalCodes'
 import { getPublicAppUrl } from '@/lib/publicAppUrl'
+import { getOfficeSeatQuotaStatus, resolveOfficeId, safeText, syncOfficeSeatUsage } from '@/lib/officeSubscriptionQuota'
+import { buildQuotaErrorResponse } from '@/lib/quotaResponses'
 
 export const dynamic = 'force-dynamic'
 
@@ -252,6 +254,30 @@ export async function POST(req: NextRequest) {
     }
 
     const normalizedEmail = String(email).trim().toLowerCase()
+    const normalizedRole = safeText(role).toLowerCase()
+    const requestedOfficeRef = safeText(brokerage)
+    const resolvedOfficeId = normalizedRole === 'agent'
+      ? await resolveOfficeId(adminDb, requestedOfficeRef)
+      : ''
+
+    if (normalizedRole === 'agent') {
+      if (!requestedOfficeRef) {
+        return NextResponse.json({ ok: false, error: 'brokerage is required when creating an agent' }, { status: 400 })
+      }
+
+      if (resolvedOfficeId) {
+        const seatQuota = await getOfficeSeatQuotaStatus(adminDb, resolvedOfficeId)
+        if (!seatQuota.ok) {
+          return buildQuotaErrorResponse({
+            status: seatQuota,
+            fallbackError: 'Office seat quota exceeded',
+            fallbackCode: 'OFFICE_AGENT_LIMIT_REACHED',
+            officeId: resolvedOfficeId,
+            includeOk: true,
+          })
+        }
+      }
+    }
 
     // avoid duplicate email in users collection
     const existingUser = await adminDb.collection('users').where('email', '==', normalizedEmail).limit(1).get()
@@ -284,6 +310,14 @@ export async function POST(req: NextRequest) {
       onboardingStatus: typeof onboardingStatus === 'string' && onboardingStatus.trim() ? onboardingStatus.trim() : 'discovery',
       createdAt: new Date(),
       updatedAt: new Date(),
+    }
+
+    if (normalizedRole === 'agent') {
+      const officeId = resolvedOfficeId || requestedOfficeRef
+      userDoc.brokerId = officeId
+      userDoc.brokerageId = officeId
+      userDoc.brokerage_id = officeId
+      userDoc.officeId = officeId
     }
 
     await adminDb.collection('users').doc(userId).set(userDoc)
@@ -325,6 +359,10 @@ export async function POST(req: NextRequest) {
     }
 
     await ActivityLogger.userCreated(String(email).trim().toLowerCase(), name, role)
+
+    if (normalizedRole === 'agent' && resolvedOfficeId) {
+      await syncOfficeSeatUsage(adminDb, resolvedOfficeId)
+    }
 
     return NextResponse.json({
       ok: true,

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { FiCheck, FiX, FiFilter, FiSearch, FiClock, FiAlertCircle, FiTrash2 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import { mapOfficeQuotaError } from '@/lib/quotaUiMessages'
 
 interface Application {
   id: string
@@ -301,7 +302,12 @@ export default function ApplicationsPage() {
         closeReview()
         loadApplications()
       } else {
-        toast.error(json.error || 'Failed to update application review')
+        toast.error(
+          mapOfficeQuotaError(json || {}, {
+            context: 'agent-seat',
+            fallbackMessage: 'Failed to update application review',
+          })
+        )
       }
     } catch (e) {
       console.error('Failed to update application review', e)
