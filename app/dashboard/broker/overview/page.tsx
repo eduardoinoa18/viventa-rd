@@ -11,6 +11,20 @@ type SummaryState = {
   followUpDue: number
   pipeline: number
   projectedValue: number
+  officePipelineValue: number
+  expectedCommission: number
+  dealsClosingThisMonth: number
+  activeDeals: number
+}
+
+type TopBroker = {
+  userId: string
+  name: string
+  deals: number
+  pipelineValue: number
+  expectedCommission: number
+  closedDeals: number
+  closedCommission: number
 }
 
 type OfficeProfile = {
@@ -44,7 +58,12 @@ export default function BrokerOverviewPage() {
     followUpDue: 0,
     pipeline: 0,
     projectedValue: 0,
+    officePipelineValue: 0,
+    expectedCommission: 0,
+    dealsClosingThisMonth: 0,
+    activeDeals: 0,
   })
+  const [topBrokers, setTopBrokers] = useState<TopBroker[]>([])
 
   useEffect(() => {
     let active = true
@@ -54,22 +73,24 @@ export default function BrokerOverviewPage() {
         setLoading(true)
         setError('')
 
-        const [myRes, officeRes, marketRes, automationRes, txRes, officeProfileRes] = await Promise.all([
+        const [myRes, officeRes, marketRes, automationRes, txRes, officeProfileRes, revenueRes] = await Promise.all([
           fetch('/api/broker/listings/my?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/office?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/market?status=active', { cache: 'no-store' }),
           fetch('/api/broker/leads/automation', { cache: 'no-store' }),
           fetch('/api/broker/transactions', { cache: 'no-store' }),
           fetch('/api/broker/office', { cache: 'no-store' }),
+          fetch('/api/broker/analytics/revenue', { cache: 'no-store' }),
         ])
 
-        const [myJson, officeJson, marketJson, automationJson, txJson, officeProfileJson] = await Promise.all([
+        const [myJson, officeJson, marketJson, automationJson, txJson, officeProfileJson, revenueJson] = await Promise.all([
           myRes.json().catch(() => ({})),
           officeRes.json().catch(() => ({})),
           marketRes.json().catch(() => ({})),
           automationRes.json().catch(() => ({})),
           txRes.json().catch(() => ({})),
           officeProfileRes.json().catch(() => ({})),
+          revenueRes.json().catch(() => ({})),
         ])
 
         if (!active) return
@@ -83,7 +104,13 @@ export default function BrokerOverviewPage() {
           followUpDue: Number(automationJson?.data?.followUpDue || 0),
           pipeline: Number(txJson?.summary?.totalPipeline || 0),
           projectedValue: Number(txJson?.summary?.projectedValue || 0),
+          officePipelineValue: Number(revenueJson?.metrics?.officePipelineValue || 0),
+          expectedCommission: Number(revenueJson?.metrics?.expectedCommission || 0),
+          dealsClosingThisMonth: Number(revenueJson?.metrics?.dealsClosingThisMonth || 0),
+          activeDeals: Number(revenueJson?.metrics?.activeDeals || 0),
         })
+
+        setTopBrokers(Array.isArray(revenueJson?.topBrokers) ? revenueJson.topBrokers : [])
 
         if (officeProfileRes.ok && officeProfileJson?.ok) {
           setOffice((officeProfileJson?.office || null) as OfficeProfile | null)
@@ -119,6 +146,10 @@ export default function BrokerOverviewPage() {
         <Metric label="Follow-up due" value={summary.followUpDue} />
         <Metric label="Pipeline" value={summary.pipeline} />
         <Metric label="Proyección" value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.projectedValue || 0)} />
+        <Metric label="Office Pipeline" value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.officePipelineValue || 0)} />
+        <Metric label="Expected Commission" value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.expectedCommission || 0)} />
+        <Metric label="Deals Closing Mes" value={summary.dealsClosingThisMonth} />
+        <Metric label="Deals Activos" value={summary.activeDeals} />
       </div>
 
       {office ? (
@@ -136,6 +167,24 @@ export default function BrokerOverviewPage() {
           </div>
         </div>
       ) : null}
+
+      <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3">
+        <div className="text-xs text-gray-500">Top Brokers by Expected Commission</div>
+        <div className="mt-2 space-y-2">
+          {topBrokers.map((broker) => (
+            <div key={broker.userId} className="rounded bg-white border border-gray-100 p-2 text-xs">
+              <div className="font-semibold text-[#0B2545]">{broker.name}</div>
+              <div className="mt-1 text-gray-600">
+                Deals: {broker.deals} • Pipeline: {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(broker.pipelineValue || 0))}
+              </div>
+              <div className="text-gray-600">
+                Expected: {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(broker.expectedCommission || 0))} • Closed: {broker.closedDeals}
+              </div>
+            </div>
+          ))}
+          {!topBrokers.length ? <p className="text-xs text-gray-500">Sin brokers para mostrar todavía.</p> : null}
+        </div>
+      </div>
     </section>
   )
 }
