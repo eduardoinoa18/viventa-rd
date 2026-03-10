@@ -25,13 +25,10 @@ export default function ConstructoraSidebar() {
   const links = [
     { href: '/dashboard/constructora/overview', label: 'Dashboard', icon: <FiGrid /> },
     { href: '/dashboard/constructora/projects', label: 'Proyectos', icon: <FiLayers /> },
-    { href: '/dashboard/constructora/units', label: 'Unidades', icon: <FiPackage /> },
+    { href: '/dashboard/constructora/units', label: 'Inventario', icon: <FiPackage /> },
     { href: '/dashboard/constructora/reservations', label: 'Reservas', icon: <FiCalendar /> },
     { href: '/dashboard/constructora/deals', label: 'Deals', icon: <FiTrendingUp /> },
-    { href: '/constructoras', label: 'Directorio', icon: <FiUsers /> },
     { href: '/dashboard/listings', label: 'Listings', icon: <FiHome /> },
-    { href: '/messages', label: 'Mensajes', icon: <FiMessageSquare /> },
-    { href: '/dashboard/billing', label: 'Billing', icon: <FiDollarSign /> },
   ]
 
   return (
@@ -71,13 +68,22 @@ export default function ConstructoraSidebar() {
       </nav>
       {!collapsed && (
         <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-inner border border-blue-100">
-          <div className="text-xs font-bold text-blue-900 mb-2 tracking-wide">ACCIONES RÁPIDAS</div>
+          <div className="text-xs font-bold text-blue-900 mb-2 tracking-wide">ACCESOS</div>
           <div className="space-y-2">
             <Link href="/dashboard/listings/create" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
               <FiPlusSquare className="text-blue-600" /> <span>Crear Propiedad</span>
             </Link>
+            <Link href="/messages" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <FiMessageSquare className="text-blue-600" /> <span>Mensajes</span>
+            </Link>
+            <Link href="/dashboard/billing" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <FiDollarSign className="text-blue-600" /> <span>Billing</span>
+            </Link>
             <Link href="/dashboard/constructora/projects" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
               <FiLayers className="text-blue-600" /> <span>Ver Proyectos</span>
+            </Link>
+            <Link href="/constructoras" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
+              <FiUsers className="text-blue-600" /> <span>Directorio</span>
             </Link>
             <Link href="/dashboard/constructora/units" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
               <FiPackage className="text-blue-600" /> <span>Ver Inventario</span>

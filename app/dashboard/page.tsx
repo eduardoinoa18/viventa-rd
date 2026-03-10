@@ -1770,13 +1770,15 @@ export default function BuyerDashboardPage() {
       <main className="min-h-screen bg-gray-50 pb-20 md:pb-8">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-5">
           <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sticky top-20 z-20">
-            <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <Link href="/search" className="text-center px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Buscar</Link>
               <Link href="/favorites" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Favoritos</Link>
-              <Link href="/brokers" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Brokers</Link>
               <Link href="/messages" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Mensajes</Link>
-              <Link href="/notifications" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Alertas</Link>
-              <Link href="/contact" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Ayuda</Link>
+              <Link href="/brokers" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Brokers</Link>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+              <Link href="/notifications" className="px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50">Alertas</Link>
+              <Link href="/contact" className="px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50">Ayuda</Link>
             </div>
           </section>
 

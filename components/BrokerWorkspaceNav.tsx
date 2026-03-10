@@ -8,14 +8,17 @@ type ActivitySummary = {
   unreadActivity: number
 }
 
-const NAV_ITEMS = [
+const PRIMARY_NAV_ITEMS = [
   { href: '/dashboard/broker/overview', label: 'Overview' },
   { href: '/dashboard/broker/crm', label: 'CRM' },
   { href: '/dashboard/broker/transactions', label: 'Transactions' },
   { href: '/dashboard/broker/activity', label: 'Activity' },
   { href: '/dashboard/broker/team', label: 'Team' },
+]
+
+const SECONDARY_NAV_ITEMS = [
   { href: '/dashboard/listings', label: 'Listings' },
-  { href: '/dashboard/listings/create', label: 'Crear' },
+  { href: '/dashboard/listings/create', label: 'Crear Listing' },
   { href: '/dashboard/billing', label: 'Billing' },
   { href: '/messages', label: 'Mensajes' },
 ]
@@ -35,8 +38,9 @@ export default function BrokerWorkspaceNav() {
   }, [pathname])
 
   return (
-    <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-2 text-sm">
-      {NAV_ITEMS.map((item) => {
+    <div className="mt-4 space-y-2 text-sm">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+      {PRIMARY_NAV_ITEMS.map((item) => {
         const isActive = pathname === item.href
         const isActivity = item.href === '/dashboard/broker/activity'
         const unread = summary.unreadActivity
@@ -54,6 +58,21 @@ export default function BrokerWorkspaceNav() {
           </Link>
         )
       })}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        {SECONDARY_NAV_ITEMS.map((item) => {
+          const isActive = pathname === item.href
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`px-3 py-1.5 rounded-md border ${isActive ? 'border-[#0B2545] bg-[#0B2545] text-white' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+            >
+              {item.label}
+            </Link>
+          )
+        })}
+      </div>
     </div>
   )
 }
