@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import BottomNav from '@/components/BottomNav'
+import BrokerWorkspaceNav from '@/components/BrokerWorkspaceNav'
 
 export default function BrokerDashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,17 +18,7 @@ export default function BrokerDashboardLayout({ children }: { children: React.Re
               </div>
               <Link href="/dashboard" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Volver</Link>
             </div>
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-2 text-sm">
-              <Link href="/dashboard/broker/overview" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Overview</Link>
-              <Link href="/dashboard/broker/crm" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">CRM</Link>
-              <Link href="/dashboard/broker/transactions" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Transactions</Link>
-              <Link href="/dashboard/broker/activity" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Activity</Link>
-              <Link href="/dashboard/broker/team" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Team</Link>
-              <Link href="/dashboard/listings" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Listings</Link>
-              <Link href="/dashboard/listings/create" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Crear</Link>
-              <Link href="/dashboard/billing" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Billing</Link>
-              <Link href="/messages" className="text-center px-3 py-2 rounded-lg border border-gray-200 text-[#0B2545] font-medium">Mensajes</Link>
-            </div>
+            <BrokerWorkspaceNav />
           </section>
           {children}
         </div>

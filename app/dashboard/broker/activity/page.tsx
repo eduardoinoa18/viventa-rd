@@ -51,7 +51,18 @@ export default function BrokerActivityPage() {
     }
   }
 
+  async function markActivitySeen() {
+    try {
+      await fetch('/api/activity-events/summary', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'markSeen' }),
+      })
+    } catch {}
+  }
+
   useEffect(() => {
+    markActivitySeen()
     loadEvents()
   }, [])
 

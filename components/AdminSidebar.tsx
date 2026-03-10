@@ -11,6 +11,7 @@ export default function AdminSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [userRole, setUserRole] = useState<string>('master_admin')
+  const [unreadActivity, setUnreadActivity] = useState(0)
 
   // Persist collapsed state & get user role
   useEffect(() => {
@@ -21,6 +22,16 @@ export default function AdminSidebar() {
     const session = getSession()
     if (session?.role) setUserRole(session.role)
   }, [])
+
+  useEffect(() => {
+    fetch('/api/activity-events/summary', { cache: 'no-store' })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({}))
+        if (!response.ok || !payload?.ok) return
+        setUnreadActivity(Number(payload?.summary?.unreadActivity || 0))
+      })
+      .catch(() => {})
+  }, [pathname])
   
   function toggleCollapsed() {
     const next = !collapsed
@@ -79,7 +90,11 @@ export default function AdminSidebar() {
             }`}
           >
             <span className="text-xl shrink-0">{link.icon}</span>
-            {!collapsed && <span className="truncate">{link.label}</span>}
+            {!collapsed && (
+              <span className="truncate">
+                {link.href === '/master/activity' && unreadActivity > 0 ? `${link.label} (${unreadActivity})` : link.label}
+              </span>
+            )}
           </Link>
         ))}
       </nav>
