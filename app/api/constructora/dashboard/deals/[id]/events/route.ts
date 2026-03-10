@@ -2,19 +2,11 @@ import { NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
+import { DEAL_EVENT_TYPES } from '@/lib/domain/deal'
 
 export const dynamic = 'force-dynamic'
 
-const ALLOWED_EVENT_TYPES = [
-  'reservation_created',
-  'price_changed',
-  'document_uploaded',
-  'contract_signed',
-  'payment_received',
-  'commission_calculated',
-  'deal_closed',
-  'status_changed',
-] as const
+const ALLOWED_EVENT_TYPES = DEAL_EVENT_TYPES
 
 function safeText(value: unknown): string {
   return String(value ?? '').trim()
@@ -37,6 +29,7 @@ function toMillis(value: any): number {
 
 type DealEvent = Record<string, any> & {
   id: string
+  dealId: string
   createdAt?: unknown
 }
 
@@ -67,7 +60,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     const eventsSnap = await dealRef.collection('events').limit(400).get()
     const events: DealEvent[] = eventsSnap.docs
-      .map((doc): DealEvent => ({ id: doc.id, ...(doc.data() as Record<string, any>) }))
+      .map((doc): DealEvent => ({ id: doc.id, dealId: params.id, ...(doc.data() as Record<string, any>) }))
       .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))
 
     return NextResponse.json({ ok: true, events })

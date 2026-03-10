@@ -3,39 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { uploadFile, validateFile } from '@/lib/storageService'
+import type { DealRecord, DealEventRecord, DealDocumentRecord } from '@/lib/domain/deal'
 
-type Deal = {
-  id: string
-  unitId: string
-  projectId: string
-  reservationId: string
-  buyerName: string
-  brokerName: string
-  price: number
-  currency: string
-  status: string
-  createdAt: any
-  updatedAt: any
-}
-
-type DealEvent = {
-  id: string
-  type: string
-  actorId: string
-  metadata?: Record<string, any>
-  createdAt: any
-}
-
-type DealDocument = {
-  id: string
-  type: string
-  fileUrl: string
-  fileName: string
-  uploadedBy: string
-  size?: number
-  mimeType?: string
-  createdAt: any
-}
+type Deal = DealRecord
+type DealEvent = DealEventRecord
+type DealDocument = DealDocumentRecord
 
 const STATUS_OPTIONS = ['reserved', 'negotiating', 'contract_signed', 'financing', 'closing', 'closed', 'cancelled']
 const EVENT_OPTIONS = ['reservation_created', 'price_changed', 'document_uploaded', 'contract_signed', 'payment_received', 'commission_calculated', 'deal_closed']

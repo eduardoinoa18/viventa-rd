@@ -2,10 +2,9 @@ import { NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
+import { DEAL_STATUSES, type DealStatus } from '@/lib/domain/deal'
 
 export const dynamic = 'force-dynamic'
-
-const DEAL_STATUSES = ['reserved', 'negotiating', 'contract_signed', 'financing', 'closing', 'closed', 'cancelled'] as const
 
 function safeText(value: unknown): string {
   return String(value ?? '').trim()
@@ -22,7 +21,7 @@ function toNumber(value: unknown): number {
 
 function normalizeDealStatus(value: unknown) {
   const status = safeLower(value)
-  if ((DEAL_STATUSES as readonly string[]).includes(status)) return status
+  if ((DEAL_STATUSES as readonly string[]).includes(status)) return status as DealStatus
   if (status === 'contract') return 'contract_signed'
   if (status === 'won' || status === 'completed') return 'closed'
   return 'reserved'
@@ -42,6 +41,7 @@ function toMillis(value: any): number {
 function asDeal(id: string, data: Record<string, any>) {
   return {
     id,
+    dealId: id,
     unitId: safeText(data.unitId),
     projectId: safeText(data.projectId),
     reservationId: safeText(data.reservationId),

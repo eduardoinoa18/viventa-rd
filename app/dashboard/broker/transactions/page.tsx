@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import type { TransactionRecord, TransactionStage } from '@/lib/domain/transaction'
 
 const PIPELINE_STAGES = [
   { key: 'lead', label: 'Lead' },
@@ -14,20 +15,7 @@ const PIPELINE_STAGES = [
 
 type StageKey = (typeof PIPELINE_STAGES)[number]['key']
 
-type TransactionItem = {
-  id: string
-  clientName?: string
-  clientEmail?: string | null
-  clientPhone?: string | null
-  stage?: StageKey
-  salePrice?: number
-  currency?: 'USD' | 'DOP'
-  totalCommission?: number
-  agentCommission?: number
-  brokerCommission?: number
-  commissionStatus?: 'pending' | 'paid'
-  notes?: string | null
-}
+type TransactionItem = Partial<TransactionRecord> & { id: string; stage?: TransactionStage }
 
 type Summary = {
   totalPipeline: number

@@ -2,17 +2,11 @@ import { NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
+import { DEAL_DOCUMENT_TYPES } from '@/lib/domain/deal'
 
 export const dynamic = 'force-dynamic'
 
-const ALLOWED_DOCUMENT_TYPES = [
-  'reservation_form',
-  'contract',
-  'deposit_receipt',
-  'buyer_id',
-  'closing_document',
-  'other',
-] as const
+const ALLOWED_DOCUMENT_TYPES = DEAL_DOCUMENT_TYPES
 
 function safeText(value: unknown): string {
   return String(value ?? '').trim()
@@ -35,6 +29,7 @@ function toMillis(value: any): number {
 
 type DealDocument = Record<string, any> & {
   id: string
+  dealId: string
   createdAt?: unknown
 }
 
@@ -76,7 +71,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     const docsSnap = await scoped.dealRef.collection('documents').limit(400).get()
     const documents: DealDocument[] = docsSnap.docs
-      .map((doc): DealDocument => ({ id: doc.id, ...(doc.data() as Record<string, any>) }))
+      .map((doc): DealDocument => ({ id: doc.id, dealId: params.id, ...(doc.data() as Record<string, any>) }))
       .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))
 
     return NextResponse.json({ ok: true, documents })
@@ -125,7 +120,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     })
 
     const saved = await created.get()
-    return NextResponse.json({ ok: true, document: { id: created.id, ...(saved.data() || {}) } }, { status: 201 })
+    return NextResponse.json({ ok: true, document: { id: created.id, dealId: params.id, ...(saved.data() || {}) } }, { status: 201 })
   } catch (error: any) {
     console.error('[api/constructora/dashboard/deals/[id]/documents] POST error', error)
     return NextResponse.json({ ok: false, error: 'Failed to create deal document' }, { status: 500 })

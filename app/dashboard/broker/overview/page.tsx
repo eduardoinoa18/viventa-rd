@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { RevenueMetrics, TopBrokerRevenueRow } from '@/lib/domain/transaction'
 
 type SummaryState = {
   myListings: number
@@ -11,21 +12,7 @@ type SummaryState = {
   followUpDue: number
   pipeline: number
   projectedValue: number
-  officePipelineValue: number
-  expectedCommission: number
-  dealsClosingThisMonth: number
-  activeDeals: number
-}
-
-type TopBroker = {
-  userId: string
-  name: string
-  deals: number
-  pipelineValue: number
-  expectedCommission: number
-  closedDeals: number
-  closedCommission: number
-}
+} & RevenueMetrics
 
 type OfficeProfile = {
   id: string
@@ -63,7 +50,7 @@ export default function BrokerOverviewPage() {
     dealsClosingThisMonth: 0,
     activeDeals: 0,
   })
-  const [topBrokers, setTopBrokers] = useState<TopBroker[]>([])
+  const [topBrokers, setTopBrokers] = useState<TopBrokerRevenueRow[]>([])
 
   useEffect(() => {
     let active = true
