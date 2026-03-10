@@ -39,6 +39,11 @@ function normalizeUnitStatus(value: unknown) {
   return status || 'available'
 }
 
+type ProjectRecord = Record<string, any> & {
+  id: string
+  name?: unknown
+}
+
 export async function GET(req: Request) {
   try {
     const db = getAdminDb()
@@ -58,8 +63,8 @@ export async function GET(req: Request) {
     const projectFilter = safeText(searchParams.get('projectId') || '')
 
     const projectsSnap = await db.collection('projects').limit(600).get()
-    const scopedProjects = projectsSnap.docs
-      .map((doc) => ({ id: doc.id, ...(doc.data() as Record<string, any>) }))
+    const scopedProjects: ProjectRecord[] = projectsSnap.docs
+      .map((doc): ProjectRecord => ({ id: doc.id, ...(doc.data() as Record<string, any>) }))
       .filter((project) => belongsToConstructora(project, context))
 
     const scopedProjectIds = new Set(scopedProjects.map((project) => project.id))

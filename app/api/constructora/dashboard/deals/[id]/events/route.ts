@@ -35,6 +35,11 @@ function toMillis(value: any): number {
   return Number.isFinite(parsed.getTime()) ? parsed.getTime() : 0
 }
 
+type DealEvent = Record<string, any> & {
+  id: string
+  createdAt?: unknown
+}
+
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
     const db = getAdminDb()
@@ -61,8 +66,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     }
 
     const eventsSnap = await dealRef.collection('events').limit(400).get()
-    const events = eventsSnap.docs
-      .map((doc) => ({ id: doc.id, ...(doc.data() as Record<string, any>) }))
+    const events: DealEvent[] = eventsSnap.docs
+      .map((doc): DealEvent => ({ id: doc.id, ...(doc.data() as Record<string, any>) }))
       .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))
 
     return NextResponse.json({ ok: true, events })

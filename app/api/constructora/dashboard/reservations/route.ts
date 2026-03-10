@@ -44,6 +44,12 @@ function isReservedStatus(value: unknown) {
   return status === 'reserved' || status === 'reservado' || status === 'separado'
 }
 
+type ProjectRecord = Record<string, any> & {
+  id: string
+  name?: unknown
+  currency?: unknown
+}
+
 export async function GET(req: Request) {
   try {
     const db = getAdminDb()
@@ -61,8 +67,8 @@ export async function GET(req: Request) {
     const query = safeLower(searchParams.get('q') || '')
 
     const projectsSnap = await db.collection('projects').limit(600).get()
-    const scopedProjects = projectsSnap.docs
-      .map((doc) => ({ id: doc.id, ...(doc.data() as Record<string, any>) }))
+    const scopedProjects: ProjectRecord[] = projectsSnap.docs
+      .map((doc): ProjectRecord => ({ id: doc.id, ...(doc.data() as Record<string, any>) }))
       .filter((project) => belongsToConstructora(project, context))
 
     const reservations: Array<Record<string, any>> = []
