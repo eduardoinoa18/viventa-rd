@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
+import { emitActivityEvent } from '@/lib/activityEvents'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +38,7 @@ async function loadScopedDeal(req: Request, dealId: string) {
     return { error: NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 }) }
   }
 
-  return { context, dealRef }
+  return { db, context, dealRef }
 }
 
 export async function DELETE(req: Request, { params }: { params: { id: string; docId: string } }) {
@@ -63,6 +64,26 @@ export async function DELETE(req: Request, { params }: { params: { id: string; d
         fileName: safeText(docData.fileName || ''),
       },
       createdAt: new Date(),
+    })
+
+    const dealSnap = await scoped.dealRef.get()
+    const dealData = (dealSnap.data() || {}) as Record<string, any>
+    await emitActivityEvent(scoped.db, {
+      type: 'document_deleted',
+      actorId: scoped.context.uid,
+      actorRole: scoped.context.role,
+      entityType: 'document',
+      entityId: params.docId,
+      dealId: params.id,
+      reservationId: safeText(dealData.reservationId || ''),
+      unitId: safeText(dealData.unitId || ''),
+      projectId: safeText(dealData.projectId || ''),
+      brokerId: safeText(dealData.brokerId || ''),
+      buyerId: safeText(dealData.buyerId || ''),
+      constructoraCode: safeText(dealData.constructoraCode || ''),
+      metadata: {
+        fileName: safeText(docData.fileName || ''),
+      },
     })
 
     return NextResponse.json({ ok: true })

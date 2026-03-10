@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
+import { emitActivityEvent } from '@/lib/activityEvents'
 
 export const dynamic = 'force-dynamic'
 
@@ -246,6 +247,27 @@ export async function POST(req: Request) {
     })
 
     const saved = await created.get()
+    await emitActivityEvent(db, {
+      type: 'transaction_created',
+      actorId: context.uid,
+      actorRole: context.role,
+      entityType: 'transaction',
+      entityId: created.id,
+      transactionId: created.id,
+      dealId: String(body.dealId || '').trim() || null,
+      reservationId: String(body.reservationId || '').trim() || null,
+      listingId: String(body.propertyId || '').trim() || null,
+      unitId: String(body.unitId || '').trim() || null,
+      projectId: String(body.projectId || '').trim() || null,
+      brokerId: context.role === 'broker' ? context.uid : null,
+      agentId,
+      officeId: context.officeId,
+      metadata: {
+        stage,
+        salePrice,
+        totalCommission,
+      },
+    })
     return NextResponse.json({ ok: true, id: created.id, transaction: { id: created.id, ...(saved.data() || {}) } }, { status: 201 })
   } catch (error: any) {
     console.error('[api/broker/transactions] POST error', error)
@@ -315,6 +337,31 @@ export async function PATCH(req: Request) {
     }
 
     await txRef.set(update, { merge: true })
+
+    if (update.commissionStatus === 'paid') {
+      await emitActivityEvent(db, {
+        type: 'commission_paid',
+        actorId: context.uid,
+        actorRole: context.role,
+        entityType: 'commission',
+        entityId: id,
+        transactionId: id,
+        dealId: String(tx.dealId || '').trim() || null,
+        reservationId: String(tx.reservationId || '').trim() || null,
+        listingId: String(tx.propertyId || '').trim() || null,
+        unitId: String(tx.unitId || '').trim() || null,
+        projectId: String(tx.projectId || '').trim() || null,
+        brokerId: String(tx.brokerId || '').trim() || null,
+        agentId: String(tx.agentId || '').trim() || null,
+        officeId: context.officeId,
+        metadata: {
+          totalCommission: toNumber(tx.totalCommission),
+          agentCommission: toNumber(tx.agentCommission),
+          brokerCommission: toNumber(tx.brokerCommission),
+        },
+      })
+    }
+
     const saved = await txRef.get()
     return NextResponse.json({ ok: true, transaction: { id, ...(saved.data() || {}) } })
   } catch (error: any) {

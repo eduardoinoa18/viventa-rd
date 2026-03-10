@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { uploadFile, validateFile } from '@/lib/storageService'
 import type { DealRecord, DealEventRecord, DealDocumentRecord } from '@/lib/domain/deal'
+import type { ActivityEventRecord } from '@/lib/domain/activity'
 
 type Deal = DealRecord
 type DealEvent = DealEventRecord
@@ -49,6 +50,7 @@ export default function ConstructoraDealDetailPage() {
   const [error, setError] = useState('')
   const [deal, setDeal] = useState<Deal | null>(null)
   const [events, setEvents] = useState<DealEvent[]>([])
+  const [activityEvents, setActivityEvents] = useState<ActivityEventRecord[]>([])
   const [documents, setDocuments] = useState<DealDocument[]>([])
   const [savingStatus, setSavingStatus] = useState(false)
   const [addingEvent, setAddingEvent] = useState(false)
@@ -65,24 +67,28 @@ export default function ConstructoraDealDetailPage() {
       setLoading(true)
       setError('')
 
-      const [dealRes, eventsRes, documentsRes] = await Promise.all([
+      const [dealRes, eventsRes, documentsRes, activityRes] = await Promise.all([
         fetch(`/api/constructora/dashboard/deals/${dealId}`, { cache: 'no-store' }),
         fetch(`/api/constructora/dashboard/deals/${dealId}/events`, { cache: 'no-store' }),
         fetch(`/api/constructora/dashboard/deals/${dealId}/documents`, { cache: 'no-store' }),
+        fetch(`/api/activity-events?dealId=${encodeURIComponent(dealId)}&limit=60`, { cache: 'no-store' }),
       ])
 
       const dealJson = await dealRes.json().catch(() => ({}))
       const eventsJson = await eventsRes.json().catch(() => ({}))
       const documentsJson = await documentsRes.json().catch(() => ({}))
+      const activityJson = await activityRes.json().catch(() => ({}))
 
       if (!dealRes.ok || !dealJson?.ok) throw new Error(dealJson?.error || 'No se pudo cargar el deal')
       if (!eventsRes.ok || !eventsJson?.ok) throw new Error(eventsJson?.error || 'No se pudo cargar el timeline')
       if (!documentsRes.ok || !documentsJson?.ok) throw new Error(documentsJson?.error || 'No se pudieron cargar los documentos')
+      if (!activityRes.ok || !activityJson?.ok) throw new Error(activityJson?.error || 'No se pudo cargar la actividad global')
 
       setDeal(dealJson.deal)
       setStatusDraft(String(dealJson.deal?.status || 'reserved'))
       setEvents(Array.isArray(eventsJson?.events) ? eventsJson.events : [])
       setDocuments(Array.isArray(documentsJson?.documents) ? documentsJson.documents : [])
+      setActivityEvents(Array.isArray(activityJson?.events) ? activityJson.events : [])
     } catch (loadError: any) {
       setError(loadError?.message || 'No se pudo cargar el deal')
     } finally {
@@ -308,6 +314,25 @@ export default function ConstructoraDealDetailPage() {
                 </div>
               ))}
               {!documents.length ? <p className="text-sm text-gray-500">No hay documentos todavía.</p> : null}
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-gray-200 p-3">
+            <div className="text-sm font-semibold text-gray-900">Global Activity</div>
+            <div className="mt-2 space-y-2">
+              {activityEvents.map((activity) => (
+                <div key={activity.id} className="rounded-lg border border-gray-200 p-2">
+                  <div className="text-xs font-semibold text-[#0B2545]">{activity.type}</div>
+                  <div className="text-xs text-gray-600 mt-1">{formatTimestamp(activity.createdAt)}</div>
+                  <div className="text-[11px] text-gray-600 mt-1">
+                    {activity.entityType} · {activity.entityId}
+                  </div>
+                  {activity.metadata ? (
+                    <pre className="mt-1 text-[11px] text-gray-600 whitespace-pre-wrap">{JSON.stringify(activity.metadata, null, 2)}</pre>
+                  ) : null}
+                </div>
+              ))}
+              {!activityEvents.length ? <p className="text-sm text-gray-500">No hay actividad global todavía.</p> : null}
             </div>
           </div>
         </>

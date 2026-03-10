@@ -3,6 +3,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
 import { DEAL_STATUSES, type DealStatus } from '@/lib/domain/deal'
+import { emitActivityEvent } from '@/lib/activityEvents'
 
 export const dynamic = 'force-dynamic'
 
@@ -182,6 +183,43 @@ export async function POST(req: Request) {
       },
       createdAt: now,
     })
+
+    await emitActivityEvent(db, {
+      type: 'deal_opened',
+      actorId: context.uid,
+      actorRole: context.role,
+      entityType: 'deal',
+      entityId: created.id,
+      dealId: created.id,
+      unitId,
+      projectId,
+      reservationId: reservationId || null,
+      brokerId: brokerId || null,
+      buyerId: buyerId || null,
+      constructoraCode,
+      metadata: {
+        status,
+        price,
+        currency: safeText(body.currency || 'USD') || 'USD',
+      },
+    })
+
+    if (reservationId) {
+      await emitActivityEvent(db, {
+        type: 'reservation_created',
+        actorId: context.uid,
+        actorRole: context.role,
+        entityType: 'reservation',
+        entityId: reservationId,
+        dealId: created.id,
+        reservationId,
+        unitId,
+        projectId,
+        brokerId: brokerId || null,
+        buyerId: buyerId || null,
+        constructoraCode,
+      })
+    }
 
     const saved = await created.get()
     return NextResponse.json({ ok: true, deal: asDeal(created.id, saved.data() as Record<string, any>) }, { status: 201 })

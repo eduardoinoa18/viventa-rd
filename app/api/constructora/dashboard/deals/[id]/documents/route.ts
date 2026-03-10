@@ -3,6 +3,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
 import { DEAL_DOCUMENT_TYPES } from '@/lib/domain/deal'
+import { emitActivityEvent } from '@/lib/activityEvents'
 
 export const dynamic = 'force-dynamic'
 
@@ -117,6 +118,27 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         documentType: type,
       },
       createdAt: new Date(),
+    })
+
+    const dealSnap = await scoped.dealRef.get()
+    const dealData = (dealSnap.data() || {}) as Record<string, any>
+    await emitActivityEvent(scoped.db, {
+      type: 'document_uploaded',
+      actorId: scoped.context.uid,
+      actorRole: scoped.context.role,
+      entityType: 'document',
+      entityId: created.id,
+      dealId: params.id,
+      reservationId: safeText(dealData.reservationId || ''),
+      unitId: safeText(dealData.unitId || ''),
+      projectId: safeText(dealData.projectId || ''),
+      brokerId: safeText(dealData.brokerId || ''),
+      buyerId: safeText(dealData.buyerId || ''),
+      constructoraCode: safeText(dealData.constructoraCode || ''),
+      metadata: {
+        fileName,
+        documentType: type,
+      },
     })
 
     const saved = await created.get()

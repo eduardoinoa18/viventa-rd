@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { ingestLead } from '@/lib/leadIngestion'
 import { keyFromRequest, rateLimit } from '@/lib/rateLimiter'
+import { getAdminDb } from '@/lib/firebaseAdmin'
+import { emitActivityEvent } from '@/lib/activityEvents'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +24,25 @@ export async function POST(request: Request) {
       message: body.message,
       payload: body.payload || {},
     })
+
+    const db = getAdminDb()
+    if (db) {
+      const resultRecord = (result || {}) as Record<string, unknown>
+      const resultId = String(resultRecord.id || resultRecord.mergedIntoLeadId || body?.sourceId || Date.now())
+      await emitActivityEvent(db, {
+        type: 'lead_contacted',
+        actorId: body.buyerEmail || body.buyerPhone || null,
+        actorRole: 'public',
+        entityType: 'lead',
+        entityId: resultId,
+        listingId: String(body?.payload?.listingId || body?.sourceId || ''),
+        metadata: {
+          source: body.source || null,
+          leadType: body.type || null,
+          buyerName: body.buyerName || null,
+        },
+      })
+    }
 
     return NextResponse.json({ ok: true, data: result })
   } catch (error: any) {

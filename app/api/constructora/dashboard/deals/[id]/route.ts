@@ -3,6 +3,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
 import { DEAL_STATUSES, type DealStatus } from '@/lib/domain/deal'
+import { emitActivityEvent } from '@/lib/activityEvents'
 
 export const dynamic = 'force-dynamic'
 
@@ -130,6 +131,26 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         createdAt: new Date(),
       })
     }
+
+    await emitActivityEvent(db, {
+      type: 'deal_updated',
+      actorId: context.uid,
+      actorRole: context.role,
+      entityType: 'deal',
+      entityId: params.id,
+      dealId: params.id,
+      reservationId: current.reservationId || null,
+      unitId: current.unitId || null,
+      projectId: current.projectId || null,
+      brokerId: current.brokerId || null,
+      buyerId: current.buyerId || null,
+      constructoraCode: current.constructoraCode || null,
+      metadata: {
+        fromStatus: current.status,
+        toStatus: body.status !== undefined ? normalizeDealStatus(body.status) : current.status,
+        price: body.price !== undefined ? toNumber(body.price) : current.price,
+      },
+    })
 
     const saved = await ref.get()
     return NextResponse.json({ ok: true, deal: asDeal(saved.id, saved.data() as Record<string, any>) })

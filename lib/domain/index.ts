@@ -44,3 +44,14 @@ export type {
 	CommissionRecord,
 	TimestampLike as CommissionTimestampLike,
 } from './commission'
+
+export {
+	ACTIVITY_EVENT_TYPES,
+} from './activity'
+
+export type {
+	ActivityEventType,
+	ActivityEntityType,
+	ActivityEventRecord,
+	TimestampLike as ActivityTimestampLike,
+} from './activity'

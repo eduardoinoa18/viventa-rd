@@ -8,6 +8,7 @@ import type { Query } from 'firebase-admin/firestore'
 import { logger } from '@/lib/logger'
 import { getOfficeListingQuotaStatus } from '@/lib/officeSubscriptionQuota'
 import { buildQuotaErrorResponse } from '@/lib/quotaResponses'
+import { emitActivityEvent } from '@/lib/activityEvents'
 import {
   canMutateListing,
   getListingAccessUserContext,
@@ -334,6 +335,27 @@ export async function POST(req: Request) {
           listingId,
         }
       })
+
+      if (uid) {
+        await emitActivityEvent(db, {
+          type: 'listing_created',
+          actorId: uid,
+          actorRole: String(role || ''),
+          entityType: 'listing',
+          entityId: id,
+          listingId: id,
+          brokerId: String((createData as any).brokerId || ''),
+          agentId: String((createData as any).agentId || ''),
+          officeId: String((createData as any).brokerId || (createData as any).createdByBrokerId || ''),
+          constructoraCode: String((createData as any).constructoraCode || ''),
+          metadata: {
+            listingId,
+            title: createData.title || null,
+            city: createData.city || null,
+            neighborhood: createData.neighborhood || null,
+          },
+        })
+      }
       
       return NextResponse.json({ success: true, message: "Property created", id, listingId })
     } else if (action === 'update') {
