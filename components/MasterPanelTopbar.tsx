@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import NotificationCenter from '@/components/NotificationCenter'
@@ -51,21 +50,7 @@ export default function MasterPanelTopbar() {
           <div className="text-xs uppercase tracking-wide text-gray-500">Master Admin</div>
           <div className="text-sm font-semibold text-[#0B2545] truncate">{sectionLabel}</div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/master"
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
-          >
-            Home
-          </Link>
-          <Link
-            href="/master/overview"
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
-          >
-            Intelligence
-          </Link>
-          {session.uid ? <NotificationCenter userId={session.uid} /> : null}
-        </div>
+        {session.uid ? <NotificationCenter userId={session.uid} /> : null}
       </div>
     </div>
   )
