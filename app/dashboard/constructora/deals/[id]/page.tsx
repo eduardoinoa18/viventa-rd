@@ -13,6 +13,34 @@ const STATUS_OPTIONS = ['reserved', 'negotiating', 'contract_signed', 'financing
 const EVENT_OPTIONS = ['reservation_created', 'price_changed', 'document_uploaded', 'contract_signed', 'payment_received', 'commission_calculated', 'deal_closed']
 const DOCUMENT_TYPES = ['reservation_form', 'contract', 'deposit_receipt', 'buyer_id', 'closing_document', 'other']
 
+function formatTimestamp(value: unknown): string {
+  if (!value) return '—'
+
+  if (value instanceof Date) {
+    return value.toLocaleString()
+  }
+
+  if (typeof value === 'number' || typeof value === 'string') {
+    const parsed = new Date(value)
+    return Number.isFinite(parsed.getTime()) ? parsed.toLocaleString() : '—'
+  }
+
+  if (typeof value === 'object') {
+    const maybeSeconds = (value as { seconds?: unknown }).seconds
+    if (typeof maybeSeconds === 'number') {
+      return new Date(maybeSeconds * 1000).toLocaleString()
+    }
+
+    const maybeToDate = (value as { toDate?: unknown }).toDate
+    if (typeof maybeToDate === 'function') {
+      const converted = maybeToDate.call(value)
+      if (converted instanceof Date) return converted.toLocaleString()
+    }
+  }
+
+  return '—'
+}
+
 export default function ConstructoraDealDetailPage() {
   const params = useParams<{ id: string }>()
   const dealId = String(params?.id || '')
@@ -224,7 +252,7 @@ export default function ConstructoraDealDetailPage() {
                 <div key={event.id} className="rounded-lg border border-gray-200 p-2">
                   <div className="text-xs font-semibold text-[#0B2545]">{event.type}</div>
                   <div className="text-xs text-gray-600 mt-1">
-                    {event.createdAt ? new Date((event.createdAt?.seconds ? event.createdAt.seconds * 1000 : event.createdAt)).toLocaleString() : '—'}
+                    {formatTimestamp(event.createdAt)}
                   </div>
                   {event.metadata ? (
                     <pre className="mt-1 text-[11px] text-gray-600 whitespace-pre-wrap">{JSON.stringify(event.metadata, null, 2)}</pre>
@@ -262,7 +290,7 @@ export default function ConstructoraDealDetailPage() {
                     <div>
                       <div className="font-medium text-gray-900 break-all">{document.fileName || 'Documento'}</div>
                       <div className="text-xs text-gray-600">
-                        {document.type || 'other'} • {document.createdAt ? new Date((document.createdAt?.seconds ? document.createdAt.seconds * 1000 : document.createdAt)).toLocaleString() : '—'}
+                        {document.type || 'other'} • {formatTimestamp(document.createdAt)}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
