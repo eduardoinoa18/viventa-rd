@@ -38,6 +38,7 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const dealId = safeText(searchParams.get('dealId') || '')
+    const typeFilter = safeLower(searchParams.get('type') || '')
     const entityType = safeLower(searchParams.get('entityType') || '')
     const entityId = safeText(searchParams.get('entityId') || '')
     const limit = Math.min(Math.max(Number(searchParams.get('limit') || 80), 1), 300)
@@ -61,6 +62,7 @@ export async function GET(req: Request) {
         return safeText(event.actorId) === context.uid || safeText(event.buyerId) === context.uid
       })
 
+    if (typeFilter) events = events.filter((event) => safeLower(event.type) === typeFilter)
     if (dealId) events = events.filter((event) => safeText(event.dealId) === dealId)
     if (entityType) events = events.filter((event) => safeLower(event.entityType) === entityType)
     if (entityId) events = events.filter((event) => safeText(event.entityId) === entityId)
