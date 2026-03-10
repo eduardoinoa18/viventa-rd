@@ -21,6 +21,28 @@ export type EmitActivityEventInput = {
   metadata?: Record<string, unknown>
 }
 
+function buildActivityUrl(input: EmitActivityEventInput): string {
+  const dealId = safeText(input.dealId || input.entityId)
+  const listingId = safeText(input.listingId || input.entityId)
+
+  switch (input.entityType) {
+    case 'deal':
+      return dealId ? `/dashboard/constructora/deals/${dealId}` : '/dashboard/constructora/deals'
+    case 'reservation':
+    case 'document':
+      return dealId ? `/dashboard/constructora/deals/${dealId}` : '/dashboard/constructora/deals'
+    case 'transaction':
+    case 'commission':
+      return '/dashboard/broker/transactions'
+    case 'lead':
+      return '/master/leads'
+    case 'listing':
+      return listingId ? `/listing/${listingId}` : '/dashboard/listings'
+    default:
+      return '/dashboard'
+  }
+}
+
 function safeText(value: unknown): string {
   return String(value ?? '').trim()
 }
@@ -174,6 +196,7 @@ export async function emitActivityEvent(db: Firestore, input: EmitActivityEventI
   try {
     const payload = {
       type: input.type,
+      url: buildActivityUrl(input),
       actorId: safeText(input.actorId) || null,
       actorRole: safeText(input.actorRole) || null,
       entityType: input.entityType,
@@ -206,6 +229,7 @@ export function toActivityEvent(id: string, data: Record<string, any>): Activity
   return {
     id,
     type: data.type,
+    url: data.url || null,
     actorId: data.actorId || null,
     actorRole: data.actorRole || null,
     entityType: data.entityType,

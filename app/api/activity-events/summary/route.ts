@@ -75,7 +75,7 @@ export async function GET(req: Request) {
 
     const userDoc = await scoped.db.collection('users').doc(scoped.session.uid).get()
     const userData = (userDoc.data() || {}) as Record<string, any>
-    const lastSeenMs = toMillis(userData.activityLastSeenAt || userData.lastSeen || null)
+    const lastSeenMs = toMillis(userData.lastActivitySeenAt || userData.activityLastSeenAt || userData.lastSeen || null)
 
     const todayEvents = scoped.events.filter((event) => toMillis(event.createdAt) >= todayStartMs)
     const unreadActivity = scoped.events.filter((event) => toMillis(event.createdAt) > lastSeenMs).length
@@ -137,8 +137,17 @@ export async function PATCH(req: Request) {
     const scoped = await getScopedEvents(req)
     if ('error' in scoped) return scoped.error
 
+    const body = await req.json().catch(() => ({}))
+    const action = safeLower(body?.action || 'markSeen')
+    if (action !== 'markseen') {
+      return NextResponse.json({ ok: false, error: 'Unsupported action' }, { status: 400 })
+    }
+
+    const now = new Date()
+
     await scoped.db.collection('users').doc(scoped.session.uid).set({
-      activityLastSeenAt: new Date(),
+      activityLastSeenAt: now,
+      lastActivitySeenAt: now,
     }, { merge: true })
 
     return NextResponse.json({ ok: true })

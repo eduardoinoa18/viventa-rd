@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import type { ActivityEventRecord } from '@/lib/domain/activity'
 
@@ -119,7 +120,13 @@ export default function BrokerActivityPage() {
         {filtered.map((event) => (
           <div key={event.id} className="rounded-lg border border-gray-200 p-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div className="text-sm font-semibold text-[#0B2545]">{event.type}</div>
+              {event.url ? (
+                <Link href={event.url} className="text-sm font-semibold text-[#0B2545] hover:underline">
+                  {event.type}
+                </Link>
+              ) : (
+                <div className="text-sm font-semibold text-[#0B2545]">{event.type}</div>
+              )}
               <div className="text-xs text-gray-500">{formatTimestamp(event.createdAt)}</div>
             </div>
             <div className="text-xs text-gray-600 mt-1">

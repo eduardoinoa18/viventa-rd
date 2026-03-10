@@ -26,6 +26,7 @@ export type TimestampLike = Date | string | number | { toDate?: () => Date } | n
 export interface ActivityEventRecord {
   id: string
   type: ActivityEventType
+  url?: string | null
   actorId?: string | null
   actorRole?: string | null
   entityType: ActivityEntityType

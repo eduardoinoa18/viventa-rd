@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { FiActivity, FiRefreshCw, FiSearch } from 'react-icons/fi'
 import type { ActivityEventRecord } from '@/lib/domain/activity'
@@ -181,7 +182,13 @@ export default function MasterActivityPage() {
                     <tr key={event.id} className="hover:bg-gray-50 align-top">
                       <td className="p-3 text-xs text-gray-600">{formatTimestamp(event.createdAt)}</td>
                       <td className="p-3">
-                        <span className="px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs font-semibold">{event.type}</span>
+                        {event.url ? (
+                          <Link href={event.url} className="px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200">
+                            {event.type}
+                          </Link>
+                        ) : (
+                          <span className="px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs font-semibold">{event.type}</span>
+                        )}
                       </td>
                       <td className="p-3 text-xs text-gray-700">
                         <div>{safeText(event.actorRole) || 'system'}</div>
