@@ -32,6 +32,15 @@ type OfficeProfile = {
   }
 }
 
+type ActivitySummary = {
+  unreadNotifications: number
+  unreadActivity: number
+  todayDealsOpened: number
+  todayReservations: number
+  todayDocuments: number
+  todayTransactions: number
+}
+
 export default function BrokerOverviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -51,6 +60,14 @@ export default function BrokerOverviewPage() {
     activeDeals: 0,
   })
   const [topBrokers, setTopBrokers] = useState<TopBrokerRevenueRow[]>([])
+  const [activitySummary, setActivitySummary] = useState<ActivitySummary>({
+    unreadNotifications: 0,
+    unreadActivity: 0,
+    todayDealsOpened: 0,
+    todayReservations: 0,
+    todayDocuments: 0,
+    todayTransactions: 0,
+  })
 
   useEffect(() => {
     let active = true
@@ -60,7 +77,7 @@ export default function BrokerOverviewPage() {
         setLoading(true)
         setError('')
 
-        const [myRes, officeRes, marketRes, automationRes, txRes, officeProfileRes, revenueRes] = await Promise.all([
+        const [myRes, officeRes, marketRes, automationRes, txRes, officeProfileRes, revenueRes, activitySummaryRes] = await Promise.all([
           fetch('/api/broker/listings/my?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/office?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/market?status=active', { cache: 'no-store' }),
@@ -68,9 +85,10 @@ export default function BrokerOverviewPage() {
           fetch('/api/broker/transactions', { cache: 'no-store' }),
           fetch('/api/broker/office', { cache: 'no-store' }),
           fetch('/api/broker/analytics/revenue', { cache: 'no-store' }),
+          fetch('/api/activity-events/summary', { cache: 'no-store' }),
         ])
 
-        const [myJson, officeJson, marketJson, automationJson, txJson, officeProfileJson, revenueJson] = await Promise.all([
+        const [myJson, officeJson, marketJson, automationJson, txJson, officeProfileJson, revenueJson, activitySummaryJson] = await Promise.all([
           myRes.json().catch(() => ({})),
           officeRes.json().catch(() => ({})),
           marketRes.json().catch(() => ({})),
@@ -78,6 +96,7 @@ export default function BrokerOverviewPage() {
           txRes.json().catch(() => ({})),
           officeProfileRes.json().catch(() => ({})),
           revenueRes.json().catch(() => ({})),
+          activitySummaryRes.json().catch(() => ({})),
         ])
 
         if (!active) return
@@ -98,6 +117,14 @@ export default function BrokerOverviewPage() {
         })
 
         setTopBrokers(Array.isArray(revenueJson?.topBrokers) ? revenueJson.topBrokers : [])
+        setActivitySummary({
+          unreadNotifications: Number(activitySummaryJson?.summary?.unreadNotifications || 0),
+          unreadActivity: Number(activitySummaryJson?.summary?.unreadActivity || 0),
+          todayDealsOpened: Number(activitySummaryJson?.summary?.todayDealsOpened || 0),
+          todayReservations: Number(activitySummaryJson?.summary?.todayReservations || 0),
+          todayDocuments: Number(activitySummaryJson?.summary?.todayDocuments || 0),
+          todayTransactions: Number(activitySummaryJson?.summary?.todayTransactions || 0),
+        })
 
         if (officeProfileRes.ok && officeProfileJson?.ok) {
           setOffice((officeProfileJson?.office || null) as OfficeProfile | null)
@@ -137,6 +164,18 @@ export default function BrokerOverviewPage() {
         <Metric label="Expected Commission" value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.expectedCommission || 0)} />
         <Metric label="Deals Closing Mes" value={summary.dealsClosingThisMonth} />
         <Metric label="Deals Activos" value={summary.activeDeals} />
+      </div>
+
+      <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3">
+        <div className="text-xs text-gray-500 mb-2">Today Activity & Unread</div>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-xs">
+          <div className="rounded bg-white border border-gray-100 p-2">🔔 Notif: <span className="font-semibold text-[#0B2545]">{activitySummary.unreadNotifications}</span></div>
+          <div className="rounded bg-white border border-gray-100 p-2">⚡ Activity: <span className="font-semibold text-[#0B2545]">{activitySummary.unreadActivity}</span></div>
+          <div className="rounded bg-white border border-gray-100 p-2">Deals: <span className="font-semibold text-[#0B2545]">{activitySummary.todayDealsOpened}</span></div>
+          <div className="rounded bg-white border border-gray-100 p-2">Reservas: <span className="font-semibold text-[#0B2545]">{activitySummary.todayReservations}</span></div>
+          <div className="rounded bg-white border border-gray-100 p-2">Docs: <span className="font-semibold text-[#0B2545]">{activitySummary.todayDocuments}</span></div>
+          <div className="rounded bg-white border border-gray-100 p-2">Trans: <span className="font-semibold text-[#0B2545]">{activitySummary.todayTransactions}</span></div>
+        </div>
       </div>
 
       {office ? (

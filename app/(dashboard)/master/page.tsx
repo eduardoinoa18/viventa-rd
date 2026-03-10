@@ -54,6 +54,14 @@ export default function MasterOverviewPage() {
     }
   })
   const [timeWindow, setTimeWindow] = useState<'all'|'day'|'week'|'month'>('all')
+  const [activitySummary, setActivitySummary] = useState({
+    unreadNotifications: 0,
+    unreadActivity: 0,
+    todayDealsOpened: 0,
+    todayReservations: 0,
+    todayDocuments: 0,
+    todayTransactions: 0,
+  })
 
   const getUiErrorMessage = (status?: number) => {
     if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente para ver el panel maestro.'
@@ -129,6 +137,21 @@ export default function MasterOverviewPage() {
         setError(e?.message || getUiErrorMessage())
       })
       .finally(() => setLoading(false))
+
+    fetch('/api/activity-events/summary', { cache: 'no-store' })
+      .then(async (r) => {
+        const payload = await r.json().catch(() => ({}))
+        if (!r.ok || !payload?.ok) return
+        setActivitySummary({
+          unreadNotifications: Number(payload?.summary?.unreadNotifications || 0),
+          unreadActivity: Number(payload?.summary?.unreadActivity || 0),
+          todayDealsOpened: Number(payload?.summary?.todayDealsOpened || 0),
+          todayReservations: Number(payload?.summary?.todayReservations || 0),
+          todayDocuments: Number(payload?.summary?.todayDocuments || 0),
+          todayTransactions: Number(payload?.summary?.todayTransactions || 0),
+        })
+      })
+      .catch(() => {})
   }, [timeWindow])
 
   return (
@@ -171,6 +194,39 @@ export default function MasterOverviewPage() {
           {error}
         </div>
       )}
+
+      <section className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <FiActivity className="text-[#00A676]" />
+          Platform Today
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <div className="text-xs text-gray-500">Unread Notifications</div>
+            <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.unreadNotifications}</div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <div className="text-xs text-gray-500">Unread Activity</div>
+            <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.unreadActivity}</div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <div className="text-xs text-gray-500">Deals Opened</div>
+            <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.todayDealsOpened}</div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <div className="text-xs text-gray-500">Reservations</div>
+            <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.todayReservations}</div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <div className="text-xs text-gray-500">Documents</div>
+            <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.todayDocuments}</div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <div className="text-xs text-gray-500">Transactions</div>
+            <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.todayTransactions}</div>
+          </div>
+        </div>
+      </section>
 
       {/* === PROPERTY MODERATION KPIs (MAIN SECTION) === */}
       <section className="mb-8">
