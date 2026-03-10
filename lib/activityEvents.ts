@@ -1,5 +1,6 @@
 import type { Firestore } from 'firebase-admin/firestore'
-import type { ActivityEventRecord, ActivityEventType, ActivityEntityType } from '@/lib/domain/activity'
+import type { ActivityEventRecord, ActivityEventType, ActivityEntityType, ActivityWorkspace } from '@/lib/domain/activity'
+import { resolveEventUrl } from '@/lib/navigation/eventLinks'
 
 export type EmitActivityEventInput = {
   type: ActivityEventType
@@ -18,29 +19,9 @@ export type EmitActivityEventInput = {
   buyerId?: string | null
   officeId?: string | null
   constructoraCode?: string | null
+  workspace?: ActivityWorkspace | null
+  organizationId?: string | null
   metadata?: Record<string, unknown>
-}
-
-function buildActivityUrl(input: EmitActivityEventInput): string {
-  const dealId = safeText(input.dealId || input.entityId)
-  const listingId = safeText(input.listingId || input.entityId)
-
-  switch (input.entityType) {
-    case 'deal':
-      return dealId ? `/dashboard/constructora/deals/${dealId}` : '/dashboard/constructora/deals'
-    case 'reservation':
-    case 'document':
-      return dealId ? `/dashboard/constructora/deals/${dealId}` : '/dashboard/constructora/deals'
-    case 'transaction':
-    case 'commission':
-      return '/dashboard/broker/transactions'
-    case 'lead':
-      return '/master/leads'
-    case 'listing':
-      return listingId ? `/listing/${listingId}` : '/dashboard/listings'
-    default:
-      return '/dashboard'
-  }
 }
 
 function safeText(value: unknown): string {
@@ -58,64 +39,69 @@ function asCurrency(value: unknown): string {
 }
 
 function buildNotificationContent(input: EmitActivityEventInput): { title: string; body: string; url: string } {
-  const dealUrl = input.dealId ? `/dashboard/constructora/deals/${input.dealId}` : '/dashboard/constructora/deals'
-  const listingUrl = input.listingId ? `/listing/${input.listingId}` : '/dashboard/listings'
-  const txUrl = '/dashboard/broker/transactions'
+  const eventUrl = resolveEventUrl({
+    entityType: input.entityType,
+    entityId: input.entityId,
+    dealId: input.dealId,
+    listingId: input.listingId,
+    reservationId: input.reservationId,
+    transactionId: input.transactionId,
+  }) || '/dashboard'
 
   switch (input.type) {
     case 'listing_created':
       return {
         title: 'Nuevo listado creado',
         body: String(input.metadata?.title || 'Se creó un nuevo listado.'),
-        url: listingUrl,
+        url: eventUrl,
       }
     case 'lead_contacted':
       return {
         title: 'Nuevo lead recibido',
         body: String(input.metadata?.buyerName || 'Un lead contactó la plataforma.'),
-        url: '/master/leads',
+        url: eventUrl,
       }
     case 'reservation_created':
       return {
         title: 'Nueva reserva registrada',
         body: 'Una reserva fue vinculada al flujo comercial.',
-        url: dealUrl,
+        url: eventUrl,
       }
     case 'deal_opened':
       return {
         title: 'Deal abierto',
         body: `Nuevo deal creado por ${input.actorRole || 'usuario'}.`,
-        url: dealUrl,
+        url: eventUrl,
       }
     case 'deal_updated':
       return {
         title: 'Deal actualizado',
         body: `Estado actual: ${String(input.metadata?.toStatus || input.metadata?.status || 'actualizado')}`,
-        url: dealUrl,
+        url: eventUrl,
       }
     case 'document_uploaded':
       return {
         title: 'Documento subido',
         body: String(input.metadata?.fileName || 'Se agregó un documento al deal.'),
-        url: dealUrl,
+        url: eventUrl,
       }
     case 'document_deleted':
       return {
         title: 'Documento eliminado',
         body: String(input.metadata?.fileName || 'Se eliminó un documento del deal.'),
-        url: dealUrl,
+        url: eventUrl,
       }
     case 'transaction_created':
       return {
         title: 'Transacción creada',
         body: `Valor: ${asCurrency(input.metadata?.salePrice)}`,
-        url: txUrl,
+        url: eventUrl,
       }
     case 'commission_paid':
       return {
         title: 'Comisión pagada',
         body: `Total: ${asCurrency(input.metadata?.totalCommission)}`,
-        url: txUrl,
+        url: eventUrl,
       }
     default:
       return {
@@ -124,6 +110,35 @@ function buildNotificationContent(input: EmitActivityEventInput): { title: strin
         url: '/dashboard',
       }
   }
+}
+
+function resolveWorkspaceAndOrganization(input: EmitActivityEventInput): { workspace: ActivityWorkspace; organizationId: string | null } {
+  const explicitWorkspace = safeText(input.workspace).toLowerCase()
+  const role = safeText(input.actorRole).toLowerCase()
+  const officeId = safeText(input.officeId || input.brokerId)
+  const constructoraCode = safeText(input.constructoraCode)
+  const explicitOrg = safeText(input.organizationId)
+
+  if (explicitWorkspace === 'broker' || explicitWorkspace === 'admin' || explicitWorkspace === 'constructora' || explicitWorkspace === 'buyer' || explicitWorkspace === 'system') {
+    return {
+      workspace: explicitWorkspace as ActivityWorkspace,
+      organizationId: explicitOrg || officeId || constructoraCode || null,
+    }
+  }
+
+  if (constructoraCode || role === 'constructora') {
+    return { workspace: 'constructora', organizationId: explicitOrg || constructoraCode || null }
+  }
+  if (role === 'master_admin' || role === 'admin') {
+    return { workspace: 'admin', organizationId: explicitOrg || 'global' }
+  }
+  if (role === 'broker' || role === 'agent' || officeId) {
+    return { workspace: 'broker', organizationId: explicitOrg || officeId || null }
+  }
+  if (role === 'buyer' || safeText(input.buyerId)) {
+    return { workspace: 'buyer', organizationId: explicitOrg || safeText(input.buyerId) || null }
+  }
+  return { workspace: 'system', organizationId: explicitOrg || null }
 }
 
 async function resolveRecipientIds(db: Firestore, input: EmitActivityEventInput): Promise<string[]> {
@@ -194,9 +209,21 @@ async function createNotificationsForEvent(db: Firestore, input: EmitActivityEve
 
 export async function emitActivityEvent(db: Firestore, input: EmitActivityEventInput): Promise<string | null> {
   try {
+    const { workspace, organizationId } = resolveWorkspaceAndOrganization(input)
+    const eventUrl = resolveEventUrl({
+      entityType: input.entityType,
+      entityId: input.entityId,
+      dealId: input.dealId,
+      listingId: input.listingId,
+      reservationId: input.reservationId,
+      transactionId: input.transactionId,
+    })
+
     const payload = {
       type: input.type,
-      url: buildActivityUrl(input),
+      url: eventUrl || '/dashboard',
+      workspace,
+      organizationId,
       actorId: safeText(input.actorId) || null,
       actorRole: safeText(input.actorRole) || null,
       entityType: input.entityType,
@@ -230,6 +257,8 @@ export function toActivityEvent(id: string, data: Record<string, any>): Activity
     id,
     type: data.type,
     url: data.url || null,
+    workspace: data.workspace || null,
+    organizationId: data.organizationId || null,
     actorId: data.actorId || null,
     actorRole: data.actorRole || null,
     entityType: data.entityType,

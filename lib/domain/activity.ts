@@ -21,12 +21,16 @@ export type ActivityEntityType =
   | 'transaction'
   | 'commission'
 
+export type ActivityWorkspace = 'broker' | 'admin' | 'constructora' | 'buyer' | 'system'
+
 export type TimestampLike = Date | string | number | { toDate?: () => Date } | null
 
 export interface ActivityEventRecord {
   id: string
   type: ActivityEventType
   url?: string | null
+  workspace?: ActivityWorkspace | null
+  organizationId?: string | null
   actorId?: string | null
   actorRole?: string | null
   entityType: ActivityEntityType

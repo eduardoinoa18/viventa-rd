@@ -146,7 +146,6 @@ export async function PATCH(req: Request) {
     const now = new Date()
 
     await scoped.db.collection('users').doc(scoped.session.uid).set({
-      activityLastSeenAt: now,
       lastActivitySeenAt: now,
     }, { merge: true })
 
