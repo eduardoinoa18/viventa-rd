@@ -3,26 +3,70 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { FiBarChart2, FiChevronLeft, FiClipboard, FiGrid, FiHome, FiMessageSquare, FiPlusSquare, FiUsers, FiActivity, FiDollarSign } from 'react-icons/fi'
+import { FiActivity, FiBarChart2, FiChevronLeft, FiClipboard, FiGrid, FiHome, FiMessageSquare, FiPlusSquare, FiTrendingUp, FiUsers, FiDollarSign } from 'react-icons/fi'
 import BrandLogo from '@/components/BrandLogo'
 
-type ActivitySummary = {
-  unreadActivity: number
+type NavItem = { href: string; label: string; icon: React.ReactNode; badge?: number }
+
+const PRIMARY: NavItem[] = [
+  { href: '/dashboard/broker/overview',     label: 'Overview',    icon: <FiGrid /> },
+  { href: '/dashboard/broker/transactions', label: 'Deals',       icon: <FiTrendingUp /> },
+  { href: '/dashboard/listings',            label: 'Listings',    icon: <FiHome /> },
+]
+
+const SECONDARY: NavItem[] = [
+  { href: '/dashboard/broker/crm',          label: 'CRM',         icon: <FiUsers /> },
+  { href: '/dashboard/broker/team',         label: 'Agents',      icon: <FiClipboard /> },
+  { href: '/dashboard/broker/commissions',  label: 'Commissions', icon: <FiBarChart2 /> },
+]
+
+const SYSTEM: NavItem[] = [
+  { href: '/dashboard/broker/activity',     label: 'Activity',    icon: <FiActivity /> },
+]
+
+function SidebarLink({ item, collapsed, pathname }: { item: NavItem; collapsed: boolean; pathname: string }) {
+  const active = pathname === item.href || pathname.startsWith(item.href + '/')
+  return (
+    <Link
+      href={item.href}
+      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 ${
+        active
+          ? 'bg-gradient-to-r from-[#00A676] to-[#008F64] font-semibold text-white shadow-md'
+          : 'text-gray-600 hover:translate-x-0.5 hover:bg-gray-100 hover:text-gray-900'
+      }`}
+    >
+      <span className="shrink-0 text-lg">{item.icon}</span>
+      {!collapsed && (
+        <span className="flex min-w-0 flex-1 items-center justify-between text-sm">
+          <span className="truncate">{item.label}</span>
+          {item.badge ? (
+            <span className="ml-1 rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white">
+              {item.badge > 9 ? '9+' : item.badge}
+            </span>
+          ) : null}
+        </span>
+      )}
+    </Link>
+  )
 }
 
-const links = [
-  { href: '/dashboard/broker/overview', label: 'Overview', icon: <FiGrid /> },
-  { href: '/dashboard/broker/crm', label: 'CRM', icon: <FiUsers /> },
-  { href: '/dashboard/broker/transactions', label: 'Transactions', icon: <FiBarChart2 /> },
-  { href: '/dashboard/broker/activity', label: 'Activity', icon: <FiActivity /> },
-  { href: '/dashboard/broker/team', label: 'Team', icon: <FiClipboard /> },
-  { href: '/dashboard/listings', label: 'Listings', icon: <FiHome /> },
-]
+function NavSection({ items, label, collapsed, pathname }: { items: NavItem[]; label?: string; collapsed: boolean; pathname: string }) {
+  return (
+    <div className="mt-3 first:mt-0">
+      {label && !collapsed && (
+        <div className="mb-1 px-3 text-[10px] font-bold tracking-widest text-gray-400">{label}</div>
+      )}
+      {items.map((item) => (
+        <SidebarLink key={item.href} item={item} collapsed={collapsed} pathname={pathname} />
+      ))}
+    </div>
+  )
+}
 
 export default function BrokerSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
-  const [summary, setSummary] = useState<ActivitySummary>({ unreadActivity: 0 })
+  const [unreadActivity, setUnreadActivity] = useState(0)
 
   useEffect(() => {
     const saved = localStorage.getItem('broker_sidebar_collapsed')
@@ -31,15 +75,15 @@ export default function BrokerSidebar() {
 
   useEffect(() => {
     fetch('/api/activity-events/summary', { cache: 'no-store' })
-      .then(async (response) => {
-        const payload = await response.json().catch(() => ({}))
-        if (!response.ok || !payload?.ok) return
-        setSummary({ unreadActivity: Number(payload?.summary?.unreadActivity || 0) })
+      .then(async (r) => {
+        const body = await r.json().catch(() => ({}))
+        if (!r.ok || !body?.ok) return
+        setUnreadActivity(Number(body?.summary?.unreadActivity || 0))
       })
       .catch(() => {})
   }, [pathname])
 
-  function toggleCollapsed() {
+  function toggle() {
     const next = !collapsed
     setCollapsed(next)
     try { localStorage.setItem('broker_sidebar_collapsed', next ? '1' : '0') } catch {}
@@ -47,43 +91,35 @@ export default function BrokerSidebar() {
 
   return (
     <aside className={`${collapsed ? 'w-16' : 'w-72'} min-h-screen border-r border-gray-200 bg-gradient-to-b from-white to-gray-50 p-3 shadow-lg transition-all duration-300`}>
-      <div className="mb-4 flex items-center justify-between px-2">
+      <div className="mb-5 flex items-center justify-between px-2">
         {!collapsed ? (
           <div className="flex min-w-0 items-center gap-2">
             <BrandLogo className="h-7 w-auto" />
-            <div className="truncate text-xs font-bold tracking-wide text-[#0B2545]">BROKER WORKSPACE</div>
+            <span className="truncate text-xs font-bold tracking-wide text-[#0B2545]">BROKER WORKSPACE</span>
           </div>
         ) : (
           <BrandLogo iconOnly className="h-7 w-7" />
         )}
         <button
-          onClick={toggleCollapsed}
-          className="rounded-lg p-2 text-gray-600 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#00A676] hover:to-[#008F64] hover:text-white"
+          onClick={toggle}
+          className="rounded-lg p-2 text-gray-500 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#00A676] hover:to-[#008F64] hover:text-white"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <FiChevronLeft className={`${collapsed ? 'rotate-180' : ''} transition-transform duration-300`} />
         </button>
       </div>
 
-      <nav className="space-y-2">
-        {links.map((link) => {
-          const active = pathname === link.href
-          const isActivity = link.href === '/dashboard/broker/activity'
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex items-center gap-3 rounded-lg p-3 transition-all duration-200 ${active ? 'bg-gradient-to-r from-[#00A676] to-[#008F64] font-semibold text-white shadow-md' : 'text-gray-700 hover:translate-x-1 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50'}`}
-            >
-              <span className="shrink-0 text-xl">{link.icon}</span>
-              {!collapsed && (
-                <span className="truncate">
-                  {isActivity && summary.unreadActivity > 0 ? `${link.label} (${summary.unreadActivity})` : link.label}
-                </span>
-              )}
-            </Link>
-          )
-        })}
+      <nav>
+        <NavSection items={PRIMARY}   label="PRIMARY"   collapsed={collapsed} pathname={pathname} />
+        <NavSection items={SECONDARY} label="SECONDARY" collapsed={collapsed} pathname={pathname} />
+        <NavSection
+          items={SYSTEM.map((item) =>
+            item.href === '/dashboard/broker/activity' && unreadActivity > 0
+              ? { ...item, badge: unreadActivity } : item)}
+          label="SYSTEM"
+          collapsed={collapsed}
+          pathname={pathname}
+        />
       </nav>
 
       {!collapsed && (

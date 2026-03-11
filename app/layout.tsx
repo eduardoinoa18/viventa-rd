@@ -10,6 +10,7 @@ import Script from 'next/script'
 import PresenceManager from '../components/PresenceManager'
 import ConsoleErrorFilter from '../components/ConsoleErrorFilter'
 import ImpersonationBanner from '../components/ImpersonationBanner'
+import CommandPalette from '../components/CommandPalette'
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com'),
@@ -106,6 +107,7 @@ export default function RootLayout({children}:{children:React.ReactNode}) {
   <OfflineIndicator />
   <PresenceManager />
   <ImpersonationBanner />
+  <CommandPalette />
         <ErrorBoundary>
           {children}
         </ErrorBoundary>

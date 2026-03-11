@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { FiTarget, FiHome, FiClock, FiTrendingUp } from 'react-icons/fi'
+import PageHeader from '@/components/ui/PageHeader'
+import { KpiGrid, KpiCard } from '@/components/ui/KpiCard'
 
 type SummaryState = {
   myListings: number
@@ -74,20 +77,48 @@ export default function AgentOverviewPage() {
   }, [])
 
   return (
-    <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
-      <h2 className="text-lg font-semibold text-[#0B2545]">Overview del agente</h2>
-      {loading ? <p className="mt-2 text-sm text-gray-600">Cargando métricas...</p> : null}
-      {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-        <Metric label="Mis listados" value={summary.myListings} />
-        <Metric label="Oficina" value={summary.officeListings} />
-        <Metric label="Mercado" value={summary.marketListings} />
-        <Metric label="Leads asignados" value={summary.leadsAssigned} />
-        <Metric label="Nuevos leads 30d" value={summary.newLeadsLast30Days} />
-        <Metric label="Leads ganados" value={summary.leadsWon} />
-        <Metric label="Resp. promedio" value={`${summary.avgResponseMinutes} min`} />
-      </div>
-    </section>
+    <div>
+      <PageHeader
+        eyebrow="Agent Workspace"
+        title="Overview"
+        description="Tu pipeline de leads, listados y comisiones"
+        actions={[
+          { label: '+ Create Listing', href: '/dashboard/listings/create' },
+          { label: 'View CRM', href: '/dashboard/agent/crm', variant: 'secondary' },
+        ]}
+      />
+
+      <KpiGrid cols={4}>
+        <KpiCard label="Leads Assigned"      value={summary.leadsAssigned}     icon={<FiTarget />}    accent loading={loading} />
+        <KpiCard label="New Leads (30d)"     value={summary.newLeadsLast30Days} icon={<FiTrendingUp />} loading={loading} />
+        <KpiCard label="Active Listings"     value={summary.myListings}         icon={<FiHome />}       loading={loading} />
+        <KpiCard label="Avg Response"        value={`${summary.avgResponseMinutes} min`} icon={<FiClock />}  loading={loading} />
+      </KpiGrid>
+
+      {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
+
+      <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-semibold text-[#0B2545]">Detalles</h3>
+        {loading ? (
+          <div className="space-y-2">
+            {[1,2].map(i => <div key={i} className="h-10 animate-pulse rounded-lg bg-gray-100" />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+            <Metric label="Office Listings"  value={summary.officeListings} />
+            <Metric label="Market Listings"  value={summary.marketListings} />
+            <Metric label="Leads Ganados"    value={summary.leadsWon} />
+            <Metric label="Resp. Promedio"   value={`${summary.avgResponseMinutes} min`} />
+          </div>
+        )}
+        {!loading && summary.leadsAssigned === 0 && (
+          <div className="mt-4 rounded-lg border border-dashed border-gray-200 py-8 text-center">
+            <p className="text-sm font-medium text-gray-500">No tienes leads asignados todavía</p>
+            <p className="mt-1 text-xs text-gray-400">Cuando se te asignen leads apareceran aquí.</p>
+          </div>
+        )}
+      </section>
+    </div>
   )
 }
 

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { FiLogOut, FiArrowLeft } from 'react-icons/fi'
+import { FiLogOut, FiArrowLeft, FiSearch } from 'react-icons/fi'
 import NotificationCenter from '@/components/NotificationCenter'
 import { clearSession, getSession, type UserSession } from '@/lib/authSession'
 
@@ -37,6 +37,19 @@ export default function WorkspaceHeaderBar({ eyebrow, title, subtitle, backHref 
         </div>
 
         <div className="flex items-center gap-2">
+          {/* ⌘K search trigger */}
+          <button
+            onClick={() => {
+              const isMac = navigator.platform.toUpperCase().includes('MAC')
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: isMac, ctrlKey: !isMac, bubbles: true }))
+            }}
+            className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-500 transition hover:border-gray-300 hover:text-gray-700 sm:inline-flex"
+            title="Open command palette"
+          >
+            <FiSearch className="text-sm" />
+            <span>Search</span>
+            <kbd className="ml-1 rounded border border-gray-200 bg-gray-100 px-1 py-0.5 text-[10px]">⌘K</kbd>
+          </button>
           <Link
             href={backHref}
             className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-[#0B2545] hover:bg-gray-50"

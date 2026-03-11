@@ -2,6 +2,9 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { FiLayers, FiPackage, FiCalendar, FiCheckCircle } from 'react-icons/fi'
+import PageHeader from '@/components/ui/PageHeader'
+import { KpiGrid, KpiCard } from '@/components/ui/KpiCard'
 
 type OverviewState = {
   totalProjects: number
@@ -67,27 +70,54 @@ export default function ConstructoraOverviewPage() {
   }, [])
 
   return (
-    <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
-      <h2 className="text-lg font-semibold text-[#0B2545]">Dashboard de constructora</h2>
-      <p className="mt-1 text-sm text-gray-600">Vista ejecutiva de proyectos, inventario y reservas para la operación diaria.</p>
-      {loading ? <p className="mt-2 text-sm text-gray-600">Cargando métricas...</p> : null}
-      {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-        <Metric label="Total proyectos" value={summary.totalProjects} />
-        <Metric label="Proyectos activos" value={summary.activeProjects} />
-        <Metric label="Total unidades" value={summary.totalUnits} />
-        <Metric label="Disponibles" value={summary.availableUnits} />
-        <Metric label="Reservadas" value={summary.reservedUnits} />
-        <Metric label="Vendidas" value={summary.soldUnits} />
-        <Metric label="En proceso" value={summary.inProcessUnits} />
-      </div>
+    <div>
+      <PageHeader
+        eyebrow="Constructora"
+        title="Dashboard"
+        description="Vista ejecutiva de proyectos, inventario y reservas"
+        actions={[
+          { label: '+ Nuevo Proyecto', href: '/dashboard/constructora/projects' },
+          { label: 'Ver Inventario', href: '/dashboard/constructora/units', variant: 'secondary' },
+        ]}
+      />
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <KpiGrid cols={4}>
+        <KpiCard label="Proyectos Activos"  value={summary.activeProjects}  icon={<FiLayers />}      accent loading={loading} />
+        <KpiCard label="Unidades Disponibles" value={summary.availableUnits} icon={<FiPackage />}     loading={loading} />
+        <KpiCard label="Reservadas"         value={summary.reservedUnits}   icon={<FiCalendar />}    loading={loading} />
+        <KpiCard label="Vendidas"           value={summary.soldUnits}       icon={<FiCheckCircle />} loading={loading} />
+      </KpiGrid>
+
+      {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
+
+      <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-semibold text-[#0B2545]">Detalles de Inventario</h3>
+        {loading ? (
+          <div className="space-y-2">{[1,2].map(i => <div key={i} className="h-10 animate-pulse rounded-lg bg-gray-100" />)}</div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+            <Metric label="Total Proyectos"  value={summary.totalProjects} />
+            <Metric label="Total Unidades"   value={summary.totalUnits} />
+            <Metric label="En Proceso"       value={summary.inProcessUnits} />
+            <Metric label="Ocupación"        value={summary.totalUnits > 0 ? `${Math.round((summary.soldUnits + summary.reservedUnits) / summary.totalUnits * 100)}%` : '0%'} />
+          </div>
+        )}
+        {!loading && summary.totalProjects === 0 && (
+          <div className="mt-4 rounded-lg border border-dashed border-gray-200 py-8 text-center">
+            <p className="text-sm font-medium text-gray-500">No hay proyectos todavía</p>
+            <p className="mt-1 text-xs text-gray-400">Crea tu primer proyecto para empezar a rastrear el inventario.</p>
+            <Link href="/dashboard/constructora/projects" className="mt-3 inline-flex items-center rounded-lg bg-gradient-to-r from-[#00A676] to-[#008F64] px-4 py-2 text-xs font-semibold text-white">
+              + Nuevo Proyecto
+            </Link>
+          </div>
+        )}
+      </section>
+      <div className="mt-4 flex flex-wrap gap-2">
         <Link href="/dashboard/constructora/projects" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Ir a Proyectos</Link>
         <Link href="/dashboard/constructora/units" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Ir a Unidades</Link>
         <Link href="/dashboard/constructora/reservations" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Ir a Reservas</Link>
       </div>
-    </section>
+    </div>
   )
 }
 

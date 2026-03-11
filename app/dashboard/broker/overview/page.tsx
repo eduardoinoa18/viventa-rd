@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { FiTrendingUp, FiHome, FiDollarSign, FiCalendar } from 'react-icons/fi'
+import PageHeader from '@/components/ui/PageHeader'
+import { KpiGrid, KpiCard } from '@/components/ui/KpiCard'
 import type { RevenueMetrics, TopBrokerRevenueRow } from '@/lib/domain/transaction'
 
 type SummaryState = {
@@ -147,71 +150,95 @@ export default function BrokerOverviewPage() {
   }, [])
 
   return (
-    <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
-      <h2 className="text-lg font-semibold text-[#0B2545]">Overview del broker</h2>
-      {loading ? <p className="mt-2 text-sm text-gray-600">Cargando métricas...</p> : null}
-      {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-        <Metric label="Mis listados" value={summary.myListings} />
-        <Metric label="Oficina" value={summary.officeListings} />
-        <Metric label="Mercado" value={summary.marketListings} />
-        <Metric label="Auto-asignables" value={summary.autoAssignable} />
-        <Metric label="SLA vencido" value={summary.overdue} />
-        <Metric label="Follow-up due" value={summary.followUpDue} />
-        <Metric label="Pipeline" value={summary.pipeline} />
-        <Metric label="Proyección" value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.projectedValue || 0)} />
-        <Metric label="Office Pipeline" value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.officePipelineValue || 0)} />
-        <Metric label="Expected Commission" value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.expectedCommission || 0)} />
-        <Metric label="Deals Closing Mes" value={summary.dealsClosingThisMonth} />
-        <Metric label="Deals Activos" value={summary.activeDeals} />
-      </div>
+    <div>
+      <PageHeader
+        eyebrow="Broker Workspace"
+        title="Overview"
+        description="Métricas de rendimiento de tu oficina y pipeline"
+        actions={[
+          { label: '+ Create Deal', href: '/dashboard/broker/transactions' },
+          { label: 'View Listings', href: '/dashboard/listings', variant: 'secondary' },
+        ]}
+      />
 
-      <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3">
-        <div className="text-xs text-gray-500 mb-2">Today Activity & Unread</div>
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-xs">
-          <div className="rounded bg-white border border-gray-100 p-2">🔔 Notif: <span className="font-semibold text-[#0B2545]">{activitySummary.unreadNotifications}</span></div>
-          <div className="rounded bg-white border border-gray-100 p-2">⚡ Activity: <span className="font-semibold text-[#0B2545]">{activitySummary.unreadActivity}</span></div>
-          <div className="rounded bg-white border border-gray-100 p-2">Deals: <span className="font-semibold text-[#0B2545]">{activitySummary.todayDealsOpened}</span></div>
-          <div className="rounded bg-white border border-gray-100 p-2">Reservas: <span className="font-semibold text-[#0B2545]">{activitySummary.todayReservations}</span></div>
-          <div className="rounded bg-white border border-gray-100 p-2">Docs: <span className="font-semibold text-[#0B2545]">{activitySummary.todayDocuments}</span></div>
-          <div className="rounded bg-white border border-gray-100 p-2">Trans: <span className="font-semibold text-[#0B2545]">{activitySummary.todayTransactions}</span></div>
+      {/* KPI Cards */}
+      <KpiGrid cols={4}>
+        <KpiCard label="Active Deals"         value={summary.activeDeals}          icon={<FiTrendingUp />} accent loading={loading} />
+        <KpiCard label="Active Listings"      value={summary.myListings}           icon={<FiHome />}       loading={loading} />
+        <KpiCard label="Expected Commission"  value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.expectedCommission || 0)} icon={<FiDollarSign />} loading={loading} />
+        <KpiCard label="Closing This Month"   value={summary.dealsClosingThisMonth} icon={<FiCalendar />}  loading={loading} />
+      </KpiGrid>
+
+      {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
+
+      {/* Secondary metrics */}
+      <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-semibold text-[#0B2545]">Pipeline Breakdown</h3>
+        <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+          <Metric label="Office Listings"   value={summary.officeListings} />
+          <Metric label="Market Listings"   value={summary.marketListings} />
+          <Metric label="Auto-Asignables"   value={summary.autoAssignable} />
+          <Metric label="SLA Vencido"       value={summary.overdue} />
+          <Metric label="Follow-up Due"     value={summary.followUpDue} />
+          <Metric label="Pipeline Value"    value={summary.pipeline} />
+          <Metric label="Proyección"        value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.projectedValue || 0)} />
+          <Metric label="Office Pipeline"   value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.officePipelineValue || 0)} />
         </div>
-      </div>
+      </section>
 
+      {/* Activity summary */}
+      <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-semibold text-[#0B2545]">Today&apos;s Activity</h3>
+        <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-6">
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">🔔 Notif: <span className="font-semibold text-[#0B2545]">{activitySummary.unreadNotifications}</span></div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">⚡ Activity: <span className="font-semibold text-[#0B2545]">{activitySummary.unreadActivity}</span></div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">Deals: <span className="font-semibold text-[#0B2545]">{activitySummary.todayDealsOpened}</span></div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">Reservas: <span className="font-semibold text-[#0B2545]">{activitySummary.todayReservations}</span></div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">Docs: <span className="font-semibold text-[#0B2545]">{activitySummary.todayDocuments}</span></div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">Trans: <span className="font-semibold text-[#0B2545]">{activitySummary.todayTransactions}</span></div>
+        </div>
+      </section>
+
+      {/* Office subscription */}
       {office ? (
-        <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3">
-          <div className="text-xs text-gray-500">Office Subscription</div>
-          <div className="mt-1 text-sm font-semibold text-[#0B2545]">{office.name || 'Office'} ({office.officeCode || 'N/A'})</div>
-          <div className="text-xs text-gray-600 mt-1">
-            {office.brokerageName || 'Sin brokerage'} • {office.city || '—'}{office.province ? `, ${office.province}` : ''}
+        <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <h3 className="mb-1 text-sm font-semibold text-[#0B2545]">Office Subscription</h3>
+          <div className="text-sm font-semibold text-[#0B2545]">{office.name || 'Office'} ({office.officeCode || 'N/A'})</div>
+          <div className="mt-0.5 text-xs text-gray-500">{office.brokerageName || 'Sin brokerage'} • {office.city || '—'}{office.province ? `, ${office.province}` : ''}</div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
+            <Metric label="Plan"     value={office.subscription?.plan || 'basic'} />
+            <Metric label="Estado"   value={office.subscription?.status || 'active'} />
+            <Metric label="Agents"   value={`${Number(office.subscription?.seatsUsed || 0)} / ${Number(office.subscription?.agentsLimit || 0)}`} />
+            <Metric label="Listings" value={Number(office.subscription?.listingsLimit || 0)} />
           </div>
-          <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600">
-            <div className="rounded bg-white border border-gray-100 p-2">Plan: <span className="font-medium text-[#0B2545]">{office.subscription?.plan || 'basic'}</span></div>
-            <div className="rounded bg-white border border-gray-100 p-2">Estado: <span className="font-medium text-[#0B2545]">{office.subscription?.status || 'active'}</span></div>
-            <div className="rounded bg-white border border-gray-100 p-2">Agents: <span className="font-medium text-[#0B2545]">{Number(office.subscription?.seatsUsed || 0)} / {Number(office.subscription?.agentsLimit || 0)}</span></div>
-            <div className="rounded bg-white border border-gray-100 p-2">Listings: <span className="font-medium text-[#0B2545]">{Number(office.subscription?.listingsLimit || 0)}</span></div>
-          </div>
-        </div>
+        </section>
       ) : null}
 
-      <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3">
-        <div className="text-xs text-gray-500">Top Brokers by Expected Commission</div>
-        <div className="mt-2 space-y-2">
-          {topBrokers.map((broker) => (
-            <div key={broker.userId} className="rounded bg-white border border-gray-100 p-2 text-xs">
-              <div className="font-semibold text-[#0B2545]">{broker.name}</div>
-              <div className="mt-1 text-gray-600">
-                Deals: {broker.deals} • Pipeline: {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(broker.pipelineValue || 0))}
+      {/* Top brokers */}
+      <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-semibold text-[#0B2545]">Top Brokers by Commission</h3>
+        {loading ? (
+          <div className="space-y-2">
+            {[1,2,3].map(i => <div key={i} className="h-12 animate-pulse rounded-lg bg-gray-100" />)}
+          </div>
+        ) : topBrokers.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-gray-200 py-8 text-center">
+            <p className="text-sm text-gray-400">No hay brokers con datos todavía.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {topBrokers.map((broker) => (
+              <div key={broker.userId} className="rounded-lg border border-gray-100 bg-gray-50 p-3 text-xs">
+                <div className="font-semibold text-[#0B2545]">{broker.name}</div>
+                <div className="mt-1 text-gray-500">
+                  Deals: {broker.deals} · Pipeline: {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(broker.pipelineValue || 0))} · Expected: {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(broker.expectedCommission || 0))} · Closed: {broker.closedDeals}
+                </div>
               </div>
-              <div className="text-gray-600">
-                Expected: {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(broker.expectedCommission || 0))} • Closed: {broker.closedDeals}
-              </div>
-            </div>
-          ))}
-          {!topBrokers.length ? <p className="text-xs text-gray-500">Sin brokers para mostrar todavía.</p> : null}
-        </div>
-      </div>
-    </section>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   )
 }
 
