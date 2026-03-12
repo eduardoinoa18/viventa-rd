@@ -195,6 +195,23 @@ When finishing a task, append a section:
 
 ---
 
+### Update 2026-03-12 18:40
+- Task: P0.1 + P0.2 + P0.3 (partial enforcement)
+- Status: Completed (with follow-up items)
+- Commit: pending
+- Files changed:
+  - `lib/projectService.ts`
+  - `app/api/projects/list/route.ts`
+  - `app/api/debug/env/route.ts`
+  - `app/api/dev/seed-pro-users/route.ts`
+  - `.eslintrc.json`
+- Validation:
+  - `npm run build`: PASS
+  - Notes: API routes with `@/lib/firebaseClient` now produce lint warnings (non-blocking) via `no-restricted-imports`.
+- Remaining blockers:
+  - Migrate remaining API routes still importing `@/lib/firebaseClient` (admin/analytics/contact/health/recommendations/stats/stripe/user endpoints)
+  - Decide when to raise lint restriction from warning to error after migration
+
 ## Ready-to-Use Prompts for Next AI
 
 ### Prompt 1 — Project service migration

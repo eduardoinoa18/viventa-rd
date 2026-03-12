@@ -3,13 +3,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { listProjects } from '@/lib/projectService';
-import { db } from '@/lib/firebaseClient';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const db = getAdminDb();
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
 
     const status = searchParams.get('status') || 'active';
@@ -43,13 +50,12 @@ export async function GET(request: NextRequest) {
       }
 
       for (const chunk of chunks) {
-        const offersQuery = query(
-          collection(db, 'promotionalOffers'),
-          where('projectId', 'in', chunk)
-        );
-        const offersSnapshot = await getDocs(offersQuery);
+        const offersSnapshot = await db
+          .collection('promotionalOffers')
+          .where('projectId', 'in', chunk)
+          .get();
 
-        offersSnapshot.forEach((docSnap: any) => {
+        offersSnapshot.forEach((docSnap) => {
           const offer = docSnap.data() as any;
           const validFrom = offer.validFrom?.toDate
             ? offer.validFrom.toDate()

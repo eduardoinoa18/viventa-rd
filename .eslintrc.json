@@ -6,5 +6,23 @@
     "react-hooks/exhaustive-deps": "off",
     "no-console": "off",
     "@next/next/no-img-element": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["app/api/**/*.ts", "app/api/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "warn",
+          {
+            "paths": [
+              {
+                "name": "@/lib/firebaseClient",
+                "message": "Use Admin SDK helpers from @/lib/firebaseAdmin in API routes."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

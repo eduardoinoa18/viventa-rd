@@ -1,19 +1,8 @@
 // lib/projectService.ts
 // Firestore operations for projects and units
 
-import { db } from '@/lib/firebaseClient';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-} from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebaseAdmin';
+import type { Query } from 'firebase-admin/firestore';
 import {
   Project,
   Unit,
@@ -25,11 +14,21 @@ import {
   ProjectStats,
 } from '@/types/project';
 
+function getDbOrThrow() {
+  const db = getAdminDb();
+  if (!db) {
+    throw new Error('Admin Firestore not initialized');
+  }
+  return db;
+}
+
 /**
  * Create a new project
  */
 export async function createProject(input: CreateProjectInput, developerId: string): Promise<string> {
   try {
+    const db = getDbOrThrow();
+
     const projectData: Omit<Project, 'id'> = {
       developerId,
       name: input.name,
@@ -62,8 +61,7 @@ export async function createProject(input: CreateProjectInput, developerId: stri
       updatedAt: new Date(),
     };
 
-    const projectsRef = collection(db, 'projects');
-    const docRef = await addDoc(projectsRef, projectData);
+    const docRef = await db.collection('projects').add(projectData as any);
     return docRef.id;
   } catch (error) {
     console.error('Error creating project:', error);
@@ -76,31 +74,35 @@ export async function createProject(input: CreateProjectInput, developerId: stri
  */
 export async function getProjectDetail(projectId: string): Promise<ProjectDetail | null> {
   try {
-    const projectDoc = await getDoc(doc(db, 'projects', projectId));
-    if (!projectDoc.exists()) return null;
+    const db = getDbOrThrow();
+
+    const projectDoc = await db.collection('projects').doc(projectId).get();
+    if (!projectDoc.exists) return null;
 
     const projectData = projectDoc.data() as Project;
 
     // Get units
-    const unitsSnapshot = await getDocs(collection(db, `projects/${projectId}/units`));
+    const unitsSnapshot = await db.collection('projects').doc(projectId).collection('units').get();
     const units = unitsSnapshot.docs.map((docSnap: any) => ({
       ...docSnap.data(),
       id: docSnap.id,
     })) as Unit[];
 
     // Get promotional offers
-    const offersSnapshot = await getDocs(
-      query(collection(db, 'promotionalOffers'), where('projectId', '==', projectId))
-    );
+    const offersSnapshot = await db
+      .collection('promotionalOffers')
+      .where('projectId', '==', projectId)
+      .get();
     const promotionalOffers = offersSnapshot.docs.map((docSnap: any) => ({
       ...docSnap.data(),
       id: docSnap.id,
     }));
 
     // Get financing options
-    const financingSnapshot = await getDocs(
-      query(collection(db, 'financingOptions'), where('projectId', '==', projectId))
-    );
+    const financingSnapshot = await db
+      .collection('financingOptions')
+      .where('projectId', '==', projectId)
+      .get();
     const financingOptions = financingSnapshot.docs.map((docSnap: any) => ({
       ...docSnap.data(),
       id: docSnap.id,
@@ -111,7 +113,7 @@ export async function getProjectDetail(projectId: string): Promise<ProjectDetail
     const unitsSeparated = units.filter((u) => u.status === 'separado').length;
 
     // Increment view count
-    await updateDoc(doc(db, 'projects', projectId), {
+    await db.collection('projects').doc(projectId).update({
       views: (projectData.views || 0) + 1,
     });
 
@@ -147,6 +149,8 @@ export async function listProjects(options: {
   limit?: number;
 }): Promise<{ projects: Project[]; total: number; page: number; hasMore: boolean }> {
   try {
+    const db = getDbOrThrow();
+
     const {
       status = 'active',
       city,
@@ -156,27 +160,23 @@ export async function listProjects(options: {
       limit: pageSize = 20,
     } = options;
 
-    const constraints: any[] = [];
+    let q = db.collection('projects') as Query;
 
     if (status) {
-      constraints.push(where('status', '==', status));
+      q = q.where('status', '==', status);
     }
 
     if (options.constructionStatus) {
-      constraints.push(where('constructionStatus', '==', options.constructionStatus));
+      q = q.where('constructionStatus', '==', options.constructionStatus);
     }
 
     if (city) {
-      constraints.push(where('location.city', '==', city));
+      q = q.where('location.city', '==', city);
     }
 
-    constraints.push(orderBy(sortBy, sortOrder === 'desc' ? 'desc' : 'asc'));
+    q = q.orderBy(sortBy, sortOrder === 'desc' ? 'desc' : 'asc').limit(pageSize + 1);
 
-    const offset = (page - 1) * pageSize;
-    constraints.push(limit(pageSize + 1)); // +1 to check if there are more
-
-    const q = query(collection(db, 'projects'), ...constraints);
-    const snapshot = await getDocs(q);
+    const snapshot = await q.get();
 
     const projects = snapshot.docs.slice(0, pageSize).map((docSnap: any) => ({
       ...docSnap.data(),
@@ -198,6 +198,8 @@ export async function listProjects(options: {
  */
 export async function createUnit(projectId: string, input: CreateUnitInput): Promise<string> {
   try {
+    const db = getDbOrThrow();
+
     const pricePerM2 = input.priceUSD / input.meters;
 
     const unitData: Omit<Unit, 'id'> = {
@@ -222,8 +224,7 @@ export async function createUnit(projectId: string, input: CreateUnitInput): Pro
       updatedAt: new Date(),
     };
 
-    const unitsRef = collection(db, `projects/${projectId}/units`);
-    const docRef = await addDoc(unitsRef, unitData);
+    const docRef = await db.collection('projects').doc(projectId).collection('units').add(unitData as any);
 
     // Update project metadata
     await updateProjectMetadata(projectId);
@@ -243,8 +244,10 @@ export async function bulkCreateUnits(
   input: BulkCreateUnitsInput
 ): Promise<{ created: number; failed: number; errors: Array<{ line: number; error: string }> }> {
   try {
+    const db = getDbOrThrow();
+
     const results = { created: 0, failed: 0, errors: [] as Array<{ line: number; error: string }> };
-    const unitsRef = collection(db, `projects/${projectId}/units`);
+    const unitsRef = db.collection('projects').doc(projectId).collection('units');
 
     for (let i = 0; i < input.units.length; i++) {
       try {
@@ -273,7 +276,7 @@ export async function bulkCreateUnits(
           updatedAt: new Date(),
         };
 
-        await addDoc(unitsRef, unitData);
+        await unitsRef.add(unitData as any);
         results.created++;
       } catch (error) {
         results.failed++;
@@ -303,8 +306,10 @@ export async function updateUnit(
   updates: Partial<Unit>
 ): Promise<void> {
   try {
-    const unitRef = doc(db, `projects/${projectId}/units`, unitId);
-    await updateDoc(unitRef, {
+    const db = getDbOrThrow();
+
+    const unitRef = db.collection('projects').doc(projectId).collection('units').doc(unitId);
+    await unitRef.update({
       ...updates,
       updatedAt: new Date(),
     });
@@ -329,20 +334,19 @@ export async function getProjectUnits(
   }
 ): Promise<Unit[]> {
   try {
-    const constraints: any[] = [];
+    const db = getDbOrThrow();
+
+    let q = db.collection('projects').doc(projectId).collection('units') as Query;
 
     if (options?.status) {
-      constraints.push(where('status', '==', options.status));
+      q = q.where('status', '==', options.status);
     }
 
     if (options?.sortBy) {
-      constraints.push(
-        orderBy(options.sortBy, options.sortOrder === 'desc' ? 'desc' : 'asc')
-      );
+      q = q.orderBy(options.sortBy, options.sortOrder === 'desc' ? 'desc' : 'asc');
     }
 
-    const q = query(collection(db, `projects/${projectId}/units`), ...constraints);
-    const snapshot = await getDocs(q);
+    const snapshot = await q.get();
 
     return snapshot.docs.map((docSnap: any) => ({
       ...docSnap.data(),
@@ -384,22 +388,25 @@ export async function getUnitInventorySummary(projectId: string): Promise<UnitIn
  */
 export async function updateProjectMetadata(projectId: string): Promise<void> {
   try {
+    const db = getDbOrThrow();
+
     const units = await getProjectUnits(projectId);
 
     const availableUnits = units.filter((u) => u.status === 'disponible').length;
-    const smallestUnitMeters = Math.min(...units.map((u) => u.meters));
-    const smallestUnitPrice = {
-      usd: Math.min(...units.map((u) => u.priceUSD)),
-      dop: Math.min(...units.map((u) => u.priceDOP)),
+    const metadataUpdate: Record<string, unknown> = {
+      availableUnits,
+      updatedAt: new Date(),
     };
 
-    const projectRef = doc(db, 'projects', projectId);
-    await updateDoc(projectRef, {
-      availableUnits,
-      smallestUnitMeters,
-      smallestUnitPrice,
-      updatedAt: new Date(),
-    });
+    if (units.length > 0) {
+      metadataUpdate.smallestUnitMeters = Math.min(...units.map((u) => u.meters));
+      metadataUpdate.smallestUnitPrice = {
+        usd: Math.min(...units.map((u) => u.priceUSD)),
+        dop: Math.min(...units.map((u) => u.priceDOP)),
+      };
+    }
+
+    await db.collection('projects').doc(projectId).update(metadataUpdate);
   } catch (error) {
     console.error('Error updating project metadata:', error);
     throw error;
@@ -411,8 +418,10 @@ export async function updateProjectMetadata(projectId: string): Promise<void> {
  */
 export async function getProjectStats(projectId: string): Promise<ProjectStats> {
   try {
-    const project = await getDoc(doc(db, 'projects', projectId));
-    if (!project.exists()) throw new Error('Project not found');
+    const db = getDbOrThrow();
+
+    const project = await db.collection('projects').doc(projectId).get();
+    if (!project.exists) throw new Error('Project not found');
 
     const projectData = project.data() as Project;
     const units = await getProjectUnits(projectId);

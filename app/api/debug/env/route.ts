@@ -4,14 +4,20 @@
  */
 
 import { NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { requireMasterAdmin } from '@/lib/adminApiAuth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
-  // Only allow in preview/dev
-  if (process.env.VERCEL_ENV === 'production') {
-    return NextResponse.json({ error: 'Not available in production' }, { status: 403 })
+export async function GET(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  const authError = await requireMasterAdmin(request)
+  if (authError) {
+    return authError
   }
 
   const checks = {

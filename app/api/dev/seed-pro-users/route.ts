@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterAdmin } from '@/lib/adminApiAuth'
 
 export async function POST(req: NextRequest) {
   try {
-    // Safety: only allow in non-production or with explicit secret
-    const isProd = process.env.NODE_ENV === 'production'
-    const headerSecret = req.headers.get('x-seed-secret') || ''
-    const requiredSecret = process.env.SEED_SECRET || ''
-    if (isProd && (!requiredSecret || headerSecret !== requiredSecret)) {
-      return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+      return NextResponse.json({ ok: false, error: 'Not found' }, { status: 404 })
+    }
+
+    const authError = await requireMasterAdmin(req)
+    if (authError) {
+      return authError
     }
 
     const adminAuth = getAdminAuth()
