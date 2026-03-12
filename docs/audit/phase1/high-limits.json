@@ -1,0 +1,332 @@
+[
+    {
+        "file":  "app\\api\\activity-events\\route.ts",
+        "line":  46,
+        "limit":  1000
+    },
+    {
+        "file":  "app\\api\\activity-events\\summary\\route.ts",
+        "line":  47,
+        "limit":  3000
+    },
+    {
+        "file":  "app\\api\\activity-events\\summary\\route.ts",
+        "line":  92,
+        "limit":  500
+    },
+    {
+        "file":  "app\\api\\activity-events\\summary\\route.ts",
+        "line":  107,
+        "limit":  500
+    },
+    {
+        "file":  "app\\api\\admin\\data-quality\\overview\\route.ts",
+        "line":  63,
+        "limit":  1500
+    },
+    {
+        "file":  "app\\api\\admin\\growth\\overview\\route.ts",
+        "line":  52,
+        "limit":  6000
+    },
+    {
+        "file":  "app\\api\\admin\\growth\\overview\\route.ts",
+        "line":  53,
+        "limit":  8000
+    },
+    {
+        "file":  "app\\api\\admin\\marketplace-intelligence\\overview\\route.ts",
+        "line":  45,
+        "limit":  5000
+    },
+    {
+        "file":  "app\\api\\admin\\marketplace-intelligence\\overview\\route.ts",
+        "line":  46,
+        "limit":  8000
+    },
+    {
+        "file":  "app\\api\\admin\\revenue\\overview\\route.ts",
+        "line":  27,
+        "limit":  800
+    },
+    {
+        "file":  "app\\api\\admin\\revenue\\plans\\route.ts",
+        "line":  15,
+        "limit":  200
+    },
+    {
+        "file":  "app\\api\\admin\\revenue\\plans\\route.ts",
+        "line":  17,
+        "limit":  200
+    },
+    {
+        "file":  "app\\api\\admin\\revenue\\subscription-requests\\route.ts",
+        "line":  54,
+        "limit":  200
+    },
+    {
+        "file":  "app\\api\\admin\\revenue\\subscription-requests\\route.ts",
+        "line":  56,
+        "limit":  200
+    },
+    {
+        "file":  "app\\api\\admin\\reviews\\route.ts",
+        "line":  26,
+        "limit":  500
+    },
+    {
+        "file":  "app\\api\\admin\\users\\[id]\\activity\\route.ts",
+        "line":  147,
+        "limit":  300
+    },
+    {
+        "file":  "app\\api\\admin\\users\\[id]\\activity\\route.ts",
+        "line":  150,
+        "limit":  300
+    },
+    {
+        "file":  "app\\api\\admin\\users\\[id]\\activity\\route.ts",
+        "line":  153,
+        "limit":  300
+    },
+    {
+        "file":  "app\\api\\admin\\users\\overview\\route.ts",
+        "line":  33,
+        "limit":  10000
+    },
+    {
+        "file":  "app\\api\\admin\\users\\overview\\route.ts",
+        "line":  34,
+        "limit":  2000
+    },
+    {
+        "file":  "app\\api\\admin\\users\\overview\\route.ts",
+        "line":  35,
+        "limit":  500
+    },
+    {
+        "file":  "app\\api\\agent\\commissions\\route.ts",
+        "line":  48,
+        "limit":  1500
+    },
+    {
+        "file":  "app\\api\\agent\\dashboard\\overview\\route.ts",
+        "line":  50,
+        "limit":  600
+    },
+    {
+        "file":  "app\\api\\agent\\dashboard\\overview\\route.ts",
+        "line":  51,
+        "limit":  600
+    },
+    {
+        "file":  "app\\api\\agent\\dashboard\\overview\\route.ts",
+        "line":  69,
+        "limit":  2500
+    },
+    {
+        "file":  "app\\api\\agents\\profile\\[slug]\\route.ts",
+        "line":  51,
+        "limit":  500
+    },
+    {
+        "file":  "app\\api\\broker\\analytics\\revenue\\route.ts",
+        "line":  58,
+        "limit":  3000
+    },
+    {
+        "file":  "app\\api\\broker\\dashboard\\overview\\route.ts",
+        "line":  135,
+        "limit":  800
+    },
+    {
+        "file":  "app\\api\\broker\\dashboard\\overview\\route.ts",
+        "line":  136,
+        "limit":  800
+    },
+    {
+        "file":  "app\\api\\broker\\dashboard\\overview\\route.ts",
+        "line":  137,
+        "limit":  800
+    },
+    {
+        "file":  "app\\api\\broker\\dashboard\\overview\\route.ts",
+        "line":  179,
+        "limit":  400
+    },
+    {
+        "file":  "app\\api\\broker\\dashboard\\overview\\route.ts",
+        "line":  180,
+        "limit":  400
+    },
+    {
+        "file":  "app\\api\\broker\\dashboard\\overview\\route.ts",
+        "line":  197,
+        "limit":  2000
+    },
+    {
+        "file":  "app\\api\\broker\\dashboard\\overview\\route.ts",
+        "line":  262,
+        "limit":  1500
+    },
+    {
+        "file":  "app\\api\\broker\\leads\\automation\\route.ts",
+        "line":  108,
+        "limit":  500
+    },
+    {
+        "file":  "app\\api\\broker\\leads\\automation\\route.ts",
+        "line":  109,
+        "limit":  500
+    },
+    {
+        "file":  "app\\api\\broker\\leads\\automation\\route.ts",
+        "line":  128,
+        "limit":  3000
+    },
+    {
+        "file":  "app\\api\\broker\\leads\\automation\\route.ts",
+        "line":  190,
+        "limit":  500
+    },
+    {
+        "file":  "app\\api\\broker\\leads\\route.ts",
+        "line":  61,
+        "limit":  400
+    },
+    {
+        "file":  "app\\api\\broker\\leads\\route.ts",
+        "line":  62,
+        "limit":  400
+    },
+    {
+        "file":  "app\\api\\broker\\leads\\route.ts",
+        "line":  100,
+        "limit":  2500
+    },
+    {
+        "file":  "app\\api\\broker\\listings\\market\\route.ts",
+        "line":  44,
+        "limit":  300
+    },
+    {
+        "file":  "app\\api\\broker\\listings\\my\\route.ts",
+        "line":  48,
+        "limit":  200
+    },
+    {
+        "file":  "app\\api\\broker\\listings\\office\\route.ts",
+        "line":  52,
+        "limit":  200
+    },
+    {
+        "file":  "app\\api\\broker\\mls\\route.ts",
+        "line":  65,
+        "limit":  2500
+    },
+    {
+        "file":  "app\\api\\broker\\team\\route.ts",
+        "line":  29,
+        "limit":  400
+    },
+    {
+        "file":  "app\\api\\broker\\team\\route.ts",
+        "line":  30,
+        "limit":  400
+    },
+    {
+        "file":  "app\\api\\broker\\transactions\\route.ts",
+        "line":  90,
+        "limit":  400
+    },
+    {
+        "file":  "app\\api\\broker\\transactions\\route.ts",
+        "line":  91,
+        "limit":  400
+    },
+    {
+        "file":  "app\\api\\broker\\transactions\\route.ts",
+        "line":  109,
+        "limit":  2000
+    },
+    {
+        "file":  "app\\api\\brokers\\profile\\[slug]\\route.ts",
+        "line":  85,
+        "limit":  300
+    },
+    {
+        "file":  "app\\api\\brokers\\profile\\[slug]\\route.ts",
+        "line":  111,
+        "limit":  1200
+    },
+    {
+        "file":  "app\\api\\brokers\\profile\\[slug]\\route.ts",
+        "line":  112,
+        "limit":  1200
+    },
+    {
+        "file":  "app\\api\\brokers\\profile\\[slug]\\route.ts",
+        "line":  113,
+        "limit":  1200
+    },
+    {
+        "file":  "app\\api\\constructora\\dashboard\\deals\\[id]\\documents\\route.ts",
+        "line":  73,
+        "limit":  400
+    },
+    {
+        "file":  "app\\api\\constructora\\dashboard\\deals\\[id]\\events\\route.ts",
+        "line":  61,
+        "limit":  400
+    },
+    {
+        "file":  "app\\api\\constructora\\dashboard\\deals\\route.ts",
+        "line":  83,
+        "limit":  2000
+    },
+    {
+        "file":  "app\\api\\constructora\\dashboard\\overview\\route.ts",
+        "line":  69,
+        "limit":  600
+    },
+    {
+        "file":  "app\\api\\constructora\\dashboard\\overview\\route.ts",
+        "line":  81,
+        "limit":  2000
+    },
+    {
+        "file":  "app\\api\\constructora\\dashboard\\reservations\\route.ts",
+        "line":  69,
+        "limit":  600
+    },
+    {
+        "file":  "app\\api\\constructora\\dashboard\\reservations\\route.ts",
+        "line":  77,
+        "limit":  2500
+    },
+    {
+        "file":  "app\\api\\constructora\\dashboard\\units\\route.ts",
+        "line":  65,
+        "limit":  600
+    },
+    {
+        "file":  "app\\api\\constructora\\dashboard\\units\\route.ts",
+        "line":  76,
+        "limit":  2500
+    },
+    {
+        "file":  "app\\api\\messages\\route.ts",
+        "line":  20,
+        "limit":  500
+    },
+    {
+        "file":  "app\\api\\recommendations\\route.ts",
+        "line":  44,
+        "limit":  200
+    },
+    {
+        "file":  "app\\api\\user\\export-data\\route.ts",
+        "line":  56,
+        "limit":  1000
+    }
+]

@@ -1,0 +1,8 @@
+{
+    "routes":  152,
+    "pass":  38,
+    "fail":  114,
+    "firebaseClientImports":  15,
+    "highLimits":  66,
+    "hardcodedTenantLiterals":  0
+}

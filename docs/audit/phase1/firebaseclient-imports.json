@@ -1,0 +1,47 @@
+[
+    {
+        "file":  "app\\api\\admin\\roles\\route.ts"
+    },
+    {
+        "file":  "app\\api\\admin\\roles\\users\\route.ts"
+    },
+    {
+        "file":  "app\\api\\analytics\\agent-performance\\route.ts"
+    },
+    {
+        "file":  "app\\api\\analytics\\track\\route.ts"
+    },
+    {
+        "file":  "app\\api\\auth\\verify-2fa\\route.ts"
+    },
+    {
+        "file":  "app\\api\\contact\\route.ts"
+    },
+    {
+        "file":  "app\\api\\contact\\submit\\route.ts"
+    },
+    {
+        "file":  "app\\api\\health\\route.ts"
+    },
+    {
+        "file":  "app\\api\\projects\\create\\route.ts"
+    },
+    {
+        "file":  "app\\api\\projects\\list\\route.ts"
+    },
+    {
+        "file":  "app\\api\\recommendations\\route.ts"
+    },
+    {
+        "file":  "app\\api\\stats\\homepage\\route.ts"
+    },
+    {
+        "file":  "app\\api\\stripe\\create-session\\route.ts"
+    },
+    {
+        "file":  "app\\api\\stripe\\webhook\\route.ts"
+    },
+    {
+        "file":  "app\\api\\user\\stats\\route.ts"
+    }
+]

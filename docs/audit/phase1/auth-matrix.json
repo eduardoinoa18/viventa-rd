@@ -1,0 +1,1066 @@
+[
+    {
+        "route":  "app\\api\\activity-events\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\activity-events\\summary\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\admin\\activity\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\analytics\\aggregate\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\analytics\\daily\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\applications\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\applications\\approve\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\bootstrap\\paraiso\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\cleanup-test-data\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\control\\stream\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\data-quality\\overview\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\diagnostics\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\email\\events\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\firebase\\cleanup\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\growth\\overview\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\inbox\\conversations\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\inbox\\messages\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\leads\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\leads\\assign\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\leads\\auto-assign\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\leads\\escalate\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\leads\\queue\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\marketplace-intelligence\\overview\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\migrations\\brokerage-id\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\offices\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\admin\\offices\\[id]\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\admin\\overview\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\professionals\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\projects\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\admin\\projects\\[id]\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\admin\\projects\\[id]\\publish\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\projects\\[id]\\units\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\admin\\projects\\[id]\\units\\[unitId]\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\admin\\properties\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\properties\\bulk\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\revenue\\overview\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\revenue\\plans\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\revenue\\subscription-requests\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\reviews\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\roles\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\roles\\users\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\settings\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\stats\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\stop-impersonation\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\users\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\users\\compliance-check\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\users\\impersonate\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\users\\overview\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\users\\resend-invite\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\users\\reset-password\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\users\\sync\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\admin\\users\\[id]\\activity\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\admin\\users\\[id]\\performance\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\agent\\commissions\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\agent\\dashboard\\overview\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\agents\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\agents\\profile\\[slug]\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\analytics\\agent-performance\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\analytics\\track\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\applications\\email\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\gate\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\login\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\logout\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\master-password\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\send-master-code\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\session\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\setup-password\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\signup\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\validate-setup-token\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\verify\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\verify-2fa\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\auth\\verify-master-code\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\broker\\analytics\\revenue\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\crm\\events\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\crm\\tasks\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\dashboard\\overview\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\leads\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\leads\\automation\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\leads\\automation\\scheduler\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\listings\\market\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\listings\\my\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\listings\\office\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\mls\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\office\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\profile\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\broker\\projects\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\projects\\[id]\\units\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\broker\\team\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\transactions\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\broker\\transactions\\[id]\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\brokers\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\brokers\\profile\\[slug]\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\clients\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\constructora\\dashboard\\deals\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\constructora\\dashboard\\deals\\[id]\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\constructora\\dashboard\\deals\\[id]\\documents\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\constructora\\dashboard\\deals\\[id]\\documents\\[docId]\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\constructora\\dashboard\\deals\\[id]\\events\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\constructora\\dashboard\\overview\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\constructora\\dashboard\\reservations\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\constructora\\dashboard\\units\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\contact\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\contact\\property-inquiry\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\contact\\submit\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\crm\\buyers\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\crm\\buyers\\[id]\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\crm\\buyers\\[id]\\matches\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\crm\\buyers\\[id]\\send-matches\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\debug\\env\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\dev\\seed-pro-users\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\developers\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\developers\\[id]\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\health\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\invitations\\complete\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\invitations\\send\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\invitations\\verify\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\leads\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\leads\\chat-request\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\leads\\ingest\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\messages\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\messages\\mark-read\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\messages\\typing\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\notifications\\preferences\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\notifications\\send\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\notifications\\waitlist\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\presence\\off\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\professionals\\profile\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\professionals\\[id]\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\professionals\\[id]\\reviews\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\projects\\create\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\projects\\list\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\projects\\[projectId]\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\projects\\[projectId]\\stats\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\projects\\[projectId]\\units\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\projects\\[projectId]\\units\\[unitId]\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\properties\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\properties\\[id]\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\recommendations\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\search\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "PASS"
+    },
+    {
+        "route":  "app\\api\\stats\\homepage\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\stripe\\create-session\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\stripe\\customer-portal\\route.ts",
+        "usesGetSessionFromRequest":  true,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\stripe\\webhook\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\support\\tickets\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\uploads\\listing-images\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\user\\delete-account\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\user\\export-data\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  true,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\user\\me\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\user\\stats\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  false,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\users\\welcome\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\webhooks\\email\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    },
+    {
+        "route":  "app\\api\\webhooks\\stripe\\route.ts",
+        "usesGetSessionFromRequest":  false,
+        "usesAdminSdkOnly":  true,
+        "hasOfficeOrOrgScopeFilter":  false,
+        "result":  "FAIL"
+    }
+]

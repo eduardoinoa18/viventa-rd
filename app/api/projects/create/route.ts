@@ -2,14 +2,22 @@
 // POST /api/projects/create - Create new project
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/firebaseClient';
+import { getSessionFromRequest } from '@/lib/auth/session';
 import { createProject } from '@/lib/projectService';
 import { CreateProjectInput } from '@/types/project';
 
 export async function POST(request: NextRequest) {
   try {
-    // Auth check (for developer/admin)
-    // In production, verify auth token from request
+    const session = await getSessionFromRequest(request);
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!['constructora', 'admin', 'master_admin'].includes(session.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const body = (await request.json()) as CreateProjectInput;
 
     // Validation
@@ -52,8 +60,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For now, use hardcoded developerId (in production, get from auth token)
-    const developerId = 'mock-developer-id'; // TODO: Get from auth
+    const developerId = session.uid;
 
     const projectId = await createProject(body, developerId);
 
