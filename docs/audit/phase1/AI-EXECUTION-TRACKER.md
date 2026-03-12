@@ -249,6 +249,21 @@ When finishing a task, append a section:
 - Remaining blockers:
   - Replace 2,500 hard cap with indexed cursor strategy to avoid wide scans under high inventory volume.
 
+### Update 2026-03-12 21:05
+- Task: Listings workspace query-first scalability pass
+- Status: Completed
+- Commit: pending
+- Files changed:
+  - `app/api/listings/workspace/route.ts`
+- Validation:
+  - `npm run build`: PASS
+- Notes:
+  - Replaced primary wide-scan behavior with mode-aware Firestore query-first candidate retrieval.
+  - Added deduped multi-query aggregation for `my` mode and query-filter application at fetch time (`status`, `city`) before in-memory refinements.
+  - Preserved fallback fetch path for sparse/index-miss scenarios and kept response shape stable.
+- Remaining blockers:
+  - Move from limit-based candidate expansion to true cursor pagination for very high-cardinality MLS inventory.
+
 ## Ready-to-Use Prompts for Next AI
 
 ### Prompt 1 — Project service migration
