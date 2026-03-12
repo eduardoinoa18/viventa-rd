@@ -16,6 +16,9 @@
     "db:wipe": "cd functions && npx ts-node ../scripts/wipe-database.ts"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@headlessui/react": "^2.2.9",
     "@sendgrid/mail": "^8.1.6",
     "dotenv": "^17.3.1",

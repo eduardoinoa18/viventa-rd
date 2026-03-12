@@ -4,6 +4,7 @@ export const ACTIVITY_EVENT_TYPES = [
   'reservation_created',
   'deal_opened',
   'deal_updated',
+  'deal_stage_changed',
   'document_uploaded',
   'document_deleted',
   'transaction_created',
