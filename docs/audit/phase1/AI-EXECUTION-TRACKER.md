@@ -234,6 +234,21 @@ When finishing a task, append a section:
   - Normalize remaining role dashboards into shared component architecture (P1 UX refinement)
   - Extend MLS filters with pagination/indexed query strategy beyond 2,500 row cap
 
+### Update 2026-03-12 20:30
+- Task: Listings workspace performance and UX refinement
+- Status: Completed
+- Commit: pending
+- Files changed:
+  - `app/api/listings/workspace/route.ts`
+  - `app/dashboard/listings/page.tsx`
+- Validation:
+  - `npm run build`: PASS
+- Notes:
+  - Added server pagination metadata (`total`, `page`, `pageSize`, `hasMore`).
+  - Added workspace search filters (`q`, `city`, `minPrice`, `maxPrice`) and client pagination controls.
+- Remaining blockers:
+  - Replace 2,500 hard cap with indexed cursor strategy to avoid wide scans under high inventory volume.
+
 ## Ready-to-Use Prompts for Next AI
 
 ### Prompt 1 — Project service migration

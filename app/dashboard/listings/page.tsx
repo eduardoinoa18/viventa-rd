@@ -36,6 +36,10 @@ type Listing = {
 type WorkspaceResponse = {
   ok: boolean
   listings: Listing[]
+  total?: number
+  page?: number
+  pageSize?: number
+  hasMore?: boolean
   permissions?: {
     canCreate?: boolean
     canUseMls?: boolean
@@ -69,6 +73,14 @@ export default function ListingsWorkspacePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [listings, setListings] = useState<Listing[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pageSize] = useState(24)
+  const [hasMore, setHasMore] = useState(false)
+  const [queryText, setQueryText] = useState('')
+  const [cityFilter, setCityFilter] = useState('')
+  const [minPrice, setMinPrice] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
   const [workspaceMode, setWorkspaceMode] = useState<'my' | 'mls'>('my')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'sold' | 'inactive'>('all')
   const [shareStatus, setShareStatus] = useState('')
@@ -96,8 +108,16 @@ export default function ListingsWorkspacePage() {
 
         setSession(sessionJson.session)
 
-        const params = new URLSearchParams({ mode: workspaceMode, limit: '200' })
+        const params = new URLSearchParams({
+          mode: workspaceMode,
+          page: String(page),
+          pageSize: String(pageSize),
+        })
         if (statusFilter !== 'all') params.set('status', statusFilter)
+        if (queryText.trim()) params.set('q', queryText.trim())
+        if (cityFilter.trim()) params.set('city', cityFilter.trim())
+        if (minPrice.trim()) params.set('minPrice', minPrice.trim())
+        if (maxPrice.trim()) params.set('maxPrice', maxPrice.trim())
 
         const listingsRes = await fetch(`/api/listings/workspace?${params.toString()}`, { cache: 'no-store' })
         const listingsJson = (await listingsRes.json().catch(() => ({}))) as WorkspaceResponse & { error?: string }
@@ -107,16 +127,20 @@ export default function ListingsWorkspacePage() {
 
         setPermissions(listingsJson.permissions || null)
         setListings(Array.isArray(listingsJson.listings) ? listingsJson.listings : [])
+        setTotal(Number(listingsJson.total || 0))
+        setHasMore(Boolean(listingsJson.hasMore))
       } catch (loadError: any) {
         setError(loadError?.message || 'No se pudieron cargar listados')
         setListings([])
+        setTotal(0)
+        setHasMore(false)
       } finally {
         setLoading(false)
       }
     }
 
     load()
-  }, [workspaceMode, statusFilter])
+  }, [workspaceMode, statusFilter, page, pageSize, queryText, cityFilter, minPrice, maxPrice])
 
   const sortedListings = useMemo(
     () => [...listings].sort((a, b) => toMillis((b as any).updatedAt || b.createdAt) - toMillis((a as any).updatedAt || a.createdAt)),
@@ -147,6 +171,18 @@ export default function ListingsWorkspacePage() {
     }
   }
 
+  function applyQuickFilters() {
+    setPage(1)
+  }
+
+  function clearQuickFilters() {
+    setQueryText('')
+    setCityFilter('')
+    setMinPrice('')
+    setMaxPrice('')
+    setPage(1)
+  }
+
   if (loading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-600">Cargando workspace...</div>
   }
@@ -174,7 +210,10 @@ export default function ListingsWorkspacePage() {
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setWorkspaceMode('my')}
+              onClick={() => {
+                setWorkspaceMode('my')
+                setPage(1)
+              }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
                 workspaceMode === 'my' ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'bg-white text-gray-700 border-gray-200'
               }`}
@@ -183,7 +222,10 @@ export default function ListingsWorkspacePage() {
             </button>
             <button
               type="button"
-              onClick={() => setWorkspaceMode('mls')}
+              onClick={() => {
+                setWorkspaceMode('mls')
+                setPage(1)
+              }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
                 workspaceMode === 'mls' ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'bg-white text-gray-700 border-gray-200'
               }`}
@@ -197,7 +239,10 @@ export default function ListingsWorkspacePage() {
               <button
                 key={status}
                 type="button"
-                onClick={() => setStatusFilter(status)}
+                onClick={() => {
+                  setStatusFilter(status)
+                  setPage(1)
+                }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
                   statusFilter === status
                     ? 'bg-[#0B2545] text-white border-[#0B2545]'
@@ -208,6 +253,38 @@ export default function ListingsWorkspacePage() {
               </button>
             ))}
           </div>
+
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+            <input
+              value={queryText}
+              onChange={(e) => setQueryText(e.target.value)}
+              placeholder="Buscar por título o proyecto"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm lg:col-span-2"
+            />
+            <input
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+              placeholder="Ciudad"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+            <input
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              placeholder="Precio min"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+            <input
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              placeholder="Precio max"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+
+          <div className="mt-2 flex gap-2">
+            <button onClick={applyQuickFilters} type="button" className="px-3 py-1.5 rounded-lg bg-[#0B2545] text-white text-xs font-medium">Aplicar filtros</button>
+            <button onClick={clearQuickFilters} type="button" className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700">Limpiar</button>
+          </div>
         </section>
 
         {error ? (
@@ -215,6 +292,7 @@ export default function ListingsWorkspacePage() {
         ) : null}
 
         <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+          <div className="mb-3 text-xs text-gray-600">Mostrando {sortedListings.length} de {total} resultados</div>
           {shareStatus ? (
             <p className="mb-3 text-xs text-[#0B2545] bg-[#E8F4FF] border border-[#CFE8FF] rounded-lg px-3 py-2">{shareStatus}</p>
           ) : null}
@@ -276,6 +354,28 @@ export default function ListingsWorkspacePage() {
               ))}
             </div>
           )}
+
+          {total > 0 ? (
+            <div className="mt-4 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={page === 1}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 disabled:opacity-50"
+              >
+                Anterior
+              </button>
+              <span className="text-xs text-gray-600">Página {page}</span>
+              <button
+                type="button"
+                onClick={() => setPage((prev) => prev + 1)}
+                disabled={!hasMore}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 disabled:opacity-50"
+              >
+                Siguiente
+              </button>
+            </div>
+          ) : null}
         </section>
       </div>
     </main>

@@ -68,7 +68,8 @@ export async function GET(req: Request) {
     const cityFilter = safeLower(searchParams.get('city'))
     const minPrice = Number(searchParams.get('minPrice') || '')
     const maxPrice = Number(searchParams.get('maxPrice') || '')
-    const limit = Math.min(Math.max(Number(searchParams.get('limit') || '120'), 1), 400)
+    const pageSize = Math.min(Math.max(Number(searchParams.get('pageSize') || searchParams.get('limit') || '40'), 1), 200)
+    const page = Math.max(Number(searchParams.get('page') || '1'), 1)
 
     const snapshot = await db.collection('properties').limit(2500).get()
 
@@ -153,19 +154,27 @@ export async function GET(req: Request) {
       })
       .filter(Boolean)
       .sort((a: any, b: any) => toMillis(b.updatedAt || b.createdAt) - toMillis(a.updatedAt || a.createdAt))
-      .slice(0, limit)
+
+    const total = rows.length
+    const start = (page - 1) * pageSize
+    const pagedRows = rows.slice(start, start + pageSize)
+    const hasMore = start + pageSize < total
 
     return NextResponse.json({
       ok: true,
       mode,
-      count: rows.length,
+      count: pagedRows.length,
+      total,
+      page,
+      pageSize,
+      hasMore,
       permissions: {
         canCreate: isAdmin || isProfessional,
         canUseMls: true,
         canModerate: context.role === 'master_admin',
         canEditAny: context.role === 'master_admin',
       },
-      listings: rows,
+      listings: pagedRows,
     })
   } catch (error: any) {
     console.error('[api/listings/workspace] GET error', error)
