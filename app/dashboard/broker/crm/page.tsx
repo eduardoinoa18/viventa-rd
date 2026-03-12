@@ -56,6 +56,34 @@ export default function BrokerCrmPage() {
   const [loading, setLoading] = useState(true)
 
   const selectedLead = useMemo(() => leads.find((item) => item.id === selectedLeadId) || null, [leads, selectedLeadId])
+  const crmSummary = useMemo(() => {
+    const openTasks = tasks.filter((task) => task.status !== 'done').length
+    const dueToday = tasks.filter((task) => {
+      if (!task.dueAt) return false
+      const due = new Date(task.dueAt)
+      const now = new Date()
+      return (
+        due.getFullYear() === now.getFullYear() &&
+        due.getMonth() === now.getMonth() &&
+        due.getDate() === now.getDate()
+      )
+    }).length
+
+    const hotLeads = leads.filter((lead) => (lead.priority || 'normal') === 'high').length
+    const upcomingEvents = events.filter((event) => {
+      if (!event.startAt) return false
+      const start = new Date(event.startAt).getTime()
+      return Number.isFinite(start) && start >= Date.now()
+    }).length
+
+    return {
+      totalLeads: leads.length,
+      hotLeads,
+      openTasks,
+      dueToday,
+      upcomingEvents,
+    }
+  }, [leads, tasks, events])
 
   useEffect(() => {
     let active = true
@@ -238,6 +266,29 @@ export default function BrokerCrmPage() {
     <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
       <h2 className="text-lg font-semibold text-[#0B2545]">CRM Integrado</h2>
       {loading ? <p className="mt-2 text-sm text-gray-600">Cargando CRM...</p> : null}
+
+      <div className="mt-3 grid grid-cols-2 lg:grid-cols-5 gap-2">
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-2">
+          <p className="text-[11px] uppercase tracking-wide text-gray-500">Leads</p>
+          <p className="text-base font-semibold text-[#0B2545]">{crmSummary.totalLeads}</p>
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-red-50 p-2">
+          <p className="text-[11px] uppercase tracking-wide text-red-600">Alta prioridad</p>
+          <p className="text-base font-semibold text-[#0B2545]">{crmSummary.hotLeads}</p>
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-blue-50 p-2">
+          <p className="text-[11px] uppercase tracking-wide text-blue-600">Tareas abiertas</p>
+          <p className="text-base font-semibold text-[#0B2545]">{crmSummary.openTasks}</p>
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-amber-50 p-2">
+          <p className="text-[11px] uppercase tracking-wide text-amber-700">Vencen hoy</p>
+          <p className="text-base font-semibold text-[#0B2545]">{crmSummary.dueToday}</p>
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-emerald-50 p-2">
+          <p className="text-[11px] uppercase tracking-wide text-emerald-700">Eventos</p>
+          <p className="text-base font-semibold text-[#0B2545]">{crmSummary.upcomingEvents}</p>
+        </div>
+      </div>
 
       <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-lg border border-gray-200 p-3">

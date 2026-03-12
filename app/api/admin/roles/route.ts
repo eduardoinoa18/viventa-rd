@@ -1,13 +1,16 @@
 // app/api/admin/roles/route.ts
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 
 // GET - List all roles
 export async function GET() {
   try {
-    const q = query(collection(db, 'admin_roles'), orderBy('createdAt', 'desc'))
-    const snapshot = await getDocs(q)
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const snapshot = await db.collection('admin_roles').orderBy('createdAt', 'desc').get()
     const roles = snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }))
 
     return NextResponse.json({ ok: true, roles })
@@ -24,20 +27,25 @@ export async function GET() {
 // POST - Create new role
 export async function POST(request: Request) {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
     const { name, displayName, description, permissions, color } = await request.json()
 
     if (!name || !displayName) {
       return NextResponse.json({ ok: false, error: 'Nombre y displayName son requeridos' }, { status: 400 })
     }
 
-    const docRef = await addDoc(collection(db, 'admin_roles'), {
+    const docRef = await db.collection('admin_roles').add({
       name,
       displayName,
       description: description || '',
       permissions: permissions || [],
       color: color || '#3B82F6',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: new Date(),
+      updatedAt: new Date()
     })
 
     return NextResponse.json({ ok: true, id: docRef.id })
@@ -50,19 +58,24 @@ export async function POST(request: Request) {
 // PUT - Update role
 export async function PUT(request: Request) {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
     const { id, name, displayName, description, permissions, color } = await request.json()
 
     if (!id) {
       return NextResponse.json({ ok: false, error: 'ID es requerido' }, { status: 400 })
     }
 
-    await updateDoc(doc(db, 'admin_roles', id), {
+    await db.collection('admin_roles').doc(id).update({
       name,
       displayName,
       description,
       permissions,
       color,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date()
     })
 
     return NextResponse.json({ ok: true })
@@ -75,6 +88,11 @@ export async function PUT(request: Request) {
 // DELETE - Remove role
 export async function DELETE(request: Request) {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -82,7 +100,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ ok: false, error: 'ID es requerido' }, { status: 400 })
     }
 
-    await deleteDoc(doc(db, 'admin_roles', id))
+    await db.collection('admin_roles').doc(id).delete()
 
     return NextResponse.json({ ok: true })
   } catch (error) {

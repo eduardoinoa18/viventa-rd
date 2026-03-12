@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { doc, getDoc } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 import Stripe from 'stripe'
 import { getPublicAppUrl } from '@/lib/publicAppUrl'
 
 export async function POST(req: NextRequest) {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
     const { plan, email, metadata, successUrl, cancelUrl } = await req.json()
     
     if (!plan) {
@@ -21,8 +25,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch billing settings from Firestore
-    const settingsSnap = await getDoc(doc(db, 'settings', 'billing'))
-    const settings = settingsSnap.exists() ? settingsSnap.data() : { priceIds: {} }
+    const settingsSnap = await db.collection('settings').doc('billing').get()
+    const settings = settingsSnap.data() ?? { priceIds: {} }
     
     const priceId = plan === 'agent' ? settings.priceIds?.agent : settings.priceIds?.broker
     if (!priceId) {

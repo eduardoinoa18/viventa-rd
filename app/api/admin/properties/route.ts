@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, serverTimestamp, getDoc } from 'firebase/firestore'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterAdmin } from '@/lib/adminApiAuth'
 import { sendEmail } from '@/lib/emailService'
 import { ActivityLogger } from '@/lib/activityLogger'
 import { getPublicAppUrl } from '@/lib/publicAppUrl'
@@ -135,6 +136,9 @@ function markDuplicateRisk(rows: any[]) {
 // GET /api/admin/properties - list all properties with optional status filter
 export async function GET(req: NextRequest) {
   try {
+    const authError = await requireMasterAdmin(req)
+    if (authError) return authError
+
     const adminDb = getAdminDb()
     if (adminDb) {
       const { searchParams } = new URL(req.url)
@@ -189,6 +193,9 @@ export async function GET(req: NextRequest) {
 // POST /api/admin/properties - create new property listing
 export async function POST(req: NextRequest) {
   try {
+    const authError = await requireMasterAdmin(req)
+    if (authError) return authError
+
     const adminDb = getAdminDb()
     const body = await req.json()
     const {
@@ -403,6 +410,9 @@ export async function POST(req: NextRequest) {
 // PATCH /api/admin/properties - update property status or details
 export async function PATCH(req: NextRequest) {
   try {
+    const authError = await requireMasterAdmin(req)
+    if (authError) return authError
+
     const body = await req.json()
     const { id, status, featured } = body
     if (!id) {
@@ -527,6 +537,9 @@ export async function PATCH(req: NextRequest) {
 // DELETE /api/admin/properties - delete a property
 export async function DELETE(req: NextRequest) {
   try {
+    const authError = await requireMasterAdmin(req)
+    if (authError) return authError
+
     const body = await req.json()
     const { id } = body
     if (!id) {

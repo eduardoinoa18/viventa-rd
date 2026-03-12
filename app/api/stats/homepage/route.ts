@@ -1,10 +1,11 @@
 // app/api/stats/homepage/route.ts
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 
 export async function GET() {
   try {
+    const db = getAdminDb()
+
     // Quick stats for homepage
     const stats = {
       totalProperties: 0,
@@ -32,13 +33,13 @@ export async function GET() {
 
     // Count properties
     try {
-      const propsSnap = await getDocs(collection(db, 'properties'))
+      const propsSnap = await db.collection('properties').get()
       stats.totalProperties = propsSnap.size
     } catch {}
 
     // Count users with agent/broker role
     try {
-      const usersSnap = await getDocs(collection(db, 'users'))
+      const usersSnap = await db.collection('users').get()
       stats.totalAgents = usersSnap.docs.filter((d: any) => 
         ['agent', 'broker'].includes(d.data()?.role)
       ).length
@@ -46,13 +47,12 @@ export async function GET() {
 
     // Get trending searches from analytics
     try {
-      const analyticsQ = query(
-        collection(db, 'analytics_events'),
-        where('event', '==', 'search_performed'),
-        orderBy('timestamp', 'desc'),
-        limit(100)
-      )
-      const analyticsSnap = await getDocs(analyticsQ)
+      const analyticsSnap = await db
+        .collection('analytics_events')
+        .where('event', '==', 'search_performed')
+        .orderBy('timestamp', 'desc')
+        .limit(100)
+        .get()
       const searches = new Map<string, number>()
       
       analyticsSnap.docs.forEach((doc: any) => {

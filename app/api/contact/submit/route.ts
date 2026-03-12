@@ -1,8 +1,6 @@
 // app/api/contact/submit/route.ts
 import { NextResponse } from 'next/server'
 import { rateLimit, keyFromRequest } from '@/lib/rateLimiter'
-import { db } from '@/lib/firebaseClient'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { sendEmail } from '@/lib/emailService'
 import { sendContactConfirmation } from '@/lib/emailTemplates'
 import { logger } from '@/lib/logger'
@@ -11,6 +9,11 @@ import { ingestLead } from '@/lib/leadIngestion'
 
 export async function POST(request: Request) {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
     // Basic rate limit: 10 submissions per hour per IP
     const rl = rateLimit(keyFromRequest(request), 10, 60 * 60 * 1000)
     if (!rl.allowed) {
@@ -28,7 +31,7 @@ export async function POST(request: Request) {
     }
 
     // Save to Firestore contact_submissions collection
-    const docRef = await addDoc(collection(db, 'contact_submissions'), {
+    const docRef = await db.collection('contact_submissions').add({
       name,
       email,
       phone: phone || '',
@@ -39,7 +42,7 @@ export async function POST(request: Request) {
       message,
       source: source || 'website',
       status: 'new',
-      createdAt: serverTimestamp(),
+      createdAt: new Date(),
       readBy: [],
     })
 
@@ -168,12 +171,12 @@ export async function POST(request: Request) {
 
     // In-app notification for admins
     try {
-      await addDoc(collection(db, 'notifications'), {
+      await db.collection('notifications').add({
         type: 'contact_submission',
         title: 'Nuevo contacto recibido',
         message: `${name} (${email}) - ${type || 'General'}`,
         refId: docRef.id,
-        createdAt: serverTimestamp(),
+        createdAt: new Date(),
         audience: ['admin', 'master'],
         readBy: [],
       })

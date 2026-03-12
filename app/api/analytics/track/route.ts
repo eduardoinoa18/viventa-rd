@@ -1,7 +1,6 @@
 // app/api/analytics/track/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 import type { AnalyticsEventType } from '@/types/analytics'
 
 const VALID_EVENT_TYPES: AnalyticsEventType[] = [
@@ -20,6 +19,11 @@ function getCookie(req: NextRequest, name: string): string | null {
 
 export async function POST(req: NextRequest) {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
     const body = await req.json()
     const { eventType, event, userId, userRole, sessionId, metadata, data, page, referrer, userAgent: clientUserAgent } = body
 
@@ -50,7 +54,7 @@ export async function POST(req: NextRequest) {
       userRole: role,
       sessionId: sessionId || null,
       metadata: metadata || data || {},
-      timestamp: serverTimestamp(),
+      timestamp: now,
       date: dateStr,
       hour: hour,
       page: page || null,
@@ -60,7 +64,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      await addDoc(collection(db, 'analytics_events'), eventData)
+      await db.collection('analytics_events').add(eventData)
     } catch (e) {
       // Firebase not configured or error, just log
       console.log('[Analytics Event]', eventName, uid, metadata || data)

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 import Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
@@ -37,19 +41,19 @@ export async function POST(req: NextRequest) {
         
         // Save customer & subscription data to Firestore
         if (session.customer && session.subscription) {
-          await setDoc(doc(db, 'billing_customers', session.customer as string), {
+          await db.collection('billing_customers').doc(session.customer as string).set({
             customerId: session.customer,
             email: session.customer_email || session.customer_details?.email,
             name: session.customer_details?.name,
-            createdAt: serverTimestamp(),
+            createdAt: new Date(),
           }, { merge: true })
 
-          await setDoc(doc(db, 'billing_subscriptions', session.subscription as string), {
+          await db.collection('billing_subscriptions').doc(session.subscription as string).set({
             subscriptionId: session.subscription,
             customerId: session.customer,
             plan: session.metadata?.plan || 'unknown',
             status: 'active',
-            createdAt: serverTimestamp(),
+            createdAt: new Date(),
           }, { merge: true })
         }
         break
@@ -59,13 +63,13 @@ export async function POST(req: NextRequest) {
         const subscription = event.data.object
         console.log('Subscription updated:', subscription.id)
         
-        await setDoc(doc(db, 'billing_subscriptions', subscription.id), {
+        await db.collection('billing_subscriptions').doc(subscription.id).set({
           subscriptionId: subscription.id,
           customerId: subscription.customer,
           status: subscription.status,
           currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
           cancelAtPeriodEnd: subscription.cancel_at_period_end,
-          updatedAt: serverTimestamp(),
+          updatedAt: new Date(),
         }, { merge: true })
         break
       }
@@ -74,9 +78,9 @@ export async function POST(req: NextRequest) {
         const subscription = event.data.object
         console.log('Subscription deleted:', subscription.id)
         
-        await setDoc(doc(db, 'billing_subscriptions', subscription.id), {
+        await db.collection('billing_subscriptions').doc(subscription.id).set({
           status: 'canceled',
-          canceledAt: serverTimestamp(),
+          canceledAt: new Date(),
         }, { merge: true })
         break
       }
@@ -85,14 +89,14 @@ export async function POST(req: NextRequest) {
         const invoice = event.data.object
         console.log('Invoice paid:', invoice.id)
         
-        await setDoc(doc(db, 'billing_invoices', invoice.id), {
+        await db.collection('billing_invoices').doc(invoice.id).set({
           invoiceId: invoice.id,
           customerId: invoice.customer,
           subscriptionId: invoice.subscription,
           amount: invoice.amount_paid,
           currency: invoice.currency,
           status: 'paid',
-          paidAt: serverTimestamp(),
+          paidAt: new Date(),
         }, { merge: true })
         break
       }
@@ -101,14 +105,14 @@ export async function POST(req: NextRequest) {
         const invoice = event.data.object
         console.log('Invoice payment failed:', invoice.id)
         
-        await setDoc(doc(db, 'billing_invoices', invoice.id), {
+        await db.collection('billing_invoices').doc(invoice.id).set({
           invoiceId: invoice.id,
           customerId: invoice.customer,
           subscriptionId: invoice.subscription,
           amount: invoice.amount_due,
           currency: invoice.currency,
           status: 'past_due',
-          failedAt: serverTimestamp(),
+          failedAt: new Date(),
         }, { merge: true })
         break
       }

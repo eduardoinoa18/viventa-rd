@@ -3,8 +3,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const fetchCache = 'default-no-store'
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { collection, getDocs, query, where, limit, orderBy, Timestamp } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 
 type Property = {
   id: string
@@ -31,20 +30,20 @@ function getCookie(req: NextRequest, name: string): string | null {
 
 async function getUserPreferences(userId: string) {
   try {
+    const db = getAdminDb()
+    if (!db) throw new Error('Admin Firestore not configured')
+
     // Fetch from analytics_events to build preferences
     const ninetyDaysAgo = new Date()
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
 
-    const eventsRef = collection(db, 'analytics_events')
-    const q = query(
-      eventsRef,
-      where('userId', '==', userId),
-      where('timestamp', '>=', Timestamp.fromDate(ninetyDaysAgo)),
-      orderBy('timestamp', 'desc'),
-      limit(200)
-    )
-    
-    const snapshot = await getDocs(q)
+    const snapshot = await db
+      .collection('analytics_events')
+      .where('userId', '==', userId)
+      .where('timestamp', '>=', ninetyDaysAgo)
+      .orderBy('timestamp', 'desc')
+      .limit(200)
+      .get()
     const events = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }))
 
     // Analyze events to build preferences
@@ -103,20 +102,20 @@ async function getUserPreferences(userId: string) {
 
 async function getUserBehavior(userId: string) {
   try {
+    const db = getAdminDb()
+    if (!db) throw new Error('Admin Firestore not configured')
+
     // Fetch from analytics_events for behavior patterns
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-    const eventsRef = collection(db, 'analytics_events')
-    const q = query(
-      eventsRef,
-      where('userId', '==', userId),
-      where('timestamp', '>=', Timestamp.fromDate(thirtyDaysAgo)),
-      orderBy('timestamp', 'desc'),
-      limit(100)
-    )
-    
-    const snapshot = await getDocs(q)
+    const snapshot = await db
+      .collection('analytics_events')
+      .where('userId', '==', userId)
+      .where('timestamp', '>=', thirtyDaysAgo)
+      .orderBy('timestamp', 'desc')
+      .limit(100)
+      .get()
     const events = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }))
 
     const viewedProperties: string[] = []
@@ -207,6 +206,11 @@ function scoreProperty(p: Property, prefs: any, behavior: any): number {
 
 export async function GET(req: NextRequest) {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
     const uid = getCookie(req, 'viventa_uid')
     if (!uid) {
       return NextResponse.json({ ok: false, error: 'Not authenticated' }, { status: 401 })
@@ -245,13 +249,12 @@ export async function GET(req: NextRequest) {
     // Fetch active properties
     let properties: Property[] = []
     try {
-      const q = query(
-        collection(db, 'properties'),
-        where('status', '==', 'active'),
-        orderBy('createdAt', 'desc'),
-        limit(100)
-      )
-      const snap = await getDocs(q)
+      const snap = await db
+        .collection('properties')
+        .where('status', '==', 'active')
+        .orderBy('createdAt', 'desc')
+        .limit(100)
+        .get()
       properties = snap.docs.map((d: any) => ({ id: d.id, ...d.data() })) as Property[]
     } catch (e) {
       // Firebase not configured, use mock data

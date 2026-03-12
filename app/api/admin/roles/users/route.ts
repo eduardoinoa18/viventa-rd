@@ -1,15 +1,21 @@
 // app/api/admin/roles/users/route.ts
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { collection, addDoc, getDocs, doc, setDoc, serverTimestamp, query, orderBy, where } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 // NOTE: Creating Firebase Auth users server-side requires the Firebase Admin SDK.
 // For now, we will create a pending admin user record in Firestore.
 
 // GET - List all admin users
 export async function GET() {
   try {
-    const q = query(collection(db, 'users'), where('role', 'in', ['master_admin', 'support', 'moderator', 'content_manager']))
-    const snapshot = await getDocs(q)
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const snapshot = await db
+      .collection('users')
+      .where('role', 'in', ['master_admin', 'support', 'moderator', 'content_manager'])
+      .get()
     const users = snapshot.docs.map((d: any) => {
       const data = d.data()
       return {
@@ -38,6 +44,11 @@ export async function GET() {
 // POST - Create new admin user
 export async function POST(request: Request) {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
     const { email, name, role, password } = await request.json()
 
     if (!email || !name || !role || !password) {
@@ -49,13 +60,13 @@ export async function POST(request: Request) {
     }
 
     // Create pending admin invitation (without Auth user creation)
-    const pendingRef = doc(collection(db, 'admin_invitations'))
-    await setDoc(pendingRef, {
+    const pendingRef = db.collection('admin_invitations').doc()
+    await pendingRef.set({
       email,
       name,
       role,
       status: 'pending',
-      createdAt: serverTimestamp(),
+      createdAt: new Date(),
       createdBy: 'master_admin', // TODO: Get from session
     })
 

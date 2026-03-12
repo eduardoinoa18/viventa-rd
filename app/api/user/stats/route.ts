@@ -1,11 +1,16 @@
 // app/api/user/stats/route.ts
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
+import { FieldValue } from 'firebase-admin/firestore'
 import { getSession } from '@/lib/authSession'
 
 export async function GET() {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
     const session = await getSession()
     
     if (!session?.uid) {
@@ -24,10 +29,10 @@ export async function GET() {
     }
 
     // Get user stats from Firestore
-    const statsRef = doc(db, 'user_stats', session.uid)
-    const statsSnap = await getDoc(statsRef)
+    const statsRef = db.collection('user_stats').doc(session.uid)
+    const statsSnap = await statsRef.get()
 
-    if (!statsSnap.exists()) {
+    if (!statsSnap.exists) {
       // Create initial stats
       const initialStats = {
         userId: session.uid,
@@ -40,7 +45,7 @@ export async function GET() {
         createdAt: new Date().toISOString()
       }
       
-      await setDoc(statsRef, initialStats)
+      await statsRef.set(initialStats)
       return NextResponse.json({ ok: true, stats: initialStats })
     }
 
@@ -56,6 +61,11 @@ export async function GET() {
 // POST - Track user activity
 export async function POST(request: Request) {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
     const session = await getSession()
     
     if (!session?.uid) {
@@ -65,35 +75,35 @@ export async function POST(request: Request) {
     const { action } = await request.json()
     // action can be: 'property_view', 'search', 'favorite_add'
 
-    const statsRef = doc(db, 'user_stats', session.uid)
-    const statsSnap = await getDoc(statsRef)
+    const statsRef = db.collection('user_stats').doc(session.uid)
+    const statsSnap = await statsRef.get()
 
     let points = 0
     const updates: Record<string, unknown> = {}
 
     switch (action) {
       case 'property_view':
-        updates.propertiesViewed = increment(1)
+        updates.propertiesViewed = FieldValue.increment(1)
         points = 2
         break
       case 'search':
-        updates.searchesMade = increment(1)
+        updates.searchesMade = FieldValue.increment(1)
         points = 5
         break
       case 'favorite_add':
-        updates.favoritesSaved = increment(1)
+        updates.favoritesSaved = FieldValue.increment(1)
         points = 10
         break
       default:
         return NextResponse.json({ ok: false, error: 'Acción inválida' }, { status: 400 })
     }
 
-    updates.points = increment(points)
+    updates.points = FieldValue.increment(points)
     updates.lastActivity = new Date().toISOString()
 
-    if (!statsSnap.exists()) {
+    if (!statsSnap.exists) {
       // Create initial stats with the action
-      await setDoc(statsRef, {
+      await statsRef.set({
         userId: session.uid,
         propertiesViewed: action === 'property_view' ? 1 : 0,
         searchesMade: action === 'search' ? 1 : 0,
@@ -106,16 +116,16 @@ export async function POST(request: Request) {
       })
     } else {
       // Update existing stats
-      await updateDoc(statsRef, updates)
+      await statsRef.update(updates)
 
       // Check for level up
-      const currentStats = statsSnap.data()
+      const currentStats = statsSnap.data() || {}
       const newPoints = (currentStats.points || 0) + points
       const currentLevel = currentStats.level || 1
       const nextLevelPoints = currentStats.nextLevelPoints || 100
 
       if (newPoints >= nextLevelPoints) {
-        await updateDoc(statsRef, {
+        await statsRef.update({
           level: currentLevel + 1,
           nextLevelPoints: nextLevelPoints + 50 // Increase by 50 for each level
         })

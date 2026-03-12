@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { requireMasterAdmin } from '@/lib/adminApiAuth'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 
@@ -27,6 +28,9 @@ function initFirebase() {
 
 export async function POST(req: NextRequest) {
   try {
+    const authError = await requireMasterAdmin(req)
+    if (authError) return authError
+
     const body = await req.json()
     const ids: string[] = Array.isArray(body.ids) ? body.ids : []
     const status: 'active'|'rejected' = body.status

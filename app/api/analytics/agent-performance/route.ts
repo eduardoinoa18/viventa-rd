@@ -3,8 +3,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const fetchCache = 'default-no-store'
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebaseClient'
-import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 
 function getCookie(req: NextRequest, name: string): string | null {
   const cookie = req.headers.get('cookie') || ''
@@ -14,6 +13,11 @@ function getCookie(req: NextRequest, name: string): string | null {
 
 export async function GET(req: NextRequest) {
   try {
+    const db = getAdminDb()
+    if (!db) {
+      return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
+    }
+
     const uid = getCookie(req, 'viventa_uid')
     const role = getCookie(req, 'viventa_role')
 
@@ -29,15 +33,13 @@ export async function GET(req: NextRequest) {
     cutoffDate.setDate(cutoffDate.getDate() - days)
 
     // Aggregate from analytics_events
-    const eventsQ = query(
-      collection(db, 'analytics_events'),
-      where('data.agentId', '==', agentId),
-      where('timestamp', '>=', Timestamp.fromDate(cutoffDate)),
-      orderBy('timestamp', 'desc')
-    )
-
     try {
-      const eventsSnap = await getDocs(eventsQ)
+      const eventsSnap = await db
+        .collection('analytics_events')
+        .where('data.agentId', '==', agentId)
+        .where('timestamp', '>=', cutoffDate)
+        .orderBy('timestamp', 'desc')
+        .get()
       
       const metrics = {
         profileViews: 0,
@@ -57,8 +59,7 @@ export async function GET(req: NextRequest) {
       })
 
       // Get property stats
-      const propsQ = query(collection(db, 'properties'), where('agentId', '==', agentId))
-      const propsSnap = await getDocs(propsQ)
+      const propsSnap = await db.collection('properties').where('agentId', '==', agentId).get()
       const properties = propsSnap.docs.map((d: any) => d.data())
 
       const performance = {

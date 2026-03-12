@@ -212,6 +212,28 @@ When finishing a task, append a section:
   - Migrate remaining API routes still importing `@/lib/firebaseClient` (admin/analytics/contact/health/recommendations/stats/stripe/user endpoints)
   - Decide when to raise lint restriction from warning to error after migration
 
+### Update 2026-03-12 20:05
+- Task: Workspace unification + demo dataset + admin moderation hardening
+- Status: Completed
+- Commit: pending
+- Files changed:
+  - `app/api/listings/workspace/route.ts`
+  - `app/dashboard/listings/page.tsx`
+  - `app/api/admin/properties/route.ts`
+  - `app/api/admin/properties/bulk/route.ts`
+  - `app/api/dev/seed-platform-demo/route.ts`
+  - `app/dashboard/broker/crm/page.tsx`
+  - `docs/DEMO-SEED-PLAYBOOK.md`
+- Validation:
+  - `npm run build`: PASS
+- Notes:
+  - Unified listing workspace now supports `my` and `mls` modes with role-based permissions.
+  - Master admin-only guard enforced on listing moderation endpoints.
+  - New secure non-prod seed endpoint creates constructora + brokers + agents + 10 DR prime demo listings.
+- Remaining blockers:
+  - Normalize remaining role dashboards into shared component architecture (P1 UX refinement)
+  - Extend MLS filters with pagination/indexed query strategy beyond 2,500 row cap
+
 ## Ready-to-Use Prompts for Next AI
 
 ### Prompt 1 — Project service migration
