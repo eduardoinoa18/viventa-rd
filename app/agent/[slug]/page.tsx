@@ -154,6 +154,30 @@ export default function AgentSlugProfilePage({ params }: { params: { slug: strin
               </div>
             </div>
 
+            <div className="px-6 pt-6">
+              <div className="rounded-xl border border-[#CFE8FF] bg-[#F5FAFF] p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[#0B2545]">Acciones rápidas</p>
+                  <p className="text-xs text-gray-600">Conecta con el agente y explora más propiedades de su portafolio.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link href={`/search?agent=${encodeURIComponent(profile?.slug || params.slug)}`} className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-xs font-semibold">
+                    Ver listados activos
+                  </Link>
+                  {profile?.phone ? (
+                    <a
+                      href={`https://wa.me/${profile.phone.replace(/[^\d]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-2 rounded-lg bg-[#00A676] text-white text-xs font-semibold"
+                    >
+                      WhatsApp
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
             <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
               <section className="lg:col-span-2">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Perfil profesional</h2>
