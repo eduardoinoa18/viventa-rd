@@ -252,7 +252,7 @@ When finishing a task, append a section:
 ### Update 2026-03-12 21:05
 - Task: Listings workspace query-first scalability pass
 - Status: Completed
-- Commit: pending
+- Commit: `2801fbf`
 - Files changed:
   - `app/api/listings/workspace/route.ts`
 - Validation:
