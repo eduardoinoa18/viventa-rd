@@ -76,8 +76,7 @@ export async function GET(req: Request) {
     // ── 2. Deals / Transactions (role-gated) ─────────────────────────────────
     if (context.role === 'broker' || context.role === 'agent' || context.role === 'admin') {
       try {
-        let txQuery = db.collection('transactions').limit(100)
-        const txSnap = await txQuery.get()
+        const txSnap = await db.collection('transactions').limit(100).get()
 
         let count = 0
         for (const doc of txSnap.docs) {
