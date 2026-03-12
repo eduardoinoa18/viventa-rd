@@ -92,6 +92,13 @@ const RESULT_GROUPS: Record<SearchResultItem['type'], string> = {
   client:  'Clients',
 }
 
+const RESULT_EMOJI: Record<SearchResultItem['type'], string> = {
+  listing: '🏢',
+  deal: '📄',
+  project: '🏗',
+  client: '👤',
+}
+
 const LIVE_GROUPS = new Set(['Listings', 'Deals', 'Projects', 'Clients'])
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -115,7 +122,7 @@ export default function CommandPalette() {
   // ── Convert dynamic results → Command-like objects ────────────────────────
   const dynamicCommands: Command[] = dynamicResults.map((r) => ({
     id: `dynamic-${r.type}-${r.id}`,
-    label: r.title,
+    label: `${RESULT_EMOJI[r.type]} ${r.title}`,
     description: [r.subtitle, r.meta].filter(Boolean).join(' · ') || undefined,
     icon: RESULT_ICONS[r.type],
     href: r.href,

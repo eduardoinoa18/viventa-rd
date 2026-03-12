@@ -24,6 +24,10 @@ function matches(value: unknown, q: string): boolean {
     .includes(q)
 }
 
+function safeText(value: unknown): string {
+  return String(value ?? '').trim()
+}
+
 // ─── GET /api/search?q=... ────────────────────────────────────────────────────
 
 export async function GET(req: Request) {
@@ -76,13 +80,17 @@ export async function GET(req: Request) {
     // ── 2. Deals / Transactions (role-gated) ─────────────────────────────────
     if (context.role === 'broker' || context.role === 'agent' || context.role === 'admin') {
       try {
-        const txSnap = await db.collection('transactions').limit(100).get()
+        const txRef = db.collection('transactions')
+        const txSnap = context.role === 'broker' && context.officeId
+          ? await txRef.where('officeId', '==', context.officeId).limit(100).get()
+          : context.role === 'agent'
+            ? await txRef.where('agentId', '==', context.uid).limit(100).get()
+            : await txRef.limit(100).get()
 
         let count = 0
         for (const doc of txSnap.docs) {
           if (count >= limit) break
           const d = doc.data()
-          // Office gating
           if (context.role === 'broker' && d.officeId !== context.officeId) continue
           if (context.role === 'agent' && d.agentId !== context.uid) continue
 
@@ -114,6 +122,17 @@ export async function GET(req: Request) {
       for (const doc of projectSnap.docs) {
         if (count >= limit) break
         const d = doc.data()
+        if (context.role === 'constructora') {
+          const scope = safeText(context.constructoraCode || context.professionalCode || context.uid)
+          const projectScope = safeText(
+            d.constructoraCode ||
+            d.professionalCode ||
+            d.developerCode ||
+            d.ownerId ||
+            d.createdBy
+          )
+          if (!scope || !projectScope || projectScope !== scope) continue
+        }
         const name = String(d.name ?? d.projectName ?? '').toLowerCase()
         const location = String(d.location ?? d.ciudad ?? '').toLowerCase()
         const developer = String(d.developerName ?? d.constructoraName ?? '').toLowerCase()
