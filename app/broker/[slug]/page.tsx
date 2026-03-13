@@ -5,7 +5,20 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
-import { FiArrowLeft, FiMail, FiMapPin, FiPhone, FiShield, FiStar, FiTrendingUp } from 'react-icons/fi'
+import { FiArrowLeft, FiMail, FiMapPin, FiPhone, FiShield, FiStar, FiTrendingUp, FiHome, FiAward, FiGlobe } from 'react-icons/fi'
+
+type ListingCard = {
+  id: string
+  title: string
+  price: number
+  listingType: string
+  propertyType: string
+  city: string
+  sector?: string
+  bedrooms?: number
+  bathrooms?: number
+  photos?: string[]
+}
 
 type BrokerPublicProfile = {
   id: string
@@ -48,6 +61,7 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
   const [profile, setProfile] = useState<BrokerPublicProfile | null>(null)
   const [reviews, setReviews] = useState<ReviewItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [listings, setListings] = useState<ListingCard[]>([])
 
   useEffect(() => {
     let active = true
@@ -73,6 +87,14 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
             setReviews(Array.isArray(reviewJson.reviews) ? reviewJson.reviews : [])
           } else {
             setReviews([])
+          }
+
+          const lid = profileJson.profile?.id
+          if (lid) {
+            fetch(`/api/listings/public?brokerId=${lid}&limit=6`)
+              .then((r) => r.json())
+              .then((d) => { if (active) setListings(d?.listings ?? []) })
+              .catch(() => {})
           }
         } else {
           setProfile(null)
@@ -187,6 +209,35 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
               </div>
             </div>
 
+            {/* Trust badges */}
+            <div className="px-6 py-3 flex flex-wrap gap-2 border-b bg-gray-50">
+              {profile?.emailVerified && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700">
+                  <FiShield className="w-3.5 h-3.5" /> Email verificado
+                </span>
+              )}
+              {profile?.identityVerified && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-blue-100 text-blue-700">
+                  <FiAward className="w-3.5 h-3.5" /> Identidad verificada
+                </span>
+              )}
+              {profile?.activeSubscription && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-amber-100 text-amber-700">
+                  <FiStar className="w-3.5 h-3.5" /> Pro
+                </span>
+              )}
+              {profile?.professionalCode && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-200 text-gray-600">
+                  Lic. {profile.professionalCode}
+                </span>
+              )}
+              {profile?.languages?.length ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-purple-100 text-purple-700">
+                  <FiGlobe className="w-3.5 h-3.5" /> {profile.languages.join(' · ')}
+                </span>
+              ) : null}
+            </div>
+
             <div className="px-6 pt-6">
               <div className="rounded-xl border border-[#D7ECFA] bg-[#F4FAFF] p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                 <div>
@@ -291,6 +342,44 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
                 </div>
               </aside>
             </div>
+
+            {/* Active Listings Grid */}
+            {listings.length > 0 && (
+              <div className="px-6 pb-6 border-t border-gray-100 pt-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <FiHome className="text-[#0B2545]" /> Propiedades activas
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {listings.map((l) => (
+                    <Link key={l.id} href={`/listing/${l.id}`} className="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+                      {l.photos?.[0] ? (
+                        <img src={l.photos[0]} alt={l.title} className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300" />
+                      ) : (
+                        <div className="w-full h-36 bg-gray-100 flex items-center justify-center">
+                          <FiHome className="w-8 h-8 text-gray-300" />
+                        </div>
+                      )}
+                      <div className="p-3">
+                        <p className="font-semibold text-gray-900 text-sm line-clamp-1">{l.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{l.city}{l.sector ? `, ${l.sector}` : ''}</p>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-sm font-bold text-[#0B2545]">${l.price.toLocaleString()}</span>
+                          {l.bedrooms != null && (
+                            <span className="text-xs text-gray-400">{l.bedrooms}h · {l.bathrooms}b</span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                <div className="mt-4 text-center">
+                  <Link href={`/search?brokerSlug=${encodeURIComponent(profile?.slug ?? params.slug)}`}
+                    className="text-sm text-[#0B2545] hover:underline font-semibold">
+                    Ver todos los listados →
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

@@ -28,6 +28,21 @@ export interface Listing {
   title: string;
   description: string;
 
+  // ── Approval workflow ────────────────────────────────────────────────────
+  submittedAt?: Date | string | null;
+  submittedBy?: string | null;
+  submissionNote?: string | null;
+  approvedAt?: Date | string | null;
+  approvedBy?: string | null;
+  approvalNotes?: string | null;
+  rejectedAt?: Date | string | null;
+  rejectedBy?: string | null;
+  rejectionReason?: string | null;
+  revisionRequestedAt?: Date | string | null;
+  revisionNote?: string | null;
+  reviewedAt?: Date | string | null;
+  reviewedBy?: string | null;
+
   price: number;
   currency: 'DOP' | 'USD';
 

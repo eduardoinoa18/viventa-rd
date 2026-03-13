@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
-import { FiPlusSquare } from 'react-icons/fi'
+import { FiPlusSquare, FiClock, FiCheckCircle, FiXCircle, FiRefreshCw, FiAlertTriangle, FiEye } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import type { Listing } from '@/types/listing'
 import { normalizeListingStatus, mapUIFilterToDB } from '@/lib/listingStatus'
@@ -12,6 +12,26 @@ import ListingStats from './components/ListingStats'
 import ListingFilters from './components/ListingFilters'
 import BulkActions from './components/BulkActions'
 import ListingTable from './components/ListingTable'
+
+type PendingItem = {
+  id: string
+  listingId: string
+  title: string
+  city: string
+  sector: string
+  propertyType: string
+  price: number
+  currency: string
+  images: string[]
+  qualityScore: number
+  submittedAt: string | null
+  submissionNote: string
+  approvalNotes: string
+  brokerName: string
+  constructora: string
+  agentId: string
+  updatedAt: string | null
+}
 
 export default function MasterListingsPage() {
   // State
@@ -23,6 +43,12 @@ export default function MasterListingsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [selected, setSelected] = useState<Record<string, boolean>>({})
+  // Pending approval queue
+  const [pending, setPending]       = useState<PendingItem[]>([])
+  const [pendingLoading, setPendingLoading] = useState(true)
+  const [reviewId, setReviewId]     = useState<string | null>(null)
+  const [reviewNote, setReviewNote] = useState('')
+  const [reviewing, setReviewing]   = useState(false)
 
   // Filtered listings based on search
   const filteredListings = useMemo(() => {
@@ -65,7 +91,41 @@ export default function MasterListingsPage() {
   // Load listings on mount and when filter changes
   useEffect(() => {
     load()
+    loadPending()
   }, [statusFilter])
+
+  async function loadPending() {
+    setPendingLoading(true)
+    try {
+      const res = await fetch('/api/listings/review?status=pending&limit=50')
+      const json = await res.json()
+      if (res.ok && json.ok) setPending(json.items || [])
+    } catch { /* noop */ }
+    setPendingLoading(false)
+  }
+
+  async function reviewListing(id: string, action: 'approve' | 'reject' | 'revision') {
+    setReviewing(true)
+    try {
+      const res = await fetch('/api/listings/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingId: id, action, note: reviewNote }),
+      })
+      const json = await res.json()
+      if (res.ok && json.ok) {
+        const msg = action === 'approve' ? '✅ Listado aprobado y publicado.' : action === 'reject' ? '❌ Listado rechazado.' : '🔄 Revisión solicitada al profesional.'
+        toast.success(msg)
+        setReviewId(null)
+        setReviewNote('')
+        await loadPending()
+        load()
+      } else {
+        toast.error(json.error || 'Error en revisión')
+      }
+    } catch { toast.error('Error de red') }
+    setReviewing(false)
+  }
 
   const getUiErrorMessage = (status?: number) => {
     if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente para gestionar propiedades.'
@@ -105,17 +165,14 @@ export default function MasterListingsPage() {
   // API: Approve listing
   async function approve(id: string) {
     try {
-      const res = await fetch('/api/admin/properties', {
-        method: 'PATCH',
+      const res = await fetch('/api/listings/review', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: 'active' }),
+        body: JSON.stringify({ listingId: id, action: 'approve', note: '' }),
       })
-      if (res.ok) {
-        toast.success('Property approved')
-        load()
-      } else {
-        toast.error('Failed to approve property')
-      }
+      const json = await res.json()
+      if (res.ok && json.ok) { toast.success('Listado aprobado'); load(); loadPending() }
+      else toast.error(json.error || 'Error al aprobar')
     } catch (e) {
       console.error('Failed to approve property', e)
       toast.error('Failed to approve property')
@@ -125,17 +182,14 @@ export default function MasterListingsPage() {
   // API: Reject listing
   async function reject(id: string) {
     try {
-      const res = await fetch('/api/admin/properties', {
-        method: 'PATCH',
+      const res = await fetch('/api/listings/review', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: 'rejected' }),
+        body: JSON.stringify({ listingId: id, action: 'reject', note: '' }),
       })
-      if (res.ok) {
-        toast.success('Property rejected')
-        load()
-      } else {
-        toast.error('Failed to reject property')
-      }
+      const json = await res.json()
+      if (res.ok && json.ok) { toast.success('Listado rechazado'); load(); loadPending() }
+      else toast.error(json.error || 'Error al rechazar')
     } catch (e) {
       console.error('Failed to reject property', e)
       toast.error('Failed to reject property')
@@ -253,6 +307,137 @@ export default function MasterListingsPage() {
             />
           </div>
         </div>
+
+        {/* ─── PENDING APPROVAL QUEUE ─────────────────────────────────────── */}
+        {(pending.length > 0 || pendingLoading) && (
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <FiClock className="text-amber-500" />
+                <h2 className="text-lg font-bold text-gray-900">Cola de Aprobación</h2>
+                {pending.length > 0 && (
+                  <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{pending.length}</span>
+                )}
+              </div>
+              <button onClick={loadPending} className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                <FiRefreshCw className="w-3 h-3" /> Actualizar
+              </button>
+            </div>
+
+            {pendingLoading ? (
+              <div className="bg-white border border-amber-100 rounded-2xl p-6 text-center text-gray-400 text-sm">Cargando cola pendiente...</div>
+            ) : (
+              <div className="bg-white border border-amber-100 rounded-2xl overflow-hidden shadow-sm">
+                <div className="divide-y divide-gray-100">
+                  {pending.map((item) => (
+                    <div key={item.id} className="p-4 hover:bg-amber-50 transition-colors">
+                      <div className="flex gap-4 items-start">
+                        {/* Thumbnail */}
+                        <div className="w-20 h-16 shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                          {item.images?.[0] ? (
+                            <img src={item.images[0]} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-300 text-2xl">🏠</div>
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-semibold text-gray-900 text-sm line-clamp-1">{item.title}</h3>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {item.city}{item.sector ? ` · ${item.sector}` : ''} &middot; {item.propertyType}
+                                {item.brokerName && <> &middot; <span className="font-medium">{item.brokerName}</span></>}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-sm font-bold text-blue-700">
+                                {item.currency === 'DOP' ? `RD$` : `$`}{item.price.toLocaleString()}
+                              </p>
+                              {item.qualityScore > 0 && (
+                                <p className="text-xs text-gray-400">QS: {item.qualityScore}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {item.submissionNote && (
+                            <p className="mt-1.5 text-xs text-gray-600 bg-gray-50 rounded px-2 py-1 italic">
+                              &quot;{item.submissionNote}&quot;
+                            </p>
+                          )}
+
+                          {/* Review panel (expanded) */}
+                          {reviewId === item.id ? (
+                            <div className="mt-3 bg-white border border-gray-200 rounded-xl p-3 space-y-2">
+                              <textarea
+                                value={reviewNote}
+                                onChange={(e) => setReviewNote(e.target.value)}
+                                placeholder="Nota para el profesional (opcional)..."
+                                rows={2}
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                              />
+                              <div className="flex gap-2 flex-wrap">
+                                <button
+                                  onClick={() => reviewListing(item.id, 'approve')}
+                                  disabled={reviewing}
+                                  className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  <FiCheckCircle className="w-3.5 h-3.5" /> Aprobar
+                                </button>
+                                <button
+                                  onClick={() => reviewListing(item.id, 'reject')}
+                                  disabled={reviewing}
+                                  className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  <FiXCircle className="w-3.5 h-3.5" /> Rechazar
+                                </button>
+                                <button
+                                  onClick={() => reviewListing(item.id, 'revision')}
+                                  disabled={reviewing}
+                                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  <FiRefreshCw className="w-3.5 h-3.5" /> Solicitar Revisión
+                                </button>
+                                <button
+                                  onClick={() => { setReviewId(null); setReviewNote('') }}
+                                  className="text-gray-500 hover:text-gray-700 text-xs px-2 py-1.5"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                onClick={() => { setReviewId(item.id); setReviewNote('') }}
+                                className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                              >
+                                <FiEye className="w-3.5 h-3.5" /> Revisar
+                              </button>
+                              <button
+                                onClick={() => reviewListing(item.id, 'approve')}
+                                className="flex items-center gap-1 border border-emerald-400 text-emerald-600 hover:bg-emerald-50 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                              >
+                                <FiCheckCircle className="w-3.5 h-3.5" /> Aprobar
+                              </button>
+                              <button
+                                onClick={() => reviewListing(item.id, 'reject')}
+                                className="flex items-center gap-1 border border-red-300 text-red-500 hover:bg-red-50 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                              >
+                                <FiXCircle className="w-3.5 h-3.5" /> Rechazar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Filters & Search */}
         <div className="mb-4">
