@@ -3,22 +3,9 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 import { AdminAuthError, requireMasterAdmin } from '@/lib/requireMasterAdmin'
 import { sendEmail } from '@/lib/emailService'
 import { getPublicAppUrl } from '@/lib/publicAppUrl'
+import { getBuyerMatches, normalizeBuyerCriteria } from '@/lib/crmBuyerMatching'
 
 export const dynamic = 'force-dynamic'
-
-interface MatchListing {
-  id: string
-  title: string
-  city: string
-  sector: string
-  image: string
-  price: number
-  bedrooms: number
-  bathrooms: number
-  squareMeters: number
-  pricePerM2: number
-  verified: boolean
-}
 
 function currency(value?: number): string {
   if (!value || Number.isNaN(value)) return 'Price on request'
@@ -53,49 +40,14 @@ export async function POST(
       return NextResponse.json({ ok: false, error: 'Buyer email is missing' }, { status: 400 })
     }
 
-    const criteria = buyer.criteria || {}
-    let ref: any = adminDb.collection('listings').where('status', '==', 'published')
-
-    if (criteria.location) {
-      ref = ref.where('city', '==', criteria.location)
-    }
-    if (criteria.budgetMin && criteria.budgetMax) {
-      ref = ref.where('price', '>=', criteria.budgetMin)
-      ref = ref.where('price', '<=', criteria.budgetMax)
-    } else if (criteria.budgetMax) {
-      ref = ref.where('price', '<=', criteria.budgetMax)
-    } else if (criteria.budgetMin) {
-      ref = ref.where('price', '>=', criteria.budgetMin)
-    }
-    if (criteria.bedrooms) {
-      ref = ref.where('bedrooms', '==', criteria.bedrooms)
-    }
-
-    const snap = await ref.limit(6).get()
-    const listings: MatchListing[] = snap.docs.map((doc: any) => {
-      const data = doc.data()
-      const squareMeters = Number(data.squareMeters || 0)
-      const price = Number(data.price || 0)
-      const pricePerM2 = squareMeters > 0 ? Math.round(price / squareMeters) : 0
-      return {
-        id: doc.id,
-        title: String(data.title || 'Listing'),
-        city: String(data.city || ''),
-        sector: String(data.sector || ''),
-        image: data.images?.[0] || '',
-        price,
-        bedrooms: Number(data.bedrooms || 0),
-        bathrooms: Number(data.bathrooms || 0),
-        squareMeters,
-        pricePerM2,
-        verified: !!data.verified,
-      }
-    })
+    const criteria = normalizeBuyerCriteria((buyer.criteria || {}) as Record<string, any>)
+    const result = await getBuyerMatches(adminDb, criteria, 6)
+    const listings = result.listings
 
     const baseUrl = getPublicAppUrl()
 
     const cards = listings
-      .map((listing: MatchListing) => {
+      .map((listing) => {
         const location = [listing.city, listing.sector].filter(Boolean).join(', ')
         const verifiedBadge = listing.verified
           ? '<span style="display:inline-block;background:#ecfdf5;color:#047857;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;">Viventa Verified</span>'
@@ -133,6 +85,7 @@ export async function POST(
           <p style="margin:0 0 16px;color:#374151;">We found ${listings.length} listings that match your criteria on Viventa.</p>
           ${cards || '<p style="color:#6b7280;">No listings available right now. We will continue monitoring new properties for you.</p>'}
           <p style="margin-top:18px;color:#6b7280;font-size:12px;">This update is powered by Viventa CRM matching.</p>
+          ${result.warning ? `<p style="margin-top:6px;color:#9ca3af;font-size:11px;">${result.warning}</p>` : ''}
         </div>
       </div>
     `

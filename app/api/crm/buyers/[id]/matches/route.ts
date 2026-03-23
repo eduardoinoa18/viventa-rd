@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { AdminAuthError, requireMasterAdmin } from '@/lib/requireMasterAdmin'
+import { getBuyerMatches, normalizeBuyerCriteria } from '@/lib/crmBuyerMatching'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,71 +43,32 @@ export async function GET(
       )
     }
 
-    const criteria = buyer.criteria || {}
+    const criteria = normalizeBuyerCriteria((buyer.criteria || {}) as Record<string, any>)
+    const result = await getBuyerMatches(adminDb, criteria, 20)
+    const listings = result.listings.map((listing) => ({
+      id: listing.id,
+      title: listing.title,
+      price: listing.price,
+      beds: listing.bedrooms,
+      baths: listing.bathrooms,
+      mt2: listing.squareMeters,
+      city: listing.city,
+      sector: listing.sector,
+      image: listing.image,
+      verified: listing.verified,
+      pricePerM2: listing.pricePerM2,
+    }))
 
-    // Build query for listings matching criteria
-    let ref: any = adminDb.collection('listings')
-    ref = ref.where('status', '==', 'published')
-
-    if (criteria.location) {
-      ref = ref.where('city', '==', criteria.location)
-    }
-
-    if (criteria.budgetMin && criteria.budgetMax) {
-      ref = ref.where('price', '>=', criteria.budgetMin)
-      ref = ref.where('price', '<=', criteria.budgetMax)
-    } else if (criteria.budgetMax) {
-      ref = ref.where('price', '<=', criteria.budgetMax)
-    } else if (criteria.budgetMin) {
-      ref = ref.where('price', '>=', criteria.budgetMin)
-    }
-
-    if (criteria.bedrooms) {
-      ref = ref.where('bedrooms', '==', criteria.bedrooms)
-    }
-
-    try {
-      const snap = await ref.limit(20).get()
-      const listings = snap.docs.map((doc: any) => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          title: data.title,
-          price: data.price,
-          beds: data.bedrooms,
-          baths: data.bathrooms,
-          mt2: data.squareMeters,
-          city: data.city,
-          sector: data.sector,
-          image: data.images?.[0],
-          verified: data.verified || false,
-          pricePerM2: data.squareMeters ? Math.round(data.price / data.squareMeters) : 0,
-        }
-      })
-
-      return NextResponse.json({
-        ok: true,
-        data: {
-          buyerId,
-          criteria,
-          listingsCount: listings.length,
-          listings,
-        },
-      })
-    } catch (queryError: any) {
-      // If query fails due to missing indexes, return empty with message
-      console.warn('[crm/buyers/matches] Query failed, returning empty:', queryError.message)
-      return NextResponse.json({
-        ok: true,
-        data: {
-          buyerId,
-          criteria,
-          listingsCount: 0,
-          listings: [],
-          warning: 'Some criteria filters unavailable - showing all published listings',
-        },
-      })
-    }
+    return NextResponse.json({
+      ok: true,
+      data: {
+        buyerId,
+        criteria,
+        listingsCount: listings.length,
+        listings,
+        ...(result.warning ? { warning: result.warning } : {}),
+      },
+    })
   } catch (error: any) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json(
