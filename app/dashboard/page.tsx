@@ -7,12 +7,9 @@ import Footer from '@/components/Footer'
 import BottomNav from '@/components/BottomNav'
 import PropertyCard from '@/components/PropertyCard'
 import {
-  buildSearchUrl,
   getSavedPropertyIds,
-  getSavedSearches,
-  removeSavedSearch,
-  type SavedSearchCriteria,
 } from '@/lib/buyerPreferences'
+import { buildSavedSearchUrl, useSavedSearches } from '@/hooks/useSavedSearches'
 
 type SessionData = {
   uid: string
@@ -342,7 +339,6 @@ export default function BuyerDashboardPage() {
   const [session, setSession] = useState<SessionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [savedPropertyIds, setSavedPropertyIds] = useState<string[]>([])
-  const [savedSearches, setSavedSearches] = useState<SavedSearchCriteria[]>([])
   const [savedProperties, setSavedProperties] = useState<any[]>([])
   const [myListings, setMyListings] = useState<ListingItem[]>([])
   const [officeListings, setOfficeListings] = useState<ListingItem[]>([])
@@ -372,6 +368,11 @@ export default function BuyerDashboardPage() {
   const [schedulerSyncLoading, setSchedulerSyncLoading] = useState(false)
   const [agentOverview, setAgentOverview] = useState<AgentDashboardOverview | null>(null)
   const [constructoraOverview, setConstructoraOverview] = useState<ConstructoraDashboardOverview | null>(null)
+  const {
+    searches: savedSearches,
+    loading: savedSearchesLoading,
+    removeSearch,
+  } = useSavedSearches({ autoLoad: Boolean(session?.uid) })
 
   useEffect(() => {
     const load = async () => {
@@ -395,9 +396,7 @@ export default function BuyerDashboardPage() {
   useEffect(() => {
     if (!session) return
     const nextIds = getSavedPropertyIds()
-    const nextSearches = getSavedSearches()
     setSavedPropertyIds(nextIds)
-    setSavedSearches(nextSearches)
   }, [session])
 
   useEffect(() => {
@@ -1814,22 +1813,24 @@ export default function BuyerDashboardPage() {
               <Link href="/search" className="text-sm text-[#00A676] font-medium">Nueva búsqueda</Link>
             </div>
             {savedSearches.length === 0 ? (
-              <p className="text-sm text-gray-500">Aún no tienes búsquedas guardadas. Desde buscar propiedades puedes guardar tus criterios.</p>
+              <p className="text-sm text-gray-500">{savedSearchesLoading ? 'Cargando búsquedas guardadas...' : 'Aún no tienes búsquedas guardadas. Desde buscar propiedades puedes guardar tus criterios.'}</p>
             ) : (
               <div className="space-y-2">
                 {savedSearches.map((item) => (
                   <div key={item.id} className="rounded-lg border border-gray-200 p-3 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="text-sm font-medium text-[#0B2545] truncate">{item.name}</div>
+                      <div className="text-sm font-medium text-[#0B2545] truncate">{item.label}</div>
                       <div className="text-xs text-gray-500">{new Date(item.createdAt).toLocaleDateString()}</div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Link href={buildSearchUrl(item)} className="text-xs px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50">
+                      <Link href={buildSavedSearchUrl(item)} className="text-xs px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50">
                         Abrir
                       </Link>
                       <button
                         type="button"
-                        onClick={() => setSavedSearches(removeSavedSearch(item.id))}
+                        onClick={async () => {
+                          await removeSearch(item.id)
+                        }}
                         className="text-xs px-3 py-1.5 rounded-md border border-red-200 text-red-600 hover:bg-red-50"
                       >
                         Quitar

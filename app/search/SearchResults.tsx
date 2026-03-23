@@ -6,8 +6,8 @@ import AdvancedFilters from '@/components/AdvancedFilters'
 import type { Listing } from '@/types/listing'
 import { FiSearch } from 'react-icons/fi'
 import toast from 'react-hot-toast'
-import { saveSearchCriteria } from '@/lib/buyerPreferences'
 import { useSearchParams } from 'next/navigation'
+import { useSavedSearches } from '@/hooks/useSavedSearches'
 
 interface SearchResultsProps {
   initialListings: Listing[]
@@ -18,6 +18,8 @@ export default function SearchResults({ initialListings, initialTotal }: SearchR
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [localFilters, setLocalFilters] = useState<any>({})
+  const [savingSearch, setSavingSearch] = useState(false)
+  const { createSearch } = useSavedSearches()
 
   useEffect(() => {
     const q = searchParams.get('q') || ''
@@ -86,7 +88,10 @@ export default function SearchResults({ initialListings, initialTotal }: SearchR
     })
   }
 
-  function handleSaveSearch() {
+  async function handleSaveSearch() {
+    if (savingSearch) return
+    setSavingSearch(true)
+
     const activeFilters = {
       propertyType: localFilters.propertyType,
       minPrice: localFilters.minPrice,
@@ -95,13 +100,35 @@ export default function SearchResults({ initialListings, initialTotal }: SearchR
       bathrooms: localFilters.bathrooms,
     }
 
-    saveSearchCriteria({
-      name: searchQuery?.trim() || 'Búsqueda personalizada',
-      query: searchQuery,
-      filters: activeFilters,
-    })
+    try {
+      const created = await createSearch({
+        label: searchQuery?.trim() || 'Búsqueda personalizada',
+        criteria: {
+          query: searchQuery || undefined,
+          city: searchParams.get('city') || undefined,
+          sector: searchParams.get('sector') || undefined,
+          listingType: (searchParams.get('listingType') as 'sale' | 'rent' | null) || undefined,
+          propertyType: activeFilters.propertyType || undefined,
+          priceMin: activeFilters.minPrice || undefined,
+          priceMax: activeFilters.maxPrice || undefined,
+          bedroomsMin: activeFilters.bedrooms || undefined,
+          bathroomsMin: activeFilters.bathrooms || undefined,
+        },
+        marketingOptIn: true,
+        frequency: 'daily_digest',
+      })
 
-    toast.success('Búsqueda guardada en tu panel')
+      if (!created) {
+        toast.error('No se pudo guardar. Inicia sesión para activar recomendaciones.')
+        return
+      }
+
+      toast.success('Búsqueda guardada en tu panel')
+    } catch {
+      toast.error('No se pudo guardar tu búsqueda')
+    } finally {
+      setSavingSearch(false)
+    }
   }
 
   return (
@@ -132,9 +159,10 @@ export default function SearchResults({ initialListings, initialTotal }: SearchR
         <button
           type="button"
           onClick={handleSaveSearch}
+          disabled={savingSearch}
           className="px-3 py-1.5 text-xs sm:text-sm rounded-lg border border-gray-300 hover:bg-gray-100 text-[#0B2545]"
         >
-          Guardar búsqueda
+          {savingSearch ? 'Guardando...' : 'Guardar búsqueda'}
         </button>
       </div>
 
