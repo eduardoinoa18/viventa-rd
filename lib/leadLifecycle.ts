@@ -118,6 +118,26 @@ export function stageSlaHours(stage: LeadStage): number {
   return SLA_HOURS_BY_STAGE[stage]
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Canonical CRM stage bridge
+// Imports from types/platform allow shared UI and server code to use
+// the same canonical stage vocabulary without duplicating logic here.
+// ─────────────────────────────────────────────────────────────────────────────
+export {
+  CRM_STAGES,
+  CRM_STAGE_LABELS,
+  CRM_ALLOWED_TRANSITIONS,
+  CRM_SLA_HOURS,
+  CRM_TERMINAL_STAGES,
+  LEGACY_LEAD_STAGE_MAP,
+  CLOSED_LOST_REASONS,
+  isCrmStage,
+  toCanonicalCrmStage,
+  canTransitionCrmStage,
+  validateCrmStageTransition,
+} from '@/types/platform'
+export type { CrmStage, ClosedLostReason, PlatformRole } from '@/types/platform'
+
 export function stageSlaDueAt(stage: LeadStage, fromDate = new Date()): Date | null {
   const hours = stageSlaHours(stage)
   if (!hours) return null

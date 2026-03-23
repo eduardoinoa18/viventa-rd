@@ -6,5 +6,6 @@ export { sendAdminCode, verifyAdminCode } from './adminAuth'
 export { processApplication } from './applications'
 export { scheduledLeadAutoAssign, scheduledLeadSlaEscalation } from './leadAutomation'
 export { sendPushNotification } from './sendPush'
+export { onListingWriteRecommendations, dispatchRecommendationEmails } from './listingRecommendations'
 
 admin.initializeApp()
