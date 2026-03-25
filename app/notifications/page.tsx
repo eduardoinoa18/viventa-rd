@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import BottomNav from '@/components/BottomNav'
 import NotificationCenter from '@/components/NotificationCenter'
+import SavedSearchPreferences from '@/components/SavedSearchPreferences'
 
 type SessionData = {
   uid: string
@@ -63,12 +64,25 @@ export default function NotificationsPage() {
               Cargando notificaciones...
             </section>
           ) : session?.uid ? (
-            <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-2 sm:p-3">
-              <div className="flex justify-end px-2 pt-2">
-                <NotificationCenter userId={session.uid} />
-              </div>
-              <p className="text-xs text-gray-500 px-3 pb-3">Tip: abre la campana para filtrar por no leídas y marcarlas rápidamente.</p>
-            </section>
+            <>
+              <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-2 sm:p-3">
+                <div className="flex justify-end px-2 pt-2">
+                  <NotificationCenter userId={session.uid} />
+                </div>
+                <p className="text-xs text-gray-500 px-3 pb-3">Tip: abre la campana para filtrar por no leídas y marcarlas rápidamente.</p>
+              </section>
+
+              <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-[#0B2545]">Búsquedas guardadas</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">Controla las alertas de email y la frecuencia por búsqueda.</p>
+                  </div>
+                  <Link href="/search" className="text-sm text-[#00A676] font-medium">+ Nueva búsqueda</Link>
+                </div>
+                <SavedSearchPreferences sessionUid={session.uid} />
+              </section>
+            </>
           ) : (
             <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-sm text-gray-700">
               Debes iniciar sesión para acceder a tus notificaciones.{' '}
