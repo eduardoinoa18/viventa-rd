@@ -14,6 +14,7 @@ import ImageGalleryCarousel from '../../../components/ImageGalleryCarousel'
 import ShareButtons from '../../../components/ShareButtons'
 import SimilarProperties from '../../../components/SimilarProperties'
 import InvestmentInsightPanel from '../../../components/InvestmentInsightPanel'
+import BuyerClarityPanel from '../../../components/BuyerClarityPanel'
 import MortgageCalculator from '../../../components/MortgageCalculator'
 import WhatsAppFloatingCTA from '../../../components/WhatsAppFloatingCTA'
 import DeveloperCard from '../../../components/DeveloperCard'
@@ -729,6 +730,18 @@ export default function ListingDetail(){
                   {listing.description || 'Sin descripción disponible'}
                 </p>
               </div>
+
+              <BuyerClarityPanel
+                price={Number(ctaPriceSource || listing.price || 0)}
+                currency={(listing.currency || 'USD') as 'USD' | 'DOP'}
+                area={Number(listing.area || 0)}
+                bedrooms={Number(listing.bedrooms || 0)}
+                bathrooms={Number(listing.bathrooms || 0)}
+                city={String(listing.city || '')}
+                features={Array.isArray(listing.features) ? listing.features : []}
+                maintenanceFee={Number(listing.maintenanceFee || 0)}
+                propertyType={String(propertyTypeLabel || listing.propertyType || '')}
+              />
 
               {/* Developer Card - Trust Badge Compact */}
               {developer && !developerLoading && (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { uploadMultipleImages, validateImageFiles } from '@/lib/storageService'
@@ -98,6 +98,80 @@ export default function CreateProfessionalListingPage() {
     terrainBuildPotential: '',
     terrainUtilities: '',
   })
+
+  const completion = useMemo(() => {
+    const checks = [
+      Boolean(form.title.trim()),
+      Boolean(form.description.trim()),
+      Boolean(form.price.trim()),
+      Boolean(form.city.trim()),
+      Boolean(form.neighborhood.trim()),
+      Boolean(form.propertyType.trim()),
+      Boolean(form.listingType.trim()),
+      Boolean(form.bedrooms.trim()),
+      Boolean(form.bathrooms.trim()),
+      uploadedImages.length > 0 || Boolean(form.imagesText.trim()),
+      features.length > 0,
+    ]
+
+    const score = Math.round((checks.filter(Boolean).length / checks.length) * 100)
+    return {
+      score,
+      essentialsDone: checks.slice(0, 5).every(Boolean),
+      mediaDone: checks[9],
+      amenitiesDone: checks[10],
+    }
+  }, [features.length, form, uploadedImages.length])
+
+  function applyTemplate(template: 'starter-home' | 'luxury-sea' | 'investor-rent' | 'project-preventa') {
+    if (template === 'starter-home') {
+      setForm((prev) => ({
+        ...prev,
+        title: prev.title || 'Apartamento familiar listo para mudarse',
+        description: prev.description || 'Propiedad funcional, iluminada y con distribucion comoda para familia o pareja.',
+        propertyType: 'apartment',
+        listingType: 'sale',
+        furnishedStatus: 'sin-amueblar',
+      }))
+      return
+    }
+
+    if (template === 'luxury-sea') {
+      setForm((prev) => ({
+        ...prev,
+        title: prev.title || 'Penthouse de lujo con vista al mar',
+        description: prev.description || 'Acabados premium, elevador privado y terraza panoramica para estilo de vida exclusivo.',
+        propertyType: 'penthouse',
+        listingType: 'sale',
+        status: 'active',
+      }))
+      setFeatures((prev) => Array.from(new Set([...prev, 'ocean-view', 'pool', 'gym', 'security-24-7'])))
+      return
+    }
+
+    if (template === 'investor-rent') {
+      setForm((prev) => ({
+        ...prev,
+        title: prev.title || 'Unidad ideal para renta ejecutiva',
+        description: prev.description || 'Excelente para flujo de caja con alta demanda en zona corporativa y servicios cercanos.',
+        listingType: 'rent',
+        mlsOnly: true,
+        furnishedStatus: 'semi-amueblado',
+      }))
+      return
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      title: prev.title || 'Proyecto en preventa con unidades escalables',
+      description: prev.description || 'Proyecto residencial con plan de pagos, inventario por etapas y potencial de valorizacion.',
+      propertyType: 'project',
+      listingType: 'sale',
+      inventoryMode: 'project',
+      totalUnits: prev.totalUnits || '120',
+      availableUnits: prev.availableUnits || '120',
+    }))
+  }
 
   function update<K extends keyof CreateForm>(key: K, value: CreateForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -273,10 +347,40 @@ export default function CreateProfessionalListingPage() {
         <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Crear listado</h1>
-              <p className="text-sm text-gray-600 mt-1">Publica una propiedad en tu cartera profesional.</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Listing Studio Pro</h1>
+              <p className="text-sm text-gray-600 mt-1">Flujo rapido estilo MLS, tropicalizado para RD y enfocado en conversion.</p>
             </div>
             <Link href="/dashboard/listings" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Ver mis listados</Link>
+          </div>
+
+          <div className="mb-4 rounded-xl border border-[#0B2545]/10 bg-gradient-to-r from-[#F7FAFF] to-[#ECFDF5] p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-[#0B2545]">Barra de calidad del listado</p>
+                <p className="text-xs text-gray-600">Mientras mas completa la ficha, mayor respuesta de clientes y brokers.</p>
+              </div>
+              <div className="inline-flex items-center rounded-full bg-[#0B2545] px-3 py-1 text-xs font-semibold text-white">
+                {completion.score}% completo
+              </div>
+            </div>
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/80">
+              <div className="h-full rounded-full bg-gradient-to-r from-[#0B2545] via-[#00A676] to-[#00A6A6] transition-all duration-500" style={{ width: `${completion.score}%` }} />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <span className={`rounded-full px-2 py-1 border ${completion.essentialsDone ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-600'}`}>Datos base</span>
+              <span className={`rounded-full px-2 py-1 border ${completion.mediaDone ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-600'}`}>Fotos y media</span>
+              <span className={`rounded-full px-2 py-1 border ${completion.amenitiesDone ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-600'}`}>Amenidades</span>
+            </div>
+          </div>
+
+          <div className="mb-4 rounded-xl border border-gray-200 bg-white p-3">
+            <p className="text-xs font-semibold text-[#0B2545] mb-2">Plantillas rapidas (dominican flow)</p>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => applyTemplate('starter-home')} className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-700 hover:border-[#0B2545]">Primera vivienda</button>
+              <button type="button" onClick={() => applyTemplate('luxury-sea')} className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-700 hover:border-[#0B2545]">Lujo vista mar</button>
+              <button type="button" onClick={() => applyTemplate('investor-rent')} className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-700 hover:border-[#0B2545]">Inversion renta</button>
+              <button type="button" onClick={() => applyTemplate('project-preventa')} className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-700 hover:border-[#0B2545]">Proyecto preventa</button>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
