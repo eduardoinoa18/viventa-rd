@@ -1,6 +1,8 @@
 export const ACTIVITY_EVENT_TYPES = [
   'listing_created',
   'lead_contacted',
+  'buyer.search_saved',
+  'buyer.search_updated',
   'reservation_created',
   'deal_opened',
   'deal_updated',
@@ -16,6 +18,7 @@ export type ActivityEventType = (typeof ACTIVITY_EVENT_TYPES)[number]
 export type ActivityEntityType =
   | 'listing'
   | 'lead'
+  | 'saved_search'
   | 'reservation'
   | 'deal'
   | 'document'

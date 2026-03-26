@@ -4,7 +4,17 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { FiArrowLeft, FiMapPin, FiPhone, FiMail, FiHome } from 'react-icons/fi'
+import { FiArrowLeft, FiMapPin, FiPhone, FiMail, FiHome, FiSearch, FiBookmark } from 'react-icons/fi'
+
+interface SavedSearch {
+  id: string
+  label: string
+  frequency: string
+  status: string
+  marketingOptIn: boolean
+  createdAt?: string
+  criteria?: Record<string, unknown>
+}
 
 interface BuyerCriteria {
   location?: string
@@ -52,6 +62,7 @@ export default function BuyerDetailPage() {
   const [buyer, setBuyer] = useState<BuyerRecord | null>(null)
   const [matches, setMatches] = useState<ListingMatch[]>([])
   const [matchesCount, setMatchesCount] = useState(0)
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([])
   const [loading, setLoading] = useState(true)
   const [sendingMatches, setSendingMatches] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
@@ -69,13 +80,15 @@ export default function BuyerDetailPage() {
     try {
       setLoading(true)
 
-      const [buyerRes, matchesRes] = await Promise.all([
+      const [buyerRes, matchesRes, searchesRes] = await Promise.all([
         fetch(`/api/crm/buyers/${buyerId}`),
         fetch(`/api/crm/buyers/${buyerId}/matches`),
+        fetch(`/api/admin/buyers/${buyerId}/saved-searches`),
       ])
 
       const buyerData = await buyerRes.json()
       const matchesData = await matchesRes.json()
+      const searchesData = await searchesRes.json().catch(() => ({}))
 
       if (!buyerRes.ok || !buyerData?.ok) {
         throw new Error(buyerData?.error || 'Failed to load buyer')
@@ -88,6 +101,7 @@ export default function BuyerDetailPage() {
       setBuyer(buyerData.data)
       setMatches(matchesData.data?.listings || [])
       setMatchesCount(matchesData.data?.listingsCount || 0)
+      setSavedSearches(searchesData?.data?.searches || [])
 
       setLifecycleStage((buyerData.data?.lifecycleStage || 'new') as 'new' | 'active' | 'nurturing' | 'offer' | 'won' | 'lost')
       setPriority((buyerData.data?.priority || 'medium') as 'low' | 'medium' | 'high')
@@ -336,6 +350,48 @@ export default function BuyerDetailPage() {
                   </div>
                 </div>
               </div>
+            </section>
+
+            {/* Saved Searches Section */}
+            <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <FiBookmark className="text-[#00A676]" />
+                <h2 className="text-xl font-semibold text-[#0B2545]">Saved Searches</h2>
+                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">{savedSearches.length}</span>
+              </div>
+              {savedSearches.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500">
+                  No saved searches for this buyer.
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {savedSearches.map((s) => (
+                    <div key={s.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <FiSearch className="text-gray-400 text-xs" />
+                          <span className="font-medium text-[#0B2545] text-sm">{s.label || s.id}</span>
+                          {s.status === 'paused' && (
+                            <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">paused</span>
+                          )}
+                          {!s.marketingOptIn && (
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">mktg off</span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">Frequency: {s.frequency || 'off'}</div>
+                        {s.criteria && Object.keys(s.criteria).length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {Object.entries(s.criteria).slice(0, 6).map(([k, v]) => v ? (
+                              <span key={k} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">{k}: {String(v)}</span>
+                            ) : null)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-400">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : ''}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
 
             <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">

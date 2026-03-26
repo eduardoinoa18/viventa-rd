@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { FiGrid, FiUsers, FiUser, FiHome, FiSettings, FiPlusSquare, FiClipboard, FiTarget, FiActivity, FiChevronLeft, FiCpu, FiDollarSign, FiShield, FiTrendingUp, FiMap } from 'react-icons/fi'
+import { FiGrid, FiUsers, FiUser, FiHome, FiSettings, FiPlusSquare, FiClipboard, FiTarget, FiActivity, FiChevronLeft, FiCpu, FiDollarSign, FiShield, FiTrendingUp, FiMap, FiMail } from 'react-icons/fi'
 import { getSession } from '@/lib/authSession'
 import BrandLogo from './BrandLogo'
 
@@ -54,8 +54,9 @@ export default function AdminSidebar() {
   ]
 
   const allSystem = [
-    { href: '/master/overview',   label: 'Intelligence', icon: <FiTrendingUp />, roles: ['master_admin'] },
-    { href: '/master/activity',   label: 'Activity',    icon: <FiActivity />, roles: ['master_admin', 'admin'] },
+    { href: '/master/overview',         label: 'Intelligence',    icon: <FiTrendingUp />, roles: ['master_admin'] },
+    { href: '/master/activity',         label: 'Activity',        icon: <FiActivity />,   roles: ['master_admin', 'admin'] },
+    { href: '/master/recommendations',  label: 'Recommendations', icon: <FiMail />,       roles: ['master_admin'] },
   ]
 
   const primary   = allPrimary.filter(l => l.roles.includes(userRole))

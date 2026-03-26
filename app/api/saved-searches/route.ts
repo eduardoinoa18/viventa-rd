@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionFromRequest } from '@/lib/auth/session'
+import { getAdminDb } from '@/lib/firebaseAdmin'
+import { emitActivityEvent } from '@/lib/activityEvents'
 import {
   listSavedSearches,
   createSavedSearch,
   updateSavedSearch,
   deleteSavedSearch,
 } from '@/lib/savedSearchService'
+import { backfillSavedSearchMatches } from '@/lib/savedSearchBackfill'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,6 +48,27 @@ export async function POST(req: NextRequest) {
       locale: String(locale || 'es-DO'),
     })
 
+    // Trigger initial backfill so newly-created searches can surface relevant
+    // listings without waiting for the next listing update trigger.
+    void backfillSavedSearchMatches(session.uid, search.id, search)
+
+    const db = getAdminDb()
+    if (db) {
+      void emitActivityEvent(db, {
+        type: 'buyer.search_saved',
+        actorId: session.uid,
+        actorRole: String(session.role || 'buyer'),
+        buyerId: session.uid,
+        workspace: 'buyer',
+        entityType: 'saved_search',
+        entityId: search.id,
+        metadata: {
+          label: search.label,
+          frequency: search.frequency,
+        },
+      })
+    }
+
     return NextResponse.json({ ok: true, search }, { status: 201 })
   } catch (error: any) {
     if (error?.message?.includes('Maximum')) {
@@ -75,6 +99,23 @@ export async function PATCH(req: NextRequest) {
     )
 
     await updateSavedSearch(session.uid, searchId, safePatch)
+
+    const db = getAdminDb()
+    if (db) {
+      void emitActivityEvent(db, {
+        type: 'buyer.search_updated',
+        actorId: session.uid,
+        actorRole: String(session.role || 'buyer'),
+        buyerId: session.uid,
+        workspace: 'buyer',
+        entityType: 'saved_search',
+        entityId: searchId,
+        metadata: {
+          changedKeys: Object.keys(safePatch),
+        },
+      })
+    }
+
     return NextResponse.json({ ok: true })
   } catch (error: any) {
     console.error('[saved-searches] PATCH', error)

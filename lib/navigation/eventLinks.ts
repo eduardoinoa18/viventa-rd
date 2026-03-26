@@ -34,6 +34,8 @@ export function resolveEventUrl(input: EventLinkInput): string | null {
       return '/master/leads'
     case 'listing':
       return listingId ? `/listing/${listingId}` : '/dashboard/listings'
+    case 'saved_search':
+      return '/notifications'
     default:
       return '/dashboard'
   }

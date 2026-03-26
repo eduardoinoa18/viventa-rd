@@ -1,16 +1,20 @@
 import { getAdminDb } from './firebaseAdmin'
 import type { Listing, PropertyType, ListingType } from '@/types/listing'
+import type { ListingLifecycleStatus } from '@/types/platform'
 
 export interface ListingFilters {
   city?: string
   sector?: string
   propertyType?: PropertyType
   listingType?: ListingType
+  agent?: string
+  broker?: string
+  featured?: boolean
   minPrice?: number
   maxPrice?: number
   bedrooms?: number
   bathrooms?: number
-  status?: 'active' | 'draft' | 'pending' | 'sold' | 'rented'
+  status?: ListingLifecycleStatus | 'pending' | 'rented' | 'published' | 'rejected'
 }
 
 export interface ListingSearchResult {
@@ -24,6 +28,61 @@ function normalizeTimestamp(value: any): Date | null {
   if (typeof value.toDate === 'function') return value.toDate()
   if (typeof value === 'string' || typeof value === 'number') return new Date(value)
   return null
+}
+
+function safeText(value: unknown): string {
+  return String(value ?? '').trim()
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+}
+
+async function resolveUserIdByRole(adminDb: any, role: 'agent' | 'broker', rawValue?: string): Promise<string | null> {
+  const value = safeText(rawValue)
+  if (!value) return null
+
+  const byId = await adminDb.collection('users').doc(value).get()
+  if (byId.exists) {
+    const data = byId.data() || {}
+    if (safeText(data.role).toLowerCase() === role) return byId.id
+  }
+
+  try {
+    const bySlug = await adminDb
+      .collection('users')
+      .where('role', '==', role)
+      .where('slug', '==', value.toLowerCase())
+      .limit(1)
+      .get()
+    if (!bySlug.empty) return bySlug.docs[0].id
+  } catch {
+    // fallback below
+  }
+
+  const candidates = await adminDb.collection('users').where('role', '==', role).limit(500).get()
+  for (const doc of candidates.docs) {
+    const data = doc.data() || {}
+    const candidateSlug = safeText(data.slug) || slugify(safeText(data.name || data.displayName || data.company || doc.id))
+    if (candidateSlug === value.toLowerCase()) return doc.id
+  }
+
+  return null
+}
+
+function resolveStatusFilters(status?: ListingFilters['status']): string[] {
+  const resolved = String(status || 'active').toLowerCase()
+  if (resolved === 'active') return ['active', 'published']
+  if (resolved === 'pending' || resolved === 'pending_review') return ['pending_review', 'pending']
+  if (resolved === 'sold' || resolved === 'rented') return ['sold', 'rented']
+  if (resolved === 'archived' || resolved === 'rejected') return ['archived', 'rejected']
+  return [resolved]
 }
 
 /**
@@ -43,9 +102,11 @@ export async function getListings(
 
     let query = adminDb.collection('properties') as any
 
-    // Default to active listings only
-    const status = filters.status || 'active'
-    query = query.where('status', '==', status)
+    // Default to active listings and include legacy published values.
+    const statusFilters = resolveStatusFilters(filters.status)
+    query = statusFilters.length > 1
+      ? query.where('status', 'in', statusFilters)
+      : query.where('status', '==', statusFilters[0])
 
     // Apply filters
     if (filters.city) {
@@ -64,6 +125,17 @@ export async function getListings(
       query = query.where('listingType', '==', filters.listingType)
     }
 
+    if (filters.featured) {
+      query = query.where('featured', '==', true)
+    }
+
+    if (filters.agent) {
+      const agentId = await resolveUserIdByRole(adminDb, 'agent', filters.agent)
+      if (agentId) {
+        query = query.where('agentId', '==', agentId)
+      }
+    }
+
     // Limit results
     query = query.limit(limit)
 
@@ -80,6 +152,20 @@ export async function getListings(
         updatedAt: normalizeTimestamp(data?.updatedAt) || new Date(0),
       }
     }) as Listing[]
+
+    if (filters.broker) {
+      const brokerId = await resolveUserIdByRole(adminDb, 'broker', filters.broker)
+      if (brokerId) {
+        listings = listings.filter((listing: any) => {
+          const direct = safeText((listing as any).brokerId)
+          const createdByBroker = safeText((listing as any).createdByBrokerId)
+          const brokerageId = safeText((listing as any).brokerageId)
+          return direct === brokerId || createdByBroker === brokerId || brokerageId === brokerId
+        })
+      } else {
+        listings = []
+      }
+    }
 
     // Client-side filters for price and bedrooms (Firestore composite index limitation)
     if (filters.minPrice) {
@@ -154,7 +240,7 @@ export async function getActiveCities(): Promise<string[]> {
 
     const snapshot = await adminDb
       .collection('properties')
-      .where('status', '==', 'active')
+      .where('status', 'in', ['active', 'published'])
       .select('city')
       .get()
 
@@ -184,7 +270,7 @@ export async function getSectorsByCity(city: string): Promise<string[]> {
 
     const snapshot = await adminDb
       .collection('properties')
-      .where('status', '==', 'active')
+      .where('status', 'in', ['active', 'published'])
       .where('city', '==', city)
       .select('sector', 'neighborhood')
       .get()

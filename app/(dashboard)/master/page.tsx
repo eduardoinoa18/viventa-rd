@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { FiUsers, FiHome, FiDollarSign, FiClock, FiUserPlus, FiActivity, FiCheckCircle, FiXCircle } from 'react-icons/fi'
+import { FiUsers, FiHome, FiDollarSign, FiClock, FiUserPlus, FiActivity, FiCheckCircle, FiXCircle, FiMail } from 'react-icons/fi'
 
 export default function MasterOverviewPage() {
   const [loading, setLoading] = useState(true)
@@ -538,6 +538,12 @@ export default function MasterOverviewPage() {
             className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
           >
             <FiUsers /> Invite Broker
+          </Link>
+          <Link 
+            href="/master/recommendations" 
+            className="px-6 py-3 bg-gradient-to-r from-[#0B2545] to-[#1d4f7a] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
+          >
+            <FiMail /> Recommendation Pipeline
           </Link>
         </div>
       </section>
