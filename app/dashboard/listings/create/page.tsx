@@ -37,7 +37,15 @@ type CreateForm = {
   coverImage: string
   promoVideoUrl: string
   imagesText: string
-  status: 'active' | 'pending'
+  status: 'active' | 'pending' | 'inactive' | 'sold' | 'rented'
+  maintenanceInfo: string
+  inventoryMode: 'single' | 'project'
+  totalUnits: string
+  availableUnits: string
+  terrainZoningType: string
+  terrainMaxBuildHeight: string
+  terrainBuildPotential: string
+  terrainUtilities: string
 }
 
 export default function CreateProfessionalListingPage() {
@@ -80,6 +88,14 @@ export default function CreateProfessionalListingPage() {
     promoVideoUrl: '',
     imagesText: '',
     status: 'active',
+    maintenanceInfo: '',
+    inventoryMode: 'single',
+    totalUnits: '',
+    availableUnits: '',
+    terrainZoningType: '',
+    terrainMaxBuildHeight: '',
+    terrainBuildPotential: '',
+    terrainUtilities: '',
   })
 
   function update<K extends keyof CreateForm>(key: K, value: CreateForm[K]) {
@@ -178,6 +194,7 @@ export default function CreateProfessionalListingPage() {
           parking: Number(form.parking || 0),
           maintenanceFee: form.maintenanceFee ? Number(form.maintenanceFee) : undefined,
           maintenanceFeeCurrency: form.currency,
+          maintenanceInfo: form.maintenanceInfo || undefined,
           deslindadoStatus: form.deslindadoStatus,
           furnishedStatus: form.furnishedStatus,
           hoaIncludedItems: form.hoaIncludedItems
@@ -196,6 +213,24 @@ export default function CreateProfessionalListingPage() {
           lng: form.lng ? Number(form.lng) : undefined,
           coverImage: form.coverImage || undefined,
           promoVideoUrl: form.promoVideoUrl || undefined,
+          inventoryMode: form.inventoryMode,
+          totalUnits: form.totalUnits ? Number(form.totalUnits) : undefined,
+          availableUnits: form.availableUnits ? Number(form.availableUnits) : undefined,
+          terrainDetails:
+            form.terrainZoningType ||
+            form.terrainMaxBuildHeight ||
+            form.terrainBuildPotential ||
+            form.terrainUtilities
+              ? {
+                  zoningType: form.terrainZoningType || undefined,
+                  maxBuildHeight: form.terrainMaxBuildHeight || undefined,
+                  buildPotential: form.terrainBuildPotential || undefined,
+                  utilitiesAvailable: form.terrainUtilities
+                    .split(',')
+                    .map((item) => item.trim())
+                    .filter(Boolean),
+                }
+              : undefined,
           images: [
             ...uploadedImages,
             ...form.imagesText
@@ -314,9 +349,17 @@ export default function CreateProfessionalListingPage() {
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Estado inicial</label>
-                <select title="Estado inicial del listado" value={form.status} onChange={(e) => update('status', e.target.value as 'active' | 'pending')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                <select
+                  title="Estado inicial del listado"
+                  value={form.status}
+                  onChange={(e) => update('status', e.target.value as CreateForm['status'])}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                >
                   <option value="active">Activo</option>
                   <option value="pending">Pendiente</option>
+                  <option value="inactive">Inactivo</option>
+                  <option value="sold">Vendido</option>
+                  <option value="rented">Alquilado</option>
                 </select>
               </div>
               <div>
@@ -379,6 +422,103 @@ export default function CreateProfessionalListingPage() {
                   <div className="sm:col-span-2">
                     <label className="block text-xs text-gray-600 mb-1">Notas privadas del broker</label>
                     <textarea title="Notas privadas" value={form.brokerNotes} onChange={(e) => update('brokerNotes', e.target.value)} rows={2} placeholder="Notas visibles solo para profesionales" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs text-gray-600 mb-1">Información de mantenimiento</label>
+                    <textarea
+                      title="Información de mantenimiento"
+                      value={form.maintenanceInfo}
+                      onChange={(e) => update('maintenanceInfo', e.target.value)}
+                      rows={2}
+                      placeholder="Qué cubre, frecuencia y reglas de pago"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="sm:col-span-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
+                <label className="text-xs text-gray-700 font-medium">Inventario / Proyecto</label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Modo</label>
+                    <select
+                      title="Modo de inventario"
+                      value={form.inventoryMode}
+                      onChange={(e) => update('inventoryMode', e.target.value as 'single' | 'project')}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    >
+                      <option value="single">Unidad única</option>
+                      <option value="project">Proyecto multi-unidades</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Unidades totales</label>
+                    <input
+                      title="Unidades totales"
+                      value={form.totalUnits}
+                      onChange={(e) => update('totalUnits', e.target.value)}
+                      inputMode="numeric"
+                      placeholder="120"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Unidades disponibles</label>
+                    <input
+                      title="Unidades disponibles"
+                      value={form.availableUnits}
+                      onChange={(e) => update('availableUnits', e.target.value)}
+                      inputMode="numeric"
+                      placeholder="95"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="sm:col-span-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
+                <label className="text-xs text-gray-700 font-medium">Detalles de terreno / zonificación</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Tipo de zonificación</label>
+                    <input
+                      title="Tipo de zonificación"
+                      value={form.terrainZoningType}
+                      onChange={(e) => update('terrainZoningType', e.target.value)}
+                      placeholder="Residencial R-3"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Altura máxima de construcción</label>
+                    <input
+                      title="Altura máxima"
+                      value={form.terrainMaxBuildHeight}
+                      onChange={(e) => update('terrainMaxBuildHeight', e.target.value)}
+                      placeholder="8 niveles"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Potencial constructivo</label>
+                    <input
+                      title="Potencial constructivo"
+                      value={form.terrainBuildPotential}
+                      onChange={(e) => update('terrainBuildPotential', e.target.value)}
+                      placeholder="Hasta 5,000 m2 vendibles"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Servicios disponibles (coma)</label>
+                    <input
+                      title="Servicios disponibles"
+                      value={form.terrainUtilities}
+                      onChange={(e) => update('terrainUtilities', e.target.value)}
+                      placeholder="Agua, Energía, Alcantarillado"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    />
                   </div>
                 </div>
               </div>

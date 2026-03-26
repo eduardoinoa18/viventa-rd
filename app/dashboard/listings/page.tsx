@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 type SessionData = {
@@ -21,6 +21,10 @@ type Listing = {
   currency?: string
   propertyType?: string
   listingType?: string
+  bedrooms?: number
+  bathrooms?: number
+  area?: number
+  daysOnMarket?: number
   commissionOffered?: number
   showingInstructions?: string
   internalNotes?: string
@@ -47,17 +51,6 @@ type WorkspaceResponse = {
   }
 }
 
-function toMillis(value: unknown): number {
-  if (!value) return 0
-  if (value instanceof Date) return value.getTime()
-  if (typeof value === 'object' && value !== null && 'toDate' in (value as any)) {
-    const date = (value as any).toDate()
-    return date instanceof Date ? date.getTime() : 0
-  }
-  const parsed = new Date(String(value))
-  return Number.isFinite(parsed.getTime()) ? parsed.getTime() : 0
-}
-
 function formatPrice(value?: number, currency = 'USD') {
   if (!value || Number.isNaN(Number(value))) return 'Precio no disponible'
   return new Intl.NumberFormat('es-DO', {
@@ -82,7 +75,13 @@ export default function ListingsWorkspacePage() {
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [workspaceMode, setWorkspaceMode] = useState<'my' | 'mls'>('my')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'sold' | 'inactive'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'sold' | 'rented' | 'inactive'>('all')
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState('')
+  const [listingTypeFilter, setListingTypeFilter] = useState('')
+  const [bedroomsMin, setBedroomsMin] = useState('')
+  const [bathroomsMin, setBathroomsMin] = useState('')
+  const [sortBy, setSortBy] = useState<'updatedAt' | 'createdAt' | 'price'>('updatedAt')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [shareStatus, setShareStatus] = useState('')
 
   useEffect(() => {
@@ -118,6 +117,12 @@ export default function ListingsWorkspacePage() {
         if (cityFilter.trim()) params.set('city', cityFilter.trim())
         if (minPrice.trim()) params.set('minPrice', minPrice.trim())
         if (maxPrice.trim()) params.set('maxPrice', maxPrice.trim())
+        if (propertyTypeFilter.trim()) params.set('propertyType', propertyTypeFilter.trim())
+        if (listingTypeFilter.trim()) params.set('listingType', listingTypeFilter.trim())
+        if (bedroomsMin.trim()) params.set('bedroomsMin', bedroomsMin.trim())
+        if (bathroomsMin.trim()) params.set('bathroomsMin', bathroomsMin.trim())
+        params.set('sortBy', sortBy)
+        params.set('sortOrder', sortOrder)
 
         const listingsRes = await fetch(`/api/listings/workspace?${params.toString()}`, { cache: 'no-store' })
         const listingsJson = (await listingsRes.json().catch(() => ({}))) as WorkspaceResponse & { error?: string }
@@ -140,12 +145,22 @@ export default function ListingsWorkspacePage() {
     }
 
     load()
-  }, [workspaceMode, statusFilter, page, pageSize, queryText, cityFilter, minPrice, maxPrice])
-
-  const sortedListings = useMemo(
-    () => [...listings].sort((a, b) => toMillis((b as any).updatedAt || b.createdAt) - toMillis((a as any).updatedAt || a.createdAt)),
-    [listings]
-  )
+  }, [
+    workspaceMode,
+    statusFilter,
+    page,
+    pageSize,
+    queryText,
+    cityFilter,
+    minPrice,
+    maxPrice,
+    propertyTypeFilter,
+    listingTypeFilter,
+    bedroomsMin,
+    bathroomsMin,
+    sortBy,
+    sortOrder,
+  ])
 
   async function shareListing(listingId: string) {
     if (!session) return
@@ -180,6 +195,12 @@ export default function ListingsWorkspacePage() {
     setCityFilter('')
     setMinPrice('')
     setMaxPrice('')
+    setPropertyTypeFilter('')
+    setListingTypeFilter('')
+    setBedroomsMin('')
+    setBathroomsMin('')
+    setSortBy('updatedAt')
+    setSortOrder('desc')
     setPage(1)
   }
 
@@ -235,7 +256,7 @@ export default function ListingsWorkspacePage() {
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            {(['all', 'active', 'pending', 'sold', 'inactive'] as const).map((status) => (
+            {(['all', 'active', 'pending', 'sold', 'rented', 'inactive'] as const).map((status) => (
               <button
                 key={status}
                 type="button"
@@ -281,6 +302,68 @@ export default function ListingsWorkspacePage() {
             />
           </div>
 
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+            <select
+              value={propertyTypeFilter}
+              onChange={(e) => setPropertyTypeFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              title="Tipo de propiedad"
+            >
+              <option value="">Tipo propiedad</option>
+              <option value="apartment">Apartamento</option>
+              <option value="house">Casa</option>
+              <option value="penthouse">Penthouse</option>
+              <option value="villa">Villa</option>
+              <option value="office">Oficina</option>
+              <option value="commercial">Comercial</option>
+              <option value="land">Solar/Terreno</option>
+              <option value="project">Proyecto</option>
+            </select>
+            <select
+              value={listingTypeFilter}
+              onChange={(e) => setListingTypeFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              title="Tipo de operación"
+            >
+              <option value="">Operación</option>
+              <option value="sale">Venta</option>
+              <option value="rent">Alquiler</option>
+            </select>
+            <input
+              value={bedroomsMin}
+              onChange={(e) => setBedroomsMin(e.target.value)}
+              placeholder="Min hab"
+              inputMode="numeric"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+            <input
+              value={bathroomsMin}
+              onChange={(e) => setBathroomsMin(e.target.value)}
+              placeholder="Min baños"
+              inputMode="numeric"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'updatedAt' | 'createdAt' | 'price')}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              title="Ordenar por"
+            >
+              <option value="updatedAt">Ordenar: actividad reciente</option>
+              <option value="createdAt">Ordenar: fecha de alta</option>
+              <option value="price">Ordenar: precio</option>
+            </select>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              title="Dirección de orden"
+            >
+              <option value="desc">Descendente</option>
+              <option value="asc">Ascendente</option>
+            </select>
+          </div>
+
           <div className="mt-2 flex gap-2">
             <button onClick={applyQuickFilters} type="button" className="px-3 py-1.5 rounded-lg bg-[#0B2545] text-white text-xs font-medium">Aplicar filtros</button>
             <button onClick={clearQuickFilters} type="button" className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700">Limpiar</button>
@@ -292,12 +375,12 @@ export default function ListingsWorkspacePage() {
         ) : null}
 
         <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
-          <div className="mb-3 text-xs text-gray-600">Mostrando {sortedListings.length} de {total} resultados</div>
+          <div className="mb-3 text-xs text-gray-600">Mostrando {listings.length} de {total} resultados</div>
           {shareStatus ? (
             <p className="mb-3 text-xs text-[#0B2545] bg-[#E8F4FF] border border-[#CFE8FF] rounded-lg px-3 py-2">{shareStatus}</p>
           ) : null}
 
-          {!sortedListings.length ? (
+          {!listings.length ? (
             <div className="text-sm text-gray-500">
               {workspaceMode === 'mls' ? 'No hay resultados MLS para este filtro.' : 'No tienes listados para este filtro.'}{' '}
               {workspaceMode === 'my' ? (
@@ -307,7 +390,7 @@ export default function ListingsWorkspacePage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {sortedListings.map((listing) => (
+              {listings.map((listing) => (
                 <div key={listing.id} className="rounded-lg border border-gray-200 p-3">
                   <div className="flex items-start justify-between gap-2">
                     <Link href={`/listing/${listing.id}`} className="min-w-0 flex-1 hover:text-[#00A676] transition-colors">
@@ -318,6 +401,10 @@ export default function ListingsWorkspacePage() {
                         {' • '}{listing.status || 'active'}
                         {listing.propertyType ? ` • ${listing.propertyType}` : ''}
                         {listing.listingType ? ` • ${listing.listingType}` : ''}
+                        {typeof listing.bedrooms === 'number' ? ` • ${listing.bedrooms} hab` : ''}
+                        {typeof listing.bathrooms === 'number' ? ` • ${listing.bathrooms} baños` : ''}
+                        {typeof listing.area === 'number' && listing.area > 0 ? ` • ${listing.area} m2` : ''}
+                        {typeof listing.daysOnMarket === 'number' && listing.daysOnMarket > 0 ? ` • ${listing.daysOnMarket} DOM` : ''}
                       </div>
                     </Link>
                     <div className="text-right">

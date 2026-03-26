@@ -14,7 +14,7 @@ import {
   getListingAccessUserContext,
 } from '@/lib/listingOwnership'
 
-type PropertyStatus = 'active' | 'pending' | 'inactive' | 'sold'
+type PropertyStatus = 'active' | 'pending' | 'pending_review' | 'inactive' | 'sold' | 'rented'
 type ListingType = 'sale' | 'rent'
 
 interface PropertyPayload {
@@ -156,6 +156,16 @@ function validatePayload(action: string, data: PropertyPayload) {
   return { ok: errors.length === 0, errors }
 }
 
+function normalizePropertyStatus(raw: unknown): PropertyStatus {
+  const normalized = String(raw || '').trim().toLowerCase()
+  if (normalized === 'pending_review') return 'pending'
+  if (normalized === 'rented') return 'rented'
+  if (normalized === 'sold') return 'sold'
+  if (normalized === 'inactive') return 'inactive'
+  if (normalized === 'pending') return 'pending'
+  return 'active'
+}
+
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
@@ -274,7 +284,7 @@ export async function POST(req: Request) {
         }
       }
       // default to active if not provided
-      if (!createData.status) createData.status = 'active'
+      createData.status = normalizePropertyStatus(createData.status)
       if (typeof createData.price === 'string') createData.price = Number(createData.price)
       if (typeof createData.bedrooms === 'string') createData.bedrooms = Number(createData.bedrooms)
       if (typeof createData.bathrooms === 'string') createData.bathrooms = Number(createData.bathrooms)
@@ -391,6 +401,10 @@ export async function POST(req: Request) {
         delete updateData.brokerageId
         delete updateData.brokerage_id
       }
+      if (Object.prototype.hasOwnProperty.call(updateData, 'status')) {
+        updateData.status = normalizePropertyStatus(updateData.status)
+      }
+
       if (typeof updateData.price === 'string') updateData.price = Number(updateData.price)
       if (typeof updateData.bedrooms === 'string') updateData.bedrooms = Number(updateData.bedrooms)
       if (typeof updateData.bathrooms === 'string') updateData.bathrooms = Number(updateData.bathrooms)

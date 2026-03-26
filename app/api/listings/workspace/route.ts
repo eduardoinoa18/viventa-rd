@@ -11,6 +11,8 @@ import {
 export const dynamic = 'force-dynamic'
 
 type WorkspaceMode = 'my' | 'mls' | 'all'
+type WorkspaceSortBy = 'updatedAt' | 'createdAt' | 'price'
+type WorkspaceSortOrder = 'asc' | 'desc'
 
 function safeText(value: unknown): string {
   return String(value ?? '').trim()
@@ -39,6 +41,15 @@ function toMillis(value: any): number {
 function parseMode(value: string | null): WorkspaceMode {
   if (value === 'mls' || value === 'all' || value === 'my') return value
   return 'my'
+}
+
+function parseSortBy(value: string | null): WorkspaceSortBy {
+  if (value === 'createdAt' || value === 'price' || value === 'updatedAt') return value
+  return 'updatedAt'
+}
+
+function parseSortOrder(value: string | null): WorkspaceSortOrder {
+  return value === 'asc' ? 'asc' : 'desc'
 }
 
 function applyFirestoreFilters(
@@ -84,6 +95,12 @@ export async function GET(req: Request) {
     const cityFilter = safeLower(rawCityFilter)
     const minPrice = Number(searchParams.get('minPrice') || '')
     const maxPrice = Number(searchParams.get('maxPrice') || '')
+    const propertyTypeFilter = safeLower(searchParams.get('propertyType'))
+    const listingTypeFilter = safeLower(searchParams.get('listingType'))
+    const bedroomsMin = Number(searchParams.get('bedroomsMin') || '')
+    const bathroomsMin = Number(searchParams.get('bathroomsMin') || '')
+    const sortBy = parseSortBy(searchParams.get('sortBy'))
+    const sortOrder = parseSortOrder(searchParams.get('sortOrder'))
 
     const pageSize = Math.min(Math.max(Number(searchParams.get('pageSize') || searchParams.get('limit') || '40'), 1), 200)
     const page = Math.max(Number(searchParams.get('page') || '1'), 1)
@@ -206,6 +223,8 @@ export async function GET(req: Request) {
         const sector = safeText(raw.sector || raw.neighborhood)
         const status = safeText(raw.status || 'pending').toLowerCase()
         const price = toNumber(raw.price)
+        const createdAtMillis = toMillis(raw.createdAt)
+        const daysOnMarket = createdAtMillis > 0 ? Math.max(0, Math.floor((Date.now() - createdAtMillis) / (24 * 60 * 60 * 1000))) : 0
 
         if (effectiveStatusFilter && status !== effectiveStatusFilter) return null
         if (queryText) {
@@ -215,6 +234,16 @@ export async function GET(req: Request) {
         if (cityFilter && safeLower(city) !== cityFilter) return null
         if (Number.isFinite(minPrice) && minPrice > 0 && price < minPrice) return null
         if (Number.isFinite(maxPrice) && maxPrice > 0 && price > maxPrice) return null
+
+        const normalizedPropertyType = safeLower(raw.propertyType)
+        const normalizedListingType = safeLower(raw.listingType)
+        if (propertyTypeFilter && normalizedPropertyType !== propertyTypeFilter) return null
+        if (listingTypeFilter && normalizedListingType !== listingTypeFilter) return null
+
+        const bedrooms = toNumber(raw.bedrooms)
+        const bathrooms = toNumber(raw.bathrooms)
+        if (Number.isFinite(bedroomsMin) && bedroomsMin > 0 && bedrooms < bedroomsMin) return null
+        if (Number.isFinite(bathroomsMin) && bathroomsMin > 0 && bathrooms < bathroomsMin) return null
 
         return {
           id: doc.id,
@@ -230,12 +259,13 @@ export async function GET(req: Request) {
           listingType: safeText(raw.listingType),
           price,
           currency: safeText(raw.currency || 'USD'),
-          bedrooms: toNumber(raw.bedrooms),
-          bathrooms: toNumber(raw.bathrooms),
+          bedrooms,
+          bathrooms,
           area: toNumber(raw.area || raw.meters || raw.squareMeters),
           images: Array.isArray(raw.images) ? raw.images : [],
           createdAt: raw.createdAt || null,
           updatedAt: raw.updatedAt || null,
+          daysOnMarket,
           isMine,
           canManage,
           mlsOnly: Boolean(raw.mlsOnly),
@@ -251,7 +281,27 @@ export async function GET(req: Request) {
         }
       })
       .filter(Boolean)
-      .sort((a: any, b: any) => toMillis(b.updatedAt || b.createdAt) - toMillis(a.updatedAt || a.createdAt))
+      .sort((a: any, b: any) => {
+        const aValue =
+          sortBy === 'price'
+            ? toNumber(a.price)
+            : sortBy === 'createdAt'
+              ? toMillis(a.createdAt)
+              : toMillis(a.updatedAt || a.createdAt)
+
+        const bValue =
+          sortBy === 'price'
+            ? toNumber(b.price)
+            : sortBy === 'createdAt'
+              ? toMillis(b.createdAt)
+              : toMillis(b.updatedAt || b.createdAt)
+
+        if (aValue === bValue) {
+          return toMillis(b.updatedAt || b.createdAt) - toMillis(a.updatedAt || a.createdAt)
+        }
+
+        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue
+      })
 
     const total = rows.length
     const start = (page - 1) * pageSize
@@ -266,6 +316,8 @@ export async function GET(req: Request) {
       page,
       pageSize,
       hasMore,
+      sortBy,
+      sortOrder,
       permissions: {
         canCreate: isAdmin || isProfessional,
         canUseMls: true,
