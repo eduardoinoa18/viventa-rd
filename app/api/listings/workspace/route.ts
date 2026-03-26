@@ -278,6 +278,8 @@ export async function GET(req: Request) {
           responsibleAgent: safeText(raw.agentName),
           responsibleBroker: safeText(raw.brokerName || raw.companyName),
           constructora: safeText(raw.constructora || raw.builderName),
+          features: Array.isArray(raw.features) ? (raw.features as string[]) : [],
+          coverImage: safeText(raw.coverImage),
         }
       })
       .filter(Boolean)

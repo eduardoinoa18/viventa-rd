@@ -1,12 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { uploadMultipleImages, validateImageFiles } from '@/lib/storageService'
-import { mapOfficeQuotaIssue } from '@/lib/quotaUiMessages'
 
-type CreateForm = {
+type EditForm = {
   title: string
   description: string
   price: string
@@ -36,7 +35,6 @@ type CreateForm = {
   lng: string
   coverImage: string
   promoVideoUrl: string
-  imagesText: string
   status: 'active' | 'pending' | 'inactive' | 'sold' | 'rented'
   maintenanceInfo: string
   inventoryMode: 'single' | 'project'
@@ -48,16 +46,31 @@ type CreateForm = {
   terrainUtilities: string
 }
 
-export default function CreateProfessionalListingPage() {
+const AMENITIES_CATEGORIES = [
+  { key: 'interior', label: 'Interior', items: [{ id: 'ac', label: 'Aire Acondicionado' }, { id: 'furnished', label: 'Amueblado' }, { id: 'kitchen-equipped', label: 'Cocina Equipada' }, { id: 'walk-in-closet', label: 'Walk-in Closet' }, { id: 'laundry-room', label: 'Cuarto de Lavado' }, { id: 'maid-quarters', label: 'Cuarto de Servicio' }, { id: 'office', label: 'Oficina/Estudio' }, { id: 'fireplace', label: 'Chimenea' }, { id: 'high-ceilings', label: 'Techos Altos' }, { id: 'hardwood-floors', label: 'Pisos de Madera' }] },
+  { key: 'exterior', label: 'Exterior', items: [{ id: 'pool', label: 'Piscina' }, { id: 'garden', label: 'Jardín' }, { id: 'terrace', label: 'Terraza' }, { id: 'balcony', label: 'Balcón' }, { id: 'bbq-area', label: 'Área BBQ' }, { id: 'outdoor-kitchen', label: 'Cocina Exterior' }, { id: 'gazebo', label: 'Gazebo' }, { id: 'jacuzzi', label: 'Jacuzzi' }, { id: 'deck', label: 'Deck' }, { id: 'patio', label: 'Patio' }] },
+  { key: 'building', label: 'Edificio/Comunidad', items: [{ id: 'elevator', label: 'Ascensor' }, { id: 'gym', label: 'Gimnasio' }, { id: 'security-24-7', label: 'Seguridad 24/7' }, { id: 'concierge', label: 'Conserje' }, { id: 'playground', label: 'Parque Infantil' }, { id: 'social-area', label: 'Área Social' }, { id: 'party-room', label: 'Salón de Fiestas' }, { id: 'coworking', label: 'Coworking' }, { id: 'pet-friendly', label: 'Pet-Friendly' }, { id: 'spa', label: 'Spa' }, { id: 'tennis-court', label: 'Cancha de Tenis' }, { id: 'basketball-court', label: 'Cancha de Baloncesto' }] },
+  { key: 'parking', label: 'Parqueo', items: [{ id: 'covered-parking', label: 'Parqueo Techado' }, { id: 'garage', label: 'Garaje' }, { id: 'visitor-parking', label: 'Parqueo Visitantes' }, { id: 'electric-charger', label: 'Cargador Eléctrico' }] },
+  { key: 'views', label: 'Vistas', items: [{ id: 'ocean-view', label: 'Vista al Mar' }, { id: 'mountain-view', label: 'Vista a Montañas' }, { id: 'city-view', label: 'Vista a Ciudad' }, { id: 'golf-view', label: 'Vista a Campo Golf' }, { id: 'garden-view', label: 'Vista a Jardín' }, { id: 'pool-view', label: 'Vista a Piscina' }] },
+  { key: 'technology', label: 'Tecnología', items: [{ id: 'smart-home', label: 'Smart Home' }, { id: 'fiber-optic', label: 'Fibra Óptica' }, { id: 'solar-panels', label: 'Paneles Solares' }, { id: 'backup-generator', label: 'Planta Eléctrica' }, { id: 'water-cistern', label: 'Cisterna' }, { id: 'security-cameras', label: 'Cámaras de Seguridad' }, { id: 'alarm-system', label: 'Sistema de Alarma' }] },
+] as const
+
+export default function EditProfessionalListingPage() {
   const router = useRouter()
+  const params = useParams()
+  const listingId = String(params?.id || '')
+
+  const [loadingData, setLoadingData] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [error, setError] = useState('')
-  const [errorCta, setErrorCta] = useState<{ href: string; label: string } | null>(null)
   const [features, setFeatures] = useState<string[]>([])
-  const [form, setForm] = useState<CreateForm>({
+  const [listingDisplayId, setListingDisplayId] = useState('')
+
+  const [form, setForm] = useState<EditForm>({
     title: '',
     description: '',
     price: '',
@@ -87,7 +100,6 @@ export default function CreateProfessionalListingPage() {
     lng: '',
     coverImage: '',
     promoVideoUrl: '',
-    imagesText: '',
     status: 'active',
     maintenanceInfo: '',
     inventoryMode: 'single',
@@ -99,7 +111,81 @@ export default function CreateProfessionalListingPage() {
     terrainUtilities: '',
   })
 
-  function update<K extends keyof CreateForm>(key: K, value: CreateForm[K]) {
+  useEffect(() => {
+    if (!listingId) return
+
+    async function loadListing() {
+      try {
+        setLoadingData(true)
+        const res = await fetch(`/api/properties/${listingId}`, { cache: 'no-store' })
+        const json = await res.json().catch(() => ({}))
+
+        if (!res.ok || !json?.ok || !json?.data) {
+          setLoadError(json?.error || 'No se pudo cargar el listado.')
+          return
+        }
+
+        const d = json.data as Record<string, any>
+        setListingDisplayId(d.listingId || listingId)
+        setFeatures(Array.isArray(d.features) ? d.features : [])
+        setUploadedImages(Array.isArray(d.images) ? d.images : [])
+
+        const hoaRaw = Array.isArray(d.hoaIncludedItems) ? d.hoaIncludedItems.join(', ') : String(d.hoaIncludedItems || '')
+        const terrainUtilities = Array.isArray(d.terrainDetails?.utilitiesAvailable)
+          ? d.terrainDetails.utilitiesAvailable.join(', ')
+          : String(d.terrainDetails?.utilitiesAvailable || '')
+
+        setForm({
+          title: String(d.title || ''),
+          description: String(d.description || d.publicRemarks || ''),
+          price: d.price ? String(d.price) : '',
+          currency: d.currency === 'DOP' ? 'DOP' : 'USD',
+          city: String(d.city || ''),
+          neighborhood: String(d.neighborhood || d.sector || ''),
+          location: String(d.location || ''),
+          propertyType: String(d.propertyType || 'apartment'),
+          listingType: d.listingType === 'rent' ? 'rent' : 'sale',
+          bedrooms: d.bedrooms !== undefined ? String(d.bedrooms) : '1',
+          bathrooms: d.bathrooms !== undefined ? String(d.bathrooms) : '1',
+          area: d.area ? String(d.area) : '',
+          parking: d.parking !== undefined ? String(d.parking) : '0',
+          maintenanceFee: d.maintenanceFee ? String(d.maintenanceFee) : '',
+          deslindadoStatus: (['deslindado', 'en-proceso', 'sin-deslinde', 'desconocido'].includes(d.deslindadoStatus) ? d.deslindadoStatus : 'desconocido') as EditForm['deslindadoStatus'],
+          furnishedStatus: (['amueblado', 'semi-amueblado', 'sin-amueblar'].includes(d.furnishedStatus) ? d.furnishedStatus : 'sin-amueblar') as EditForm['furnishedStatus'],
+          hoaIncludedItems: hoaRaw,
+          mlsOnly: Boolean(d.mlsOnly),
+          cobrokeCommissionPercent: d.cobrokeCommissionPercent ? String(d.cobrokeCommissionPercent) : '',
+          showingInstructions: String(d.showingInstructions || ''),
+          brokerNotes: String(d.brokerNotes || ''),
+          privateContactName: String(d.privateContactName || ''),
+          privateContactPhone: String(d.privateContactPhone || ''),
+          privateContactEmail: String(d.privateContactEmail || ''),
+          address: String(d.address || ''),
+          lat: d.lat !== undefined && d.lat !== null ? String(d.lat) : '',
+          lng: d.lng !== undefined && d.lng !== null ? String(d.lng) : '',
+          coverImage: String(d.coverImage || ''),
+          promoVideoUrl: String(d.promoVideoUrl || ''),
+          status: (['active', 'pending', 'inactive', 'sold', 'rented'].includes(d.status) ? d.status : 'active') as EditForm['status'],
+          maintenanceInfo: String(d.maintenanceInfo || ''),
+          inventoryMode: d.inventoryMode === 'project' ? 'project' : 'single',
+          totalUnits: d.totalUnits ? String(d.totalUnits) : '',
+          availableUnits: d.availableUnits ? String(d.availableUnits) : '',
+          terrainZoningType: String(d.terrainDetails?.zoningType || ''),
+          terrainMaxBuildHeight: String(d.terrainDetails?.maxBuildHeight || ''),
+          terrainBuildPotential: String(d.terrainDetails?.buildPotential || ''),
+          terrainUtilities,
+        })
+      } catch (err: any) {
+        setLoadError(err?.message || 'Error cargando listado.')
+      } finally {
+        setLoadingData(false)
+      }
+    }
+
+    loadListing()
+  }, [listingId])
+
+  function update<K extends keyof EditForm>(key: K, value: EditForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -110,21 +196,17 @@ export default function CreateProfessionalListingPage() {
   function onFileSelect(files: FileList | null) {
     const incoming = Array.from(files || [])
     if (!incoming.length) return
-    const total = uploadedImages.length + incoming.length
-    if (total > 20) {
+    if (uploadedImages.length + incoming.length > 20) {
       setError('Máximo 20 imágenes por listado.')
-      setErrorCta(null)
       return
     }
     const validation = validateImageFiles(incoming)
     if (!validation.valid) {
       setError(validation.errors[0] || 'Archivos inválidos')
-      setErrorCta(null)
       return
     }
     setSelectedFiles(incoming)
     setError('')
-    setErrorCta(null)
   }
 
   async function uploadSelectedFiles() {
@@ -132,11 +214,9 @@ export default function CreateProfessionalListingPage() {
       setError('Selecciona imágenes antes de subir.')
       return
     }
-
     try {
       setUploading(true)
       setError('')
-      setErrorCta(null)
       const folder = `listing_images/pro_${Date.now()}`
       const urls = await uploadMultipleImages(selectedFiles, folder)
       setUploadedImages((prev) => [...prev, ...urls])
@@ -146,33 +226,22 @@ export default function CreateProfessionalListingPage() {
       }
     } catch (uploadError: any) {
       setError(uploadError?.message || 'No se pudieron subir las imágenes')
-      setErrorCta(null)
     } finally {
       setUploading(false)
     }
   }
 
-  function removeUploadedImage(url: string) {
+  function removeImage(url: string) {
     setUploadedImages((prev) => prev.filter((item) => item !== url))
-    if (form.coverImage === url) {
-      setForm((prev) => ({ ...prev, coverImage: '' }))
-    }
+    if (form.coverImage === url) setForm((prev) => ({ ...prev, coverImage: '' }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    setErrorCta(null)
 
     if (!form.title || !form.description || !form.price || !form.city || !form.neighborhood) {
       setError('Completa título, descripción, precio, ciudad y sector.')
-      setErrorCta(null)
-      return
-    }
-
-    if ((form.lat && !form.lng) || (!form.lat && form.lng)) {
-      setError('Si completas coordenadas, incluye latitud y longitud.')
-      setErrorCta(null)
       return
     }
 
@@ -182,7 +251,8 @@ export default function CreateProfessionalListingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'create',
+          action: 'update',
+          id: listingId,
           title: form.title,
           description: form.description,
           price: Number(form.price),
@@ -202,10 +272,7 @@ export default function CreateProfessionalListingPage() {
           maintenanceInfo: form.maintenanceInfo || undefined,
           deslindadoStatus: form.deslindadoStatus,
           furnishedStatus: form.furnishedStatus,
-          hoaIncludedItems: form.hoaIncludedItems
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean),
+          hoaIncludedItems: form.hoaIncludedItems.split(',').map((i) => i.trim()).filter(Boolean),
           mlsOnly: form.mlsOnly,
           cobrokeCommissionPercent: form.cobrokeCommissionPercent ? Number(form.cobrokeCommissionPercent) : undefined,
           showingInstructions: form.showingInstructions || undefined,
@@ -218,53 +285,52 @@ export default function CreateProfessionalListingPage() {
           lng: form.lng ? Number(form.lng) : undefined,
           coverImage: form.coverImage || undefined,
           promoVideoUrl: form.promoVideoUrl || undefined,
+          images: uploadedImages,
+          features,
           inventoryMode: form.inventoryMode,
           totalUnits: form.totalUnits ? Number(form.totalUnits) : undefined,
           availableUnits: form.availableUnits ? Number(form.availableUnits) : undefined,
           terrainDetails:
-            form.terrainZoningType ||
-            form.terrainMaxBuildHeight ||
-            form.terrainBuildPotential ||
-            form.terrainUtilities
+            form.terrainZoningType || form.terrainMaxBuildHeight || form.terrainBuildPotential || form.terrainUtilities
               ? {
                   zoningType: form.terrainZoningType || undefined,
                   maxBuildHeight: form.terrainMaxBuildHeight || undefined,
                   buildPotential: form.terrainBuildPotential || undefined,
-                  utilitiesAvailable: form.terrainUtilities
-                    .split(',')
-                    .map((item) => item.trim())
-                    .filter(Boolean),
+                  utilitiesAvailable: form.terrainUtilities.split(',').map((i) => i.trim()).filter(Boolean),
                 }
               : undefined,
-          images: [
-            ...uploadedImages,
-            ...form.imagesText
-              .split(',')
-              .map((item) => item.trim())
-              .filter(Boolean),
-          ],
-          features,
         }),
       })
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.success) {
-        const issue = mapOfficeQuotaIssue(json || {}, {
-          context: 'listing',
-          fallbackMessage: 'No se pudo crear el listado',
-        })
-        setError(issue.message)
-        setErrorCta(issue.ctaHref && issue.ctaLabel ? { href: issue.ctaHref, label: issue.ctaLabel } : null)
+        setError(json?.error || 'No se pudo actualizar el listado.')
         return
       }
 
-      router.push(`/listing/${json.id}`)
+      router.push(`/listing/${listingId}`)
     } catch (submitError: any) {
-      setError(submitError?.message || 'No se pudo crear el listado')
-      setErrorCta(null)
+      setError(submitError?.message || 'No se pudo actualizar el listado.')
     } finally {
       setSaving(false)
     }
+  }
+
+  if (loadingData) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-600 text-sm">
+        Cargando listado...
+      </main>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4 p-8">
+        <p className="text-sm text-red-600">{loadError}</p>
+        <Link href="/dashboard/listings" className="text-sm text-[#0B2545] underline">Volver al workspace</Link>
+      </main>
+    )
   }
 
   return (
@@ -273,26 +339,31 @@ export default function CreateProfessionalListingPage() {
         <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Crear listado</h1>
-              <p className="text-sm text-gray-600 mt-1">Publica una propiedad en tu cartera profesional.</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Editar listado</h1>
+              {listingDisplayId && (
+                <p className="text-xs text-gray-500 mt-0.5">{listingDisplayId}</p>
+              )}
             </div>
-            <Link href="/dashboard/listings" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Ver mis listados</Link>
+            <div className="flex gap-2">
+              <Link href={`/listing/${listingId}`} className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Ver publicación</Link>
+              <Link href="/dashboard/listings" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Mis listados</Link>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <label className="block text-xs text-gray-600 mb-1">Título</label>
-                <input title="Título del listado" placeholder="Ej: Apartamento moderno en Naco" value={form.title} onChange={(e) => update('title', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Título del listado" value={form.title} onChange={(e) => update('title', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs text-gray-600 mb-1">Descripción</label>
-                <textarea title="Descripción del listado" placeholder="Describe detalles clave, amenidades y beneficios" value={form.description} onChange={(e) => update('description', e.target.value)} rows={4} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <textarea title="Descripción" value={form.description} onChange={(e) => update('description', e.target.value)} rows={4} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
 
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Precio</label>
-                <input title="Precio" placeholder="250000" value={form.price} onChange={(e) => update('price', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Precio" value={form.price} onChange={(e) => update('price', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Moneda</label>
@@ -304,16 +375,16 @@ export default function CreateProfessionalListingPage() {
 
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Ciudad</label>
-                <input title="Ciudad" placeholder="Santo Domingo" value={form.city} onChange={(e) => update('city', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Ciudad" value={form.city} onChange={(e) => update('city', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Sector</label>
-                <input title="Sector" placeholder="Naco" value={form.neighborhood} onChange={(e) => update('neighborhood', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Sector" value={form.neighborhood} onChange={(e) => update('neighborhood', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-xs text-gray-600 mb-1">Ubicación textual</label>
-                <input title="Ubicación textual" value={form.location} onChange={(e) => update('location', e.target.value)} placeholder="Ej: Naco, Santo Domingo" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Ubicación textual" value={form.location} onChange={(e) => update('location', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
 
               <div>
@@ -339,28 +410,24 @@ export default function CreateProfessionalListingPage() {
 
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Habitaciones</label>
-                <input title="Habitaciones" placeholder="3" value={form.bedrooms} onChange={(e) => update('bedrooms', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Habitaciones" value={form.bedrooms} onChange={(e) => update('bedrooms', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Baños</label>
-                <input title="Baños" placeholder="2" value={form.bathrooms} onChange={(e) => update('bathrooms', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Baños" value={form.bathrooms} onChange={(e) => update('bathrooms', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Área (m²)</label>
-                <input title="Área en metros cuadrados" placeholder="120" value={form.area} onChange={(e) => update('area', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Área" value={form.area} onChange={(e) => update('area', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Parqueos</label>
-                <input title="Cantidad de parqueos" placeholder="2" value={form.parking} onChange={(e) => update('parking', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Parqueos" value={form.parking} onChange={(e) => update('parking', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
+
               <div>
-                <label className="block text-xs text-gray-600 mb-1">Estado inicial</label>
-                <select
-                  title="Estado inicial del listado"
-                  value={form.status}
-                  onChange={(e) => update('status', e.target.value as CreateForm['status'])}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                >
+                <label className="block text-xs text-gray-600 mb-1">Estado</label>
+                <select title="Estado" value={form.status} onChange={(e) => update('status', e.target.value as EditForm['status'])} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                   <option value="active">Activo</option>
                   <option value="pending">Pendiente</option>
                   <option value="inactive">Inactivo</option>
@@ -370,12 +437,12 @@ export default function CreateProfessionalListingPage() {
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Mantenimiento ({form.currency})</label>
-                <input title="Costo de mantenimiento" placeholder="150" value={form.maintenanceFee} onChange={(e) => update('maintenanceFee', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Mantenimiento" value={form.maintenanceFee} onChange={(e) => update('maintenanceFee', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
 
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Estado deslinde</label>
-                <select title="Estado de deslinde" value={form.deslindadoStatus} onChange={(e) => update('deslindadoStatus', e.target.value as CreateForm['deslindadoStatus'])} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                <select title="Deslinde" value={form.deslindadoStatus} onChange={(e) => update('deslindadoStatus', e.target.value as EditForm['deslindadoStatus'])} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                   <option value="desconocido">Desconocido</option>
                   <option value="deslindado">Deslindado</option>
                   <option value="en-proceso">En proceso</option>
@@ -384,7 +451,7 @@ export default function CreateProfessionalListingPage() {
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Amueblado</label>
-                <select title="Estado amueblado" value={form.furnishedStatus} onChange={(e) => update('furnishedStatus', e.target.value as CreateForm['furnishedStatus'])} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                <select title="Amueblado" value={form.furnishedStatus} onChange={(e) => update('furnishedStatus', e.target.value as EditForm['furnishedStatus'])} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                   <option value="sin-amueblar">Sin amueblar</option>
                   <option value="semi-amueblado">Semi-amueblado</option>
                   <option value="amueblado">Amueblado</option>
@@ -393,9 +460,10 @@ export default function CreateProfessionalListingPage() {
 
               <div className="sm:col-span-2">
                 <label className="block text-xs text-gray-600 mb-1">HOA incluye (separado por comas)</label>
-                <input title="HOA incluye" value={form.hoaIncludedItems} onChange={(e) => update('hoaIncludedItems', e.target.value)} placeholder="Seguridad, piscina, gimnasio" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="HOA" value={form.hoaIncludedItems} onChange={(e) => update('hoaIncludedItems', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
 
+              {/* MLS Professional Data */}
               <div className="sm:col-span-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
                 <div className="flex items-center justify-between gap-2">
                   <label className="text-xs text-gray-700 font-medium">Datos MLS profesionales</label>
@@ -407,142 +475,95 @@ export default function CreateProfessionalListingPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Co-broke comisión (%)</label>
-                    <input title="Comisión co-broke" value={form.cobrokeCommissionPercent} onChange={(e) => update('cobrokeCommissionPercent', e.target.value)} placeholder="3" inputMode="decimal" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                    <input title="Co-broke" value={form.cobrokeCommissionPercent} onChange={(e) => update('cobrokeCommissionPercent', e.target.value)} inputMode="decimal" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Contacto privado (nombre)</label>
-                    <input title="Contacto privado nombre" value={form.privateContactName} onChange={(e) => update('privateContactName', e.target.value)} placeholder="Nombre" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                    <input title="Nombre contacto" value={form.privateContactName} onChange={(e) => update('privateContactName', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Contacto privado (teléfono)</label>
-                    <input title="Contacto privado teléfono" value={form.privateContactPhone} onChange={(e) => update('privateContactPhone', e.target.value)} placeholder="809..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                    <input title="Teléfono contacto" value={form.privateContactPhone} onChange={(e) => update('privateContactPhone', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Contacto privado (email)</label>
-                    <input title="Contacto privado email" value={form.privateContactEmail} onChange={(e) => update('privateContactEmail', e.target.value)} placeholder="broker@..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                    <input title="Email contacto" value={form.privateContactEmail} onChange={(e) => update('privateContactEmail', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-xs text-gray-600 mb-1">Instrucciones de showing</label>
-                    <textarea title="Instrucciones de showing" value={form.showingInstructions} onChange={(e) => update('showingInstructions', e.target.value)} rows={2} placeholder="Coordinar con 24h de antelación..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                    <textarea title="Showing" value={form.showingInstructions} onChange={(e) => update('showingInstructions', e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-xs text-gray-600 mb-1">Notas privadas del broker</label>
-                    <textarea title="Notas privadas" value={form.brokerNotes} onChange={(e) => update('brokerNotes', e.target.value)} rows={2} placeholder="Notas visibles solo para profesionales" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                    <textarea title="Notas broker" value={form.brokerNotes} onChange={(e) => update('brokerNotes', e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-xs text-gray-600 mb-1">Información de mantenimiento</label>
-                    <textarea
-                      title="Información de mantenimiento"
-                      value={form.maintenanceInfo}
-                      onChange={(e) => update('maintenanceInfo', e.target.value)}
-                      rows={2}
-                      placeholder="Qué cubre, frecuencia y reglas de pago"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                    />
+                    <textarea title="Mantenimiento info" value={form.maintenanceInfo} onChange={(e) => update('maintenanceInfo', e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                 </div>
               </div>
 
+              {/* Inventory / Project */}
               <div className="sm:col-span-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
                 <label className="text-xs text-gray-700 font-medium">Inventario / Proyecto</label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Modo</label>
-                    <select
-                      title="Modo de inventario"
-                      value={form.inventoryMode}
-                      onChange={(e) => update('inventoryMode', e.target.value as 'single' | 'project')}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                    >
+                    <select title="Modo" value={form.inventoryMode} onChange={(e) => update('inventoryMode', e.target.value as 'single' | 'project')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                       <option value="single">Unidad única</option>
                       <option value="project">Proyecto multi-unidades</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Unidades totales</label>
-                    <input
-                      title="Unidades totales"
-                      value={form.totalUnits}
-                      onChange={(e) => update('totalUnits', e.target.value)}
-                      inputMode="numeric"
-                      placeholder="120"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                    />
+                    <input title="Total" value={form.totalUnits} onChange={(e) => update('totalUnits', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Unidades disponibles</label>
-                    <input
-                      title="Unidades disponibles"
-                      value={form.availableUnits}
-                      onChange={(e) => update('availableUnits', e.target.value)}
-                      inputMode="numeric"
-                      placeholder="95"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                    />
+                    <input title="Disponibles" value={form.availableUnits} onChange={(e) => update('availableUnits', e.target.value)} inputMode="numeric" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                 </div>
               </div>
 
+              {/* Terrain */}
               <div className="sm:col-span-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
                 <label className="text-xs text-gray-700 font-medium">Detalles de terreno / zonificación</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Tipo de zonificación</label>
-                    <input
-                      title="Tipo de zonificación"
-                      value={form.terrainZoningType}
-                      onChange={(e) => update('terrainZoningType', e.target.value)}
-                      placeholder="Residencial R-3"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                    />
+                    <input title="Zonificación" value={form.terrainZoningType} onChange={(e) => update('terrainZoningType', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Altura máxima de construcción</label>
-                    <input
-                      title="Altura máxima"
-                      value={form.terrainMaxBuildHeight}
-                      onChange={(e) => update('terrainMaxBuildHeight', e.target.value)}
-                      placeholder="8 niveles"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                    />
+                    <input title="Altura max" value={form.terrainMaxBuildHeight} onChange={(e) => update('terrainMaxBuildHeight', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Potencial constructivo</label>
-                    <input
-                      title="Potencial constructivo"
-                      value={form.terrainBuildPotential}
-                      onChange={(e) => update('terrainBuildPotential', e.target.value)}
-                      placeholder="Hasta 5,000 m2 vendibles"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                    />
+                    <input title="Potencial" value={form.terrainBuildPotential} onChange={(e) => update('terrainBuildPotential', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Servicios disponibles (coma)</label>
-                    <input
-                      title="Servicios disponibles"
-                      value={form.terrainUtilities}
-                      onChange={(e) => update('terrainUtilities', e.target.value)}
-                      placeholder="Agua, Energía, Alcantarillado"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                    />
+                    <input title="Servicios" value={form.terrainUtilities} onChange={(e) => update('terrainUtilities', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                   </div>
                 </div>
               </div>
 
+              {/* Location */}
               <div className="sm:col-span-2">
                 <label className="block text-xs text-gray-600 mb-1">Dirección</label>
-                <input title="Dirección" value={form.address} onChange={(e) => update('address', e.target.value)} placeholder="Dirección exacta (opcional)" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Dirección" value={form.address} onChange={(e) => update('address', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Latitud</label>
-                <input title="Latitud" value={form.lat} onChange={(e) => update('lat', e.target.value)} inputMode="decimal" placeholder="18.4861" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Latitud" value={form.lat} onChange={(e) => update('lat', e.target.value)} inputMode="decimal" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Longitud</label>
-                <input title="Longitud" value={form.lng} onChange={(e) => update('lng', e.target.value)} inputMode="decimal" placeholder="-69.9312" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Longitud" value={form.lng} onChange={(e) => update('lng', e.target.value)} inputMode="decimal" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
 
-              {/* ─────────── AMENIDADES ─────────── */}
+              {/* Amenities */}
               <div className="sm:col-span-2">
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs text-gray-700 font-medium">Amenidades</label>
@@ -551,14 +572,7 @@ export default function CreateProfessionalListingPage() {
                   )}
                 </div>
                 <div className="space-y-3">
-                  {([
-                    { key: 'interior', label: 'Interior', items: [{ id: 'ac', label: 'Aire Acondicionado' }, { id: 'furnished', label: 'Amueblado' }, { id: 'kitchen-equipped', label: 'Cocina Equipada' }, { id: 'walk-in-closet', label: 'Walk-in Closet' }, { id: 'laundry-room', label: 'Cuarto de Lavado' }, { id: 'maid-quarters', label: 'Cuarto de Servicio' }, { id: 'office', label: 'Oficina/Estudio' }, { id: 'fireplace', label: 'Chimenea' }, { id: 'high-ceilings', label: 'Techos Altos' }, { id: 'hardwood-floors', label: 'Pisos de Madera' }] },
-                    { key: 'exterior', label: 'Exterior', items: [{ id: 'pool', label: 'Piscina' }, { id: 'garden', label: 'Jardín' }, { id: 'terrace', label: 'Terraza' }, { id: 'balcony', label: 'Balcón' }, { id: 'bbq-area', label: 'Área BBQ' }, { id: 'outdoor-kitchen', label: 'Cocina Exterior' }, { id: 'gazebo', label: 'Gazebo' }, { id: 'jacuzzi', label: 'Jacuzzi' }, { id: 'deck', label: 'Deck' }, { id: 'patio', label: 'Patio' }] },
-                    { key: 'building', label: 'Edificio/Comunidad', items: [{ id: 'elevator', label: 'Ascensor' }, { id: 'gym', label: 'Gimnasio' }, { id: 'security-24-7', label: 'Seguridad 24/7' }, { id: 'concierge', label: 'Conserje' }, { id: 'playground', label: 'Parque Infantil' }, { id: 'social-area', label: 'Área Social' }, { id: 'party-room', label: 'Salón de Fiestas' }, { id: 'coworking', label: 'Coworking' }, { id: 'pet-friendly', label: 'Pet-Friendly' }, { id: 'spa', label: 'Spa' }, { id: 'tennis-court', label: 'Cancha de Tenis' }, { id: 'basketball-court', label: 'Cancha de Baloncesto' }] },
-                    { key: 'parking', label: 'Parqueo', items: [{ id: 'covered-parking', label: 'Parqueo Techado' }, { id: 'garage', label: 'Garaje' }, { id: 'visitor-parking', label: 'Parqueo Visitantes' }, { id: 'electric-charger', label: 'Cargador Eléctrico' }] },
-                    { key: 'views', label: 'Vistas', items: [{ id: 'ocean-view', label: 'Vista al Mar' }, { id: 'mountain-view', label: 'Vista a Montañas' }, { id: 'city-view', label: 'Vista a Ciudad' }, { id: 'golf-view', label: 'Vista a Campo Golf' }, { id: 'garden-view', label: 'Vista a Jardín' }, { id: 'pool-view', label: 'Vista a Piscina' }] },
-                    { key: 'technology', label: 'Tecnología', items: [{ id: 'smart-home', label: 'Smart Home' }, { id: 'fiber-optic', label: 'Fibra Óptica' }, { id: 'solar-panels', label: 'Paneles Solares' }, { id: 'backup-generator', label: 'Planta Eléctrica' }, { id: 'water-cistern', label: 'Cisterna' }, { id: 'security-cameras', label: 'Cámaras de Seguridad' }, { id: 'alarm-system', label: 'Sistema de Alarma' }] },
-                  ] as const).map((cat) => (
+                  {AMENITIES_CATEGORIES.map((cat) => (
                     <div key={cat.key} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
                       <p className="text-[11px] font-semibold text-gray-700 mb-2">{cat.label}</p>
                       <div className="flex flex-wrap gap-1.5">
@@ -582,73 +596,48 @@ export default function CreateProfessionalListingPage() {
                 </div>
               </div>
 
+              {/* Images */}
               <div className="sm:col-span-2">
                 <label className="block text-xs text-gray-600 mb-1">URL imagen principal</label>
-                <input title="Imagen principal" value={form.coverImage} onChange={(e) => update('coverImage', e.target.value)} placeholder="https://..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <input title="Cover" value={form.coverImage} onChange={(e) => update('coverImage', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
 
               <div className="sm:col-span-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
-                <label className="block text-xs text-gray-600 mb-2">Subir imágenes (recomendado)</label>
-                <div className="flex flex-wrap gap-2 items-center">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    title="Seleccionar imágenes"
-                    onChange={(e) => onFileSelect(e.target.files)}
-                    className="text-xs"
-                  />
-                  <button
-                    type="button"
-                    onClick={uploadSelectedFiles}
-                    disabled={uploading}
-                    className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545] disabled:opacity-50"
-                  >
-                    {uploading ? 'Subiendo...' : 'Subir seleccionadas'}
-                  </button>
-                </div>
-
+                <label className="block text-xs text-gray-600 mb-2">Galería de imágenes</label>
                 {uploadedImages.length > 0 ? (
-                  <div className="mt-3 space-y-1">
+                  <div className="mb-3 space-y-1">
                     {uploadedImages.map((url) => (
                       <div key={url} className="flex items-center justify-between text-xs bg-white border border-gray-200 rounded px-2 py-1 gap-2">
                         <span className="truncate flex-1">{url}</span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex gap-2">
                           <button type="button" onClick={() => update('coverImage', url)} className="text-[#0B2545] underline">Principal</button>
-                          <button type="button" onClick={() => removeUploadedImage(url)} className="text-red-600 underline">Quitar</button>
+                          <button type="button" onClick={() => removeImage(url)} className="text-red-600 underline">Quitar</button>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : null}
+                <div className="flex flex-wrap gap-2 items-center">
+                  <input type="file" multiple accept="image/*" title="Subir imágenes" onChange={(e) => onFileSelect(e.target.files)} className="text-xs" />
+                  <button type="button" onClick={uploadSelectedFiles} disabled={uploading} className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545] disabled:opacity-50">
+                    {uploading ? 'Subiendo...' : 'Subir seleccionadas'}
+                  </button>
+                </div>
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs text-gray-600 mb-1">URLs de imágenes (separadas por coma)</label>
-                <textarea title="Galería de imágenes" value={form.imagesText} onChange={(e) => update('imagesText', e.target.value)} rows={3} placeholder="https://img1..., https://img2..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-xs text-gray-600 mb-1">Video promocional (YouTube/Vimeo)</label>
-                <input title="Video promocional" value={form.promoVideoUrl} onChange={(e) => update('promoVideoUrl', e.target.value)} placeholder="https://..." className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                <label className="block text-xs text-gray-600 mb-1">Video promocional</label>
+                <input title="Video" value={form.promoVideoUrl} onChange={(e) => update('promoVideoUrl', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               </div>
             </div>
 
             {error ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                <p>{error}</p>
-                {errorCta ? (
-                  <div className="mt-2">
-                    <Link href={errorCta.href} className="inline-flex text-sm font-medium text-red-800 underline">
-                      {errorCta.label}
-                    </Link>
-                  </div>
-                ) : null}
-              </div>
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
             ) : null}
 
             <div className="flex items-center gap-2">
               <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium disabled:opacity-50">
-                {saving ? 'Guardando...' : 'Publicar listado'}
+                {saving ? 'Guardando...' : 'Guardar cambios'}
               </button>
               <Link href="/dashboard/listings" className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Cancelar</Link>
             </div>

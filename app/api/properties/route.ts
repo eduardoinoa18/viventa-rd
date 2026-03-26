@@ -92,6 +92,7 @@ interface PropertyPayload {
     buildPotential?: string
     utilitiesAvailable?: string[]
   }
+  features?: string[]
 }
 
 function validatePayload(action: string, data: PropertyPayload) {

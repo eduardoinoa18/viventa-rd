@@ -35,6 +35,10 @@ type Listing = {
   responsibleBroker?: string
   constructora?: string
   createdAt?: unknown
+  isMine?: boolean
+  canManage?: boolean
+  features?: string[]
+  coverImage?: string
 }
 
 type WorkspaceResponse = {
@@ -83,6 +87,86 @@ export default function ListingsWorkspacePage() {
   const [sortBy, setSortBy] = useState<'updatedAt' | 'createdAt' | 'price'>('updatedAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [shareStatus, setShareStatus] = useState('')
+  const [deleteStatus, setDeleteStatus] = useState('')
+
+  // ── Compare mode ──
+  const [compareMode, setCompareMode] = useState(false)
+  const [compareList, setCompareList] = useState<string[]>([])
+  const [showCompare, setShowCompare] = useState(false)
+
+  // ── Saved filter presets (localStorage) ──
+  type FilterPreset = { name: string; query: string; city: string; minPrice: string; maxPrice: string; propertyType: string; listingType: string; bedroomsMin: string; bathroomsMin: string; sortBy: string; sortOrder: string }
+  const [presets, setPresets] = useState<FilterPreset[]>([])
+  const [presetName, setPresetName] = useState('')
+  const [showPresetInput, setShowPresetInput] = useState(false)
+
+  // Load presets from localStorage once
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('viventa_workspace_presets')
+      if (raw) setPresets(JSON.parse(raw) as FilterPreset[])
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  function savePresets(next: FilterPreset[]) {
+    setPresets(next)
+    try { localStorage.setItem('viventa_workspace_presets', JSON.stringify(next)) } catch { /* ignore */ }
+  }
+
+  function saveCurrentPreset() {
+    const name = presetName.trim()
+    if (!name) return
+    const preset: FilterPreset = { name, query: queryText, city: cityFilter, minPrice, maxPrice, propertyType: propertyTypeFilter, listingType: listingTypeFilter, bedroomsMin, bathroomsMin, sortBy, sortOrder }
+    savePresets([...presets.filter((p) => p.name !== name), preset])
+    setPresetName('')
+    setShowPresetInput(false)
+  }
+
+  function loadPreset(p: FilterPreset) {
+    setQueryText(p.query)
+    setCityFilter(p.city)
+    setMinPrice(p.minPrice)
+    setMaxPrice(p.maxPrice)
+    setPropertyTypeFilter(p.propertyType)
+    setListingTypeFilter(p.listingType)
+    setBedroomsMin(p.bedroomsMin)
+    setBathroomsMin(p.bathroomsMin)
+    setSortBy(p.sortBy as 'updatedAt' | 'createdAt' | 'price')
+    setSortOrder(p.sortOrder as 'asc' | 'desc')
+    setPage(1)
+  }
+
+  function deletePreset(name: string) {
+    savePresets(presets.filter((p) => p.name !== name))
+  }
+
+  function toggleCompare(id: string) {
+    setCompareList((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 4 ? [...prev, id] : prev
+    )
+  }
+
+  async function deleteListing(listingId: string, title: string) {
+    if (!window.confirm(`¿Eliminar "${title}"? Esta acción no se puede deshacer.`)) return
+    try {
+      const res = await fetch('/api/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id: listingId }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.success) throw new Error(json?.error || 'Error al eliminar')
+      setListings((prev) => prev.filter((l) => l.id !== listingId))
+      setTotal((prev) => Math.max(prev - 1, 0))
+      setDeleteStatus('Listado eliminado.')
+      window.setTimeout(() => setDeleteStatus(''), 3000)
+    } catch (err: any) {
+      setDeleteStatus(err?.message || 'No se pudo eliminar.')
+      window.setTimeout(() => setDeleteStatus(''), 4000)
+    }
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -225,6 +309,13 @@ export default function ListingsWorkspacePage() {
               {permissions?.canCreate !== false ? (
                 <Link href="/dashboard/listings/create" className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium">Crear listado</Link>
               ) : null}
+              <button
+                type="button"
+                onClick={() => { setCompareMode((prev) => !prev); setCompareList([]); setShowCompare(false) }}
+                className={`px-3 py-2 rounded-lg border text-sm font-medium ${compareMode ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'border-gray-200 text-[#0B2545]'}`}
+              >
+                {compareMode ? 'Cancelar' : 'Comparar'}
+              </button>
             </div>
           </div>
 
@@ -367,7 +458,39 @@ export default function ListingsWorkspacePage() {
           <div className="mt-2 flex gap-2">
             <button onClick={applyQuickFilters} type="button" className="px-3 py-1.5 rounded-lg bg-[#0B2545] text-white text-xs font-medium">Aplicar filtros</button>
             <button onClick={clearQuickFilters} type="button" className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700">Limpiar</button>
+            <button
+              type="button"
+              onClick={() => setShowPresetInput((v) => !v)}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700"
+            >
+              Guardar filtro
+            </button>
           </div>
+
+          {/* Saved filter presets */}
+          {showPresetInput ? (
+            <div className="mt-2 flex gap-2 items-center">
+              <input
+                value={presetName}
+                onChange={(e) => setPresetName(e.target.value)}
+                placeholder="Nombre del filtro (ej: Piantini 3BR)"
+                className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+              />
+              <button type="button" onClick={saveCurrentPreset} className="px-3 py-1.5 rounded-lg bg-[#00A676] text-white text-xs font-medium">Guardar</button>
+              <button type="button" onClick={() => setShowPresetInput(false)} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600">Cancelar</button>
+            </div>
+          ) : null}
+
+          {presets.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {presets.map((p) => (
+                <div key={p.name} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#E8F4FF] border border-[#CFE8FF] text-xs">
+                  <button type="button" onClick={() => loadPreset(p)} className="text-[#0B2545] font-medium hover:underline">{p.name}</button>
+                  <button type="button" onClick={() => deletePreset(p.name)} className="text-gray-400 hover:text-red-500 font-bold">×</button>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </section>
 
         {error ? (
@@ -378,6 +501,18 @@ export default function ListingsWorkspacePage() {
           <div className="mb-3 text-xs text-gray-600">Mostrando {listings.length} de {total} resultados</div>
           {shareStatus ? (
             <p className="mb-3 text-xs text-[#0B2545] bg-[#E8F4FF] border border-[#CFE8FF] rounded-lg px-3 py-2">{shareStatus}</p>
+          ) : null}
+          {deleteStatus ? (
+            <p className="mb-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{deleteStatus}</p>
+          ) : null}
+          {compareMode && compareList.length >= 2 ? (
+            <div className="mb-3 flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+              <span className="text-xs text-amber-800 font-medium">{compareList.length} propiedades seleccionadas</span>
+              <button type="button" onClick={() => setShowCompare(true)} className="px-3 py-1 rounded-lg bg-amber-500 text-white text-xs font-medium">Ver comparativa</button>
+              <button type="button" onClick={() => setCompareList([])} className="text-xs text-amber-700 underline">Limpiar selección</button>
+            </div>
+          ) : compareMode ? (
+            <p className="mb-3 text-xs text-amber-700">Selecciona 2-4 propiedades para comparar.</p>
           ) : null}
 
           {!listings.length ? (
@@ -391,8 +526,19 @@ export default function ListingsWorkspacePage() {
           ) : (
             <div className="space-y-2">
               {listings.map((listing) => (
-                <div key={listing.id} className="rounded-lg border border-gray-200 p-3">
+                <div key={listing.id} className={`rounded-lg border p-3 ${compareMode && compareList.includes(listing.id) ? 'border-amber-400 bg-amber-50' : 'border-gray-200'}`}>
                   <div className="flex items-start justify-between gap-2">
+                    {compareMode ? (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={compareList.includes(listing.id)}
+                          onChange={() => toggleCompare(listing.id)}
+                          disabled={!compareList.includes(listing.id) && compareList.length >= 4}
+                          className="w-4 h-4 accent-amber-500"
+                        />
+                      </label>
+                    ) : null}
                     <Link href={`/listing/${listing.id}`} className="min-w-0 flex-1 hover:text-[#00A676] transition-colors">
                       <div className="text-sm font-semibold text-[#0B2545]">{listing.title || 'Listado sin título'}</div>
                       <div className="text-xs text-gray-600 mt-1">
@@ -407,15 +553,34 @@ export default function ListingsWorkspacePage() {
                         {typeof listing.daysOnMarket === 'number' && listing.daysOnMarket > 0 ? ` • ${listing.daysOnMarket} DOM` : ''}
                       </div>
                     </Link>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <div className="text-sm font-semibold text-[#0B2545]">{formatPrice(listing.price, listing.currency || 'USD')}</div>
-                      <button
-                        type="button"
-                        onClick={() => shareListing(listing.id)}
-                        className="mt-2 text-xs px-2 py-1 rounded-md border border-gray-200 text-[#0B2545] hover:bg-gray-50"
-                      >
-                        Compartir
-                      </button>
+                      <div className="mt-2 flex flex-wrap gap-1 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => shareListing(listing.id)}
+                          className="text-xs px-2 py-1 rounded-md border border-gray-200 text-[#0B2545] hover:bg-gray-50"
+                        >
+                          Compartir
+                        </button>
+                        {listing.isMine || listing.canManage ? (
+                          <>
+                            <Link
+                              href={`/dashboard/listings/${listing.id}/edit`}
+                              className="text-xs px-2 py-1 rounded-md border border-gray-200 text-[#0B2545] hover:bg-gray-50"
+                            >
+                              Editar
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => deleteListing(listing.id, listing.title || 'este listado')}
+                              className="text-xs px-2 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50"
+                            >
+                              Eliminar
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
 
@@ -465,6 +630,60 @@ export default function ListingsWorkspacePage() {
           ) : null}
         </section>
       </div>
+
+      {/* ─── Comparison Modal ─── */}
+      {showCompare && compareList.length >= 2 ? (() => {
+        const compared = compareList.map((id) => listings.find((l) => l.id === id)).filter(Boolean) as Listing[]
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between gap-3 p-4 border-b border-gray-100">
+                <h2 className="text-base font-semibold text-[#0B2545]">Comparativa de propiedades</h2>
+                <button type="button" onClick={() => setShowCompare(false)} className="text-gray-500 hover:text-gray-700 text-lg font-bold">×</button>
+              </div>
+              <div className="overflow-x-auto p-4">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="text-left py-2 pr-3 text-gray-500 font-medium w-28">Característica</th>
+                      {compared.map((l) => (
+                        <th key={l.id} className="text-left py-2 px-3 font-semibold text-[#0B2545] min-w-[160px]">
+                          <Link href={`/listing/${l.id}`} className="hover:underline">{l.title || 'Sin título'}</Link>
+                          <div className="text-[10px] font-normal text-gray-500">{l.listingId || l.id}</div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {[
+                      { label: 'Precio', render: (l: Listing) => formatPrice(l.price, l.currency || 'USD') },
+                      { label: 'Precio/m²', render: (l: Listing) => (l.area && l.price && l.area > 0) ? formatPrice(Math.round(l.price / l.area), l.currency || 'USD') + '/m²' : '—' },
+                      { label: 'Operación', render: (l: Listing) => l.listingType === 'sale' ? 'Venta' : l.listingType === 'rent' ? 'Alquiler' : '—' },
+                      { label: 'Tipo', render: (l: Listing) => l.propertyType || '—' },
+                      { label: 'Habitaciones', render: (l: Listing) => typeof l.bedrooms === 'number' ? String(l.bedrooms) : '—' },
+                      { label: 'Baños', render: (l: Listing) => typeof l.bathrooms === 'number' ? String(l.bathrooms) : '—' },
+                      { label: 'Área (m²)', render: (l: Listing) => typeof l.area === 'number' && l.area > 0 ? `${l.area} m²` : '—' },
+                      { label: 'Ciudad', render: (l: Listing) => l.city || '—' },
+                      { label: 'Sector', render: (l: Listing) => l.sector || l.neighborhood || '—' },
+                      { label: 'Estado', render: (l: Listing) => l.status || '—' },
+                      { label: 'DOM', render: (l: Listing) => typeof l.daysOnMarket === 'number' ? `${l.daysOnMarket} días` : '—' },
+                      { label: 'Amenidades', render: (l: Listing) => l.features?.length ? l.features.slice(0, 5).join(', ') + (l.features.length > 5 ? ` +${l.features.length - 5}` : '') : '—' },
+                      { label: 'Comisión', render: (l: Listing) => l.commissionOffered ? `${l.commissionOffered}%` : '—' },
+                    ].map(({ label, render }) => (
+                      <tr key={label}>
+                        <td className="py-2 pr-3 text-gray-500 font-medium">{label}</td>
+                        {compared.map((l) => (
+                          <td key={l.id} className="py-2 px-3 text-[#0B2545]">{render(l)}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )
+      })() : null}
     </main>
   )
 }
