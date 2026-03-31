@@ -9,6 +9,7 @@ import { logger } from '@/lib/logger'
 import { getOfficeListingQuotaStatus } from '@/lib/officeSubscriptionQuota'
 import { buildQuotaErrorResponse } from '@/lib/quotaResponses'
 import { emitActivityEvent } from '@/lib/activityEvents'
+import { ensureProfessionalCode } from '@/lib/professionalCodes'
 import {
   canMutateListing,
   getListingAccessUserContext,
@@ -167,6 +168,16 @@ function normalizePropertyStatus(raw: unknown): PropertyStatus {
   return 'active'
 }
 
+function isProfessionalAccountApproved(user: Record<string, unknown> | null): boolean {
+  if (!user) return false
+  const approvedFlag = user.approved === true || user.isApproved === true
+  const status = String(user.status || '').trim().toLowerCase()
+  const applicationStatus = String(user.applicationStatus || '').trim().toLowerCase()
+  const statusApproved = ['active', 'approved', 'verified'].includes(status)
+  const applicationApproved = ['approved', 'verified'].includes(applicationStatus)
+  return approvedFlag || statusApproved || applicationApproved
+}
+
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
@@ -247,10 +258,32 @@ export async function POST(req: Request) {
       }
       if (uid) {
         const userContext = await getListingAccessUserContext(db, uid, (role as any) || 'buyer')
-        const code = userContext.professionalCode
+        const userSnap = await db.collection('users').doc(uid).get()
+        const userData = userSnap.exists ? (userSnap.data() as Record<string, unknown>) : null
 
+        let code = userContext.professionalCode
         if (isPro && !code) {
-          return NextResponse.json({ error: 'Professional code required. This account must be approved before publishing listings.' }, { status: 403 })
+          const approved = isProfessionalAccountApproved(userData)
+          if (!approved) {
+            return NextResponse.json({ error: 'This professional account is pending approval. Once approved, listing publication is enabled automatically.' }, { status: 403 })
+          }
+
+          const ensured = await ensureProfessionalCode({
+            adminDb: db,
+            role: String(userContext.role || role || 'agent'),
+            userId: uid,
+            userData: userData || {},
+          })
+
+          code = ensured.code
+          await db.collection('users').doc(uid).set(
+            {
+              professionalCode: ensured.code,
+              [ensured.field]: ensured.code,
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          )
         }
 
         createData.agentName = userContext.name || userContext.email || createData.agentName

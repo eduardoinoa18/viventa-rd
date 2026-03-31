@@ -20,7 +20,7 @@ function resolveBaseUrl() {
 }
 
 function toAbsoluteUrl(urlOrPath: string, baseUrl: string) {
-  if (!urlOrPath) return `${baseUrl}/logo.png`
+  if (!urlOrPath) return `${baseUrl}/logo.svg`
   if (urlOrPath.startsWith('http://') || urlOrPath.startsWith('https://')) return urlOrPath
   return `${baseUrl}${urlOrPath.startsWith('/') ? '' : '/'}${urlOrPath}`
 }
@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
     }
 
     const title = listing?.title ? `${listing.title} - VIVENTA RD` : 'Propiedad - VIVENTA RD'
-    const imageRaw = listing.coverImage || listing.images?.[0] || listing.mainImage || listing.image || listing.main_photo_url || '/logo.png'
+    const imageRaw = listing.coverImage || listing.images?.[0] || listing.mainImage || listing.image || listing.main_photo_url || '/logo.svg'
     const image = toAbsoluteUrl(imageRaw, baseUrl)
 
     const listingPrice = Number(listing.price || 0)

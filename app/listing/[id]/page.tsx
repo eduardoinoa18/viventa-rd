@@ -158,7 +158,9 @@ export default function ListingDetail(){
 
           if (db && data.id) {
             updateDoc(doc(db, 'properties', data.id), { views: increment(1) })
-              .catch((err: any) => console.error('Error updating views:', err))
+              .catch(() => {
+                // Ignore client permission failures for view bumps; listing read is still valid.
+              })
           }
 
           const user = auth.currentUser
@@ -517,7 +519,7 @@ export default function ListingDetail(){
   const metaTitle = `${listing.title} - VIVENTA RD`;
   const propertyUrl = `https://viventa-rd.com/listing/${listing.id}`;
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://viventa-rd.com').replace(/\/$/, '')
-  const mainImageRaw = listing.coverImage || listing.images?.[0] || listing.mainImage || listing.image || listing.main_photo_url || '/logo.png'
+  const mainImageRaw = listing.coverImage || listing.images?.[0] || listing.mainImage || listing.image || listing.main_photo_url || '/logo.svg'
   const mainImage = mainImageRaw?.startsWith('http') ? mainImageRaw : `${siteUrl}${mainImageRaw.startsWith('/') ? '' : '/'}${mainImageRaw}`
   const promoVideoEmbedUrl = normalizeVideoUrl(listing.promoVideoUrl);
   const hasCoordinates = Number.isFinite(Number(listing.lat)) && Number.isFinite(Number(listing.lng))
@@ -1296,10 +1298,10 @@ export default function ListingDetail(){
                   <h4 className="font-semibold text-sm sm:text-base text-gray-900 mb-2 sm:mb-3">Listado por</h4>
                   <div className="flex items-center gap-3 mb-3 sm:mb-4">
                     <img 
-                      src="/logo.png" 
+                      src="/logo.svg" 
                       alt="VIVENTA" 
                       className="h-6 sm:h-8 w-auto"
-                      onError={(e) => { e.currentTarget.src = '/logo.png' }}
+                      onError={(e) => { e.currentTarget.src = '/logo.svg' }}
                     />
                     <div>
                       <p className="font-bold text-sm sm:text-base text-gray-900">VIVENTA</p>

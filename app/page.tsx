@@ -141,7 +141,7 @@ export default function HomePage() {
     "name": "VIVENTA",
     "description": "Plataforma inmobiliaria líder en República Dominicana",
     "url": "https://viventa-rd.com",
-    "logo": "https://viventa-rd.com/logo.png",
+    "logo": "https://viventa-rd.com/logo.svg",
     "address": {
       "@type": "PostalAddress",
       "addressCountry": "DO",

@@ -18,27 +18,40 @@ export default function SimilarProperties({ currentPropertyId, propertyType, cit
 
   useEffect(() => {
     loadSimilar()
-  }, [currentPropertyId, propertyType, city])
+  }, [currentPropertyId, propertyType, city, priceRange.min, priceRange.max])
 
   async function loadSimilar() {
     try {
       setLoading(true)
-      
-      // Query for similar properties
-      const q = query(
-        collection(db as any, 'properties'),
-        where('status', '==', 'active'),
-        where('propertyType', '==', propertyType),
-        where('city', '==', city),
-        where('price', '>=', priceRange.min),
-        where('price', '<=', priceRange.max),
-        limit(4)
-      )
 
-      const snapshot = await getDocs(q)
-      const properties = snapshot.docs
+      const root = collection(db as any, 'properties')
+      let docs: any[] = []
+
+      try {
+        // Preferred indexed query path.
+        const q = query(
+          root,
+          where('status', '==', 'active'),
+          where('propertyType', '==', propertyType),
+          where('city', '==', city),
+          where('price', '>=', priceRange.min),
+          where('price', '<=', priceRange.max),
+          limit(6)
+        )
+        const snapshot = await getDocs(q)
+        docs = snapshot.docs
+      } catch {
+        // Fallback path that avoids composite-index requirements.
+        const fallback = await getDocs(query(root, where('status', '==', 'active'), limit(120)))
+        docs = fallback.docs
+      }
+
+      const properties = docs
         .map((doc: any) => ({ id: doc.id, ...doc.data() }))
         .filter((p: any) => p.id !== currentPropertyId)
+        .filter((p: any) => String(p.city || '').toLowerCase() === String(city || '').toLowerCase())
+        .filter((p: any) => String(p.propertyType || '').toLowerCase() === String(propertyType || '').toLowerCase())
+        .filter((p: any) => Number(p.price || 0) >= Number(priceRange.min || 0) && Number(p.price || 0) <= Number(priceRange.max || Number.MAX_SAFE_INTEGER))
         .slice(0, 3)
 
       setSimilar(properties)
