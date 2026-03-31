@@ -78,11 +78,26 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') || 'pending'
     const limit = Math.min(Number(searchParams.get('limit') || '100'), 200)
 
-    const q = db.collection('properties').where('status', '==', status).orderBy('updatedAt', 'desc').limit(limit)
+    let snap: any
+    try {
+      snap = await db.collection('properties').where('status', '==', status).orderBy('updatedAt', 'desc').limit(limit).get()
+    } catch (error: any) {
+      const message = String(error?.message || '').toLowerCase()
+      const missingIndex = message.includes('requires an index') || message.includes('failed-precondition')
+      if (!missingIndex) throw error
 
-    const snap = await q.get()
+      const fallback = await db.collection('properties').where('status', '==', status).limit(limit).get()
+      const sortedDocs = [...fallback.docs].sort((a: any, b: any) => {
+        const aRaw = a.data() as any
+        const bRaw = b.data() as any
+        const aTime = aRaw?.updatedAt?.toDate?.()?.getTime?.() || new Date(aRaw?.updatedAt || aRaw?.createdAt || 0).getTime() || 0
+        const bTime = bRaw?.updatedAt?.toDate?.()?.getTime?.() || new Date(bRaw?.updatedAt || bRaw?.createdAt || 0).getTime() || 0
+        return bTime - aTime
+      })
+      snap = { docs: sortedDocs }
+    }
 
-    const items = snap.docs.map((doc) => {
+    const items = snap.docs.map((doc: any) => {
       const d = doc.data() as Record<string, any>
       return {
         id: doc.id,

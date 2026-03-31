@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 
 type SessionData = {
@@ -62,6 +62,16 @@ function formatPrice(value?: number, currency = 'USD') {
     currency,
     maximumFractionDigits: 0,
   }).format(Number(value))
+}
+
+function formatStatusLabel(status?: string) {
+  const normalized = String(status || '').toLowerCase()
+  if (normalized === 'active') return 'Activo'
+  if (normalized === 'pending') return 'Pendiente'
+  if (normalized === 'sold') return 'Vendido'
+  if (normalized === 'rented') return 'Alquilado'
+  if (normalized === 'inactive') return 'Inactivo'
+  return status || 'Sin estado'
 }
 
 export default function ListingsWorkspacePage() {
@@ -288,6 +298,19 @@ export default function ListingsWorkspacePage() {
     setPage(1)
   }
 
+  const workspaceStats = useMemo(() => {
+    const mine = listings.filter((listing) => listing.isMine || listing.canManage).length
+    const active = listings.filter((listing) => String(listing.status || '').toLowerCase() === 'active').length
+    const premium = listings.filter((listing) => Boolean(listing.commissionOffered || listing.showingInstructions || listing.privateContactPhone)).length
+
+    return {
+      total: total || listings.length,
+      mine,
+      active,
+      premium,
+    }
+  }, [listings, total])
+
   if (loading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-600">Cargando workspace...</div>
   }
@@ -298,8 +321,9 @@ export default function ListingsWorkspacePage() {
         <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-[#0B2545]">Workspace de Listados</h1>
-              <p className="text-sm text-gray-600 mt-1">Unifica gestión propia y MLS interno con permisos por rol.</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00A676]">Listing control</p>
+              <h1 className="mt-2 text-xl sm:text-2xl font-bold text-[#0B2545]">Gestion de Propiedades</h1>
+              <p className="text-sm text-gray-600 mt-1">La misma logica operativa del panel maestro, con permisos limitados a tu cartera y al MLS interno.</p>
             </div>
             <div className="flex gap-2">
               <Link href="/dashboard" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Volver al panel</Link>
@@ -317,6 +341,29 @@ export default function ListingsWorkspacePage() {
                 {compareMode ? 'Cancelar' : 'Comparar'}
               </button>
             </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-4">
+            <article className="rounded-xl border border-[#0B2545]/10 bg-[#F6FBFF] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#0B2545]">Total en vista</p>
+              <p className="mt-2 text-3xl font-bold text-[#0B2545]">{workspaceStats.total}</p>
+              <p className="mt-1 text-xs text-gray-600">Resultados bajo tus filtros actuales</p>
+            </article>
+            <article className="rounded-xl border border-[#00A676]/20 bg-[#F0FBF6] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#0B2545]">Gestionables</p>
+              <p className="mt-2 text-3xl font-bold text-[#0B2545]">{workspaceStats.mine}</p>
+              <p className="mt-1 text-xs text-gray-600">Listados propios o con permisos directos</p>
+            </article>
+            <article className="rounded-xl border border-[#FF6B35]/20 bg-[#FFF6F1] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#0B2545]">Activos</p>
+              <p className="mt-2 text-3xl font-bold text-[#0B2545]">{workspaceStats.active}</p>
+              <p className="mt-1 text-xs text-gray-600">Listos para captar demanda hoy</p>
+            </article>
+            <article className="rounded-xl border border-[#CFE8FF] bg-[#F5FAFF] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#0B2545]">Ficha MLS lista</p>
+              <p className="mt-2 text-3xl font-bold text-[#0B2545]">{workspaceStats.premium}</p>
+              <p className="mt-1 text-xs text-gray-600">Con contacto, comision o showing instructions</p>
+            </article>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
@@ -544,7 +591,7 @@ export default function ListingsWorkspacePage() {
                       <div className="text-xs text-gray-600 mt-1">
                         {(listing.city || 'RD')}
                         {listing.sector ? `, ${listing.sector}` : listing.neighborhood ? `, ${listing.neighborhood}` : ''}
-                        {' • '}{listing.status || 'active'}
+                        {' • '}{formatStatusLabel(listing.status)}
                         {listing.propertyType ? ` • ${listing.propertyType}` : ''}
                         {listing.listingType ? ` • ${listing.listingType}` : ''}
                         {typeof listing.bedrooms === 'number' ? ` • ${listing.bedrooms} hab` : ''}
@@ -563,6 +610,14 @@ export default function ListingsWorkspacePage() {
                         >
                           Compartir
                         </button>
+                        {permissions?.canUseMls ? (
+                          <Link
+                            href={`/listing/${listing.id}/sheet`}
+                            className="text-xs px-2 py-1 rounded-md border border-gray-200 text-[#0B2545] hover:bg-gray-50"
+                          >
+                            Ficha MLS
+                          </Link>
+                        ) : null}
                         {listing.isMine || listing.canManage ? (
                           <>
                             <Link

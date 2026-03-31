@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FiCheck, FiX, FiMapPin, FiDollarSign, FiEye, FiEdit, FiTrash2, FiSearch } from 'react-icons/fi'
+import { FiCheck, FiX, FiMapPin, FiDollarSign, FiEye, FiEdit, FiTrash2, FiSearch, FiFileText } from 'react-icons/fi'
 import { normalizeListingStatus, getStatusMeta } from '@/lib/listingStatus'
 import { computeQualityScore } from '@/lib/searchUtils'
 import type { Listing } from '@/types/listing'
@@ -58,6 +58,7 @@ export default function ListingTable({
         const isPending = listing.status === 'pending'
         const rawViewId = listing.listingId || listing.id
         const viewHref = `/listing/${encodeURIComponent(String(rawViewId))}`
+        const sheetHref = `/listing/${encodeURIComponent(String(rawViewId))}/sheet`
 
         if (viewMode === 'grid') {
           return (
@@ -139,6 +140,12 @@ export default function ListingTable({
                         </button>
                       </>
                     )}
+                    <Link
+                      href={sheetHref}
+                      className="inline-flex items-center justify-center gap-1 px-3 py-2 border border-[#0B2545]/20 rounded-lg hover:bg-[#F6FBFF] text-sm transition-colors"
+                    >
+                      <FiFileText /> MLS
+                    </Link>
                     <Link
                       href={`/master/listings/${listing.id}/edit`}
                       className="inline-flex items-center justify-center gap-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm transition-colors"
@@ -245,7 +252,13 @@ export default function ListingTable({
                       </button>
                     </>
                   )}
-                  <div className="grid grid-cols-3 sm:flex gap-2 w-full sm:w-auto">
+                  <div className="grid grid-cols-4 sm:flex gap-2 w-full sm:w-auto">
+                    <Link
+                      href={sheetHref}
+                      className="inline-flex items-center justify-center gap-2 px-3 py-2 border border-[#0B2545]/20 rounded-lg hover:bg-[#F6FBFF] transition-colors text-sm whitespace-nowrap"
+                    >
+                      <FiFileText /> MLS
+                    </Link>
                     <Link
                       href={`/master/listings/${listing.id}/edit`}
                       className="inline-flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm whitespace-nowrap"

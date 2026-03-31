@@ -146,7 +146,24 @@ export async function GET(req: NextRequest) {
       // Use a loosely-typed reference to avoid CollectionReference/Query assignability issues
       let ref: any = adminDb.collection('properties')
       if (statusFilter) ref = ref.where('status', '==', statusFilter)
-      const snap = await ref.orderBy('createdAt', 'desc').get()
+      let snap: any
+      try {
+        snap = await ref.orderBy('createdAt', 'desc').get()
+      } catch (error: any) {
+        const message = String(error?.message || '').toLowerCase()
+        const missingIndex = message.includes('requires an index') || message.includes('failed-precondition')
+        if (!missingIndex) throw error
+
+        const fallbackSnap = await ref.get()
+        const sorted = [...fallbackSnap.docs].sort((a: any, b: any) => {
+          const aRaw = a.data() as any
+          const bRaw = b.data() as any
+          const aTime = aRaw?.createdAt?.toDate?.()?.getTime?.() || new Date(aRaw?.createdAt || 0).getTime() || 0
+          const bTime = bRaw?.createdAt?.toDate?.()?.getTime?.() || new Date(bRaw?.createdAt || 0).getTime() || 0
+          return bTime - aTime
+        })
+        snap = { docs: sorted }
+      }
       const withSignals = snap.docs.map((d: any) => {
         const raw = d.data()
         return {
@@ -167,12 +184,31 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const statusFilter = searchParams.get('status') // active, pending, rejected, sold, draft
 
-    let q = query(collection(db, 'properties'), orderBy('createdAt', 'desc'))
-    if (statusFilter) {
-      q = query(collection(db, 'properties'), where('status', '==', statusFilter), orderBy('createdAt', 'desc'))
-    }
+    let snapshot: any
+    try {
+      let q = query(collection(db, 'properties'), orderBy('createdAt', 'desc'))
+      if (statusFilter) {
+        q = query(collection(db, 'properties'), where('status', '==', statusFilter), orderBy('createdAt', 'desc'))
+      }
+      snapshot = await getDocs(q)
+    } catch (error: any) {
+      const message = String(error?.message || '').toLowerCase()
+      const missingIndex = message.includes('requires an index') || message.includes('failed-precondition')
+      if (!missingIndex) throw error
 
-    const snapshot = await getDocs(q)
+      const fallbackQuery = statusFilter
+        ? query(collection(db, 'properties'), where('status', '==', statusFilter))
+        : query(collection(db, 'properties'))
+      const fallbackSnap = await getDocs(fallbackQuery)
+      const sorted = [...fallbackSnap.docs].sort((a: any, b: any) => {
+        const aRaw = a.data() as any
+        const bRaw = b.data() as any
+        const aTime = aRaw?.createdAt?.toDate?.()?.getTime?.() || new Date(aRaw?.createdAt || 0).getTime() || 0
+        const bTime = bRaw?.createdAt?.toDate?.()?.getTime?.() || new Date(bRaw?.createdAt || 0).getTime() || 0
+        return bTime - aTime
+      })
+      snapshot = { docs: sorted }
+    }
     const withSignals = snapshot.docs.map((d: any) => {
       const raw = d.data()
       return {

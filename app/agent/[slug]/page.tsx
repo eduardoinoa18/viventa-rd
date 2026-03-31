@@ -226,6 +226,23 @@ export default function AgentSlugProfilePage({ params }: { params: { slug: strin
               </div>
             </div>
 
+            <div className="px-6 pt-4">
+              <div className="rounded-xl border border-[#00A676]/20 bg-[#F0FBF6] p-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[#0B2545]">Trabaja con este agente</p>
+                  <p className="text-xs text-gray-600">Ideal para comprador final, inversionista o propietario que quiera una estrategia guiada en RD.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link href={`/contact?agent=${encodeURIComponent(profile?.slug || params.slug)}`} className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-xs font-semibold">
+                    Solicitar asesoría
+                  </Link>
+                  <Link href={`/search?agent=${encodeURIComponent(profile?.slug || params.slug)}`} className="px-3 py-2 rounded-lg border border-[#0B2545] text-[#0B2545] text-xs font-semibold">
+                    Ver portafolio completo
+                  </Link>
+                </div>
+              </div>
+            </div>
+
             <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
               <section className="lg:col-span-2">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Perfil profesional</h2>
@@ -326,7 +343,7 @@ export default function AgentSlugProfilePage({ params }: { params: { slug: strin
                   ))}
                 </div>
                 <div className="mt-4 text-center">
-                  <Link href={`/search?agentSlug=${encodeURIComponent(profile?.slug ?? params.slug)}`}
+                  <Link href={`/search?agent=${encodeURIComponent(profile?.slug ?? params.slug)}`}
                     className="text-sm text-[#0B2545] hover:underline font-semibold">
                     Ver todos los listados →
                   </Link>

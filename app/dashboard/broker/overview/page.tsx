@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { FiTrendingUp, FiHome, FiDollarSign, FiCalendar } from 'react-icons/fi'
+import { FiTrendingUp, FiHome, FiDollarSign, FiCalendar, FiMail, FiUsers } from 'react-icons/fi'
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiGrid, KpiCard } from '@/components/ui/KpiCard'
+import InviteModal from '@/components/InviteModal'
 import type { RevenueMetrics, TopBrokerRevenueRow } from '@/lib/domain/transaction'
 
 type SummaryState = {
@@ -44,6 +45,12 @@ type ActivitySummary = {
   todayTransactions: number
 }
 
+type TeamSummary = {
+  totalMembers: number
+  activeMembers: number
+  pendingMembers: number
+}
+
 export default function BrokerOverviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -71,6 +78,12 @@ export default function BrokerOverviewPage() {
     todayDocuments: 0,
     todayTransactions: 0,
   })
+  const [teamSummary, setTeamSummary] = useState<TeamSummary>({
+    totalMembers: 0,
+    activeMembers: 0,
+    pendingMembers: 0,
+  })
+  const [showInviteModal, setShowInviteModal] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -80,7 +93,7 @@ export default function BrokerOverviewPage() {
         setLoading(true)
         setError('')
 
-        const [myRes, officeRes, marketRes, automationRes, txRes, officeProfileRes, revenueRes, activitySummaryRes] = await Promise.all([
+        const [myRes, officeRes, marketRes, automationRes, txRes, officeProfileRes, revenueRes, activitySummaryRes, teamRes] = await Promise.all([
           fetch('/api/broker/listings/my?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/office?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/market?status=active', { cache: 'no-store' }),
@@ -89,9 +102,10 @@ export default function BrokerOverviewPage() {
           fetch('/api/broker/office', { cache: 'no-store' }),
           fetch('/api/broker/analytics/revenue', { cache: 'no-store' }),
           fetch('/api/activity-events/summary', { cache: 'no-store' }),
+          fetch('/api/broker/team', { cache: 'no-store' }),
         ])
 
-        const [myJson, officeJson, marketJson, automationJson, txJson, officeProfileJson, revenueJson, activitySummaryJson] = await Promise.all([
+        const [myJson, officeJson, marketJson, automationJson, txJson, officeProfileJson, revenueJson, activitySummaryJson, teamJson] = await Promise.all([
           myRes.json().catch(() => ({})),
           officeRes.json().catch(() => ({})),
           marketRes.json().catch(() => ({})),
@@ -100,6 +114,7 @@ export default function BrokerOverviewPage() {
           officeProfileRes.json().catch(() => ({})),
           revenueRes.json().catch(() => ({})),
           activitySummaryRes.json().catch(() => ({})),
+          teamRes.json().catch(() => ({})),
         ])
 
         if (!active) return
@@ -128,6 +143,11 @@ export default function BrokerOverviewPage() {
           todayDocuments: Number(activitySummaryJson?.summary?.todayDocuments || 0),
           todayTransactions: Number(activitySummaryJson?.summary?.todayTransactions || 0),
         })
+        setTeamSummary({
+          totalMembers: Number(teamJson?.summary?.totalMembers || 0),
+          activeMembers: Number(teamJson?.summary?.activeMembers || 0),
+          pendingMembers: Number(teamJson?.summary?.pendingMembers || 0),
+        })
 
         if (officeProfileRes.ok && officeProfileJson?.ok) {
           setOffice((officeProfileJson?.office || null) as OfficeProfile | null)
@@ -154,10 +174,12 @@ export default function BrokerOverviewPage() {
       <PageHeader
         eyebrow="Broker Workspace"
         title="Overview"
-        description="Métricas de rendimiento de tu oficina y pipeline"
+        description="Métricas de rendimiento, crecimiento del equipo y pipeline de tu oficina"
         actions={[
           { label: '+ Create Deal', href: '/dashboard/broker/transactions' },
           { label: 'View Listings', href: '/dashboard/listings', variant: 'secondary' },
+          { label: 'Team & Invites', href: '/dashboard/broker/team', variant: 'secondary' },
+          { label: 'Invite Agent', onClick: () => setShowInviteModal(true) },
         ]}
       />
 
@@ -183,6 +205,51 @@ export default function BrokerOverviewPage() {
           <Metric label="Pipeline Value"    value={summary.pipeline} />
           <Metric label="Proyección"        value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.projectedValue || 0)} />
           <Metric label="Office Pipeline"   value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.officePipelineValue || 0)} />
+        </div>
+      </section>
+
+      <section className="mt-4 rounded-xl border border-[#0B2545]/10 bg-gradient-to-r from-[#F6FBFF] to-[#F0FBF6] p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00A676]">Team growth</p>
+            <h3 className="mt-2 text-lg font-bold text-[#0B2545]">Haz crecer tu oficina desde el overview</h3>
+            <p className="mt-1 max-w-2xl text-sm text-gray-600">
+              Invita agentes, monitorea onboarding pendiente y mantén la estructura activa sin salir del panel principal.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setShowInviteModal(true)}
+              className="inline-flex items-center rounded-lg bg-[#0B2545] px-4 py-2 text-sm font-semibold text-white hover:bg-[#134074]"
+            >
+              Invitar agente
+            </button>
+            <a
+              href="/dashboard/broker/team"
+              className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[#0B2545] hover:bg-gray-50"
+            >
+              Ver equipo
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="rounded-xl border border-white/80 bg-white/80 p-4">
+            <div className="flex items-center gap-2 text-[#0B2545]"><FiUsers className="h-4 w-4" /><span className="text-xs font-semibold uppercase tracking-wide">Estructura</span></div>
+            <div className="mt-2 text-3xl font-bold text-[#0B2545]">{teamSummary.totalMembers}</div>
+            <p className="mt-1 text-xs text-gray-600">Miembros vinculados a la oficina</p>
+          </div>
+          <div className="rounded-xl border border-white/80 bg-white/80 p-4">
+            <div className="flex items-center gap-2 text-[#0B2545]"><FiUsers className="h-4 w-4" /><span className="text-xs font-semibold uppercase tracking-wide">Activos</span></div>
+            <div className="mt-2 text-3xl font-bold text-[#0B2545]">{teamSummary.activeMembers}</div>
+            <p className="mt-1 text-xs text-gray-600">Agentes listos para publicar y colaborar</p>
+          </div>
+          <div className="rounded-xl border border-white/80 bg-white/80 p-4">
+            <div className="flex items-center gap-2 text-[#0B2545]"><FiMail className="h-4 w-4" /><span className="text-xs font-semibold uppercase tracking-wide">Pendientes</span></div>
+            <div className="mt-2 text-3xl font-bold text-[#0B2545]">{teamSummary.pendingMembers}</div>
+            <p className="mt-1 text-xs text-gray-600">Invitaciones enviadas y onboarding abierto</p>
+          </div>
         </div>
       </section>
 
@@ -238,6 +305,13 @@ export default function BrokerOverviewPage() {
           </div>
         )}
       </section>
+
+      {showInviteModal ? (
+        <InviteModal
+          inviteType="agent"
+          onClose={() => setShowInviteModal(false)}
+        />
+      ) : null}
     </div>
   )
 }

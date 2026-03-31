@@ -129,7 +129,7 @@ export default function DashboardSettingsPage() {
     if (!session?.uid) return ''
     const role = String(profile.role || session.role || '').toLowerCase()
     if (role === 'broker') return `/broker/${profile.slug || session.uid}`
-    if (role === 'agent') return `/agents/${session.uid}`
+    if (role === 'agent') return `/agent/${profile.slug || session.uid}`
     if (role === 'constructora') return `/constructoras/${session.uid}`
     return ''
   }, [profile.role, profile.slug, session?.role, session?.uid])

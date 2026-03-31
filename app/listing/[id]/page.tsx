@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { db, auth } from '../../../lib/firebaseClient'
 import { doc, updateDoc, increment } from 'firebase/firestore'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
@@ -15,6 +16,8 @@ import ShareButtons from '../../../components/ShareButtons'
 import SimilarProperties from '../../../components/SimilarProperties'
 import InvestmentInsightPanel from '../../../components/InvestmentInsightPanel'
 import BuyerClarityPanel from '../../../components/BuyerClarityPanel'
+import NeighborhoodIntelligencePanel from '../../../components/NeighborhoodIntelligencePanel'
+import OfferStrategyPanel from '../../../components/OfferStrategyPanel'
 import BuyerReadinessPanel from '../../../components/BuyerReadinessPanel'
 import MortgageCalculator from '../../../components/MortgageCalculator'
 import WhatsAppFloatingCTA from '../../../components/WhatsAppFloatingCTA'
@@ -276,6 +279,7 @@ export default function ListingDetail(){
   // Allow viewing if: listing is active OR user is owner/admin
   const canView = !listing.status || listing.status === 'active' || isOwnerOrAdmin
   const isAuthenticated = Boolean(currentSession?.uid)
+  const canOpenMlsSheet = ['agent', 'broker', 'constructora', 'master_admin', 'admin'].includes(String(currentSession?.role || '').toLowerCase())
   
   if (!canView) {
     return (
@@ -753,6 +757,43 @@ export default function ListingDetail(){
                 deslindadoStatus={String(listing.deslindadoStatus || '')}
                 city={String(listing.city || '')}
               />
+
+              <NeighborhoodIntelligencePanel
+                city={String(listing.city || '')}
+                sector={String(listing.sector || listing.neighborhood || '')}
+                neighborhood={String(listing.neighborhood || listing.sector || '')}
+                propertyType={String(listing.propertyType || '')}
+                listingType={String(listing.listingType || 'sale')}
+              />
+
+              <OfferStrategyPanel
+                price={Number(ctaPriceSource || listing.price || 0)}
+                currency={(listing.currency || 'USD') as 'USD' | 'DOP'}
+                area={Number(listing.area || 0)}
+                listingType={String(listing.listingType || 'sale')}
+                propertyType={String(listing.propertyType || '')}
+                city={String(listing.city || '')}
+                createdAt={listing.createdAt || null}
+                maintenanceFee={Number(listing.maintenanceFee || 0)}
+              />
+
+              {canOpenMlsSheet ? (
+                <div className="rounded-2xl border border-[#0B2545]/10 bg-white p-4 shadow-sm sm:p-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00A676]">Professional view</p>
+                      <h2 className="mt-2 text-xl font-bold text-[#0B2545]">Abrir ficha MLS completa</h2>
+                      <p className="mt-1 text-sm text-gray-600">Consulta la hoja detallada con showing instructions, comision, contacto privado, notas y resumen operativo.</p>
+                    </div>
+                    <Link
+                      href={`/listing/${listing.id}/sheet`}
+                      className="inline-flex items-center justify-center rounded-lg bg-[#0B2545] px-4 py-2 text-sm font-semibold text-white hover:bg-[#134074]"
+                    >
+                      Ver ficha MLS
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
 
               {/* Developer Card - Trust Badge Compact */}
               {developer && !developerLoading && (

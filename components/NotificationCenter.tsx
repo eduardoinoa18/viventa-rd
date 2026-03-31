@@ -47,22 +47,30 @@ export default function NotificationCenter({ userId }: { userId: string }) {
         orderBy('createdAt', 'desc'),
         limit(50)
       )
-      unsubPersonal = onSnapshot(personalQ, (snap: any) => {
-        const items: Notification[] = snap.docs.map((d: any) => {
-          const data = d.data() || {}
-          return {
-            id: d.id,
-            type: data.type,
-            title: data.title,
-            body: data.body || data.message || '',
-            icon: data.icon,
-            url: data.url,
-            read: !!data.read,
-            createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
-          }
-        })
-        setPersonalLive(items)
-      })
+      unsubPersonal = onSnapshot(
+        personalQ,
+        (snap: any) => {
+          const items: Notification[] = snap.docs.map((d: any) => {
+            const data = d.data() || {}
+            return {
+              id: d.id,
+              type: data.type,
+              title: data.title,
+              body: data.body || data.message || '',
+              icon: data.icon,
+              url: data.url,
+              read: !!data.read,
+              createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+            }
+          })
+          setPersonalLive(items)
+        },
+        () => {
+          setLiveActive(false)
+          loadNotifications()
+          if (!pollInterval) pollInterval = setInterval(loadNotifications, 30000)
+        }
+      )
 
       // Build audiences for broadcast
       const audSet = new Set<string>(['all'])
@@ -81,24 +89,32 @@ export default function NotificationCenter({ userId }: { userId: string }) {
         orderBy('createdAt', 'desc'),
         limit(50)
       )
-      unsubBroadcast = onSnapshot(broadcastQ, (snap: any) => {
-        const items: Notification[] = snap.docs.map((d: any) => {
-          const data = d.data() || {}
-          const readBy: string[] = Array.isArray(data.readBy) ? data.readBy : []
-          const computedRead = readBy.includes(userId)
-          return {
-            id: d.id,
-            type: data.type,
-            title: data.title,
-            body: data.body || data.message || '',
-            icon: data.icon,
-            url: data.url,
-            read: computedRead,
-            createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
-          }
-        })
-        setBroadcastLive(items)
-      })
+      unsubBroadcast = onSnapshot(
+        broadcastQ,
+        (snap: any) => {
+          const items: Notification[] = snap.docs.map((d: any) => {
+            const data = d.data() || {}
+            const readBy: string[] = Array.isArray(data.readBy) ? data.readBy : []
+            const computedRead = readBy.includes(userId)
+            return {
+              id: d.id,
+              type: data.type,
+              title: data.title,
+              body: data.body || data.message || '',
+              icon: data.icon,
+              url: data.url,
+              read: computedRead,
+              createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+            }
+          })
+          setBroadcastLive(items)
+        },
+        () => {
+          setLiveActive(false)
+          loadNotifications()
+          if (!pollInterval) pollInterval = setInterval(loadNotifications, 30000)
+        }
+      )
 
       setLiveActive(true)
     } catch (e) {

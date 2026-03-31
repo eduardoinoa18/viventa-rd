@@ -10,9 +10,10 @@ type InviteType = 'agent' | 'broker' | 'user'
 type Props = {
   onClose: () => void
   inviteType: InviteType
+  onSuccess?: () => void
 }
 
-export default function InviteModal({ onClose, inviteType }: Props) {
+export default function InviteModal({ onClose, inviteType, onSuccess }: Props) {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
@@ -23,26 +24,26 @@ export default function InviteModal({ onClose, inviteType }: Props) {
   const getTitle = () => {
     switch (inviteType) {
       case 'agent':
-        return 'Invite Real Estate Agent'
+        return 'Invitar agente'
       case 'broker':
-        return 'Invite Broker'
+        return 'Invitar broker'
       case 'user':
-        return 'Invite User'
+        return 'Invitar usuario'
       default:
-        return 'Send Invitation'
+        return 'Enviar invitacion'
     }
   }
 
   const getDescription = () => {
     switch (inviteType) {
       case 'agent':
-        return 'Send an invitation to join as a real estate agent'
+        return 'Crea una invitacion para sumar un agente a tu estructura en VIVENTA'
       case 'broker':
-        return 'Send an invitation to join as a broker'
+        return 'Invita un broker para completar su activacion en la plataforma'
       case 'user':
-        return 'Send an invitation to join the platform'
+        return 'Comparte un acceso guiado para completar su perfil en la plataforma'
       default:
-        return 'Send an invitation'
+        return 'Enviar invitacion'
     }
   }
 
@@ -61,7 +62,7 @@ export default function InviteModal({ onClose, inviteType }: Props) {
     e.preventDefault()
     
     if (!email || !name) {
-      toast.error('Please fill in all required fields')
+      toast.error('Completa los campos obligatorios')
       return
     }
 
@@ -81,14 +82,15 @@ export default function InviteModal({ onClose, inviteType }: Props) {
       const data = await res.json()
 
       if (!res.ok || !data.ok) {
-        throw new Error(data.error || 'Failed to send invitation')
+        throw new Error(data.error || 'No se pudo enviar la invitacion')
       }
 
       setInviteLink(data.inviteLink)
-      toast.success('Invitation sent successfully!')
+      onSuccess?.()
+      toast.success('Invitacion enviada correctamente')
     } catch (error: any) {
       console.error('Error sending invitation:', error)
-      toast.error(error.message || 'Failed to send invitation')
+      toast.error(error.message || 'No se pudo enviar la invitacion')
     } finally {
       setSending(false)
     }
@@ -98,7 +100,7 @@ export default function InviteModal({ onClose, inviteType }: Props) {
     if (inviteLink) {
       navigator.clipboard.writeText(inviteLink)
       setCopied(true)
-      toast.success('Link copied to clipboard!')
+      toast.success('Enlace copiado')
       setTimeout(() => setCopied(false), 2000)
     }
   }
@@ -143,16 +145,16 @@ export default function InviteModal({ onClose, inviteType }: Props) {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                 <FiCheck className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Invitation Sent!</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Invitacion enviada</h3>
               <p className="text-gray-600">
-                An email invitation has been sent to <strong>{email}</strong>
+                Se envio una invitacion por correo a <strong>{email}</strong>
               </p>
             </div>
 
             {/* Invitation Link */}
             <div className="bg-gray-50 rounded-xl p-4 mb-6">
               <label htmlFor="invite-link" className="block text-sm font-medium text-gray-700 mb-2">
-                Invitation Link (expires in 7 days)
+                Enlace de invitacion (vence en 7 dias)
               </label>
               <div className="flex gap-2">
                 <input
@@ -168,11 +170,11 @@ export default function InviteModal({ onClose, inviteType }: Props) {
                   className="px-4 py-2 bg-[#00A676] text-white rounded-lg hover:bg-[#008F64] transition-colors inline-flex items-center gap-2"
                 >
                   {copied ? <FiCheck /> : <FiCopy />}
-                  {copied ? 'Copied!' : 'Copy'}
+                  {copied ? 'Copiado' : 'Copiar'}
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                You can also share this link directly with the invitee
+                Tambien puedes compartir este enlace directamente con la persona invitada
               </p>
             </div>
 
@@ -182,13 +184,13 @@ export default function InviteModal({ onClose, inviteType }: Props) {
                 onClick={handleSendAnother}
                 className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-colors"
               >
-                Send Another Invite
+                Enviar otra invitacion
               </button>
               <button
                 onClick={onClose}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-[#00A676] to-[#00C896] text-white rounded-xl font-semibold hover:shadow-lg transition-all"
               >
-                Done
+                Cerrar
               </button>
             </div>
           </div>
@@ -199,12 +201,12 @@ export default function InviteModal({ onClose, inviteType }: Props) {
               {/* Role Badge */}
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <strong>Invitation for:</strong>{' '}
+                  <strong>Invitacion para:</strong>{' '}
                   {inviteType === 'agent'
-                    ? 'Real Estate Agent'
+                    ? 'Agente inmobiliario'
                     : inviteType === 'broker'
-                    ? 'Broker/Brokerage'
-                    : 'Platform User'}
+                    ? 'Broker / inmobiliaria'
+                    : 'Usuario de plataforma'}
                 </p>
               </div>
 
@@ -212,7 +214,7 @@ export default function InviteModal({ onClose, inviteType }: Props) {
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                   <FiUser className="inline mr-2" />
-                  Recipient Name <span className="text-red-500">*</span>
+                  Nombre de la persona <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="name"
@@ -220,7 +222,7 @@ export default function InviteModal({ onClose, inviteType }: Props) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
-                  placeholder="John Doe"
+                  placeholder="Nombre completo"
                   required
                 />
               </div>
@@ -229,7 +231,7 @@ export default function InviteModal({ onClose, inviteType }: Props) {
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   <FiMail className="inline mr-2" />
-                  Email Address <span className="text-red-500">*</span>
+                  Correo electronico <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="email"
@@ -245,7 +247,7 @@ export default function InviteModal({ onClose, inviteType }: Props) {
               {/* Personal Message */}
               <div>
                 <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                  Personal Message (Optional)
+                  Mensaje personal (opcional)
                 </label>
                 <textarea
                   id="message"
@@ -253,23 +255,23 @@ export default function InviteModal({ onClose, inviteType }: Props) {
                   onChange={(e) => setMessage(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                   rows={4}
-                  placeholder="Add a personal note to your invitation..."
+                  placeholder="Agrega una nota para contextualizar la invitacion..."
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  This message will be included in the invitation email
+                  Este mensaje se incluira en el correo de invitacion
                 </p>
               </div>
 
               {/* Info Box */}
               <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
                 <p className="text-sm text-green-800">
-                  📧 <strong>What happens next:</strong>
+                  📧 <strong>Que pasa despues:</strong>
                 </p>
                 <ul className="text-sm text-green-800 mt-2 space-y-1 ml-5 list-disc">
-                  <li>An email invitation will be sent to the recipient</li>
-                  <li>They&apos;ll receive a unique link to complete their application</li>
-                  <li>The invitation expires after 7 days</li>
-                  <li>You can track invitation status in the system</li>
+                  <li>Se envia un correo con acceso guiado al onboarding</li>
+                  <li>La persona completa su perfil y crea su contrasena</li>
+                  <li>La invitacion vence despues de 7 dias</li>
+                  <li>Puedes seguir el estado desde el panel</li>
                 </ul>
               </div>
             </div>
@@ -281,7 +283,7 @@ export default function InviteModal({ onClose, inviteType }: Props) {
                 onClick={onClose}
                 className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-colors"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 type="submit"
@@ -291,12 +293,12 @@ export default function InviteModal({ onClose, inviteType }: Props) {
                 {sending ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Sending...
+                    Enviando...
                   </>
                 ) : (
                   <>
                     <FiSend />
-                    Send Invitation
+                    Enviar invitacion
                   </>
                 )}
               </button>

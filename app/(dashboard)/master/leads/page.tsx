@@ -835,7 +835,7 @@ export default function LeadsPage() {
     }
 
     if (lead.source === 'agent' && lead.sourceId) {
-      router.push(`/agents/${lead.sourceId}`)
+      router.push(`/agent/${lead.sourceId}`)
       return
     }
 

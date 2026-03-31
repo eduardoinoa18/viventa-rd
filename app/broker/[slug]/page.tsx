@@ -262,6 +262,23 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
               </div>
             </div>
 
+            <div className="px-6 pt-4">
+              <div className="rounded-xl border border-[#3BAFDA]/20 bg-[#F4FAFF] p-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[#0B2545]">Trabaja o aplica con esta oficina</p>
+                  <p className="text-xs text-gray-600">Si eres agente y te interesa unirte a esta estructura, inicia el proceso desde aquí.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link href={`/apply?pathway=agent&broker=${encodeURIComponent(profile?.slug || params.slug)}`} className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-xs font-semibold">
+                    Aplicar como agente
+                  </Link>
+                  <Link href={`/contact?broker=${encodeURIComponent(profile?.slug || params.slug)}`} className="px-3 py-2 rounded-lg border border-[#0B2545] text-[#0B2545] text-xs font-semibold">
+                    Contactar oficina
+                  </Link>
+                </div>
+              </div>
+            </div>
+
             <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
               <section className="lg:col-span-2">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Perfil profesional</h2>
@@ -373,7 +390,7 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
                   ))}
                 </div>
                 <div className="mt-4 text-center">
-                  <Link href={`/search?brokerSlug=${encodeURIComponent(profile?.slug ?? params.slug)}`}
+                  <Link href={`/search?broker=${encodeURIComponent(profile?.slug ?? params.slug)}`}
                     className="text-sm text-[#0B2545] hover:underline font-semibold">
                     Ver todos los listados →
                   </Link>

@@ -174,17 +174,44 @@ export async function listProjects(options: {
       q = q.where('location.city', '==', city);
     }
 
-    q = q.orderBy(sortBy, sortOrder === 'desc' ? 'desc' : 'asc').limit(pageSize + 1);
+    let snapshot: any = null
+    try {
+      const ordered = q.orderBy(sortBy, sortOrder === 'desc' ? 'desc' : 'asc').limit(pageSize + 1)
+      snapshot = await ordered.get()
+    } catch (error: any) {
+      const message = String(error?.message || '')
+      const missingIndex =
+        message.toLowerCase().includes('requires an index') ||
+        message.toLowerCase().includes('failed-precondition') ||
+        message.toLowerCase().includes('the query requires an index')
 
-    const snapshot = await q.get();
+      if (!missingIndex) throw error
 
-    const projects = snapshot.docs.slice(0, pageSize).map((docSnap: any) => ({
+      // Fallback path: fetch by filters only, then sort in memory.
+      const fallbackLimit = Math.min(Math.max(pageSize * Math.max(page, 1) + 1, pageSize + 1), 400)
+      snapshot = await q.limit(fallbackLimit).get()
+    }
+
+    const rows = snapshot.docs.map((docSnap: any) => ({
       ...docSnap.data(),
       id: docSnap.id,
-    })) as Project[];
+    })) as Project[]
 
-    const hasMore = snapshot.docs.length > pageSize;
-    const total = snapshot.docs.length;
+    const sorted = [...rows].sort((a: any, b: any) => {
+      const aVal = Number(a?.[sortBy] || 0)
+      const bVal = Number(b?.[sortBy] || 0)
+      if (sortBy === 'createdAt') {
+        const aTime = a?.createdAt?.toDate?.()?.getTime?.() || new Date(a?.createdAt || 0).getTime() || 0
+        const bTime = b?.createdAt?.toDate?.()?.getTime?.() || new Date(b?.createdAt || 0).getTime() || 0
+        return sortOrder === 'asc' ? aTime - bTime : bTime - aTime
+      }
+      return sortOrder === 'asc' ? aVal - bVal : bVal - aVal
+    })
+
+    const start = Math.max(0, (page - 1) * pageSize)
+    const projects = sorted.slice(start, start + pageSize)
+    const hasMore = sorted.length > start + pageSize
+    const total = sorted.length
 
     return { projects, total, page, hasMore };
   } catch (error) {

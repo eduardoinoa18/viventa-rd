@@ -51,7 +51,7 @@ export async function GET(req: Request) {
     // ── 1. Listings ───────────────────────────────────────────────────────────
     try {
       const listingSnap = await db
-        .collection('listings')
+        .collection('properties')
         .where('status', '==', 'active')
         .limit(50)
         .get()

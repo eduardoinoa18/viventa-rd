@@ -26,12 +26,45 @@ function initAdmin() {
   if (fs.existsSync(saPath)) {
     const sa = JSON.parse(fs.readFileSync(saPath, 'utf8'))
     admin.initializeApp({ credential: admin.credential.cert(sa) })
+    return
+  }
+
+  const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT
+  if (serviceAccountEnv) {
+    const raw = /^[A-Za-z0-9+/=]+$/.test(serviceAccountEnv) && serviceAccountEnv.length > 100
+      ? Buffer.from(serviceAccountEnv, 'base64').toString('utf8')
+      : serviceAccountEnv
+    const parsed = JSON.parse(raw)
+    if (parsed.project_id && parsed.client_email && parsed.private_key) {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: parsed.project_id,
+          clientEmail: parsed.client_email,
+          privateKey: String(parsed.private_key).replace(/\\n/g, '\n'),
+        }),
+      })
+      return
+    }
+  }
+
+  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL
+  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
+
+  if (projectId && clientEmail && privateKey) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId,
+        clientEmail,
+        privateKey: privateKey.replace(/\\n/g, '\n'),
+      }),
+    })
   } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     admin.initializeApp({ credential: admin.credential.applicationDefault() })
   } else {
     throw new Error(
       'No Firebase credentials found.\n' +
-      'Place service-account.json in project root OR set GOOGLE_APPLICATION_CREDENTIALS.'
+      'Place service-account.json in project root OR set FIREBASE_SERVICE_ACCOUNT / FIREBASE_ADMIN_* vars OR GOOGLE_APPLICATION_CREDENTIALS.'
     )
   }
 }
@@ -849,6 +882,7 @@ async function seedListings(db: admin.firestore.Firestore) {
   console.log('\n[4/4] Seeding Listings...')
 
   for (const l of LISTINGS) {
+    const isPendingDemo = l.id === 'listing-010'
     const publicData = {
       listingId: l.id,
       title: l.title,
@@ -876,7 +910,7 @@ async function seedListings(db: admin.firestore.Firestore) {
       features: l.features ?? [],
       images: l.images ?? [],
       coverImage: l.coverImage ?? '',
-      status: l.status,
+      status: isPendingDemo ? 'pending' : l.status,
       mlsOnly: l.mlsOnly ?? false,
       cobrokeCommissionPercent: l.cobrokeCommissionPercent ?? 0,
       commissionType: (l as any).commissionType ?? 'cobroke',
@@ -904,9 +938,11 @@ async function seedListings(db: admin.firestore.Firestore) {
       privateContactEmail: l.privateContactEmail,
       // approval workflow
       submittedAt: ts(),
-      approvedAt: ts(),
-      approvedBy: 'system-seed',
-      approvalNotes: 'Seeded demo listing — auto-approved.',
+      approvedAt: isPendingDemo ? null : ts(),
+      approvedBy: isPendingDemo ? null : 'system-seed',
+      approvalNotes: isPendingDemo
+        ? 'Seeded as pending for master-admin approval test.'
+        : 'Seeded demo listing — auto-approved.',
       createdAt: ts(),
       updatedAt: ts(),
     }

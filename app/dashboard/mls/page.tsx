@@ -130,15 +130,15 @@ export default function InternalMLSPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 dark:text-slate-100">
       {/* ─── Header ─────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between dark:bg-slate-900 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
             <FiLock className="text-blue-600" />
-            <h1 className="text-xl font-bold text-gray-900">MLS Interno — Viventa</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">MLS Interno — Viventa</h1>
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">Acceso exclusivo para profesionales verificados · Información confidencial</p>
+          <p className="text-sm text-gray-500 mt-0.5 dark:text-slate-400">Acceso exclusivo para profesionales verificados · Información confidencial</p>
         </div>
         <Link
           href="/dashboard/listings"
@@ -150,7 +150,7 @@ export default function InternalMLSPage() {
 
       <div className="flex min-h-[calc(100vh-65px)]">
         {/* ─── Filters sidebar ──────────────────────────────────────────── */}
-        <aside className="w-72 shrink-0 border-r border-gray-200 bg-white p-5 overflow-y-auto">
+        <aside className="w-72 shrink-0 border-r border-gray-200 bg-white p-5 overflow-y-auto dark:bg-slate-900 dark:border-slate-800">
           <form onSubmit={handleSearch} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Búsqueda</label>
@@ -159,28 +159,28 @@ export default function InternalMLSPage() {
                 <input
                   value={q} onChange={(e) => setQ(e.target.value)}
                   placeholder="Título, sector, ciudad..."
-                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Ciudad</label>
-              <select title="Filtrar por ciudad" aria-label="Filtrar por ciudad" value={city} onChange={(e) => setCity(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select title="Filtrar por ciudad" aria-label="Filtrar por ciudad" value={city} onChange={(e) => setCity(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100">
                 {DR_CITIES.map((c) => <option key={c} value={c}>{c || 'Todas las ciudades'}</option>)}
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Tipo de Propiedad</label>
-              <select title="Filtrar por tipo de propiedad" aria-label="Filtrar por tipo de propiedad" value={propType} onChange={(e) => setPropType(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select title="Filtrar por tipo de propiedad" aria-label="Filtrar por tipo de propiedad" value={propType} onChange={(e) => setPropType(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100">
                 {PROPERTY_TYPES.map((t) => <option key={t} value={t}>{t || 'Todos los tipos'}</option>)}
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Venta / Alquiler</label>
-              <select title="Filtrar por modalidad" aria-label="Filtrar por modalidad" value={listType} onChange={(e) => setListType(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select title="Filtrar por modalidad" aria-label="Filtrar por modalidad" value={listType} onChange={(e) => setListType(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100">
                 {LISTING_TYPES.map((t) => <option key={t} value={t}>{t ? (t === 'sale' ? 'Venta' : 'Alquiler') : 'Todos'}</option>)}
               </select>
             </div>
@@ -188,22 +188,22 @@ export default function InternalMLSPage() {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Precio Min</label>
-                <input value={minPrice} onChange={(e) => setMinPrice(e.target.value)} type="number" placeholder="0" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input value={minPrice} onChange={(e) => setMinPrice(e.target.value)} type="number" placeholder="0" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Precio Max</label>
-                <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} type="number" placeholder="∞" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} type="number" placeholder="∞" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Hab. Min</label>
-                <input title="Habitaciones mínimas" aria-label="Habitaciones mínimas" value={minBeds} onChange={(e) => setMinBeds(e.target.value)} type="number" min="0" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input title="Habitaciones mínimas" aria-label="Habitaciones mínimas" value={minBeds} onChange={(e) => setMinBeds(e.target.value)} type="number" min="0" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Comisión Min %</label>
-                <input title="Comisión mínima" aria-label="Comisión mínima" value={minComm} onChange={(e) => setMinComm(e.target.value)} type="number" min="0" step="0.5" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input title="Comisión mínima" aria-label="Comisión mínima" value={minComm} onChange={(e) => setMinComm(e.target.value)} type="number" min="0" step="0.5" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100" />
               </div>
             </div>
 
@@ -224,7 +224,7 @@ export default function InternalMLSPage() {
         {/* ─── Results ──────────────────────────────────────────────────── */}
         <main className="flex-1 overflow-y-auto">
           {/* stats bar */}
-          <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between">
+          <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between dark:bg-slate-900 dark:border-slate-800">
             <p className="text-sm text-gray-600">
               {loading ? 'Cargando...' : `${total} propiedad${total !== 1 ? 'es' : ''} encontrada${total !== 1 ? 's' : ''}`}
             </p>
@@ -272,7 +272,7 @@ function MLSCard({ listing: l, onClick, isSelected }: { listing: MLSListing; onC
   return (
     <div
       onClick={onClick}
-      className={`border-b border-gray-100 p-4 cursor-pointer hover:bg-blue-50 transition-colors ${isSelected ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`}
+      className={`border-b border-gray-100 p-4 cursor-pointer hover:bg-blue-50 transition-colors dark:border-slate-800 dark:hover:bg-slate-800 ${isSelected ? 'bg-blue-50 border-l-4 border-l-blue-500 dark:bg-slate-800' : ''}`}
     >
       <div className="flex gap-3">
         {/* Photo */}
@@ -289,7 +289,7 @@ function MLSCard({ listing: l, onClick, isSelected }: { listing: MLSListing; onC
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">{l.title}</h3>
+            <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight dark:text-slate-100">{l.title}</h3>
             {l.mlsOnly && <FiLock className="text-blue-400 shrink-0 w-3.5 h-3.5 mt-0.5" />}
           </div>
           <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
@@ -315,7 +315,7 @@ function MLSDetailPanel({ listing: l, onClose }: { listing: MLSListing; onClose:
   return (
     <div>
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between dark:bg-slate-900 dark:border-slate-800">
         <h2 className="font-bold text-gray-900 text-sm line-clamp-1">{l.title}</h2>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-xl font-light leading-none">×</button>
       </div>

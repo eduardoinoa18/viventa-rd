@@ -13,7 +13,8 @@
     "test:e2e:headed": "playwright test --headed",
     "ai:preflight": "bash scripts/ai-preflight.sh",
     "db:cleanup": "cd functions && npx ts-node ../scripts/cleanup-database.ts",
-    "db:wipe": "cd functions && npx ts-node ../scripts/wipe-database.ts"
+    "db:wipe": "cd functions && npx ts-node ../scripts/wipe-database.ts",
+    "db:seed": "npx ts-node --project tsconfig.scripts.json scripts/seed.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

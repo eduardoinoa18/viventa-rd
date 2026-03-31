@@ -16,6 +16,9 @@ interface SearchPageProps {
     city?: string
     sector?: string
     type?: string
+    agent?: string
+    broker?: string
+    featured?: string
     listingType?: 'sale' | 'rent'
     minPrice?: string
     maxPrice?: string
@@ -30,6 +33,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     city: searchParams.city,
     sector: searchParams.sector,
     propertyType: searchParams.type as any,
+    agent: searchParams.agent,
+    broker: searchParams.broker,
+    featured: searchParams.featured === '1' || searchParams.featured === 'true',
     listingType: searchParams.listingType,
     minPrice: searchParams.minPrice ? Number(searchParams.minPrice) : undefined,
     maxPrice: searchParams.maxPrice ? Number(searchParams.maxPrice) : undefined,

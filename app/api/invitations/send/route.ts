@@ -1,21 +1,41 @@
 // app/api/invitations/send/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminDb } from '@/lib/firebaseAdmin'
+import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin'
+import { getSessionFromRequest } from '@/lib/auth/session'
+import { getListingAccessUserContext } from '@/lib/listingOwnership'
 import { sendEmail } from '@/lib/emailService'
 import { getPublicAppUrl } from '@/lib/publicAppUrl'
 import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
+type InviteType = 'agent' | 'broker' | 'user'
+
 // Generate a secure random token
 function generateInviteToken(): string {
   return crypto.randomBytes(32).toString('hex')
 }
 
+function safeText(value: unknown): string {
+  return String(value ?? '').trim()
+}
+
+function normalizeEmail(value: unknown): string {
+  return safeText(value).toLowerCase()
+}
+
 // POST - Send invitation
 export async function POST(request: NextRequest) {
   try {
-    const { email, name, message, inviteType } = await request.json()
+    const session = await getSessionFromRequest(request)
+    if (!session?.uid) {
+      return NextResponse.json(
+        { ok: false, error: 'Debes iniciar sesion para enviar invitaciones' },
+        { status: 401 }
+      )
+    }
+
+    const { email, name, message, inviteType, officeId: requestedOfficeId } = await request.json()
 
     if (!email || !name || !inviteType) {
       return NextResponse.json(
@@ -33,17 +53,49 @@ export async function POST(request: NextRequest) {
     }
 
     const adminDb = getAdminDb()
+    const adminAuth = getAdminAuth()
     if (!adminDb) {
       return NextResponse.json(
         { ok: false, error: 'Base de datos no configurada' },
         { status: 500 }
       )
     }
+    if (!adminAuth) {
+      return NextResponse.json(
+        { ok: false, error: 'Servicio de autenticacion no configurado' },
+        { status: 500 }
+      )
+    }
+
+    const senderContext = await getListingAccessUserContext(adminDb, session.uid, (session.role as any) || 'buyer')
+    const senderRole = safeText(senderContext.role).toLowerCase()
+    if (!['master_admin', 'admin', 'broker'].includes(senderRole)) {
+      return NextResponse.json(
+        { ok: false, error: 'No tienes permisos para enviar invitaciones' },
+        { status: 403 }
+      )
+    }
+
+    const normalizedEmail = normalizeEmail(email)
+    const normalizedName = safeText(name)
+    const normalizedInviteType = safeText(inviteType).toLowerCase() as InviteType
+
+    let officeId = safeText(requestedOfficeId)
+    if (senderRole === 'broker') {
+      officeId = senderContext.officeId || senderContext.uid
+    }
+
+    if (normalizedInviteType === 'agent' && senderRole === 'broker' && !officeId) {
+      return NextResponse.json(
+        { ok: false, error: 'Debes tener una oficina asignada para invitar agentes' },
+        { status: 400 }
+      )
+    }
 
     // Check if email already exists in users
     const existingUserSnap = await adminDb
       .collection('users')
-      .where('email', '==', email)
+      .where('email', '==', normalizedEmail)
       .limit(1)
       .get()
 
@@ -57,7 +109,7 @@ export async function POST(request: NextRequest) {
     // Check if there's already a pending invitation for this email
     const existingInviteSnap = await adminDb
       .collection('invitations')
-      .where('email', '==', email)
+      .where('email', '==', normalizedEmail)
       .where('status', '==', 'pending')
       .limit(1)
       .get()
@@ -74,20 +126,68 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiration
 
+    const createdAuthUser = await adminAuth.createUser({
+      email: normalizedEmail,
+      displayName: normalizedName,
+      disabled: false,
+      emailVerified: false,
+    })
+
+    const userId = createdAuthUser.uid
+
+    const userDoc: Record<string, unknown> = {
+      name: normalizedName,
+      email: normalizedEmail,
+      role: normalizedInviteType,
+      status: 'invited',
+      emailVerified: false,
+      inviteUsed: false,
+      invitedById: senderContext.uid,
+      invitedByRole: senderContext.role,
+      invitedByName: senderContext.name || session.email || 'Viventa',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+
+    if (normalizedInviteType === 'agent' && officeId) {
+      userDoc.brokerId = officeId
+      userDoc.brokerageId = officeId
+      userDoc.brokerage_id = officeId
+      userDoc.officeId = officeId
+    }
+
+    await adminDb.collection('users').doc(userId).set(userDoc)
+
     // Create invitation record
     const invitationData = {
-      email,
-      name,
+      userId,
+      email: normalizedEmail,
+      name: normalizedName,
       message: message || '',
-      inviteType,
+      role: normalizedInviteType,
+      inviteType: normalizedInviteType,
+      officeId: officeId || '',
+      invitedById: senderContext.uid,
+      invitedByRole: senderContext.role,
+      invitedByName: senderContext.name || session.email || 'Viventa',
       token,
       status: 'pending',
+      used: false,
       createdAt: new Date(),
+      updatedAt: new Date(),
       expiresAt,
       acceptedAt: null,
     }
 
     const inviteRef = await adminDb.collection('invitations').add(invitationData)
+    await adminDb.collection('users').doc(userId).set(
+      {
+        inviteId: inviteRef.id,
+        inviteExpiresAt: expiresAt,
+        updatedAt: new Date(),
+      },
+      { merge: true }
+    )
 
     // Generate invitation link
     const baseUrl = getPublicAppUrl()
@@ -192,7 +292,7 @@ export async function POST(request: NextRequest) {
     // Send invitation email
     try {
       await sendEmail({
-        to: email,
+        to: normalizedEmail,
         subject: emailSubject,
         html: emailHtml,
       })
@@ -205,6 +305,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       inviteLink,
       invitationId: inviteRef.id,
+      userId,
       message: 'Invitación enviada correctamente',
     })
   } catch (error: any) {

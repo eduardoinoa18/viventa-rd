@@ -25,9 +25,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ ok: false, error: 'Broker office assignment required' }, { status: 403 })
     }
 
-    const [byBrokerId, byBrokerageId] = await Promise.all([
+    const [byBrokerId, byBrokerageId, pendingInviteSnap] = await Promise.all([
       db.collection('users').where('brokerId', '==', context.officeId).limit(400).get(),
       db.collection('users').where('brokerageId', '==', context.officeId).limit(400).get(),
+      db.collection('invitations').where('officeId', '==', context.officeId).where('status', '==', 'pending').limit(100).get(),
     ])
 
     const membersMap = new Map<string, Record<string, any>>()
@@ -51,12 +52,39 @@ export async function GET(req: Request) {
         id: safeText(member.id),
         name: safeText(member.name || member.displayName || member.email || 'Miembro'),
         role: safeText(member.role || 'agent').toLowerCase(),
-        status: safeText(member.status || 'active').toLowerCase() || 'active',
+        status: (() => {
+          const normalizedStatus = safeText(member.status || 'active').toLowerCase() || 'active'
+          return normalizedStatus === 'invited' ? 'pending' : normalizedStatus
+        })(),
         email: safeText(member.email),
       }))
 
     const activeMembers = members.filter((member) => member.status === 'active').length
-    const pendingMembers = members.filter((member) => member.status === 'pending').length
+    const pendingMemberEmails = new Set(
+      members
+        .filter((member) => member.status === 'pending')
+        .map((member) => safeText(member.email).toLowerCase())
+        .filter(Boolean)
+    )
+
+    const pendingInviteRows = pendingInviteSnap.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as Record<string, any>),
+    })) as Array<Record<string, any> & { id: string }>
+
+    const pendingInvites = pendingInviteRows
+      .filter((invite) => ['agent', 'broker'].includes(safeText(invite.role || invite.inviteType).toLowerCase()))
+      .map((invite) => ({
+        id: safeText(invite.id),
+        name: safeText(invite.name || invite.email || 'Invitacion pendiente'),
+        email: safeText(invite.email),
+        role: safeText(invite.role || invite.inviteType || 'agent').toLowerCase(),
+        status: 'pending',
+        expiresAt: invite.expiresAt?.toDate?.()?.toISOString?.() || safeText(invite.expiresAt),
+      }))
+      .filter((invite) => !pendingMemberEmails.has(safeText(invite.email).toLowerCase()))
+
+    const pendingMembers = members.filter((member) => member.status === 'pending').length + pendingInvites.length
 
     return NextResponse.json({
       ok: true,
@@ -67,6 +95,7 @@ export async function GET(req: Request) {
         pendingMembers,
       },
       members: members.slice(0, 50),
+      pendingInvites: pendingInvites.slice(0, 50),
     })
   } catch (error: any) {
     console.error('[api/broker/team] GET error', error)
