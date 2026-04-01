@@ -10,7 +10,6 @@ import Footer from '../../../components/Footer'
 import WhatsAppButton from '../../../components/WhatsAppButton'
 import PropertyInquiryForm from '../../../components/PropertyInquiryForm'
 import StructuredData from '../../../components/StructuredData'
-import RegistrationPrompt from '../../../components/RegistrationPrompt'
 import ImageGalleryCarousel from '../../../components/ImageGalleryCarousel'
 import ShareButtons from '../../../components/ShareButtons'
 import SimilarProperties from '../../../components/SimilarProperties'
@@ -20,7 +19,6 @@ import NeighborhoodIntelligencePanel from '../../../components/NeighborhoodIntel
 import OfferStrategyPanel from '../../../components/OfferStrategyPanel'
 import BuyerReadinessPanel from '../../../components/BuyerReadinessPanel'
 import MortgageCalculator from '../../../components/MortgageCalculator'
-import WhatsAppFloatingCTA from '../../../components/WhatsAppFloatingCTA'
 import DeveloperCard from '../../../components/DeveloperCard'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
@@ -590,12 +588,6 @@ export default function ListingDetail(){
               {formatCurrency(secondaryPrice, { currency: secondaryCurrency })}
             </div>
           </div>
-          <button
-            onClick={() => (isAuthenticated ? (setInquiryCommunicationType('more_info'), setShowInquiryForm(true)) : requireAccountForDetails())}
-            className="shrink-0 px-3 sm:px-4 py-2 bg-[#00A676] text-white rounded-lg font-semibold text-xs sm:text-sm whitespace-nowrap"
-          >
-            {isAuthenticated ? 'Contactar' : 'Crear cuenta'}
-          </button>
         </div>
       </div>
 
@@ -1098,29 +1090,9 @@ export default function ListingDetail(){
               )}
             </div>
             
-            {/* Sidebar - Hidden on Mobile (sticky price bar replaces it) */}
+            {/* Sidebar - Hidden on Mobile (bottom sticky actions replace it) */}
             <div className={`hidden lg:block space-y-4 ${!isAuthenticated ? 'opacity-50 pointer-events-none select-none' : ''}`}>
-              {/* WhatsApp Floating CTA - Desktop Sidebar */}
-              <WhatsAppFloatingCTA 
-                agent={{
-                  id: listing.agentId || '',
-                  name: listing.agentName || 'Agente VIVENTA',
-                  phone: listing.agentPhone || '+18095551234',
-                  email: listing.agentEmail || '',
-                  photo: listing.agentPhoto || '',
-                  verificationTier: listing.agentVerificationTier || undefined,
-                  avgResponseTime: listing.agentResponseTime || undefined
-                }}
-                listing={{
-                  id: listing.id,
-                  title: listing.title,
-                  address: `${listing.city || ''}, ${listing.sector || ''}`,
-                  price: Number(ctaPriceSource || listing.price || 0),
-                  currency: listing.currency || 'USD'
-                }}
-              />
-
-              {/* Price Card - Desktop Only */}
+              {/* Unified Sticky Action Card - Desktop */}
               <div className="bg-white rounded-xl shadow-sm p-5 lg:p-6 sticky top-24">
                 <div className="mb-6">
                   <div className="text-4xl font-bold text-[#FF6B35]">
@@ -1347,12 +1319,11 @@ export default function ListingDetail(){
                   </div>
                 </div>
               )}
-              <p className="text-xs leading-relaxed text-gray-500">
-                <strong>Nota:</strong> La información de este listado es proporcionada por el agente y debe ser verificada. 
-                VIVENTA actúa como plataforma intermediaria entre compradores y vendedores. Las transacciones inmobiliarias 
-                están sujetas a disponibilidad y pueden cambiar sin previo aviso. Se recomienda realizar inspecciones 
-                independientes antes de cualquier transacción.
-              </p>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 sm:p-4 text-xs leading-relaxed text-amber-900 space-y-1.5">
+                <p><strong>Aviso legal y de datos:</strong> La información publicada (precio, metraje, estado, disponibilidad, impuestos, comisiones y documentos) es referencial y puede cambiar sin previo aviso.</p>
+                <p>VIVENTA opera como plataforma tecnológica de conexión y no sustituye asesoría legal, financiera, fiscal, técnica ni de valuación profesional.</p>
+                <p>Antes de reservar, comprar o alquilar, valida toda la información con el profesional responsable y tus asesores independientes.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -1375,27 +1346,45 @@ export default function ListingDetail(){
 
       {/* Mobile Sticky Bottom CTA - Zillow Style (only on mobile, hidden on desktop) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg safe-area-inset-bottom">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                requireAccountForDetails()
-                return
-              }
-              const whatsappUrl = `https://wa.me/${(listing.agentPhone || '+18095551234').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola, estoy interesado en ${listing.title} (${listing.id})`)}`;
-              window.open(whatsappUrl, '_blank');
-            }}
-            className="flex-1 px-4 py-3 bg-[#25D366] hover:bg-[#20BA59] text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-            {isAuthenticated ? 'WhatsApp' : 'Crear cuenta'}
-          </button>
-          <button
-            onClick={() => (isAuthenticated ? (setInquiryCommunicationType('more_info'), setShowInquiryForm(true)) : requireAccountForDetails())}
-            className="flex-1 px-4 py-3 bg-[#0B2545] hover:bg-[#143a66] text-white rounded-lg font-semibold transition-colors"
-          >
-            {isAuthenticated ? 'Contactar' : 'Iniciar / Crear cuenta'}
-          </button>
+        <div className="px-4 py-3">
+          {isAuthenticated ? (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  const whatsappUrl = `https://wa.me/${(listing.agentPhone || '+18095551234').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola, estoy interesado en ${listing.title} (${listing.id})`)}`;
+                  window.open(whatsappUrl, '_blank');
+                }}
+                className="flex-1 px-4 py-3 bg-[#25D366] hover:bg-[#20BA59] text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                WhatsApp
+              </button>
+              <button
+                onClick={() => {
+                  setInquiryCommunicationType('more_info')
+                  setShowInquiryForm(true)
+                }}
+                className="flex-1 px-4 py-3 bg-[#0B2545] hover:bg-[#143a66] text-white rounded-lg font-semibold transition-colors"
+              >
+                Contactar
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <button
+                onClick={requireAccountForDetails}
+                className="w-full px-4 py-3 bg-[#0B2545] hover:bg-[#143a66] text-white rounded-lg font-semibold transition-colors"
+              >
+                Crear cuenta para contactar
+              </button>
+              <p className="text-center text-xs text-gray-600">
+                ¿Ya tienes cuenta?{' '}
+                <a href={`/login?next=${encodeURIComponent(authRedirectTarget)}`} className="font-semibold text-[#0B2545] underline">
+                  Iniciar sesion
+                </a>
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1413,7 +1402,6 @@ export default function ListingDetail(){
           onClose={() => setShowInquiryForm(false)}
         />
       )}
-      <RegistrationPrompt />
       <Footer />
     </>
   )
