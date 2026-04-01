@@ -64,7 +64,6 @@ export async function GET(req: NextRequest) {
       .collection('users')
       .where('role', '==', 'broker')
       .where('status', '==', 'active')
-      .where('approved', '==', true)
 
     let snap: QuerySnapshot<DocumentData>
     try {

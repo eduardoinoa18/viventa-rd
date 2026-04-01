@@ -19,6 +19,7 @@ const PRIMARY: NavItem[] = [
 ]
 
 const SECONDARY: NavItem[] = [
+  { href: '/dashboard/agent/profile',     label: 'Profile',   icon: <FiSettings /> },
   { href: '/dashboard/agent/deals',       label: 'Deals',       icon: <FiTrendingUp /> },
   { href: '/dashboard/agent/clients',     label: 'Clients',     icon: <FiUsers /> },
   { href: '/dashboard/agent/commissions', label: 'Commissions', icon: <FiBarChart2 /> },

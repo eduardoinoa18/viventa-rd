@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { FiActivity, FiBarChart2, FiChevronLeft, FiClipboard, FiGrid, FiHome, FiLayout, FiMessageSquare, FiPlusSquare, FiTrendingUp, FiUsers, FiDollarSign } from 'react-icons/fi'
+import { FiActivity, FiBarChart2, FiChevronLeft, FiClipboard, FiGrid, FiHome, FiLayout, FiMessageSquare, FiPlusSquare, FiTrendingUp, FiUsers, FiDollarSign, FiSettings } from 'react-icons/fi'
 import BrandLogo from '@/components/BrandLogo'
 
 type NavItem = { href: string; label: string; icon: React.ReactNode; badge?: number }
@@ -16,6 +16,7 @@ const PRIMARY: NavItem[] = [
 ]
 
 const SECONDARY: NavItem[] = [
+  { href: '/dashboard/broker/profile',      label: 'Profile',     icon: <FiSettings /> },
   { href: '/dashboard/broker/crm',          label: 'CRM',         icon: <FiUsers /> },
   { href: '/dashboard/broker/team',         label: 'Agents',      icon: <FiClipboard /> },
   { href: '/dashboard/broker/commissions',  label: 'Commissions', icon: <FiBarChart2 /> },
