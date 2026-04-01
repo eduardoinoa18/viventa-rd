@@ -50,36 +50,39 @@ export async function GET(req: Request) {
     const agentId = safeText(searchParams.get('agentId'))
     const brokerId = safeText(searchParams.get('brokerId'))
     const limit = Math.min(Math.max(Number(searchParams.get('limit') || '24'), 1), 100)
+    const statusParam = safeText(searchParams.get('status')).toLowerCase()
+    const status = ['active', 'sold', 'rented', 'all'].includes(statusParam) ? statusParam : 'active'
 
     const rows = new Map<string, Record<string, any>>()
     const addSnapshot = (docs: Array<{ id: string; data: () => any }>) => {
       docs.forEach((doc) => rows.set(doc.id, doc.data() || {}))
     }
 
+    const fetchByField = async (field: string, value: string) => {
+      if (status === 'all') {
+        return db.collection('properties').where(field, '==', value).limit(limit).get()
+      }
+      return db.collection('properties').where('status', '==', status).where(field, '==', value).limit(limit).get()
+    }
+
     if (agentId) {
-      const snap = await db
-        .collection('properties')
-        .where('status', '==', 'active')
-        .where('agentId', '==', agentId)
-        .limit(limit)
-        .get()
+      const snap = await fetchByField('agentId', agentId)
       addSnapshot(snap.docs)
     } else if (brokerId) {
       const [byBrokerId, byCreatedByBrokerId, byBrokerageId] = await Promise.all([
-        db.collection('properties').where('status', '==', 'active').where('brokerId', '==', brokerId).limit(limit).get(),
-        db.collection('properties').where('status', '==', 'active').where('createdByBrokerId', '==', brokerId).limit(limit).get(),
-        db.collection('properties').where('status', '==', 'active').where('brokerageId', '==', brokerId).limit(limit).get(),
+        fetchByField('brokerId', brokerId),
+        fetchByField('createdByBrokerId', brokerId),
+        fetchByField('brokerageId', brokerId),
       ])
 
       addSnapshot(byBrokerId.docs)
       addSnapshot(byCreatedByBrokerId.docs)
       addSnapshot(byBrokerageId.docs)
     } else {
-      const snap = await db
-        .collection('properties')
-        .where('status', '==', 'active')
-        .limit(limit)
-        .get()
+      const baseRef = db.collection('properties')
+      const snap = status === 'all'
+        ? await baseRef.limit(limit).get()
+        : await baseRef.where('status', '==', status).limit(limit).get()
       addSnapshot(snap.docs)
     }
 

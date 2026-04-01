@@ -56,12 +56,23 @@ type ReviewItem = {
   createdAt: string
 }
 
+type TeamAgent = {
+  id: string
+  slug: string
+  name: string
+  rating: number
+  area: string
+  photo?: string
+}
+
 export default function BrokerSlugProfilePage({ params }: { params: { slug: string } }) {
   const router = useRouter()
   const [profile, setProfile] = useState<BrokerPublicProfile | null>(null)
   const [reviews, setReviews] = useState<ReviewItem[]>([])
   const [loading, setLoading] = useState(true)
   const [listings, setListings] = useState<ListingCard[]>([])
+  const [soldListings, setSoldListings] = useState<ListingCard[]>([])
+  const [teamAgents, setTeamAgents] = useState<TeamAgent[]>([])
 
   useEffect(() => {
     let active = true
@@ -91,9 +102,17 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
 
           const lid = profileJson.profile?.id
           if (lid) {
+            fetch(`/api/agents?brokerId=${lid}&limit=8`, { cache: 'no-store' })
+              .then((r) => r.json())
+              .then((d) => { if (active) setTeamAgents(Array.isArray(d?.data) ? d.data : []) })
+              .catch(() => {})
             fetch(`/api/listings/public?brokerId=${lid}&limit=6`)
               .then((r) => r.json())
               .then((d) => { if (active) setListings(d?.listings ?? []) })
+              .catch(() => {})
+            fetch(`/api/listings/public?brokerId=${lid}&status=sold&limit=4`)
+              .then((r) => r.json())
+              .then((d) => { if (active) setSoldListings(d?.listings ?? []) })
               .catch(() => {})
           }
         } else {
@@ -394,6 +413,62 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
                     className="text-sm text-[#0B2545] hover:underline font-semibold">
                     Ver todos los listados →
                   </Link>
+                </div>
+              </div>
+            )}
+
+            {teamAgents.length > 0 && (
+              <div className="px-6 pb-6 border-t border-gray-100 pt-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Equipo de agentes</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {teamAgents.map((agent) => (
+                    <Link key={agent.id} href={`/agent/${encodeURIComponent(agent.slug || agent.id)}`} className="group block rounded-xl border border-gray-200 bg-white p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={agent.photo || '/agent-placeholder.jpg'}
+                          alt={agent.name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-gray-900 truncate">{agent.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{agent.area || 'RD'}</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-xs text-amber-600 font-semibold">Rating {Number(agent.rating || 0).toFixed(1)}</div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {soldListings.length > 0 && (
+              <div className="px-6 pb-6 border-t border-gray-100 pt-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Cierres recientes</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {soldListings.map((l) => (
+                    <Link key={l.id} href={`/listing/${l.id}`} className="group block rounded-xl border border-gray-200 bg-white p-4 hover:shadow-md transition-shadow">
+                      <p className="font-semibold text-sm text-gray-900 line-clamp-1">{l.title}</p>
+                      <p className="text-xs text-gray-500 mt-1">{l.city}{l.sector ? `, ${l.sector}` : ''}</p>
+                      <div className="mt-3 text-xs text-emerald-700 font-semibold">Transacci\u00f3n cerrada</div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {reviews.length > 0 && (
+              <div className="px-6 pb-6 border-t border-gray-100 pt-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Rese\u00f1as de clientes</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {reviews.slice(0, 4).map((review) => (
+                    <article key={review.id} className="rounded-xl border border-gray-200 bg-white p-4">
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-gray-900 text-sm">{review.authorName || 'Cliente verificado'}</p>
+                        <p className="text-xs text-amber-600 font-semibold">{Number(review.rating || 0).toFixed(1)} / 5</p>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-4">{review.comment || 'Experiencia positiva con esta oficina.'}</p>
+                    </article>
+                  ))}
                 </div>
               </div>
             )}

@@ -100,7 +100,9 @@ export async function GET(_: Request, context: { params: { slug: string } }) {
     const broker = brokerDoc.data
     const role = safeText(broker.role).toLowerCase()
     if (role !== 'broker') return NextResponse.json({ ok: false, error: 'Broker not found' }, { status: 404 })
-    if (safeText(broker.status) !== 'active' || broker.approved !== true) {
+    const hasProfessionalCode = Boolean(safeText(broker.professionalCode || broker.brokerCode))
+    const isApprovedOrQualified = broker.approved === true || hasProfessionalCode
+    if (safeText(broker.status) !== 'active' || !isApprovedOrQualified) {
       return NextResponse.json({ ok: false, error: 'Broker profile unavailable' }, { status: 404 })
     }
     if (broker.publicProfileEnabled === false) {

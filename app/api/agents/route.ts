@@ -40,6 +40,10 @@ type AgentDoc = {
   activeSubscription?: boolean
   publicProfileEnabled?: boolean
   slug?: string
+  role?: string
+  brokerId?: string
+  brokerageId?: string
+  officeId?: string
 }
 
 type AgentPublic = {
@@ -73,6 +77,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const limitParam = Number(searchParams.get('limit') || '200')
     const safeLimit = Math.min(Math.max(limitParam, 1), 500)
+    const brokerId = String(searchParams.get('brokerId') || '').trim()
 
     const ref: any = db
       .collection('users')
@@ -129,7 +134,19 @@ export async function GET(req: NextRequest) {
           }),
         }
       })
-      .filter((u) => u.status === 'active' && u.approved && u.publicProfileEnabled)
+      .filter((u, index) => {
+        const raw = (snap.docs[index]?.data?.() || {}) as AgentDoc
+        const role = String(raw.role || '').toLowerCase()
+        const isActive = u.status === 'active'
+        const isPublic = u.publicProfileEnabled
+        const hasProfessionalCode = Boolean(raw.agentCode || raw.professionalCode)
+        const isApprovedOrQualified = u.approved || hasProfessionalCode
+        const belongsToBroker = brokerId
+          ? [raw.brokerId, raw.brokerageId, raw.officeId].some((value) => String(value || '').trim() === brokerId)
+          : true
+
+        return role === 'agent' && isActive && isPublic && isApprovedOrQualified && belongsToBroker
+      })
 
     return NextResponse.json({ ok: true, data })
   } catch (error: any) {

@@ -36,6 +36,7 @@ type BrokerDoc = {
   activeSubscription?: boolean
   slug?: string
   publicProfileEnabled?: boolean
+  role?: string
 }
 
 function slugify(value: string): string {
@@ -121,7 +122,15 @@ export async function GET(req: NextRequest) {
           }),
         }
       })
-      .filter((u) => u.status === 'active' && u.approved && u.publicProfileEnabled)
+      .filter((u, index) => {
+        const raw = (snap.docs[index]?.data?.() || {}) as BrokerDoc
+        const role = String(raw.role || '').toLowerCase()
+        const isActive = u.status === 'active'
+        const isPublic = u.publicProfileEnabled
+        const hasProfessionalCode = Boolean(raw.brokerCode || raw.professionalCode)
+        const isApprovedOrQualified = u.approved || hasProfessionalCode
+        return role === 'broker' && isActive && isPublic && isApprovedOrQualified
+      })
 
     return NextResponse.json({ ok: true, data })
   } catch (error: any) {
