@@ -203,6 +203,8 @@ const STEPS = [
 
 export default function CreateProfessionalListingPage() {
   const router = useRouter()
+  const [accessChecking, setAccessChecking] = useState(true)
+  const [accessDenied, setAccessDenied] = useState('')
   const [currentStep, setCurrentStep] = useState(0)
   const [draftSaved, setDraftSaved] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -214,6 +216,39 @@ export default function CreateProfessionalListingPage() {
   const [features, setFeatures] = useState<string[]>([])
   const [form, setForm] = useState<CreateForm>(DEFAULT_FORM)
   const [showAdvancedCoords, setShowAdvancedCoords] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    const checkAccess = async () => {
+      try {
+        const res = await fetch('/api/auth/session', { cache: 'no-store' })
+        const json = await res.json().catch(() => ({}))
+        if (!active) return
+
+        if (!res.ok || !json?.ok || !json?.session) {
+          setAccessDenied('Inicia sesión con una cuenta profesional para publicar listados.')
+          return
+        }
+
+        const role = String(json.session.role || '').toLowerCase()
+        if (!['agent', 'broker', 'constructora', 'admin', 'master_admin'].includes(role)) {
+          setAccessDenied('Esta sección está disponible solo para cuentas profesionales aprobadas.')
+          return
+        }
+
+        setAccessDenied('')
+      } catch {
+        if (active) setAccessDenied('No se pudo validar tu sesión. Intenta nuevamente.')
+      } finally {
+        if (active) setAccessChecking(false)
+      }
+    }
+
+    checkAccess()
+    return () => {
+      active = false
+    }
+  }, [])
 
   // Load draft on mount
   useEffect(() => {
@@ -390,6 +425,11 @@ export default function CreateProfessionalListingPage() {
     setError('')
     setErrorCta(null)
 
+    if (accessChecking || accessDenied) {
+      setError(accessDenied || 'Validando permisos de publicación...')
+      return
+    }
+
     if (!form.title || !form.description || !form.price || !form.city || !form.neighborhood) {
       setError('Faltan campos esenciales: título, descripción, precio, ciudad y sector.')
       return
@@ -470,6 +510,16 @@ export default function CreateProfessionalListingPage() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.success) {
+        if (res.status === 401 || res.status === 403) {
+          setError(
+            String(
+              json?.error ||
+                'Tu cuenta no tiene permisos para publicar en este momento. Si ya fue aprobada, cierra sesión y vuelve a iniciar.'
+            )
+          )
+          setErrorCta({ href: '/login?next=/dashboard/listings/create', label: 'Reiniciar sesión' })
+          return
+        }
         const issue = mapOfficeQuotaIssue(json || {}, {
           context: 'listing',
           fallbackMessage: 'No se pudo crear el listado',
@@ -495,6 +545,33 @@ export default function CreateProfessionalListingPage() {
     : null
 
   const propTypeLabel = PROPERTY_TYPES.find((t) => t.value === form.propertyType)
+
+  if (accessChecking) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-[#EEF3FA] to-gray-100 pb-20">
+        <div className="max-w-3xl mx-auto px-4 pt-10">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-600 shadow-sm">Validando permisos de publicación...</div>
+        </div>
+      </main>
+    )
+  }
+
+  if (accessDenied) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-[#EEF3FA] to-gray-100 pb-20">
+        <div className="max-w-3xl mx-auto px-4 pt-10">
+          <div className="rounded-2xl border border-amber-200 bg-white p-6 shadow-sm">
+            <h1 className="text-xl font-bold text-[#0B2545]">No tienes acceso a publicar listados</h1>
+            <p className="mt-2 text-sm text-gray-600">{accessDenied}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link href="/login?next=/dashboard/listings/create" className="rounded-lg bg-[#0B2545] px-4 py-2 text-sm font-semibold text-white">Iniciar sesión</Link>
+              <Link href="/dashboard/listings" className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-[#0B2545]">Volver al workspace</Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#EEF3FA] to-gray-100 pb-20">

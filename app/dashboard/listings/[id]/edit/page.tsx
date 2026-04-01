@@ -59,6 +59,8 @@ export default function EditProfessionalListingPage() {
   const router = useRouter()
   const params = useParams()
   const listingId = String(params?.id || '')
+  const [accessChecking, setAccessChecking] = useState(true)
+  const [accessDenied, setAccessDenied] = useState('')
 
   const [loadingData, setLoadingData] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -69,6 +71,39 @@ export default function EditProfessionalListingPage() {
   const [error, setError] = useState('')
   const [features, setFeatures] = useState<string[]>([])
   const [listingDisplayId, setListingDisplayId] = useState('')
+
+  useEffect(() => {
+    let active = true
+    const checkAccess = async () => {
+      try {
+        const res = await fetch('/api/auth/session', { cache: 'no-store' })
+        const json = await res.json().catch(() => ({}))
+        if (!active) return
+
+        if (!res.ok || !json?.ok || !json?.session) {
+          setAccessDenied('Inicia sesión con una cuenta profesional para editar listados.')
+          return
+        }
+
+        const role = String(json.session.role || '').toLowerCase()
+        if (!['agent', 'broker', 'constructora', 'admin', 'master_admin'].includes(role)) {
+          setAccessDenied('Esta sección está disponible solo para cuentas profesionales aprobadas.')
+          return
+        }
+
+        setAccessDenied('')
+      } catch {
+        if (active) setAccessDenied('No se pudo validar tu sesión. Intenta nuevamente.')
+      } finally {
+        if (active) setAccessChecking(false)
+      }
+    }
+
+    checkAccess()
+    return () => {
+      active = false
+    }
+  }, [])
 
   const [form, setForm] = useState<EditForm>({
     title: '',
@@ -112,7 +147,7 @@ export default function EditProfessionalListingPage() {
   })
 
   useEffect(() => {
-    if (!listingId) return
+    if (!listingId || accessChecking || accessDenied) return
 
     async function loadListing() {
       try {
@@ -183,7 +218,7 @@ export default function EditProfessionalListingPage() {
     }
 
     loadListing()
-  }, [listingId])
+  }, [listingId, accessChecking, accessDenied])
 
   function update<K extends keyof EditForm>(key: K, value: EditForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -239,6 +274,11 @@ export default function EditProfessionalListingPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (accessChecking || accessDenied) {
+      setError(accessDenied || 'Validando permisos de edición...')
+      return
+    }
 
     if (!form.title || !form.description || !form.price || !form.city || !form.neighborhood) {
       setError('Completa título, descripción, precio, ciudad y sector.')
@@ -304,6 +344,15 @@ export default function EditProfessionalListingPage() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.success) {
+        if (res.status === 401 || res.status === 403) {
+          setError(
+            String(
+              json?.error ||
+                'Tu cuenta no tiene permisos para editar este listado. Si ya fue aprobada, cierra sesión y vuelve a iniciar.'
+            )
+          )
+          return
+        }
         setError(json?.error || 'No se pudo actualizar el listado.')
         return
       }
@@ -314,6 +363,26 @@ export default function EditProfessionalListingPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  if (accessChecking) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-600 text-sm">
+        Validando permisos de edición...
+      </main>
+    )
+  }
+
+  if (accessDenied) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4 p-8">
+        <p className="text-sm text-amber-700">{accessDenied}</p>
+        <div className="flex items-center gap-3">
+          <Link href="/login?next=/dashboard/listings" className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-semibold">Iniciar sesión</Link>
+          <Link href="/dashboard/listings" className="text-sm text-[#0B2545] underline">Volver al workspace</Link>
+        </div>
+      </main>
+    )
   }
 
   if (loadingData) {
