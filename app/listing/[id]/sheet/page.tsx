@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import LegalDataDisclaimer from '@/components/LegalDataDisclaimer'
 
 type SessionData = {
   uid?: string
@@ -274,6 +275,11 @@ export default function ListingSheetPage() {
               </div>
             </aside>
           </div>
+
+          {/* Professional Conduct & Confidentiality Disclaimer */}
+          <section>
+            <LegalDataDisclaimer variant="professional" />
+          </section>
         </div>
       </main>
       <Footer />

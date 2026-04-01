@@ -20,6 +20,7 @@ import OfferStrategyPanel from '../../../components/OfferStrategyPanel'
 import BuyerReadinessPanel from '../../../components/BuyerReadinessPanel'
 import MortgageCalculator from '../../../components/MortgageCalculator'
 import DeveloperCard from '../../../components/DeveloperCard'
+import LegalDataDisclaimer from '../../../components/LegalDataDisclaimer'
 import { formatCurrency, convertCurrency, getUserCurrency, type Currency } from '../../../lib/currency'
 import { generatePropertySchema } from '../../../lib/seoUtils'
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaParking, FaBuilding, FaCalendar } from 'react-icons/fa'
@@ -1319,11 +1320,7 @@ export default function ListingDetail(){
                   </div>
                 </div>
               )}
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 sm:p-4 text-xs leading-relaxed text-amber-900 space-y-1.5">
-                <p><strong>Aviso legal y de datos:</strong> La información publicada (precio, metraje, estado, disponibilidad, impuestos, comisiones y documentos) es referencial y puede cambiar sin previo aviso.</p>
-                <p>VIVENTA opera como plataforma tecnológica de conexión y no sustituye asesoría legal, financiera, fiscal, técnica ni de valuación profesional.</p>
-                <p>Antes de reservar, comprar o alquilar, valida toda la información con el profesional responsable y tus asesores independientes.</p>
-              </div>
+              <LegalDataDisclaimer variant="public" />
             </div>
           </div>
         </div>
