@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FiChevronDown, FiX, FiSliders } from 'react-icons/fi'
+import { FiChevronDown, FiSliders } from 'react-icons/fi'
 
 type SearchFilters = {
   listingType?: 'rent' | 'sell'
@@ -91,6 +91,7 @@ export default function AdvancedSearchFilters({
       {/* Collapsed Header */}
       <button
         onClick={() => setExpanded(!expanded)}
+        aria-controls="advanced-search-filter-panel"
         className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-3">
@@ -124,12 +125,12 @@ export default function AdvancedSearchFilters({
 
       {/* Expanded Filters */}
       {expanded && (
-        <div className="border-t border-gray-200 px-6 py-6 space-y-6">
+        <div id="advanced-search-filter-panel" className="border-t border-gray-200 px-4 sm:px-6 py-6 space-y-6">
           {/* Tabs */}
-          <div className="flex gap-4 border-b border-gray-200">
+          <div className="flex gap-3 sm:gap-4 border-b border-gray-200 overflow-x-auto">
             <button
               onClick={() => setActiveTab('basic')}
-              className={`pb-4 font-medium border-b-2 transition-colors ${
+              className={`pb-4 whitespace-nowrap font-medium border-b-2 transition-colors ${
                 activeTab === 'basic'
                   ? 'text-[#FF6B35] border-[#FF6B35]'
                   : 'text-gray-600 border-transparent hover:text-gray-900'
@@ -139,7 +140,7 @@ export default function AdvancedSearchFilters({
             </button>
             <button
               onClick={() => setActiveTab('advanced')}
-              className={`pb-4 font-medium border-b-2 transition-colors ${
+              className={`pb-4 whitespace-nowrap font-medium border-b-2 transition-colors ${
                 activeTab === 'advanced'
                   ? 'text-[#FF6B35] border-[#FF6B35]'
                   : 'text-gray-600 border-transparent hover:text-gray-900'
@@ -157,7 +158,7 @@ export default function AdvancedSearchFilters({
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
                   Tipo de Transacción
                 </label>
-                <div className="flex gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {['rent', 'sell'].map((type) => (
                     <button
                       key={type}
@@ -182,6 +183,7 @@ export default function AdvancedSearchFilters({
                   Ciudad
                 </label>
                 <select
+                  title="Selecciona una ciudad"
                   value={filters.city || ''}
                   onChange={(e) => handleFilterChange('city', e.target.value || undefined)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent"
@@ -200,7 +202,7 @@ export default function AdvancedSearchFilters({
                 <label className="block text-sm font-semibold text-gray-900">
                   Rango de Precio
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
                     type="number"
                     placeholder="Mín"
@@ -223,7 +225,7 @@ export default function AdvancedSearchFilters({
               </div>
 
               {/* Bedrooms & Bathrooms */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
                     Habitaciones
@@ -266,7 +268,7 @@ export default function AdvancedSearchFilters({
                 <label className="block text-sm font-semibold text-gray-900">
                   Área (m²)
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
                     type="number"
                     placeholder="Mín"
@@ -294,6 +296,7 @@ export default function AdvancedSearchFilters({
                   Tipo de Propiedad
                 </label>
                 <select
+                  title="Selecciona un tipo de propiedad"
                   value={filters.propertyType || ''}
                   onChange={(e) => handleFilterChange('propertyType', e.target.value || undefined)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent"
@@ -316,6 +319,8 @@ export default function AdvancedSearchFilters({
                   type="number"
                   min="1950"
                   max={new Date().getFullYear()}
+                  placeholder="Ej: 2015"
+                  title="Ingresa un año minimo de construccion"
                   value={filters.yearBuilt || ''}
                   onChange={(e) =>
                     handleFilterChange('yearBuilt', e.target.value ? parseInt(e.target.value) : undefined)
@@ -329,7 +334,7 @@ export default function AdvancedSearchFilters({
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
                   Amenidades
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {AMENITIES.map((amenity) => (
                     <button
                       key={amenity.id}
@@ -349,13 +354,21 @@ export default function AdvancedSearchFilters({
           )}
 
           {/* Search Button */}
-          <button
-            onClick={onSearch}
-            disabled={loading}
-            className="w-full bg-[#FF6B35] text-white py-3 rounded-lg hover:bg-[#e55a24] transition-colors font-semibold disabled:opacity-50"
-          >
-            {loading ? 'Buscando...' : 'Buscar Propiedades'}
-          </button>
+          <div className="flex flex-col-reverse sm:flex-row gap-3">
+            <button
+              onClick={() => setExpanded(false)}
+              className="sm:w-auto w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+            >
+              Cerrar filtros
+            </button>
+            <button
+              onClick={onSearch}
+              disabled={loading}
+              className="sm:flex-1 w-full bg-[#FF6B35] text-white py-3 rounded-lg hover:bg-[#e55a24] transition-colors font-semibold disabled:opacity-50"
+            >
+              {loading ? 'Buscando...' : 'Buscar Propiedades'}
+            </button>
+          </div>
         </div>
       )}
     </div>

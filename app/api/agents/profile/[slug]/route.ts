@@ -68,9 +68,7 @@ export async function GET(_: Request, context: { params: { slug: string } }) {
       return NextResponse.json({ ok: false, error: 'Agent not found' }, { status: 404 })
     }
 
-    const hasProfessionalCode = Boolean(safeText(data.professionalCode || data.agentCode))
-    const isApprovedOrQualified = data.approved === true || hasProfessionalCode
-    if (safeText(data.status) !== 'active' || !isApprovedOrQualified || data.publicProfileEnabled === false) {
+    if (data.publicProfileEnabled === false) {
       return NextResponse.json({ ok: false, error: 'Agent profile unavailable' }, { status: 404 })
     }
 

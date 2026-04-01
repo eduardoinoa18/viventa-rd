@@ -109,16 +109,12 @@ export async function GET(req: NextRequest) {
     const userData = userDoc.data() || {}
     const role = userData.role || 'user'
 
-    // Fetch personal notifications
-    let personalQuery: any = adminDb
-      .collection('notifications')
-      .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
-      .limit(50)
-
+    // Fetch personal notifications without orderBy to avoid composite index requirements.
+    let personalQuery: any = adminDb.collection('notifications').where('userId', '==', userId)
     if (unreadOnly) {
       personalQuery = personalQuery.where('read', '==', false)
     }
+    personalQuery = personalQuery.limit(200)
 
     // Build broadcast audience filters
     const broadcastAudiences = new Set<string>(['all'])
@@ -135,8 +131,7 @@ export async function GET(req: NextRequest) {
       adminDb
         .collection('notifications')
         .where('audience', 'array-contains-any', Array.from(broadcastAudiences))
-        .orderBy('createdAt', 'desc')
-        .limit(50)
+        .limit(200)
         .get()
     ])
 

@@ -47,8 +47,7 @@ export default function FeaturedProperties() {
           propertiesRef,
           where('status', '==', 'active'),
           where('featured', '==', true),
-          orderBy('createdAt', 'desc'),
-          limit(6)
+          limit(24)
         )
       } else if (activeTab === 'new') {
         q = query(
@@ -64,8 +63,7 @@ export default function FeaturedProperties() {
           propertiesRef,
           where('status', '==', 'active'),
           where('featured', '==', true),
-          orderBy('createdAt', 'desc'),
-          limit(6)
+          limit(24)
         )
       }
 
@@ -75,7 +73,13 @@ export default function FeaturedProperties() {
         props.push({ id: doc.id, ...doc.data() } as Property)
       })
 
-      setProperties(props)
+      props.sort((a, b) => {
+        const aTime = a.createdAt?.toDate?.()?.getTime?.() || 0
+        const bTime = b.createdAt?.toDate?.()?.getTime?.() || 0
+        return bTime - aTime
+      })
+
+      setProperties(props.slice(0, 6))
     } catch (error) {
       console.error('Error loading properties:', error)
     } finally {

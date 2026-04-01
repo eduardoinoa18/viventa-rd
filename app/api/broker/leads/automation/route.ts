@@ -87,16 +87,29 @@ function buildSafeguardMeta(lastRunAt: Date | null, cooldownSeconds: number, max
 }
 
 async function getLatestRunForJob(db: FirebaseFirestore.Firestore, officeId: string, job: string) {
-  const snap = await db
-    .collection('office_automation_runs')
-    .where('officeId', '==', officeId)
-    .where('job', '==', job)
-    .orderBy('createdAt', 'desc')
-    .limit(1)
-    .get()
+  let snap: FirebaseFirestore.QuerySnapshot
+  try {
+    snap = await db
+      .collection('office_automation_runs')
+      .where('officeId', '==', officeId)
+      .where('job', '==', job)
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get()
+  } catch {
+    snap = await db
+      .collection('office_automation_runs')
+      .where('officeId', '==', officeId)
+      .where('job', '==', job)
+      .limit(50)
+      .get()
+  }
 
   if (snap.empty) return null
-  return snap.docs[0].data() as Record<string, any>
+  const doc = snap.docs
+    .map((item) => ({ item, createdAt: toDate(item.data()?.createdAt)?.getTime() || 0 }))
+    .sort((a, b) => b.createdAt - a.createdAt)[0]?.item
+  return (doc?.data() || null) as Record<string, any> | null
 }
 
 function extractOwnerAgentId(lead: Record<string, any>): string {
@@ -183,12 +196,24 @@ export async function GET(req: Request) {
       byAgent.set(ownerId, current)
     }
 
-    const usersSnap = await db
-      .collection('users')
-      .where('role', 'in', ['agent', 'broker'])
-      .where('status', '==', 'active')
-      .limit(500)
-      .get()
+    let usersSnap: FirebaseFirestore.QuerySnapshot
+    try {
+      usersSnap = await db
+        .collection('users')
+        .where('role', 'in', ['agent', 'broker'])
+        .where('status', '==', 'active')
+        .limit(500)
+        .get()
+    } catch {
+      const [agents, brokers] = await Promise.all([
+        db.collection('users').where('role', '==', 'agent').limit(500).get(),
+        db.collection('users').where('role', '==', 'broker').limit(500).get(),
+      ])
+      const mergedDocs = [...agents.docs, ...brokers.docs].filter(
+        (doc) => safeText(doc.data()?.status).toLowerCase() === 'active'
+      )
+      usersSnap = { docs: mergedDocs } as FirebaseFirestore.QuerySnapshot
+    }
 
     const userNameById = new Map<string, string>()
     for (const userDoc of usersSnap.docs) {
@@ -212,12 +237,21 @@ export async function GET(req: Request) {
       .sort((a, b) => b.conversionRate - a.conversionRate || b.assigned - a.assigned)
       .slice(0, 5)
 
-    const runsSnap = await db
-      .collection('office_automation_runs')
-      .where('officeId', '==', context.officeId)
-      .orderBy('createdAt', 'desc')
-      .limit(6)
-      .get()
+    let runsSnap: FirebaseFirestore.QuerySnapshot
+    try {
+      runsSnap = await db
+        .collection('office_automation_runs')
+        .where('officeId', '==', context.officeId)
+        .orderBy('createdAt', 'desc')
+        .limit(6)
+        .get()
+    } catch {
+      runsSnap = await db
+        .collection('office_automation_runs')
+        .where('officeId', '==', context.officeId)
+        .limit(100)
+        .get()
+    }
 
     const automationRuns = runsSnap.docs.map((doc) => {
       const run = doc.data() as Record<string, any>
@@ -232,7 +266,7 @@ export async function GET(req: Request) {
         durationMs: Number(run.durationMs || 0),
         timestamp: toIso(run.createdAt),
       }
-    })
+    }).sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()).slice(0, 6)
 
     const latestAutoAssign = automationRuns.find((run) => run.job === AUTO_ASSIGN_JOB)
     const latestEscalation = automationRuns.find((run) => run.job === ESCALATION_JOB)

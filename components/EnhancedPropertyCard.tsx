@@ -84,10 +84,10 @@ export default function EnhancedPropertyCard({
         </div>
 
         {/* Action Buttons - Top Right */}
-        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-3 right-3 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => onFavorite?.(id)}
-            className={`flex items-center justify-center w-10 h-10 rounded-full backdrop-blur-sm transition-all ${
+            className={`flex items-center justify-center w-10 h-10 rounded-full backdrop-blur-sm transition-all active:scale-95 ${
               isFavorited
                 ? 'bg-[#FF6B35] text-white'
                 : 'bg-white/80 text-gray-900 hover:bg-white'
@@ -97,7 +97,7 @@ export default function EnhancedPropertyCard({
             <FiHeart className="w-5 h-5" fill={isFavorited ? 'currentColor' : 'none'} />
           </button>
           <button
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/80 text-gray-900 hover:bg-white transition-all backdrop-blur-sm"
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/80 text-gray-900 hover:bg-white transition-all backdrop-blur-sm active:scale-95"
             title="Compartir"
           >
             <FiShare2 className="w-5 h-5" />
@@ -105,7 +105,7 @@ export default function EnhancedPropertyCard({
         </div>
 
         {/* Quick Info Overlay - Bottom */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300">
           <p className="text-white text-sm font-semibold">
             {currency === 'USD' ? '$' : 'RD$'}
             {pricePerM2.toLocaleString()} por m²
@@ -183,10 +183,10 @@ export default function EnhancedPropertyCard({
         )}
 
         {/* Actions */}
-        <div className="flex gap-2 pt-2">
+        <div className="flex flex-col sm:flex-row gap-2 pt-2">
           <Link
             href={`/listing/${id}`}
-            className="flex-1 bg-[#FF6B35] text-white py-2 rounded-lg hover:bg-[#e55a24] transition-colors font-semibold text-sm"
+            className="flex-1 text-center bg-[#FF6B35] text-white py-2.5 rounded-lg hover:bg-[#e55a24] transition-colors font-semibold text-sm"
           >
             Ver Detalles
           </Link>
