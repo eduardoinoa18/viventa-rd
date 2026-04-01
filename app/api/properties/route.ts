@@ -296,7 +296,7 @@ export async function POST(req: Request) {
 
         if (!isAdmin) {
           createData.createdByUserId = uid
-          if (userContext.role === 'broker' || userContext.role === 'agent') {
+          if (userContext.role === 'broker') {
             if (!userContext.officeId) {
               return NextResponse.json({ error: 'Broker office assignment is required before publishing listings.' }, { status: 403 })
             }
@@ -310,6 +310,13 @@ export async function POST(req: Request) {
               })
             }
 
+            createData.brokerId = userContext.officeId
+            createData.createdByBrokerId = userContext.officeId
+            createData.brokerageId = userContext.officeId
+            createData.brokerage_id = userContext.officeId
+          }
+
+          if (userContext.role === 'agent' && userContext.officeId) {
             createData.brokerId = userContext.officeId
             createData.createdByBrokerId = userContext.officeId
             createData.brokerageId = userContext.officeId

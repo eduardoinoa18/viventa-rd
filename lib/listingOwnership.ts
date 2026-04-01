@@ -27,6 +27,7 @@ function safeText(value: unknown): string {
 export function resolveOfficeIdFromUser(user: Record<string, unknown> | null | undefined): string {
   if (!user) return ''
   return (
+    safeText(user.officeId) ||
     safeText(user.brokerId) ||
     safeText(user.brokerageId) ||
     safeText(user.brokerage_id) ||
@@ -37,6 +38,7 @@ export function resolveOfficeIdFromUser(user: Record<string, unknown> | null | u
 export function resolveOfficeIdFromListing(listing: Record<string, unknown> | null | undefined): string {
   if (!listing) return ''
   return (
+    safeText(listing.officeId) ||
     safeText(listing.brokerId) ||
     safeText(listing.createdByBrokerId) ||
     safeText(listing.brokerageId) ||
