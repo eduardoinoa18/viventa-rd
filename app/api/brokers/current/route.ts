@@ -91,30 +91,28 @@ export async function PUT(req: NextRequest) {
     // Get the updated data from the request body
     const body = await req.json().catch(() => ({}))
 
-    // Update only allowed fields
-    const updateData: Record<string, any> = {
-      updatedAt: new Date(),
+    const updateData: Record<string, any> = { updatedAt: new Date() }
+
+    if ('company' in body) updateData.company = String(body.company || '').trim()
+    if ('phone' in body) updateData.phone = String(body.phone || '').trim()
+    if ('website' in body) updateData.website = String(body.website || '').trim()
+    if ('description' in body) updateData.description = String(body.description || '').trim()
+    if ('logo' in body) updateData.logo = String(body.logo || '').trim()
+    if ('city' in body) updateData.city = String(body.city || '').trim()
+    if ('yearsEstablished' in body) updateData.yearsEstablished = Number(body.yearsEstablished || 0)
+    if ('officeAddress' in body) updateData.officeAddress = String(body.officeAddress || '').trim()
+    if ('publicProfileEnabled' in body) updateData.publicProfileEnabled = Boolean(body.publicProfileEnabled)
+
+    if ('areasServed' in body) {
+      updateData.areasServed = Array.isArray(body.areasServed)
+        ? body.areasServed.map((item: unknown) => String(item || '').trim()).filter(Boolean)
+        : []
     }
 
-    // Allowed fields for brokers to update
-    const allowedFields = [
-      'company',
-      'phone',
-      'website',
-      'description',
-      'logo',
-      'city',
-      'areasServed',
-      'languages',
-      'yearsEstablished',
-      'officeAddress',
-      'publicProfileEnabled',
-    ]
-
-    for (const field of allowedFields) {
-      if (field in body) {
-        updateData[field] = body[field]
-      }
+    if ('languages' in body) {
+      updateData.languages = Array.isArray(body.languages)
+        ? body.languages.map((item: unknown) => String(item || '').trim()).filter(Boolean)
+        : []
     }
 
     // Update the document

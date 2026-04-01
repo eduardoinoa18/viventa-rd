@@ -92,35 +92,31 @@ export async function PUT(req: NextRequest) {
     // Get the updated data from the request body
     const body = await req.json().catch(() => ({}))
 
-    // Update only allowed fields
-    const updateData: Record<string, any> = {
-      updatedAt: new Date(),
+    const updateData: Record<string, any> = { updatedAt: new Date() }
+
+    if ('name' in body) updateData.name = String(body.name || '').trim()
+    if ('phone' in body) updateData.phone = String(body.phone || '').trim()
+    if ('company' in body) updateData.company = String(body.company || '').trim()
+    if ('bio' in body) updateData.bio = String(body.bio || '').trim()
+    if ('profileImage' in body) updateData.profileImage = String(body.profileImage || '').trim()
+    if ('city' in body) updateData.city = String(body.city || '').trim()
+    if ('area' in body) updateData.area = String(body.area || '').trim()
+    if ('yearsExperience' in body) updateData.yearsExperience = Number(body.yearsExperience || 0)
+    if ('publicProfileEnabled' in body) updateData.publicProfileEnabled = Boolean(body.publicProfileEnabled)
+    if ('websiteUrl' in body || 'website' in body) {
+      updateData.website = String(body.websiteUrl || body.website || '').trim()
     }
 
-    // Allowed fields for agents to update
-    const allowedFields = [
-      'name',
-      'phone',
-      'company',
-      'bio',
-      'profileImage',
-      'city',
-      'area',
-      'languages',
-      'specialties',
-      'yearsExperience',
-      'website',
-      'publicProfileEnabled',
-    ]
+    if ('languages' in body) {
+      updateData.languages = Array.isArray(body.languages)
+        ? body.languages.map((item: unknown) => String(item || '').trim()).filter(Boolean)
+        : []
+    }
 
-    for (const field of allowedFields) {
-      if (field in body) {
-        if (field === 'website') {
-          updateData.website = String(body.websiteUrl || '').trim()
-        } else {
-          updateData[field] = body[field]
-        }
-      }
+    if ('specialties' in body) {
+      updateData.specialties = Array.isArray(body.specialties)
+        ? body.specialties.map((item: unknown) => String(item || '').trim()).filter(Boolean)
+        : []
     }
 
     // Update the document
@@ -140,7 +136,7 @@ export async function PUT(req: NextRequest) {
       languages: body.languages || userData.languages || [],
       specialties: body.specialties || userData.specialties || [],
       yearsExperience: body.yearsExperience ?? userData.yearsExperience ?? 0,
-      websiteUrl: body.websiteUrl || userData.website || '',
+      websiteUrl: body.websiteUrl || body.website || userData.website || '',
       slug: userData.slug || '',
       publicProfileEnabled: body.publicProfileEnabled ?? userData.publicProfileEnabled !== false,
       professionalCode: userData.professionalCode || userData.agentCode || '',
