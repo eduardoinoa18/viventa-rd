@@ -1,4 +1,14 @@
 {
+  "crons": [
+    {
+      "path": "/api/admin/deals/automation",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/admin/analytics/aggregate",
+      "schedule": "15 3 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/manifest.json",

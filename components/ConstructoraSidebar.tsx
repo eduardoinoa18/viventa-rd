@@ -25,6 +25,7 @@ const SECONDARY: NavItem[] = [
 ]
 
 const SYSTEM: NavItem[] = [
+  { href: '/dashboard/constructora/clients',      label: 'Clients',     icon: <FiUsers /> },
   { href: '/dashboard/constructora/activity',     label: 'Activity',    icon: <FiActivity /> },
 ]
 
