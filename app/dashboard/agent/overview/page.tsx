@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { FiTarget, FiHome, FiClock, FiTrendingUp } from 'react-icons/fi'
+import { FiAlertTriangle, FiCheckSquare, FiTarget, FiHome, FiClock, FiTrendingUp } from 'react-icons/fi'
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiGrid, KpiCard } from '@/components/ui/KpiCard'
 
@@ -27,6 +27,7 @@ export default function AgentOverviewPage() {
     avgResponseMinutes: 0,
     newLeadsLast30Days: 0,
   })
+  const [taskHealth, setTaskHealth] = useState({ total: 0, pending: 0, inProgress: 0, overdue: 0, automationOpen: 0 })
 
   useEffect(() => {
     let active = true
@@ -36,18 +37,20 @@ export default function AgentOverviewPage() {
         setLoading(true)
         setError('')
 
-        const [myRes, officeRes, marketRes, agentOverviewRes] = await Promise.all([
+        const [myRes, officeRes, marketRes, agentOverviewRes, tasksRes] = await Promise.all([
           fetch('/api/broker/listings/my?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/office?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/market?status=active', { cache: 'no-store' }),
           fetch('/api/agent/dashboard/overview', { cache: 'no-store' }),
+          fetch('/api/agent/tasks?limit=100', { cache: 'no-store' }),
         ])
 
-        const [myJson, officeJson, marketJson, overviewJson] = await Promise.all([
+        const [myJson, officeJson, marketJson, overviewJson, tasksJson] = await Promise.all([
           myRes.json().catch(() => ({})),
           officeRes.json().catch(() => ({})),
           marketRes.json().catch(() => ({})),
           agentOverviewRes.json().catch(() => ({})),
+          tasksRes.json().catch(() => ({})),
         ])
 
         if (!active) return
@@ -61,6 +64,17 @@ export default function AgentOverviewPage() {
           leadsWon: Number(profileSummary.leadsWon || 0),
           avgResponseMinutes: Number(profileSummary.avgResponseMinutes || 0),
           newLeadsLast30Days: Number(profileSummary.newLeadsLast30Days || 0),
+        })
+
+        // Task health
+        const allTasks: Array<Record<string, any>> = Array.isArray(tasksJson?.tasks) ? tasksJson.tasks : []
+        const nowMs = Date.now()
+        setTaskHealth({
+          total: allTasks.length,
+          pending: allTasks.filter((t) => t.status === 'pending').length,
+          inProgress: allTasks.filter((t) => t.status === 'in_progress').length,
+          overdue: allTasks.filter((t) => t.status !== 'done' && t.dueAt && new Date(t.dueAt).getTime() < nowMs).length,
+          automationOpen: allTasks.filter((t) => t.source === 'deal_automation' && t.status !== 'done').length,
         })
       } catch (loadError: any) {
         if (!active) return
@@ -117,6 +131,45 @@ export default function AgentOverviewPage() {
             <p className="mt-1 text-xs text-gray-400">Cuando se te asignen leads apareceran aquí.</p>
           </div>
         )}
+      </section>
+
+      {/* Task Health */}
+      <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[#0B2545]">My Tasks</h3>
+          <a href="/dashboard/agent/tasks" className="text-xs font-medium text-[#00A676] hover:underline">
+            Ir a Tasks →
+          </a>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
+          <Metric label="Total Tasks"     value={taskHealth.total} />
+          <Metric label="Pending"         value={taskHealth.pending} />
+          <Metric label="In Progress"     value={taskHealth.inProgress} />
+          <Metric label="Overdue"         value={taskHealth.overdue} />
+          <Metric label="Automation Open" value={taskHealth.automationOpen} />
+        </div>
+        {(taskHealth.overdue > 0 || taskHealth.automationOpen > 0) && !loading ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {taskHealth.overdue > 0 ? (
+              <a
+                href="/dashboard/agent/tasks?status=all"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100"
+              >
+                <FiAlertTriangle className="h-3 w-3" />
+                {taskHealth.overdue} vencidas
+              </a>
+            ) : null}
+            {taskHealth.automationOpen > 0 ? (
+              <a
+                href="/dashboard/agent/tasks?status=pending"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100"
+              >
+                <FiCheckSquare className="h-3 w-3" />
+                {taskHealth.automationOpen} automatizadas abiertas
+              </a>
+            ) : null}
+          </div>
+        ) : null}
       </section>
     </div>
   )

@@ -92,7 +92,29 @@ export async function GET(req: Request) {
       .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
       .slice(0, limit)
 
-    return NextResponse.json({ ok: true, tasks })
+    // Resolve assignee display names in bulk
+    const assigneeUids = Array.from(new Set(tasks.map((t) => t.assigneeUid).filter(Boolean)))
+    const nameMap: Record<string, string> = {}
+    if (assigneeUids.length > 0) {
+      try {
+        const userSnaps = await Promise.all(assigneeUids.map((uid) => db.collection('users').doc(uid).get()))
+        for (const userSnap of userSnaps) {
+          if (userSnap.exists) {
+            const u = userSnap.data() as Record<string, any>
+            nameMap[userSnap.id] = safeText(u.displayName || u.name || u.email || userSnap.id.slice(0, 8))
+          }
+        }
+      } catch {
+        // best-effort; fall back to uid prefix
+      }
+    }
+
+    const enrichedTasks = tasks.map((t) => ({
+      ...t,
+      assigneeName: nameMap[t.assigneeUid] || (t.assigneeUid ? t.assigneeUid.slice(0, 8) : ''),
+    }))
+
+    return NextResponse.json({ ok: true, tasks: enrichedTasks })
   } catch (error: any) {
     console.error('[api/constructora/dashboard/tasks] GET error', error)
     return NextResponse.json({ ok: false, error: 'Failed to load constructora tasks' }, { status: 500 })

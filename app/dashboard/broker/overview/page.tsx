@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { FiTrendingUp, FiHome, FiDollarSign, FiCalendar, FiMail, FiUsers } from 'react-icons/fi'
+import { FiAlertTriangle, FiCheckSquare, FiTrendingUp, FiHome, FiDollarSign, FiCalendar, FiMail, FiUsers } from 'react-icons/fi'
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiGrid, KpiCard } from '@/components/ui/KpiCard'
 import InviteModal from '@/components/InviteModal'
@@ -45,6 +45,14 @@ type ActivitySummary = {
   todayTransactions: number
 }
 
+type TaskHealth = {
+  total: number
+  pending: number
+  inProgress: number
+  overdue: number
+  automationOpen: number
+}
+
 type TeamSummary = {
   totalMembers: number
   activeMembers: number
@@ -83,6 +91,13 @@ export default function BrokerOverviewPage() {
     activeMembers: 0,
     pendingMembers: 0,
   })
+  const [taskHealth, setTaskHealth] = useState<TaskHealth>({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    overdue: 0,
+    automationOpen: 0,
+  })
   const [showInviteModal, setShowInviteModal] = useState(false)
 
   useEffect(() => {
@@ -93,7 +108,7 @@ export default function BrokerOverviewPage() {
         setLoading(true)
         setError('')
 
-        const [myRes, officeRes, marketRes, automationRes, txRes, officeProfileRes, revenueRes, activitySummaryRes, teamRes] = await Promise.all([
+        const [myRes, officeRes, marketRes, automationRes, txRes, officeProfileRes, revenueRes, activitySummaryRes, teamRes, tasksRes] = await Promise.all([
           fetch('/api/broker/listings/my?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/office?status=active', { cache: 'no-store' }),
           fetch('/api/broker/listings/market?status=active', { cache: 'no-store' }),
@@ -103,9 +118,10 @@ export default function BrokerOverviewPage() {
           fetch('/api/broker/analytics/revenue', { cache: 'no-store' }),
           fetch('/api/activity-events/summary', { cache: 'no-store' }),
           fetch('/api/broker/team', { cache: 'no-store' }),
+          fetch('/api/broker/crm/tasks?limit=200', { cache: 'no-store' }),
         ])
 
-        const [myJson, officeJson, marketJson, automationJson, txJson, officeProfileJson, revenueJson, activitySummaryJson, teamJson] = await Promise.all([
+        const [myJson, officeJson, marketJson, automationJson, txJson, officeProfileJson, revenueJson, activitySummaryJson, teamJson, tasksJson] = await Promise.all([
           myRes.json().catch(() => ({})),
           officeRes.json().catch(() => ({})),
           marketRes.json().catch(() => ({})),
@@ -115,6 +131,7 @@ export default function BrokerOverviewPage() {
           revenueRes.json().catch(() => ({})),
           activitySummaryRes.json().catch(() => ({})),
           teamRes.json().catch(() => ({})),
+          tasksRes.json().catch(() => ({})),
         ])
 
         if (!active) return
@@ -147,6 +164,17 @@ export default function BrokerOverviewPage() {
           totalMembers: Number(teamJson?.summary?.totalMembers || 0),
           activeMembers: Number(teamJson?.summary?.activeMembers || 0),
           pendingMembers: Number(teamJson?.summary?.pendingMembers || 0),
+        })
+
+        // Compute task health from task list
+        const allTasks: Array<Record<string, any>> = Array.isArray(tasksJson?.tasks) ? tasksJson.tasks : []
+        const nowMs = Date.now()
+        setTaskHealth({
+          total: allTasks.length,
+          pending: allTasks.filter((t) => t.status === 'pending').length,
+          inProgress: allTasks.filter((t) => t.status === 'in_progress').length,
+          overdue: allTasks.filter((t) => t.status !== 'done' && t.dueAt && new Date(t.dueAt).getTime() < nowMs).length,
+          automationOpen: allTasks.filter((t) => t.source === 'deal_automation' && t.status !== 'done').length,
         })
 
         if (officeProfileRes.ok && officeProfileJson?.ok) {
@@ -206,6 +234,45 @@ export default function BrokerOverviewPage() {
           <Metric label="Proyección"        value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.projectedValue || 0)} />
           <Metric label="Office Pipeline"   value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.officePipelineValue || 0)} />
         </div>
+      </section>
+
+      {/* Task Health */}
+      <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[#0B2545]">Task Health</h3>
+          <a href="/dashboard/broker/tasks" className="text-xs font-medium text-[#00A676] hover:underline">
+            Ir a Tasks →
+          </a>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
+          <Metric label="Total Tasks"   value={taskHealth.total} />
+          <Metric label="Pending"       value={taskHealth.pending} />
+          <Metric label="In Progress"   value={taskHealth.inProgress} />
+          <Metric label="Overdue"       value={taskHealth.overdue} />
+          <Metric label="Automation Open" value={taskHealth.automationOpen} />
+        </div>
+        {(taskHealth.overdue > 0 || taskHealth.automationOpen > 0) && !loading ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {taskHealth.overdue > 0 ? (
+              <a
+                href="/dashboard/broker/tasks?status=all"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100"
+              >
+                <FiAlertTriangle className="h-3 w-3" />
+                {taskHealth.overdue} vencidas
+              </a>
+            ) : null}
+            {taskHealth.automationOpen > 0 ? (
+              <a
+                href="/dashboard/broker/tasks?status=pending"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100"
+              >
+                <FiCheckSquare className="h-3 w-3" />
+                {taskHealth.automationOpen} automatizadas abiertas
+              </a>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       <section className="mt-4 rounded-xl border border-[#0B2545]/10 bg-gradient-to-r from-[#F6FBFF] to-[#F0FBF6] p-5 shadow-sm">

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { FiActivity, FiBarChart2, FiChevronLeft, FiClipboard, FiGrid, FiHome, FiLayout, FiMessageSquare, FiPlusSquare, FiTrendingUp, FiUsers, FiDollarSign, FiSettings } from 'react-icons/fi'
+import { FiActivity, FiBarChart2, FiCheckSquare, FiChevronLeft, FiClipboard, FiGrid, FiHome, FiLayout, FiMessageSquare, FiPlusSquare, FiTrendingUp, FiUsers, FiDollarSign, FiSettings } from 'react-icons/fi'
 import BrandLogo from '@/components/BrandLogo'
 
 type NavItem = { href: string; label: string; icon: React.ReactNode; badge?: number }
@@ -23,6 +23,7 @@ const SECONDARY: NavItem[] = [
 ]
 
 const SYSTEM: NavItem[] = [
+  { href: '/dashboard/broker/tasks',        label: 'Tasks',       icon: <FiCheckSquare /> },
   { href: '/dashboard/broker/activity',     label: 'Activity',    icon: <FiActivity /> },
 ]
 

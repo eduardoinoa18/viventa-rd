@@ -10,6 +10,7 @@ type TaskItem = {
   status: string
   priority: 'low' | 'normal' | 'high' | string
   assigneeUid?: string
+  assigneeName?: string
   linkedDealId?: string
   source?: string
 }
@@ -181,7 +182,11 @@ export default function ConstructoraTasksPage() {
                     </div>
                     <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-600">
                       <span>Vence: {fmtDate(task.dueAt)}</span>
-                      {task.assigneeUid ? <span>Assignee: {task.assigneeUid.slice(0, 8)}</span> : null}
+                      {task.assigneeName ? (
+                        <span>Assignee: {task.assigneeName}</span>
+                      ) : task.assigneeUid ? (
+                        <span>Assignee: {task.assigneeUid.slice(0, 8)}</span>
+                      ) : null}
                       {task.linkedDealId ? <Link href={`/dashboard/constructora/deals/${task.linkedDealId}`} className="font-medium text-blue-700 hover:underline">Deal {task.linkedDealId.slice(0, 8)}</Link> : null}
                     </div>
                   </div>

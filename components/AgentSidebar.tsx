@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
-  FiActivity, FiBarChart2, FiChevronLeft, FiDollarSign,
+  FiActivity, FiBarChart2, FiCheckSquare, FiChevronLeft, FiDollarSign,
   FiGrid, FiHome, FiMessageSquare, FiPlusSquare, FiSettings,
   FiTarget, FiTrendingUp, FiUsers,
 } from 'react-icons/fi'
@@ -26,6 +26,7 @@ const SECONDARY: NavItem[] = [
 ]
 
 const SYSTEM: NavItem[] = [
+  { href: '/dashboard/agent/tasks',       label: 'Tasks',     icon: <FiCheckSquare /> },
   { href: '/dashboard/agent/activity',    label: 'Activity',  icon: <FiActivity /> },
 ]
 

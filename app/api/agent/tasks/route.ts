@@ -10,6 +10,11 @@ function safeText(value: unknown): string {
   return String(value ?? '').trim()
 }
 
+/**
+ * Agent Tasks API
+ * Returns tasks from office_crm_tasks where assigneeUid === caller's uid.
+ * Agents only see and manage tasks assigned to them.
+ */
 export async function GET(req: Request) {
   try {
     const db = getAdminDb()
@@ -19,33 +24,31 @@ export async function GET(req: Request) {
     if (!session?.uid) return NextResponse.json({ ok: false, error: 'Authentication required' }, { status: 401 })
 
     const context = await getListingAccessUserContext(db, session.uid, (session.role as any) || 'buyer')
-    if (context.role !== 'broker' && context.role !== 'agent') {
+    if (context.role !== 'agent' && context.role !== 'broker') {
       return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
-    }
-    if (!context.officeId) {
-      return NextResponse.json({ ok: false, error: 'Broker office assignment required' }, { status: 403 })
     }
 
     const { searchParams } = new URL(req.url)
-    const limit = Math.min(Math.max(Number(searchParams.get('limit') || 50), 1), 200)
+    const limit = Math.min(Math.max(Number(searchParams.get('limit') || 100), 1), 200)
+    const statusFilter = safeText(searchParams.get('status') || '')
 
     let snap: FirebaseFirestore.QuerySnapshot
+
     try {
-      snap = await db
+      const q = db
         .collection('office_crm_tasks')
-        .where('officeId', '==', context.officeId)
+        .where('assigneeUid', '==', context.uid)
         .orderBy('createdAt', 'desc')
         .limit(limit)
-        .get()
+      snap = await q.get()
     } catch {
       snap = await db
         .collection('office_crm_tasks')
-        .where('officeId', '==', context.officeId)
-        .limit(Math.min(limit * 4, 200))
+        .where('assigneeUid', '==', context.uid)
+        .limit(limit * 2)
         .get()
     }
 
-    // Collect unique assignee UIDs for name resolution
     const rawDocs = snap.docs.map((doc) => {
       const row = doc.data() as Record<string, any>
       return {
@@ -55,45 +58,26 @@ export async function GET(req: Request) {
         status: safeText(row.status || 'pending'),
         priority: safeText(row.priority || 'normal'),
         assigneeUid: safeText(row.assigneeUid),
-        assigneeName: '',
-        createdBy: safeText(row.createdBy),
         source: safeText(row.source || 'manual'),
         linkedTransactionId: safeText(row.linkedTransactionId || ''),
+        officeId: safeText(row.officeId || ''),
         createdAt: row.createdAt?.toDate?.()?.getTime?.() || 0,
       }
     })
 
-    // Resolve display names for assignees in bulk
-    const assigneeUids = Array.from(new Set(rawDocs.map((d) => d.assigneeUid).filter(Boolean)))
-    const nameMap: Record<string, string> = {}
-    if (assigneeUids.length > 0) {
-      try {
-        const userSnaps = await Promise.all(
-          assigneeUids.map((uid) => db.collection('users').doc(uid).get())
-        )
-        for (const snap of userSnaps) {
-          if (snap.exists) {
-            const u = snap.data() as Record<string, any>
-            nameMap[snap.id] = safeText(u.displayName || u.name || u.email || snap.id.slice(0, 8))
-          }
-        }
-      } catch {
-        // name resolution is best-effort; fall back to uid prefix below
-      }
-    }
-
-    const tasks = rawDocs
+    let tasks = rawDocs
       .sort((a, b) => b.createdAt - a.createdAt)
       .slice(0, limit)
-      .map(({ createdAt, ...task }) => ({
-        ...task,
-        assigneeName: nameMap[task.assigneeUid] || task.assigneeUid.slice(0, 8) || '',
-      }))
+      .map(({ createdAt, ...task }) => task)
+
+    if (statusFilter && statusFilter !== 'all') {
+      tasks = tasks.filter((t) => t.status === statusFilter)
+    }
 
     return NextResponse.json({ ok: true, tasks })
   } catch (error: any) {
-    console.error('[api/broker/crm/tasks] GET error', error)
-    return NextResponse.json({ ok: false, error: 'Failed to load CRM tasks' }, { status: 500 })
+    console.error('[api/agent/tasks] GET error', error)
+    return NextResponse.json({ ok: false, error: 'Failed to load agent tasks' }, { status: 500 })
   }
 }
 
@@ -106,11 +90,8 @@ export async function POST(req: Request) {
     if (!session?.uid) return NextResponse.json({ ok: false, error: 'Authentication required' }, { status: 401 })
 
     const context = await getListingAccessUserContext(db, session.uid, (session.role as any) || 'buyer')
-    if (context.role !== 'broker' && context.role !== 'agent') {
+    if (context.role !== 'agent' && context.role !== 'broker') {
       return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
-    }
-    if (!context.officeId) {
-      return NextResponse.json({ ok: false, error: 'Broker office assignment required' }, { status: 403 })
     }
 
     const body = await req.json().catch(() => ({}))
@@ -123,21 +104,22 @@ export async function POST(req: Request) {
 
     const now = Timestamp.now()
     const ref = await db.collection('office_crm_tasks').add({
-      officeId: context.officeId,
+      officeId: context.officeId || '',
       title,
       dueAt,
-      status: safeText(body.status || 'pending').toLowerCase() || 'pending',
+      status: 'pending',
       priority: safeText(body.priority || 'normal').toLowerCase() || 'normal',
-      assigneeUid: safeText(body.assigneeUid || context.uid),
+      assigneeUid: context.uid,
       createdBy: context.uid,
+      source: 'manual',
       createdAt: now,
       updatedAt: now,
     })
 
     return NextResponse.json({ ok: true, id: ref.id })
   } catch (error: any) {
-    console.error('[api/broker/crm/tasks] POST error', error)
-    return NextResponse.json({ ok: false, error: 'Failed to create CRM task' }, { status: 500 })
+    console.error('[api/agent/tasks] POST error', error)
+    return NextResponse.json({ ok: false, error: 'Failed to create task' }, { status: 500 })
   }
 }
 
@@ -150,11 +132,8 @@ export async function PATCH(req: Request) {
     if (!session?.uid) return NextResponse.json({ ok: false, error: 'Authentication required' }, { status: 401 })
 
     const context = await getListingAccessUserContext(db, session.uid, (session.role as any) || 'buyer')
-    if (context.role !== 'broker' && context.role !== 'agent') {
+    if (context.role !== 'agent' && context.role !== 'broker') {
       return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
-    }
-    if (!context.officeId) {
-      return NextResponse.json({ ok: false, error: 'Broker office assignment required' }, { status: 403 })
     }
 
     const body = await req.json().catch(() => ({}))
@@ -168,14 +147,12 @@ export async function PATCH(req: Request) {
     }
 
     const taskData = taskSnap.data() as Record<string, any>
-    if (safeText(taskData.officeId) !== context.officeId) {
+    // Agents can only update tasks assigned to them
+    if (safeText(taskData.assigneeUid) !== context.uid) {
       return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
     }
 
-    const update: Record<string, any> = {
-      updatedAt: Timestamp.now(),
-    }
-
+    const update: Record<string, any> = { updatedAt: Timestamp.now() }
     if (typeof body.status !== 'undefined') {
       update.status = safeText(body.status || 'pending').toLowerCase() || 'pending'
     }
@@ -183,7 +160,7 @@ export async function PATCH(req: Request) {
     await taskRef.set(update, { merge: true })
     return NextResponse.json({ ok: true })
   } catch (error: any) {
-    console.error('[api/broker/crm/tasks] PATCH error', error)
-    return NextResponse.json({ ok: false, error: 'Failed to update CRM task' }, { status: 500 })
+    console.error('[api/agent/tasks] PATCH error', error)
+    return NextResponse.json({ ok: false, error: 'Failed to update task' }, { status: 500 })
   }
 }
