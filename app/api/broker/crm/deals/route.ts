@@ -4,7 +4,7 @@ import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
 import { emitActivityEvent } from '@/lib/activityEvents'
 import { normalizeLeadStage, stageToLegacyStatus } from '@/lib/leadLifecycle'
-import { CRM_DEAL_STAGE_LABELS, normalizeCrmDealStage, type CrmDealRecord, type CrmDealStage } from '@/lib/domain/crmDeal'
+import { CRM_DEAL_STAGE_LABELS, mapCrmDealStageToLeadStage, normalizeCrmDealStage, type CrmDealRecord, type CrmDealStage } from '@/lib/domain/crmDeal'
 
 export const dynamic = 'force-dynamic'
 
@@ -243,15 +243,20 @@ export async function POST(req: Request) {
       updatedBy: context.uid,
     })
 
+    const syncedLeadStage = mapCrmDealStageToLeadStage(stage)
+
     await leadRef.set(
       {
-        leadStage: 'negotiating',
-        status: stageToLegacyStatus('negotiating'),
-        legacyStatus: stageToLegacyStatus('negotiating'),
+        leadStage: syncedLeadStage,
+        status: stageToLegacyStatus(syncedLeadStage),
+        legacyStatus: stageToLegacyStatus(syncedLeadStage),
         linkedDealId: dealId,
         linkedTransactionId: txRef.id,
         convertedToDealAt: now,
         convertedToDealBy: context.uid,
+        stageChangedAt: now,
+        stageChangedBy: context.uid,
+        stageChangeReason: 'deal_opened_from_crm',
         updatedAt: now,
       },
       { merge: true }

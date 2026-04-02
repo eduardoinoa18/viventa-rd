@@ -51,3 +51,12 @@ export function normalizeCrmDealStage(value: unknown): CrmDealStage {
 export function getCrmDealStageLabel(stage: CrmDealStage): string {
   return CRM_DEAL_STAGE_LABELS[stage] || CRM_DEAL_STAGE_LABELS.lead
 }
+
+export type LeadLifecycleStageFromDeal = 'assigned' | 'qualified' | 'negotiating' | 'won'
+
+export function mapCrmDealStageToLeadStage(stage: CrmDealStage): LeadLifecycleStageFromDeal {
+  if (stage === 'completed') return 'won'
+  if (stage === 'offer' || stage === 'reservation' || stage === 'contract' || stage === 'closing') return 'negotiating'
+  if (stage === 'showing') return 'qualified'
+  return 'assigned'
+}

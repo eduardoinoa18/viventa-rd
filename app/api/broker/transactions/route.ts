@@ -3,7 +3,8 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
 import { emitActivityEvent } from '@/lib/activityEvents'
-import { normalizeCrmDealStage } from '@/lib/domain/crmDeal'
+import { mapCrmDealStageToLeadStage, normalizeCrmDealStage } from '@/lib/domain/crmDeal'
+import { stageToLegacyStatus } from '@/lib/leadLifecycle'
 
 export const dynamic = 'force-dynamic'
 
@@ -324,9 +325,12 @@ export async function PATCH(req: Request) {
       updatedAt: new Date(),
       updatedBy: context.uid,
     }
+    const prevStage = normalizePipelineStage(tx.stage)
+    let nextStage = prevStage
 
     if (body.stage !== undefined) {
-      update.stage = normalizePipelineStage(body.stage)
+      nextStage = normalizePipelineStage(body.stage)
+      update.stage = nextStage
     }
 
     if (body.notes !== undefined) {
@@ -343,6 +347,49 @@ export async function PATCH(req: Request) {
 
     await txRef.set(update, { merge: true })
 
+    if (nextStage !== prevStage) {
+      await emitActivityEvent(db, {
+        type: 'deal_stage_changed',
+        actorId: context.uid,
+        actorRole: context.role,
+        entityType: 'transaction',
+        entityId: id,
+        transactionId: id,
+        dealId: String(tx.dealId || '').trim() || id,
+        listingId: String(tx.propertyId || tx.listingId || '').trim() || null,
+        projectId: String(tx.projectId || '').trim() || null,
+        brokerId: String(tx.brokerId || '').trim() || null,
+        agentId: String(tx.agentId || '').trim() || null,
+        officeId: context.officeId,
+        metadata: {
+          from: prevStage,
+          to: nextStage,
+          clientName: String(tx.clientName || '').trim() || null,
+          salePrice: toNumber(tx.salePrice),
+          eventVersion: 1,
+        },
+      })
+
+      const linkedLeadId = String(tx.leadId || '').trim()
+      if (linkedLeadId) {
+        const nextLeadStage = mapCrmDealStageToLeadStage(nextStage)
+        await db.collection('leads').doc(linkedLeadId).set(
+          {
+            leadStage: nextLeadStage,
+            status: stageToLegacyStatus(nextLeadStage),
+            legacyStatus: stageToLegacyStatus(nextLeadStage),
+            stageChangedAt: new Date(),
+            stageChangedBy: context.uid,
+            stageChangeReason: 'transaction_stage_sync',
+            updatedAt: new Date(),
+            linkedDealId: String(tx.dealId || '').trim() || id,
+            linkedTransactionId: id,
+          },
+          { merge: true }
+        )
+      }
+    }
+
     if (update.commissionStatus === 'paid') {
       await emitActivityEvent(db, {
         type: 'commission_paid',
@@ -351,7 +398,7 @@ export async function PATCH(req: Request) {
         entityType: 'commission',
         entityId: id,
         transactionId: id,
-        dealId: String(tx.dealId || '').trim() || null,
+        dealId: String(tx.dealId || '').trim() || id,
         reservationId: String(tx.reservationId || '').trim() || null,
         listingId: String(tx.propertyId || '').trim() || null,
         unitId: String(tx.unitId || '').trim() || null,

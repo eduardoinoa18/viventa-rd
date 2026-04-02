@@ -4,6 +4,8 @@ import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
 import { emitActivityEvent } from '@/lib/activityEvents'
 import { TRANSACTION_STAGES, type TransactionStage } from '@/lib/domain/transaction'
+import { mapCrmDealStageToLeadStage } from '@/lib/domain/crmDeal'
+import { stageToLegacyStatus } from '@/lib/leadLifecycle'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +19,11 @@ function normalizePipelineStage(value: unknown): TransactionStage {
   if (s === 'cierre') return 'closing'
   if (s === 'completado' || s === 'won' || s === 'closed') return 'completed'
   return 'lead'
+}
+
+function getCanonicalDealId(record: Record<string, any>, fallbackId: string): string {
+  const dealId = safeText(record.dealId)
+  return dealId || fallbackId
 }
 
 // ── GET single transaction ────────────────────────────────────────────────────
@@ -100,8 +107,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         entityType: 'transaction',
         entityId: params.id,
         transactionId: params.id,
-        dealId: safeText(current.dealId) || null,
-        listingId: safeText(current.listingId) || null,
+        dealId: getCanonicalDealId(current, params.id),
+        listingId: safeText(current.propertyId || current.listingId) || null,
+        projectId: safeText(current.projectId) || null,
         brokerId: context.role === 'broker' ? context.uid : (safeText(current.brokerId) || null),
         agentId: context.role === 'agent' ? context.uid : (safeText(current.agentId) || null),
         officeId: safeText(current.officeId) || null,
@@ -113,6 +121,25 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           eventVersion: 1,
         },
       })
+
+      const linkedLeadId = safeText(current.leadId)
+      if (linkedLeadId) {
+        const syncedLeadStage = mapCrmDealStageToLeadStage(nextStage)
+        await db.collection('leads').doc(linkedLeadId).set(
+          {
+            leadStage: syncedLeadStage,
+            status: stageToLegacyStatus(syncedLeadStage),
+            legacyStatus: stageToLegacyStatus(syncedLeadStage),
+            stageChangedAt: new Date(),
+            stageChangedBy: context.uid,
+            stageChangeReason: 'transaction_stage_sync',
+            linkedDealId: getCanonicalDealId(current, params.id),
+            linkedTransactionId: params.id,
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        )
+      }
     }
 
     const saved = await ref.get()
