@@ -15,6 +15,7 @@ const ALERT_REPEAT_HOURS = 24
 const MAX_BROKER_ALERTS_PER_RUN = 120
 const MAX_CONSTRUCTORA_ALERTS_PER_RUN = 120
 const MAX_BROKER_TASKS_PER_RUN = 80
+const MAX_CONSTRUCTORA_TASKS_PER_RUN = 80
 const TASK_REPEAT_HOURS = 24
 
 function safeText(value: unknown): string {
@@ -67,6 +68,20 @@ function resolvePreferredAssigneeIds(tx: Record<string, any>): string[] {
   return result
 }
 
+function resolvePreferredConstructoraAssigneeIds(deal: Record<string, any>): string[] {
+  const result: string[] = []
+  const push = (value: unknown) => {
+    const uid = safeText(value)
+    if (uid && !result.includes(uid)) result.push(uid)
+  }
+
+  push(deal.updatedBy)
+  push(deal.createdBy)
+  push(deal.ownerId)
+  push(deal.constructoraUserId)
+  return result
+}
+
 async function getOfficeMemberIds(db: FirebaseFirestore.Firestore, officeId: string): Promise<Set<string>> {
   const [byBrokerId, byBrokerageId] = await Promise.all([
     db.collection('users').where('brokerId', '==', officeId).limit(500).get(),
@@ -104,6 +119,63 @@ async function getOfficeOpenTaskCounts(
       .get()
   } catch {
     snap = await db.collection('office_crm_tasks').where('officeId', '==', officeId).limit(2000).get()
+  }
+
+  for (const doc of snap.docs) {
+    const task = doc.data() as Record<string, any>
+    if (!isTaskOpen(task.status)) continue
+    const assigneeUid = safeText(task.assigneeUid)
+    if (!assigneeUid) continue
+    counts.set(assigneeUid, (counts.get(assigneeUid) || 0) + 1)
+  }
+
+  return counts
+}
+
+async function getConstructoraMemberIds(
+  db: FirebaseFirestore.Firestore,
+  constructoraCode: string
+): Promise<Set<string>> {
+  const [byConstructoraCode, byProfessionalCode] = await Promise.all([
+    db.collection('users').where('constructoraCode', '==', constructoraCode).limit(500).get(),
+    db.collection('users').where('professionalCode', '==', constructoraCode).limit(500).get(),
+  ])
+
+  const memberIds = new Set<string>()
+  for (const snap of [byConstructoraCode, byProfessionalCode]) {
+    for (const doc of snap.docs) {
+      const user = doc.data() as Record<string, any>
+      const role = safeText(user.role).toLowerCase()
+      const status = safeText(user.status).toLowerCase()
+      if (role === 'constructora' && status !== 'disabled' && status !== 'blocked') {
+        memberIds.add(doc.id)
+      }
+    }
+  }
+
+  return memberIds
+}
+
+async function getConstructoraOpenTaskCounts(
+  db: FirebaseFirestore.Firestore,
+  constructoraCode: string
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>()
+
+  let snap: FirebaseFirestore.QuerySnapshot
+  try {
+    snap = await db
+      .collection('constructora_crm_tasks')
+      .where('constructoraCode', '==', constructoraCode)
+      .orderBy('createdAt', 'desc')
+      .limit(2000)
+      .get()
+  } catch {
+    snap = await db
+      .collection('constructora_crm_tasks')
+      .where('constructoraCode', '==', constructoraCode)
+      .limit(2000)
+      .get()
   }
 
   for (const doc of snap.docs) {
@@ -336,6 +408,10 @@ export async function GET(req: NextRequest) {
     let constructoraAlerted = 0
     let constructoraOverdue = 0
     let constructoraAttention = 0
+    let constructoraTasksCreated = 0
+
+    const constructoraMembersByCode = new Map<string, Set<string>>()
+    const openTaskCountByConstructoraCode = new Map<string, Map<string, number>>()
 
     for (const doc of constructoraDealsSnap.docs) {
       const deal = doc.data() as Record<string, any>
@@ -398,6 +474,93 @@ export async function GET(req: NextRequest) {
         { merge: true }
       )
 
+      if (constructoraTasksCreated < MAX_CONSTRUCTORA_TASKS_PER_RUN) {
+        const lastTaskStatus = safeText(deal.dealHealthTaskStatus)
+        const lastTaskAt = toDate(deal.dealHealthTaskAt)
+        if (shouldCreateTask(lastTaskStatus, lastTaskAt, nextStatus)) {
+          let constructoraMemberIds = constructoraMembersByCode.get(constructoraCode)
+          if (!constructoraMemberIds) {
+            constructoraMemberIds = await getConstructoraMemberIds(db, constructoraCode)
+            constructoraMembersByCode.set(constructoraCode, constructoraMemberIds)
+          }
+
+          let openTaskCountByAssignee = openTaskCountByConstructoraCode.get(constructoraCode)
+          if (!openTaskCountByAssignee) {
+            openTaskCountByAssignee = await getConstructoraOpenTaskCounts(db, constructoraCode)
+            openTaskCountByConstructoraCode.set(constructoraCode, openTaskCountByAssignee)
+          }
+
+          const assigneeUid = chooseTaskAssignee({
+            officeMemberIds: constructoraMemberIds,
+            preferredAssigneeIds: resolvePreferredConstructoraAssigneeIds(deal),
+            openTaskCountByAssignee,
+          })
+
+          if (assigneeUid) {
+            const dueAt = new Date(now.getTime() + (nextStatus === 'overdue' ? 6 : 12) * 60 * 60 * 1000)
+            const priority = nextStatus === 'overdue' ? 'high' : 'normal'
+            const taskRef = await db.collection('constructora_crm_tasks').add({
+              constructoraCode,
+              title:
+                nextStatus === 'overdue'
+                  ? `Escalar deal vencido (${doc.id})`
+                  : `Revisar deal en riesgo (${doc.id})`,
+              dueAt,
+              status: 'pending',
+              priority,
+              assigneeUid,
+              createdBy: SYSTEM_ACTOR_ID,
+              createdAt: now,
+              updatedAt: now,
+              linkedDealId: doc.id,
+              source: 'deal_automation',
+              metadata: {
+                dealId: doc.id,
+                dealHealthStatus: nextStatus,
+                stage: timelineStage,
+                stageAgeDays,
+              },
+            })
+
+            await doc.ref.set(
+              {
+                dealHealthTaskStatus: nextStatus,
+                dealHealthTaskAt: now,
+                dealHealthTaskId: taskRef.id,
+                dealHealthTaskAssigneeUid: assigneeUid,
+              },
+              { merge: true }
+            )
+
+            openTaskCountByAssignee.set(assigneeUid, (openTaskCountByAssignee.get(assigneeUid) || 0) + 1)
+            constructoraTasksCreated += 1
+
+            await emitActivityEvent(db, {
+              type: 'deal_updated',
+              actorId: SYSTEM_ACTOR_ID,
+              actorRole: 'system',
+              entityType: 'deal',
+              entityId: doc.id,
+              dealId: doc.id,
+              reservationId: safeText(deal.reservationId) || null,
+              unitId: safeText(deal.unitId) || null,
+              projectId: safeText(deal.projectId) || null,
+              brokerId: safeText(deal.brokerId) || null,
+              buyerId: safeText(deal.buyerId) || null,
+              constructoraCode,
+              metadata: {
+                alertType: `deal_${nextStatus}_task_created`,
+                stage: timelineStage,
+                stageAgeDays,
+                taskId: taskRef.id,
+                assigneeUid,
+                fromAutomation: true,
+              },
+            })
+          }
+        }
+      }
+
       constructoraAlerted += 1
     }
 
@@ -416,11 +579,13 @@ export async function GET(req: NextRequest) {
         constructora: constructoraAlerted,
         constructoraOverdue,
         constructoraAttention,
+        constructoraTasksCreated,
       },
       limits: {
         broker: MAX_BROKER_ALERTS_PER_RUN,
         constructora: MAX_CONSTRUCTORA_ALERTS_PER_RUN,
         brokerTasks: MAX_BROKER_TASKS_PER_RUN,
+        constructoraTasks: MAX_CONSTRUCTORA_TASKS_PER_RUN,
       },
     })
 
@@ -439,6 +604,7 @@ export async function GET(req: NextRequest) {
         constructora: constructoraAlerted,
         constructoraOverdue,
         constructoraAttention,
+        constructoraTasksCreated,
       },
     })
   } catch (error: any) {

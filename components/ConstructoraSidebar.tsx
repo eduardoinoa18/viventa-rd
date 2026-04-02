@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   FiActivity, FiCalendar, FiChevronLeft, FiDollarSign,
-  FiGrid, FiHome, FiLayers, FiMessageSquare, FiPackage,
+  FiCheckSquare, FiGrid, FiHome, FiLayers, FiMessageSquare, FiPackage,
   FiPlusSquare, FiTrendingUp, FiUsers,
 } from 'react-icons/fi'
 import BrandLogo from './BrandLogo'
@@ -25,6 +25,7 @@ const SECONDARY: NavItem[] = [
 ]
 
 const SYSTEM: NavItem[] = [
+  { href: '/dashboard/constructora/tasks',        label: 'Tasks',       icon: <FiCheckSquare /> },
   { href: '/dashboard/constructora/clients',      label: 'Clients',     icon: <FiUsers /> },
   { href: '/dashboard/constructora/activity',     label: 'Activity',    icon: <FiActivity /> },
 ]
