@@ -13,6 +13,28 @@ export type UserSession = {
 
 const KEY = 'viventa:session';
 
+function readSessionCookies() {
+  try {
+    const cookies = document.cookie || '';
+    const map = new Map<string, string>();
+    cookies.split(';').forEach((pair) => {
+      const [k, ...rest] = pair.trim().split('=');
+      if (!k) return;
+      map.set(k, decodeURIComponent(rest.join('=')));
+    });
+
+    const uid = map.get('viventa_uid');
+    const role = map.get('viventa_role') as UserSession['role'] | undefined;
+    const name = map.get('viventa_name');
+    const profileComplete = map.get('viventa_profile') === '1';
+
+    if (uid && role) {
+      return { uid, role, name, profileComplete };
+    }
+  } catch {}
+  return null;
+}
+
 export function saveSession(session: UserSession) {
   if (typeof window === 'undefined') return;
   sessionStorage.setItem(KEY, JSON.stringify(session));
@@ -43,29 +65,43 @@ export function saveSessionLocal(session: UserSession) {
 export function getSession(): UserSession | null {
   if (typeof window === 'undefined') return null;
   const raw = sessionStorage.getItem(KEY);
-  if (raw) return JSON.parse(raw);
+  const cookieSession = readSessionCookies();
+
+  if (raw) {
+    try {
+      const stored = JSON.parse(raw) as UserSession;
+
+      // Keep client state aligned with server cookies (important after impersonation end).
+      if (cookieSession && (stored.uid !== cookieSession.uid || stored.role !== cookieSession.role)) {
+        const reconciled: UserSession = {
+          ...stored,
+          uid: cookieSession.uid,
+          role: cookieSession.role,
+          name: cookieSession.name || stored.name,
+          profileComplete: cookieSession.profileComplete,
+        };
+        sessionStorage.setItem(KEY, JSON.stringify(reconciled));
+        return reconciled;
+      }
+
+      return stored;
+    } catch {
+      sessionStorage.removeItem(KEY);
+    }
+  }
 
   // Fallback: hydrate from cookies when sessionStorage is empty (e.g., mobile refresh/PWA)
-  try {
-    const cookies = document.cookie || '';
-    const map = new Map<string, string>();
-    cookies.split(';').forEach((pair) => {
-      const [k, ...rest] = pair.trim().split('=');
-      if (!k) return;
-      map.set(k, decodeURIComponent(rest.join('=')));
-    });
-
-    const uid = map.get('viventa_uid');
-    const role = map.get('viventa_role') as UserSession['role'] | undefined;
-    if (uid && role) {
-      const name = map.get('viventa_name');
-      const profileComplete = map.get('viventa_profile') === '1';
-      const session: UserSession = { uid, role, name, profileComplete };
-      // Persist back to sessionStorage for faster subsequent reads
-      sessionStorage.setItem(KEY, JSON.stringify(session));
-      return session;
-    }
-  } catch {}
+  if (cookieSession) {
+    const session: UserSession = {
+      uid: cookieSession.uid,
+      role: cookieSession.role,
+      name: cookieSession.name,
+      profileComplete: cookieSession.profileComplete,
+    };
+    // Persist back to sessionStorage for faster subsequent reads
+    sessionStorage.setItem(KEY, JSON.stringify(session));
+    return session;
+  }
 
   return null;
 }

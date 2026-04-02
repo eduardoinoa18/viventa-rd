@@ -1,6 +1,6 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
-import { FiHome, FiSearch, FiUsers, FiMail, FiUser } from 'react-icons/fi'
+import { FiHome, FiSearch, FiUsers, FiMail, FiUser, FiTrendingUp } from 'react-icons/fi'
 import { useEffect, useState } from 'react'
 import { getSession } from '@/lib/authSession'
 
@@ -9,11 +9,28 @@ export default function BottomNav() {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [session, setSession] = useState<any>(null)
+  const [isImpersonating, setIsImpersonating] = useState(false)
 
   useEffect(() => {
     setMounted(true)
     setSession(getSession())
+    setIsImpersonating(document.cookie.includes('viventa_impersonating=true'))
   }, [])
+
+  async function stopImpersonationAndReturn() {
+    try {
+      const res = await fetch('/api/admin/stop-impersonation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const json = await res.json().catch(() => ({}))
+      if (res.ok && json?.ok) {
+        window.location.href = String(json?.redirect || '/master')
+      }
+    } catch {
+      // noop
+    }
+  }
 
   // Don't show on admin pages, special pages, or auth pages
   if (!mounted || pathname?.startsWith('/master') || pathname?.startsWith('/onboarding') || pathname === '/login' || pathname === '/signup') {
@@ -21,7 +38,7 @@ export default function BottomNav() {
   }
 
   // Build nav items based on auth state
-  const adminHome = session?.role === 'master_admin' ? '/master' : '/search'
+  const adminHome = session?.role === 'master_admin' || session?.role === 'admin' ? '/master' : '/search'
 
   const isBuyer = session?.role === 'buyer' || session?.role === 'user'
 
@@ -39,6 +56,12 @@ export default function BottomNav() {
             icon: FiSearch,
             path: '/search',
             active: pathname?.startsWith('/search')
+          },
+          {
+            name: 'Inversiones',
+            icon: FiTrendingUp,
+            path: '/projects',
+            active: pathname?.startsWith('/projects')
           },
           {
             name: 'Favoritos',
@@ -84,7 +107,7 @@ export default function BottomNav() {
             path: '/brokers',
             active: pathname?.startsWith('/brokers')
           },
-          session.role === 'master_admin'
+          (session.role === 'master_admin' || session.role === 'admin')
             ? {
                 name: 'Admin',
                 icon: FiUser,
@@ -131,6 +154,20 @@ export default function BottomNav() {
     }
   ]
 
+  const navWithImpersonation = isImpersonating
+    ? [
+        ...navItems.slice(0, 4),
+        {
+          name: 'Volver',
+          icon: FiUser,
+          path: '/master',
+          active: false,
+          highlight: true,
+          action: stopImpersonationAndReturn,
+        },
+      ]
+    : navItems
+
   return (
     <>
       {/* Spacer to prevent content from being hidden behind fixed nav */}
@@ -139,7 +176,7 @@ export default function BottomNav() {
       {/* Bottom Navigation - Only visible on mobile */}
       <nav className="fixed bottom-0 left-0 right-0 w-full bg-gradient-to-t from-white via-white to-white/95 border-t border-viventa-turquoise/20 shadow-2xl md:hidden z-50 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm">
         <div className="flex items-center justify-around h-16 px-1 max-w-[640px] mx-auto">
-          {navItems.map((item) => {
+          {navWithImpersonation.map((item) => {
             const Icon = item.icon
             const isActive = item.active
             const isHighlight = 'highlight' in item && item.highlight
@@ -148,7 +185,13 @@ export default function BottomNav() {
             return (
               <button
                 key={item.name}
-                onClick={() => router.push(item.path)}
+                onClick={() => {
+                  if ('action' in item && typeof item.action === 'function') {
+                    item.action()
+                  } else {
+                    router.push(item.path)
+                  }
+                }}
                 aria-label={item.name}
                 disabled={isComingSoon}
                 className={`relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 active:scale-95 min-w-[60px] ${

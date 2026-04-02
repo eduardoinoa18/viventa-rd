@@ -78,7 +78,7 @@ export async function GET(req: Request) {
     } catch { /* listing search is non-critical */ }
 
     // ── 2. Deals / Transactions (role-gated) ─────────────────────────────────
-    if (context.role === 'broker' || context.role === 'agent' || context.role === 'admin') {
+    if (context.role === 'broker' || context.role === 'agent' || context.role === 'master_admin') {
       try {
         const txRef = db.collection('transactions')
         const txSnap = context.role === 'broker' && context.officeId

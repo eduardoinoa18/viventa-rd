@@ -17,6 +17,8 @@ import {
 } from 'react-icons/fi'
 import type { SearchResultItem } from '@/app/api/search/route'
 
+type AppRole = 'master_admin' | 'admin' | 'broker' | 'agent' | 'constructora' | 'buyer' | 'user'
+
 // ── Command registry ──────────────────────────────────────────────────────────
 
 type Command = {
@@ -28,33 +30,35 @@ type Command = {
   action?: () => void
   group: string
   keywords?: string
+  roles?: AppRole[]
 }
 
 const COMMANDS: Command[] = [
   // Navigate
-  { id: 'goto-broker',          group: 'Navigate', label: 'Broker Workspace',    description: 'Open broker overview',        icon: <FiGrid />,       href: '/dashboard/broker/overview',       keywords: 'broker workspace home' },
-  { id: 'goto-broker-pipeline', group: 'Navigate', label: 'Deal Pipeline',       description: 'Broker Kanban pipeline',      icon: <FiTrendingUp />, href: '/dashboard/broker/pipeline',       keywords: 'pipeline deals kanban broker' },
-  { id: 'goto-agent',           group: 'Navigate', label: 'Agent Workspace',     description: 'Open agent overview',         icon: <FiGrid />,       href: '/dashboard/agent/overview',        keywords: 'agent workspace home' },
-  { id: 'goto-constructora',    group: 'Navigate', label: 'Constructora',        description: 'Open constructora overview',  icon: <FiGrid />,       href: '/dashboard/constructora/overview', keywords: 'constructora builder developer' },
-  { id: 'goto-master',          group: 'Navigate', label: 'Master Admin',        description: 'Open admin dashboard',        icon: <FiGrid />,       href: '/master',                          keywords: 'admin master platform' },
-  { id: 'goto-listings',        group: 'Navigate', label: 'Listings',            description: 'View all property listings',  icon: <FiHome />,       href: '/dashboard/listings',              keywords: 'listings properties homes' },
-  { id: 'goto-search',          group: 'Navigate', label: 'Property Search',     description: 'Search the marketplace',      icon: <FiSearch />,     href: '/search',                          keywords: 'search find property' },
-  { id: 'goto-crm-broker',      group: 'Navigate', label: 'Broker CRM',          description: 'Leads & pipeline',            icon: <FiTarget />,     href: '/dashboard/broker/crm',            keywords: 'crm leads pipeline broker' },
-  { id: 'goto-crm-agent',       group: 'Navigate', label: 'Agent CRM',           description: 'Agent leads',                 icon: <FiTarget />,     href: '/dashboard/agent/crm',             keywords: 'crm leads agent' },
-  { id: 'goto-transactions',    group: 'Navigate', label: 'Transactions',        description: 'Broker transaction board',    icon: <FiTrendingUp />, href: '/dashboard/broker/transactions',   keywords: 'deals transactions broker' },
-  { id: 'goto-team',            group: 'Navigate', label: 'Team / Agents',       description: 'Manage your agent team',      icon: <FiUsers />,      href: '/dashboard/broker/team',           keywords: 'team agents members' },
-  { id: 'goto-activity-broker', group: 'Navigate', label: 'Broker Activity',     description: 'Activity feed',               icon: <FiActivity />,   href: '/dashboard/broker/activity',       keywords: 'activity events feed broker' },
-  { id: 'goto-activity-master', group: 'Navigate', label: 'Platform Activity',   description: 'Master admin activity feed',  icon: <FiActivity />,   href: '/master/activity',                 keywords: 'activity events feed admin' },
-  { id: 'goto-messages',        group: 'Navigate', label: 'Messages',            description: 'Open messaging',              icon: <FiUsers />,      href: '/messages',                        keywords: 'messages chat inbox' },
-  { id: 'goto-favorites',       group: 'Navigate', label: 'Favorites',           description: 'Saved properties',            icon: <FiHome />,       href: '/favorites',                       keywords: 'favorites saved bookmarks' },
-  { id: 'goto-billing',         group: 'Navigate', label: 'Billing',             description: 'Subscription & payments',     icon: <FiBarChart2 />,  href: '/dashboard/billing',               keywords: 'billing subscription payments plan' },
+  { id: 'goto-broker',          group: 'Navigate', label: 'Broker Workspace',    description: 'Open broker overview',        icon: <FiGrid />,       href: '/dashboard/broker/overview',       keywords: 'broker workspace home', roles: ['master_admin', 'broker'] },
+  { id: 'goto-broker-pipeline', group: 'Navigate', label: 'Deal Pipeline',       description: 'Broker Kanban pipeline',      icon: <FiTrendingUp />, href: '/dashboard/broker/pipeline',       keywords: 'pipeline deals kanban broker', roles: ['master_admin', 'broker'] },
+  { id: 'goto-agent',           group: 'Navigate', label: 'Agent Workspace',     description: 'Open agent overview',         icon: <FiGrid />,       href: '/dashboard/agent/overview',        keywords: 'agent workspace home', roles: ['master_admin', 'agent'] },
+  { id: 'goto-constructora',    group: 'Navigate', label: 'Constructora',        description: 'Open constructora overview',  icon: <FiGrid />,       href: '/dashboard/constructora/overview', keywords: 'constructora builder developer', roles: ['master_admin', 'constructora'] },
+  { id: 'goto-master',          group: 'Navigate', label: 'Master Admin',        description: 'Open admin dashboard',        icon: <FiGrid />,       href: '/master',                          keywords: 'admin master platform', roles: ['master_admin', 'admin'] },
+  { id: 'goto-listings',        group: 'Navigate', label: 'Listings',            description: 'View all property listings',  icon: <FiHome />,       href: '/dashboard/listings',              keywords: 'listings properties homes', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora'] },
+  { id: 'goto-search',          group: 'Navigate', label: 'Property Search',     description: 'Search the marketplace',      icon: <FiSearch />,     href: '/search',                          keywords: 'search find property', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
+  { id: 'goto-crm-broker',      group: 'Navigate', label: 'Broker CRM',          description: 'Leads & pipeline',            icon: <FiTarget />,     href: '/dashboard/broker/crm',            keywords: 'crm leads pipeline broker', roles: ['master_admin', 'broker'] },
+  { id: 'goto-crm-agent',       group: 'Navigate', label: 'Agent CRM',           description: 'Agent leads',                 icon: <FiTarget />,     href: '/dashboard/agent/crm',             keywords: 'crm leads agent', roles: ['master_admin', 'agent'] },
+  { id: 'goto-transactions',    group: 'Navigate', label: 'Transactions',        description: 'Broker transaction board',    icon: <FiTrendingUp />, href: '/dashboard/broker/transactions',   keywords: 'deals transactions broker', roles: ['master_admin', 'broker'] },
+  { id: 'goto-team',            group: 'Navigate', label: 'Team / Agents',       description: 'Manage your agent team',      icon: <FiUsers />,      href: '/dashboard/broker/team',           keywords: 'team agents members', roles: ['master_admin', 'broker'] },
+  { id: 'goto-activity-broker', group: 'Navigate', label: 'Broker Activity',     description: 'Activity feed',               icon: <FiActivity />,   href: '/dashboard/broker/activity',       keywords: 'activity events feed broker', roles: ['master_admin', 'broker'] },
+  { id: 'goto-activity-master', group: 'Navigate', label: 'Platform Activity',   description: 'Master admin activity feed',  icon: <FiActivity />,   href: '/master/activity',                 keywords: 'activity events feed admin', roles: ['master_admin'] },
+  { id: 'goto-messages',        group: 'Navigate', label: 'Messages',            description: 'Open messaging',              icon: <FiUsers />,      href: '/messages',                        keywords: 'messages chat inbox', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
+  { id: 'goto-favorites',       group: 'Navigate', label: 'Favorites',           description: 'Saved properties',            icon: <FiHome />,       href: '/favorites',                       keywords: 'favorites saved bookmarks', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
+  { id: 'goto-billing',         group: 'Navigate', label: 'Billing',             description: 'Subscription & payments',     icon: <FiBarChart2 />,  href: '/dashboard/billing',               keywords: 'billing subscription payments plan', roles: ['master_admin', 'admin', 'broker'] },
   // Actions
-  { id: 'action-create-listing', group: 'Actions', label: 'Create Listing',      description: 'Add a new property',          icon: <FiPlusSquare />, href: '/dashboard/listings/create',       keywords: 'create new listing property add' },
-  { id: 'action-create-deal',    group: 'Actions', label: 'Create Deal',         description: 'Start a new transaction',     icon: <FiPlusSquare />, href: '/dashboard/broker/transactions',   keywords: 'create deal transaction new' },
-  { id: 'action-invite-agent',   group: 'Actions', label: 'Invite Agent',        description: 'Add an agent to your office', icon: <FiUsers />,      href: '/dashboard/broker/team',           keywords: 'invite agent add member' },
+  { id: 'action-create-listing', group: 'Actions', label: 'Create Listing',      description: 'Add a new property',          icon: <FiPlusSquare />, href: '/dashboard/listings/create',       keywords: 'create new listing property add', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora'] },
+  { id: 'action-create-deal',    group: 'Actions', label: 'Create Deal',         description: 'Start a new transaction',     icon: <FiPlusSquare />, href: '/dashboard/broker/transactions',   keywords: 'create deal transaction new', roles: ['master_admin', 'broker'] },
+  { id: 'action-invite-agent',   group: 'Actions', label: 'Invite Agent',        description: 'Add an agent to your office', icon: <FiUsers />,      href: '/dashboard/broker/team',           keywords: 'invite agent add member', roles: ['master_admin', 'broker'] },
   // Account
-  { id: 'account-profile',      group: 'Account',  label: 'My Profile',         description: 'Edit your profile',           icon: <FiUser />,       href: '/dashboard/settings',              keywords: 'profile settings account me' },
-  { id: 'account-public-site',  group: 'Account',  label: 'Public Site',        description: 'Go to VIVENTA marketplace',   icon: <FiHome />,       href: '/',                                keywords: 'public marketplace site home' },
+  { id: 'account-profile',      group: 'Account',  label: 'My Profile',         description: 'Edit your profile',           icon: <FiUser />,       href: '/dashboard/settings',              keywords: 'profile settings account me', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
+  { id: 'account-public-site',  group: 'Account',  label: 'Public Site',        description: 'Go to VIVENTA marketplace',   icon: <FiHome />,       href: '/',                                keywords: 'public marketplace site home', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
+  { id: 'account-back-admin',   group: 'Account',  label: 'Back to Admin',      description: 'Return to complete admin workspace', icon: <FiGrid />, href: '/master', keywords: 'return admin dashboard master', roles: ['master_admin', 'admin'] },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -108,6 +112,8 @@ export default function CommandPalette() {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [role, setRole] = useState<AppRole>('buyer')
+  const [impersonating, setImpersonating] = useState(false)
 
   // Dynamic search state
   const [dynamicResults, setDynamicResults] = useState<SearchResultItem[]>([])
@@ -116,8 +122,55 @@ export default function CommandPalette() {
 
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const loadSession = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/session', { cache: 'no-store' })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok || !body?.ok || !body?.session) {
+        setRole('buyer')
+        setImpersonating(false)
+        return
+      }
+
+      const rawRole = String(body.session.role || 'buyer') as AppRole
+      setRole(rawRole)
+      setImpersonating(Boolean(body.session?.impersonation?.active))
+    } catch {
+      setRole('buyer')
+      setImpersonating(false)
+    }
+  }, [])
+
+  const stopImpersonation = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/stop-impersonation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) return
+      window.location.href = String(json?.redirect || '/master')
+    } catch {
+      // no-op
+    }
+  }, [])
+
   // ── Static command filter ─────────────────────────────────────────────────
-  const filteredStatic = query.trim() === '' ? COMMANDS : COMMANDS.filter((c) => score(c, query))
+  const roleCommands = COMMANDS.filter((cmd) => !cmd.roles || cmd.roles.includes(role))
+  const extraCommands: Command[] = impersonating
+    ? [{
+        id: 'account-return-master-from-impersonation',
+        group: 'Account',
+        label: 'Return to Master Admin',
+        description: 'Stop impersonation and restore full admin session',
+        icon: <FiGrid />,
+        action: stopImpersonation,
+        keywords: 'stop impersonation return master admin',
+        roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'],
+      }]
+    : []
+  const visibleStatic = [...extraCommands, ...roleCommands]
+  const filteredStatic = query.trim() === '' ? visibleStatic : visibleStatic.filter((c) => score(c, query))
 
   // ── Convert dynamic results → Command-like objects ────────────────────────
   const dynamicCommands: Command[] = dynamicResults.map((r) => ({
@@ -144,6 +197,11 @@ export default function CommandPalette() {
     setSelectedIndex(0)
     setDynamicResults([])
   }, [])
+
+  useEffect(() => {
+    if (!open) return
+    loadSession()
+  }, [open, loadSession])
 
   const execute = useCallback(
     (cmd: Command) => {
@@ -235,7 +293,7 @@ export default function CommandPalette() {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search deals, listings, projects or jump to…"
+            placeholder={role === 'master_admin' ? 'Search deals, listings, projects or jump to…' : 'Search listings, projects or jump to…'}
             className="min-w-0 flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
           />
           {query && (
