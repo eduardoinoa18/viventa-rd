@@ -1,0 +1,53 @@
+import { TRANSACTION_STAGES, type CommissionStatus, type CurrencyCode, type TimestampLike, type TransactionStage } from '@/lib/domain/transaction'
+
+export const CRM_DEAL_STAGES = TRANSACTION_STAGES
+export type CrmDealStage = TransactionStage
+
+export const CRM_DEAL_STAGE_LABELS: Record<CrmDealStage, string> = {
+  lead: 'Lead',
+  showing: 'Visita',
+  offer: 'Oferta',
+  reservation: 'Reserva',
+  contract: 'Contrato',
+  closing: 'Cierre',
+  completed: 'Completado',
+}
+
+export interface CrmDealRecord {
+  id: string
+  dealId: string
+  leadId?: string | null
+  clientName: string
+  clientEmail?: string | null
+  clientPhone?: string | null
+  stage: CrmDealStage
+  salePrice: number
+  currency: CurrencyCode
+  totalCommission: number
+  commissionStatus: CommissionStatus
+  agentId?: string | null
+  listingId?: string | null
+  projectId?: string | null
+  unitId?: string | null
+  notes?: string | null
+  createdAt: TimestampLike
+  updatedAt: TimestampLike
+}
+
+function safeText(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+export function normalizeCrmDealStage(value: unknown): CrmDealStage {
+  const stage = safeText(value)
+  if ((CRM_DEAL_STAGES as readonly string[]).includes(stage)) return stage as CrmDealStage
+  if (stage === 'oferta') return 'offer'
+  if (stage === 'contrato_firmado') return 'contract'
+  if (stage === 'cierre') return 'closing'
+  if (stage === 'cerrado' || stage === 'closed' || stage === 'completado' || stage === 'won') return 'completed'
+  return 'lead'
+}
+
+export function getCrmDealStageLabel(stage: CrmDealStage): string {
+  return CRM_DEAL_STAGE_LABELS[stage] || CRM_DEAL_STAGE_LABELS.lead
+}

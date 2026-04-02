@@ -3,6 +3,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
 import { emitActivityEvent } from '@/lib/activityEvents'
+import { normalizeCrmDealStage } from '@/lib/domain/crmDeal'
 
 export const dynamic = 'force-dynamic'
 
@@ -188,7 +189,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}))
-    const stage = normalizePipelineStage(body.stage)
+    const stage = normalizeCrmDealStage(body.stage)
     const clientName = String(body.clientName || '').trim()
     const agentId = String(body.agentId || context.uid).trim()
     const salePrice = toNumber(body.salePrice)
@@ -218,7 +219,11 @@ export async function POST(req: Request) {
     const brokerCommission = Number((totalCommission - agentCommission).toFixed(2))
 
     const now = new Date()
-    const created = await db.collection('transactions').add({
+    const txRef = db.collection('transactions').doc()
+    const canonicalDealId = String(body.dealId || '').trim() || txRef.id
+
+    await txRef.set({
+      dealId: canonicalDealId,
       officeId: context.officeId,
       leadId: String(body.leadId || '').trim() || null,
       propertyId: String(body.propertyId || '').trim() || null,
@@ -246,15 +251,15 @@ export async function POST(req: Request) {
       updatedBy: context.uid,
     })
 
-    const saved = await created.get()
+    const saved = await txRef.get()
     await emitActivityEvent(db, {
       type: 'transaction_created',
       actorId: context.uid,
       actorRole: context.role,
       entityType: 'transaction',
-      entityId: created.id,
-      transactionId: created.id,
-      dealId: String(body.dealId || '').trim() || null,
+      entityId: txRef.id,
+      transactionId: txRef.id,
+      dealId: canonicalDealId,
       reservationId: String(body.reservationId || '').trim() || null,
       listingId: String(body.propertyId || '').trim() || null,
       unitId: String(body.unitId || '').trim() || null,
@@ -268,7 +273,7 @@ export async function POST(req: Request) {
         totalCommission,
       },
     })
-    return NextResponse.json({ ok: true, id: created.id, transaction: { id: created.id, ...(saved.data() || {}) } }, { status: 201 })
+    return NextResponse.json({ ok: true, id: txRef.id, transaction: { id: txRef.id, ...(saved.data() || {}) } }, { status: 201 })
   } catch (error: any) {
     console.error('[api/broker/transactions] POST error', error)
     return NextResponse.json({ ok: false, error: 'Failed to create transaction' }, { status: 500 })

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
+import { emitActivityEvent } from '@/lib/activityEvents'
 import {
   normalizeLeadStage,
   ownerRequiredForStage,
@@ -148,6 +149,98 @@ export async function GET(req: Request) {
   } catch (error: any) {
     console.error('[api/broker/leads] GET error', error)
     return NextResponse.json({ ok: false, error: 'Failed to load broker leads' }, { status: 500 })
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const db = getAdminDb()
+    if (!db) return NextResponse.json({ ok: false, error: 'Server config error' }, { status: 500 })
+
+    const session = await getSessionFromRequest(req)
+    if (!session?.uid) return NextResponse.json({ ok: false, error: 'Authentication required' }, { status: 401 })
+
+    const context = await getListingAccessUserContext(db, session.uid, (session.role as any) || 'buyer')
+    if (context.role !== 'broker' && context.role !== 'agent') {
+      return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
+    }
+    if (!context.officeId) {
+      return NextResponse.json({ ok: false, error: 'Broker office assignment required' }, { status: 403 })
+    }
+
+    const body = await req.json().catch(() => ({}))
+    const buyerName = safeText(body.buyerName || body.name || body.fullName)
+    const buyerEmail = safeText(body.buyerEmail || body.email)
+    const buyerPhone = safeText(body.buyerPhone || body.phone)
+    const source = safeText(body.source || 'direct') || 'direct'
+    const type = safeText(body.type || 'request-info') || 'request-info'
+    const requestedOwner = safeText(body.ownerAgentId)
+    const officeAgentIds = await getOfficeAgentIds(db, context.officeId, context.uid)
+
+    if (!buyerName) {
+      return NextResponse.json({ ok: false, error: 'buyerName is required' }, { status: 400 })
+    }
+
+    if (requestedOwner && !officeAgentIds.has(requestedOwner)) {
+      return NextResponse.json({ ok: false, error: 'ownerAgentId is not in your office' }, { status: 400 })
+    }
+
+    const ownerAgentId = requestedOwner || context.uid
+    const leadStage = normalizeLeadStage(body.leadStage, ownerAgentId ? 'assigned' : 'new')
+    const now = new Date()
+
+    const created = await db.collection('leads').add({
+      type,
+      source,
+      sourceId: safeText(body.sourceId) || null,
+      buyerName,
+      buyerEmail: buyerEmail || null,
+      buyerPhone: buyerPhone || null,
+      message: safeText(body.message) || null,
+      budget: Number.isFinite(Number(body.budget)) ? Number(body.budget) : 0,
+      priority: normalizePriority(body.priority),
+      leadStage,
+      status: stageToLegacyStatus(leadStage),
+      legacyStatus: stageToLegacyStatus(leadStage),
+      ownerAgentId: ownerAgentId || null,
+      assignedTo: ownerAgentId || null,
+      assignedAt: ownerAgentId ? now : null,
+      ownerAssignedAt: ownerAgentId ? now : null,
+      ownerAssignedBy: ownerAgentId ? context.uid : null,
+      brokerId: context.officeId,
+      brokerageId: context.officeId,
+      stageChangedAt: now,
+      stageChangedBy: context.uid,
+      stageChangeReason: 'manual_crm_create',
+      stageSlaDueAt: stageSlaDueAt(leadStage, now),
+      slaBreached: false,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: context.uid,
+      updatedBy: context.uid,
+    })
+
+    await emitActivityEvent(db, {
+      type: 'lead_contacted',
+      actorId: context.uid,
+      actorRole: context.role,
+      entityType: 'lead',
+      entityId: created.id,
+      agentId: ownerAgentId || null,
+      brokerId: context.officeId,
+      officeId: context.officeId,
+      metadata: {
+        buyerName,
+        source,
+        leadStage,
+      },
+    })
+
+    const saved = await created.get()
+    return NextResponse.json({ ok: true, lead: { id: created.id, ...(saved.data() as Record<string, any>) } }, { status: 201 })
+  } catch (error: any) {
+    console.error('[api/broker/leads] POST error', error)
+    return NextResponse.json({ ok: false, error: 'Failed to create broker lead' }, { status: 500 })
   }
 }
 

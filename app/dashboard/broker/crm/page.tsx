@@ -1,27 +1,28 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   FiUser, FiPhone, FiMail, FiHome, FiActivity, FiCheckSquare,
   FiClock, FiTrendingUp, FiAlertCircle, FiPlusCircle,
-  FiDollarSign, FiSearch, FiRefreshCw,
+  FiDollarSign, FiSearch, FiRefreshCw, FiBriefcase,
 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import { CRM_DEAL_STAGES, CRM_DEAL_STAGE_LABELS, type CrmDealStage } from '@/lib/domain/crmDeal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-const LEAD_STAGES = ['new', 'contacted', 'showing', 'offer', 'contract', 'closed', 'lost'] as const
+const LEAD_STAGES = ['new', 'assigned', 'contacted', 'qualified', 'negotiating', 'won', 'lost'] as const
 type LeadStage = typeof LEAD_STAGES[number]
 
 const STAGE_META: Record<LeadStage, { label: string; color: string; bg: string; dot: string }> = {
-  new:       { label: 'Nuevo',      color: 'text-gray-600',    bg: 'bg-gray-100',    dot: 'bg-gray-400'    },
-  contacted: { label: 'Contactado', color: 'text-blue-700',    bg: 'bg-blue-50',     dot: 'bg-blue-500'    },
-  showing:   { label: 'Visita',     color: 'text-purple-700',  bg: 'bg-purple-50',   dot: 'bg-purple-500'  },
-  offer:     { label: 'Oferta',     color: 'text-amber-700',   bg: 'bg-amber-50',    dot: 'bg-amber-500'   },
-  contract:  { label: 'Contrato',   color: 'text-orange-700',  bg: 'bg-orange-50',   dot: 'bg-orange-500'  },
-  closed:    { label: 'Cerrado',    color: 'text-emerald-700', bg: 'bg-emerald-50',  dot: 'bg-emerald-500' },
-  lost:      { label: 'Perdido',    color: 'text-red-600',     bg: 'bg-red-50',      dot: 'bg-red-400'     },
+  new:         { label: 'Nuevo',         color: 'text-slate-700',   bg: 'bg-slate-100',     dot: 'bg-slate-500'   },
+  assigned:    { label: 'Asignado',      color: 'text-blue-700',    bg: 'bg-blue-50',       dot: 'bg-blue-500'    },
+  contacted:   { label: 'Contactado',    color: 'text-cyan-700',    bg: 'bg-cyan-50',       dot: 'bg-cyan-500'    },
+  qualified:   { label: 'Calificado',    color: 'text-violet-700',  bg: 'bg-violet-50',     dot: 'bg-violet-500'  },
+  negotiating: { label: 'Negociación',   color: 'text-amber-700',   bg: 'bg-amber-50',      dot: 'bg-amber-500'   },
+  won:         { label: 'Ganado',        color: 'text-emerald-700', bg: 'bg-emerald-50',    dot: 'bg-emerald-500' },
+  lost:        { label: 'Perdido',       color: 'text-rose-700',    bg: 'bg-rose-50',       dot: 'bg-rose-500'    },
 }
 
 type Lead = {
@@ -41,6 +42,24 @@ type Lead = {
   source?: string
   notes?: string
   createdAt?: string
+  linkedDealId?: string | null
+  linkedTransactionId?: string | null
+}
+
+type Deal = {
+  id: string
+  dealId: string
+  leadId?: string | null
+  clientName: string
+  clientEmail?: string | null
+  clientPhone?: string | null
+  stage: CrmDealStage
+  salePrice: number
+  currency: 'USD' | 'DOP'
+  totalCommission: number
+  commissionStatus: 'pending' | 'paid'
+  updatedAt?: string | null
+  createdAt?: string | null
 }
 
 type Task = {
@@ -96,13 +115,46 @@ function fmtDateTime(date: string | null | undefined) {
   return new Date(date).toLocaleString('es-DO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+function fmtCurrency(value: number, currency: 'USD' | 'DOP' = 'USD') {
+  return new Intl.NumberFormat('es-DO', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(value || 0))
+}
+
+function toDateTimeLocal(date: string | null | undefined) {
+  if (!date) return ''
+  const parsed = new Date(date)
+  if (!Number.isFinite(parsed.getTime())) return ''
+  const adjusted = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60 * 1000)
+  return adjusted.toISOString().slice(0, 16)
+}
+
+function leadToDealStage(leadStage?: LeadStage): CrmDealStage {
+  if (leadStage === 'won') return 'completed'
+  if (leadStage === 'negotiating') return 'offer'
+  if (leadStage === 'qualified') return 'showing'
+  return 'lead'
+}
+
+function DealStageBadge({ stage }: { stage: CrmDealStage }) {
+  const palette: Record<CrmDealStage, string> = {
+    lead: 'bg-slate-100 text-slate-700',
+    showing: 'bg-violet-50 text-violet-700',
+    offer: 'bg-amber-50 text-amber-700',
+    reservation: 'bg-orange-50 text-orange-700',
+    contract: 'bg-blue-50 text-blue-700',
+    closing: 'bg-teal-50 text-teal-700',
+    completed: 'bg-emerald-50 text-emerald-700',
+  }
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${palette[stage]}`}>{CRM_DEAL_STAGE_LABELS[stage]}</span>
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function BrokerCrmPage() {
   const [leads, setLeads]                       = useState<Lead[]>([])
+  const [deals, setDeals]                       = useState<Deal[]>([])
   const [tasks, setTasks]                       = useState<Task[]>([])
   const [loading, setLoading]                   = useState(true)
-  const [activeTab, setActiveTab]               = useState<'pipeline' | 'tasks' | 'activity'>('pipeline')
+  const [activeTab, setActiveTab]               = useState<'pipeline' | 'deals' | 'tasks' | 'activity'>('pipeline')
   const [selectedLead, setSelectedLead]         = useState<Lead | null>(null)
   const [leadActivity, setLeadActivity]         = useState<LeadActivity[]>([])
   const [loadingLeadActivity, setLoadingLeadActivity] = useState(false)
@@ -124,7 +176,13 @@ export default function BrokerCrmPage() {
   const [quickStage, setQuickStage]             = useState<LeadStage>('new')
   const [quickNote, setQuickNote]               = useState('')
   const [quickFollow, setQuickFollow]           = useState('')
+  const [quickPriority, setQuickPriority]       = useState<'low' | 'normal' | 'high'>('normal')
   const [updatingLead, setUpdatingLead]         = useState(false)
+  const [convertingLead, setConvertingLead]     = useState(false)
+  const [dealSalePrice, setDealSalePrice]       = useState('')
+  const [dealCommissionPercent, setDealCommissionPercent] = useState('5')
+  const [dealAgentSplitPercent, setDealAgentSplitPercent] = useState('70')
+  const [dealStage, setDealStage]               = useState<CrmDealStage>('lead')
 
   // Task form
   const [taskTitle, setTaskTitle]               = useState('')
@@ -137,11 +195,13 @@ export default function BrokerCrmPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [leadsRes, tasksRes] = await Promise.allSettled([
+      const [leadsRes, dealsRes, tasksRes] = await Promise.allSettled([
         fetch('/api/broker/leads').then((r) => r.json()),
+        fetch('/api/broker/crm/deals').then((r) => r.json()),
         fetch('/api/broker/crm/tasks').then((r) => r.json()),
       ])
       if (leadsRes.status === 'fulfilled') setLeads(leadsRes.value?.leads ?? [])
+      if (dealsRes.status === 'fulfilled') setDeals(dealsRes.value?.deals ?? [])
       if (tasksRes.status === 'fulfilled') setTasks(tasksRes.value?.tasks ?? [])
     } catch { /* noop */ }
     setLoading(false)
@@ -152,14 +212,14 @@ export default function BrokerCrmPage() {
   // ─── KPIs ───────────────────────────────────────────────────────────────────
 
   const kpi = useMemo(() => {
-    const active  = leads.filter((l) => !['closed', 'lost'].includes(l.leadStage ?? '')).length
-    const showing = leads.filter((l) => l.leadStage === 'showing').length
-    const offers  = leads.filter((l) => l.leadStage === 'offer' || l.leadStage === 'contract').length
-    const closed  = leads.filter((l) => l.leadStage === 'closed').length
+    const active  = leads.filter((l) => !['won', 'lost'].includes(l.leadStage ?? '')).length
+    const qualified = leads.filter((l) => l.leadStage === 'qualified').length
+    const negotiating  = leads.filter((l) => l.leadStage === 'negotiating').length
+    const openDeals = deals.filter((deal) => deal.stage !== 'completed').length
     const pending = tasks.filter((t) => t.status === 'pending').length
     const overdue = tasks.filter((t) => t.status === 'pending' && t.dueAt && new Date(t.dueAt) < new Date()).length
-    return { active, showing, offers, closed, pending, overdue }
-  }, [leads, tasks])
+    return { active, qualified, negotiating, openDeals, pending, overdue }
+  }, [deals, leads, tasks])
 
   // ─── Filtered leads ─────────────────────────────────────────────────────────
 
@@ -185,6 +245,13 @@ export default function BrokerCrmPage() {
     })
     return groups
   }, [filteredLeads])
+
+  const dealSummary = useMemo(() => {
+    return CRM_DEAL_STAGES.reduce((acc, stage) => {
+      acc[stage] = deals.filter((deal) => deal.stage === stage).length
+      return acc
+    }, {} as Record<CrmDealStage, number>)
+  }, [deals])
 
   // ─── Actions ────────────────────────────────────────────────────────────────
 
@@ -221,26 +288,78 @@ export default function BrokerCrmPage() {
     if (!selectedLead) return
     setUpdatingLead(true)
     try {
-      const res = await fetch('/api/broker/leads', {
+      const stageRes = await fetch('/api/broker/leads', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'stage',
           leadId: selectedLead.id,
           leadStage: quickStage,
-          nextActionNote: quickNote,
-          followUpAt: quickFollow || null,
+          reason: 'crm_pipeline_update',
         }),
       })
-      const json = await res.json()
-      if (res.ok && json.ok) {
+      const stageJson = await stageRes.json()
+      if (!stageRes.ok || !stageJson.ok) {
+        toast.error(stageJson.error ?? 'Error al actualizar etapa')
+        setUpdatingLead(false)
+        return
+      }
+
+      const followRes = await fetch('/api/broker/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'followup',
+          leadId: selectedLead.id,
+          nextActionNote: quickNote,
+          followUpAt: quickFollow || null,
+          priority: quickPriority,
+        }),
+      })
+      const followJson = await followRes.json()
+      if (followRes.ok && followJson.ok) {
         toast.success('Lead actualizado')
         setSelectedLead(null)
         load()
       } else {
-        toast.error(json.error ?? 'Error al actualizar')
+        toast.error(followJson.error ?? 'Error al actualizar seguimiento')
       }
     } catch { toast.error('Error de red') }
     setUpdatingLead(false)
+  }
+
+  async function convertLeadToDeal() {
+    if (!selectedLead) return
+    if (!dealSalePrice.trim()) {
+      toast.error('Indica el valor del deal')
+      return
+    }
+
+    setConvertingLead(true)
+    try {
+      const res = await fetch('/api/broker/crm/deals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: selectedLead.id,
+          salePrice: Number(dealSalePrice),
+          commissionPercent: Number(dealCommissionPercent || 5),
+          agentSplitPercent: Number(dealAgentSplitPercent || 70),
+          stage: dealStage,
+        }),
+      })
+      const json = await res.json()
+      if (res.ok && json.ok) {
+        toast.success('Lead convertido en deal')
+        setSelectedLead(null)
+        await load()
+      } else {
+        toast.error(json.error ?? 'No se pudo abrir el deal')
+      }
+    } catch {
+      toast.error('Error de red')
+    }
+    setConvertingLead(false)
   }
 
   async function addTask() {
@@ -279,7 +398,12 @@ export default function BrokerCrmPage() {
     setSelectedLead(l)
     setQuickStage((l.leadStage ?? 'new') as LeadStage)
     setQuickNote(l.nextActionNote ?? '')
-    setQuickFollow(l.followUpAt ?? '')
+    setQuickFollow(toDateTimeLocal(l.followUpAt))
+    setQuickPriority(l.priority ?? 'normal')
+    setDealSalePrice(l.budget ? String(l.budget) : '')
+    setDealCommissionPercent('5')
+    setDealAgentSplitPercent('70')
+    setDealStage(leadToDealStage(l.leadStage))
   }
 
   useEffect(() => {
@@ -373,9 +497,9 @@ export default function BrokerCrmPage() {
       <div className="bg-white border-b border-gray-200 px-6 py-3 grid grid-cols-3 sm:grid-cols-6 gap-4">
         {[
           { label: 'Leads Activos',  value: kpi.active,  icon: FiUser,        color: 'text-blue-600'    },
-          { label: 'En Visita',      value: kpi.showing, icon: FiHome,        color: 'text-purple-600'  },
-          { label: 'En Oferta',      value: kpi.offers,  icon: FiDollarSign,  color: 'text-amber-600'   },
-          { label: 'Cerrados',       value: kpi.closed,  icon: FiTrendingUp,  color: 'text-emerald-600' },
+          { label: 'Calificados',    value: kpi.qualified, icon: FiHome,        color: 'text-violet-600'  },
+          { label: 'Negociación',    value: kpi.negotiating,  icon: FiDollarSign,  color: 'text-amber-600'   },
+          { label: 'Deals Abiertos', value: kpi.openDeals,  icon: FiBriefcase,  color: 'text-emerald-600' },
           { label: 'Tareas',         value: kpi.pending, icon: FiCheckSquare, color: 'text-gray-600'    },
           {
             label: 'Vencidas',
@@ -399,8 +523,8 @@ export default function BrokerCrmPage() {
       {/* Tabs */}
       <div className="bg-white border-b border-gray-200 px-6">
         <nav className="flex gap-6">
-          {(['pipeline', 'tasks', 'activity'] as const).map((tab) => {
-            const labels: Record<string, string> = { pipeline: 'Pipeline', tasks: 'Tareas', activity: 'Actividad' }
+          {(['pipeline', 'deals', 'tasks', 'activity'] as const).map((tab) => {
+            const labels: Record<string, string> = { pipeline: 'Pipeline', deals: 'Deals', tasks: 'Tareas', activity: 'Actividad' }
             return (
               <button
                 key={tab}
@@ -543,6 +667,59 @@ export default function BrokerCrmPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'deals' && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
+              {CRM_DEAL_STAGES.map((stage) => (
+                <div key={stage} className="rounded-2xl border border-gray-200 bg-white p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{CRM_DEAL_STAGE_LABELS[stage]}</p>
+                  <p className="mt-2 text-2xl font-bold text-gray-900">{dealSummary[stage] || 0}</p>
+                </div>
+              ))}
+            </div>
+
+            {loading ? (
+              <div className="text-center text-gray-400 py-16">Cargando deals...</div>
+            ) : deals.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center text-gray-400">
+                <FiBriefcase className="mx-auto mb-3 h-12 w-12 opacity-20" />
+                <p className="font-medium text-gray-600">Todavía no hay deals abiertos desde CRM.</p>
+                <p className="mt-1 text-sm">Convierte un lead calificado en deal desde el panel lateral.</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                {deals.map((deal) => (
+                  <div key={deal.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{deal.clientName}</p>
+                        <p className="mt-1 text-xs text-gray-500">Actualizado {fmtDateTime(deal.updatedAt || deal.createdAt)}</p>
+                      </div>
+                      <DealStageBadge stage={deal.stage} />
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-xl bg-gray-50 p-3">
+                        <p className="text-xs uppercase tracking-wide text-gray-500">Valor</p>
+                        <p className="mt-1 font-semibold text-gray-900">{fmtCurrency(deal.salePrice, deal.currency)}</p>
+                      </div>
+                      <div className="rounded-xl bg-gray-50 p-3">
+                        <p className="text-xs uppercase tracking-wide text-gray-500">Comisión</p>
+                        <p className="mt-1 font-semibold text-gray-900">{fmtCurrency(deal.totalCommission, deal.currency)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+                      <span>{deal.commissionStatus === 'paid' ? 'Comisión pagada' : 'Comisión pendiente'}</span>
+                      <Link href="/dashboard/broker/transactions" className="font-semibold text-blue-600 hover:text-blue-700">
+                        Ver board
+                      </Link>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -773,6 +950,21 @@ export default function BrokerCrmPage() {
                   />
                 </div>
 
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Prioridad</label>
+                  <select
+                    value={quickPriority}
+                    onChange={(e) => setQuickPriority(e.target.value as 'low' | 'normal' | 'high')}
+                    title="Prioridad del lead"
+                    aria-label="Prioridad del lead"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="low">Baja</option>
+                    <option value="normal">Media</option>
+                    <option value="high">Alta</option>
+                  </select>
+                </div>
+
                 <button
                   onClick={updateLead}
                   disabled={updatingLead}
@@ -780,6 +972,71 @@ export default function BrokerCrmPage() {
                 >
                   {updatingLead ? 'Guardando...' : 'Guardar cambios'}
                 </button>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Abrir deal</h3>
+                    <p className="mt-1 text-sm text-gray-600">Convierte este lead en pipeline transaccional real.</p>
+                  </div>
+                  {selectedLead.linkedTransactionId ? (
+                    <DealStageBadge stage={dealStage} />
+                  ) : null}
+                </div>
+
+                {selectedLead.linkedTransactionId ? (
+                  <div className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">
+                    <p className="font-semibold">Este lead ya fue convertido en deal.</p>
+                    <Link href="/dashboard/broker/transactions" className="mt-2 inline-block font-semibold text-emerald-700 hover:text-emerald-800">
+                      Ver transactions board
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        value={dealSalePrice}
+                        onChange={(e) => setDealSalePrice(e.target.value)}
+                        placeholder="Valor del deal"
+                        inputMode="decimal"
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <select
+                        value={dealStage}
+                        onChange={(e) => setDealStage(e.target.value as CrmDealStage)}
+                        title="Etapa inicial del deal"
+                        aria-label="Etapa inicial del deal"
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {CRM_DEAL_STAGES.map((stage) => (
+                          <option key={stage} value={stage}>{CRM_DEAL_STAGE_LABELS[stage]}</option>
+                        ))}
+                      </select>
+                      <input
+                        value={dealCommissionPercent}
+                        onChange={(e) => setDealCommissionPercent(e.target.value)}
+                        placeholder="Comisión %"
+                        inputMode="decimal"
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        value={dealAgentSplitPercent}
+                        onChange={(e) => setDealAgentSplitPercent(e.target.value)}
+                        placeholder="Split agente %"
+                        inputMode="decimal"
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <button
+                      onClick={convertLeadToDeal}
+                      disabled={convertingLead}
+                      className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {convertingLead ? 'Abriendo deal...' : 'Convertir a deal'}
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Linked listing */}
