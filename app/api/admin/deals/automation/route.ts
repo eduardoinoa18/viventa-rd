@@ -7,16 +7,22 @@ import {
   normalizeBrokerDealTimelineStage,
   normalizeConstructoraDealTimelineStage,
 } from '@/lib/domain/unifiedDeal'
+import {
+  chooseLeastLoadedAssignee,
+  isOpenAutomationTask,
+  resolvePreferredBrokerAssigneeIds,
+  resolvePreferredConstructoraAssigneeIds,
+  shouldCreateDealTask,
+  shouldEmitDealAlert,
+} from '@/lib/domain/dealAutomation'
 
 export const dynamic = 'force-dynamic'
 
 const SYSTEM_ACTOR_ID = 'system:deal-automation'
-const ALERT_REPEAT_HOURS = 24
 const MAX_BROKER_ALERTS_PER_RUN = 120
 const MAX_CONSTRUCTORA_ALERTS_PER_RUN = 120
 const MAX_BROKER_TASKS_PER_RUN = 80
 const MAX_CONSTRUCTORA_TASKS_PER_RUN = 80
-const TASK_REPEAT_HOURS = 24
 
 function safeText(value: unknown): string {
   return String(value ?? '').trim()
@@ -33,54 +39,6 @@ function toDate(value: any): Date | null {
   return Number.isFinite(parsed.getTime()) ? parsed : null
 }
 
-function shouldEmitAlert(lastStatus: string, lastAt: Date | null, nextStatus: 'attention' | 'overdue'): boolean {
-  if (!lastStatus) return true
-  if (lastStatus !== nextStatus) return true
-  if (!lastAt) return true
-  const nextAllowedAt = lastAt.getTime() + ALERT_REPEAT_HOURS * 60 * 60 * 1000
-  return Date.now() >= nextAllowedAt
-}
-
-function shouldCreateTask(lastStatus: string, lastAt: Date | null, nextStatus: 'attention' | 'overdue'): boolean {
-  if (!lastStatus) return true
-  if (lastStatus !== nextStatus) return true
-  if (!lastAt) return true
-  const nextAllowedAt = lastAt.getTime() + TASK_REPEAT_HOURS * 60 * 60 * 1000
-  return Date.now() >= nextAllowedAt
-}
-
-function isTaskOpen(status: unknown): boolean {
-  const normalized = safeText(status).toLowerCase()
-  return normalized !== 'done' && normalized !== 'closed' && normalized !== 'cancelled'
-}
-
-function resolvePreferredAssigneeIds(tx: Record<string, any>): string[] {
-  const result: string[] = []
-  const push = (value: unknown) => {
-    const uid = safeText(value)
-    if (uid && !result.includes(uid)) result.push(uid)
-  }
-
-  push(tx.agentId)
-  push(tx.ownerAgentId)
-  push(tx.assignedTo)
-  push(tx.brokerId)
-  return result
-}
-
-function resolvePreferredConstructoraAssigneeIds(deal: Record<string, any>): string[] {
-  const result: string[] = []
-  const push = (value: unknown) => {
-    const uid = safeText(value)
-    if (uid && !result.includes(uid)) result.push(uid)
-  }
-
-  push(deal.updatedBy)
-  push(deal.createdBy)
-  push(deal.ownerId)
-  push(deal.constructoraUserId)
-  return result
-}
 
 async function getOfficeMemberIds(db: FirebaseFirestore.Firestore, officeId: string): Promise<Set<string>> {
   const [byBrokerId, byBrokerageId] = await Promise.all([
@@ -123,7 +81,7 @@ async function getOfficeOpenTaskCounts(
 
   for (const doc of snap.docs) {
     const task = doc.data() as Record<string, any>
-    if (!isTaskOpen(task.status)) continue
+    if (!isOpenAutomationTask(task.status)) continue
     const assigneeUid = safeText(task.assigneeUid)
     if (!assigneeUid) continue
     counts.set(assigneeUid, (counts.get(assigneeUid) || 0) + 1)
@@ -180,41 +138,13 @@ async function getConstructoraOpenTaskCounts(
 
   for (const doc of snap.docs) {
     const task = doc.data() as Record<string, any>
-    if (!isTaskOpen(task.status)) continue
+    if (!isOpenAutomationTask(task.status)) continue
     const assigneeUid = safeText(task.assigneeUid)
     if (!assigneeUid) continue
     counts.set(assigneeUid, (counts.get(assigneeUid) || 0) + 1)
   }
 
   return counts
-}
-
-function chooseTaskAssignee(params: {
-  officeMemberIds: Set<string>
-  preferredAssigneeIds: string[]
-  openTaskCountByAssignee: Map<string, number>
-}): string | null {
-  const { officeMemberIds, preferredAssigneeIds, openTaskCountByAssignee } = params
-  const candidates = Array.from(officeMemberIds)
-  if (!candidates.length) return null
-
-  let minAssignee = candidates[0]
-  let minCount = openTaskCountByAssignee.get(minAssignee) || 0
-  for (const candidate of candidates) {
-    const count = openTaskCountByAssignee.get(candidate) || 0
-    if (count < minCount) {
-      minCount = count
-      minAssignee = candidate
-    }
-  }
-
-  for (const preferred of preferredAssigneeIds) {
-    if (!officeMemberIds.has(preferred)) continue
-    const preferredCount = openTaskCountByAssignee.get(preferred) || 0
-    if (preferredCount <= minCount + 2) return preferred
-  }
-
-  return minAssignee
 }
 
 function assertCronSecret(req: NextRequest) {
@@ -276,7 +206,7 @@ export async function GET(req: NextRequest) {
       const lastAlertStatus = safeText(tx.dealHealthAlertStatus)
       const lastAlertAt = toDate(tx.dealHealthAlertAt)
       const nextStatus = health === 'overdue' ? 'overdue' : 'attention'
-      if (!shouldEmitAlert(lastAlertStatus, lastAlertAt, nextStatus)) continue
+      if (!shouldEmitDealAlert(lastAlertStatus, lastAlertAt, nextStatus)) continue
 
       if (nextStatus === 'overdue') brokerOverdue += 1
       else brokerAttention += 1
@@ -315,7 +245,7 @@ export async function GET(req: NextRequest) {
       if (brokerTasksCreated < MAX_BROKER_TASKS_PER_RUN) {
         const lastTaskStatus = safeText(tx.dealHealthTaskStatus)
         const lastTaskAt = toDate(tx.dealHealthTaskAt)
-        if (shouldCreateTask(lastTaskStatus, lastTaskAt, nextStatus)) {
+        if (shouldCreateDealTask(lastTaskStatus, lastTaskAt, nextStatus)) {
           let officeMemberIds = officeMembersByOfficeId.get(officeId)
           if (!officeMemberIds) {
             officeMemberIds = await getOfficeMemberIds(db, officeId)
@@ -328,9 +258,9 @@ export async function GET(req: NextRequest) {
             openTaskCountByOfficeId.set(officeId, openTaskCountByAssignee)
           }
 
-          const assigneeUid = chooseTaskAssignee({
-            officeMemberIds,
-            preferredAssigneeIds: resolvePreferredAssigneeIds(tx),
+          const assigneeUid = chooseLeastLoadedAssignee({
+            candidateIds: officeMemberIds,
+            preferredAssigneeIds: resolvePreferredBrokerAssigneeIds(tx),
             openTaskCountByAssignee,
           })
 
@@ -439,7 +369,7 @@ export async function GET(req: NextRequest) {
       const lastAlertStatus = safeText(deal.dealHealthAlertStatus)
       const lastAlertAt = toDate(deal.dealHealthAlertAt)
       const nextStatus = health === 'overdue' ? 'overdue' : 'attention'
-      if (!shouldEmitAlert(lastAlertStatus, lastAlertAt, nextStatus)) continue
+      if (!shouldEmitDealAlert(lastAlertStatus, lastAlertAt, nextStatus)) continue
 
       if (nextStatus === 'overdue') constructoraOverdue += 1
       else constructoraAttention += 1
@@ -477,7 +407,7 @@ export async function GET(req: NextRequest) {
       if (constructoraTasksCreated < MAX_CONSTRUCTORA_TASKS_PER_RUN) {
         const lastTaskStatus = safeText(deal.dealHealthTaskStatus)
         const lastTaskAt = toDate(deal.dealHealthTaskAt)
-        if (shouldCreateTask(lastTaskStatus, lastTaskAt, nextStatus)) {
+        if (shouldCreateDealTask(lastTaskStatus, lastTaskAt, nextStatus)) {
           let constructoraMemberIds = constructoraMembersByCode.get(constructoraCode)
           if (!constructoraMemberIds) {
             constructoraMemberIds = await getConstructoraMemberIds(db, constructoraCode)
@@ -490,8 +420,8 @@ export async function GET(req: NextRequest) {
             openTaskCountByConstructoraCode.set(constructoraCode, openTaskCountByAssignee)
           }
 
-          const assigneeUid = chooseTaskAssignee({
-            officeMemberIds: constructoraMemberIds,
+          const assigneeUid = chooseLeastLoadedAssignee({
+            candidateIds: constructoraMemberIds,
             preferredAssigneeIds: resolvePreferredConstructoraAssigneeIds(deal),
             openTaskCountByAssignee,
           })
