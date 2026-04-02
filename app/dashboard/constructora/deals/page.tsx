@@ -54,6 +54,8 @@ export default function ConstructoraDealsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [deals, setDeals] = useState<DealItem[]>([])
+  const [statusDraftById, setStatusDraftById] = useState<Record<string, string>>({})
+  const [updatingDealId, setUpdatingDealId] = useState<string | null>(null)
   const [summary, setSummary] = useState<DealsSummary>(EMPTY_SUMMARY)
   const [statusFilter, setStatusFilter] = useState('all')
   const [searchInput, setSearchInput] = useState('')
@@ -86,7 +88,13 @@ export default function ConstructoraDealsPage() {
         throw new Error(json?.error || 'No se pudieron cargar los deals')
       }
 
-      setDeals(Array.isArray(json?.deals) ? json.deals : [])
+      const nextDeals = Array.isArray(json?.deals) ? json.deals : []
+      setDeals(nextDeals)
+      const draft: Record<string, string> = {}
+      nextDeals.forEach((deal: DealItem) => {
+        draft[deal.id] = deal.status || 'reserved'
+      })
+      setStatusDraftById(draft)
       setSummary({
         total: Number(json?.summary?.total || 0),
         reserved: Number(json?.summary?.reserved || 0),
@@ -160,6 +168,30 @@ export default function ConstructoraDealsPage() {
       setError(createError?.message || 'No se pudo crear el deal')
     } finally {
       setCreating(false)
+    }
+  }
+
+  async function updateDealStatus(dealId: string) {
+    const status = statusDraftById[dealId]
+    if (!status) return
+
+    try {
+      setUpdatingDealId(dealId)
+      setError('')
+      const res = await fetch(`/api/constructora/dashboard/deals/${dealId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || 'No se pudo actualizar el estado del deal')
+      }
+      await load()
+    } catch (updateError: any) {
+      setError(updateError?.message || 'No se pudo actualizar el estado del deal')
+    } finally {
+      setUpdatingDealId(null)
     }
   }
 
@@ -245,7 +277,28 @@ export default function ConstructoraDealsPage() {
                   <td className="px-3 py-2 text-sm text-gray-700">{deal.buyerName}</td>
                   <td className="px-3 py-2 text-sm text-gray-700">{deal.brokerName || '—'}</td>
                   <td className="px-3 py-2 text-sm text-gray-700">{Number(deal.price || 0).toLocaleString()} {deal.currency || 'USD'}</td>
-                  <td className="px-3 py-2 text-sm"><span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">{deal.status}</span></td>
+                  <td className="px-3 py-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={statusDraftById[deal.id] || deal.status}
+                        onChange={(e) => setStatusDraftById((prev) => ({ ...prev, [deal.id]: e.target.value }))}
+                        title="Actualizar estado del deal"
+                        aria-label="Actualizar estado del deal"
+                        className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+                      >
+                        {DEAL_STATUSES.filter((status) => status !== 'all').map((status) => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => updateDealStatus(deal.id)}
+                        disabled={updatingDealId === deal.id}
+                        className="rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        {updatingDealId === deal.id ? 'Guardando...' : 'Guardar'}
+                      </button>
+                    </div>
+                  </td>
                   <td className="px-3 py-2 text-sm">
                     <div className="flex flex-wrap gap-2">
                       <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">{deal.timelineLabel || deal.timelineStage || '—'}</span>
