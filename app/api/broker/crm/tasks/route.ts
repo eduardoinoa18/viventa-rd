@@ -29,25 +29,39 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const limit = Math.min(Math.max(Number(searchParams.get('limit') || 50), 1), 200)
 
-    const snap = await db
-      .collection('office_crm_tasks')
-      .where('officeId', '==', context.officeId)
-      .orderBy('createdAt', 'desc')
-      .limit(limit)
-      .get()
+    let snap: FirebaseFirestore.QuerySnapshot
+    try {
+      snap = await db
+        .collection('office_crm_tasks')
+        .where('officeId', '==', context.officeId)
+        .orderBy('createdAt', 'desc')
+        .limit(limit)
+        .get()
+    } catch {
+      snap = await db
+        .collection('office_crm_tasks')
+        .where('officeId', '==', context.officeId)
+        .limit(Math.min(limit * 4, 200))
+        .get()
+    }
 
-    const tasks = snap.docs.map((doc) => {
-      const row = doc.data() as Record<string, any>
-      return {
-        id: doc.id,
-        title: safeText(row.title),
-        dueAt: row.dueAt?.toDate?.()?.toISOString?.() || null,
-        status: safeText(row.status || 'open'),
-        priority: safeText(row.priority || 'normal'),
-        assigneeUid: safeText(row.assigneeUid),
-        createdBy: safeText(row.createdBy),
-      }
-    })
+    const tasks = snap.docs
+      .map((doc) => {
+        const row = doc.data() as Record<string, any>
+        return {
+          id: doc.id,
+          title: safeText(row.title),
+          dueAt: row.dueAt?.toDate?.()?.toISOString?.() || null,
+          status: safeText(row.status || 'pending'),
+          priority: safeText(row.priority || 'normal'),
+          assigneeUid: safeText(row.assigneeUid),
+          createdBy: safeText(row.createdBy),
+          createdAt: row.createdAt?.toDate?.()?.getTime?.() || 0,
+        }
+      })
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, limit)
+      .map(({ createdAt, ...task }) => task)
 
     return NextResponse.json({ ok: true, tasks })
   } catch (error: any) {
@@ -85,7 +99,7 @@ export async function POST(req: Request) {
       officeId: context.officeId,
       title,
       dueAt,
-      status: safeText(body.status || 'open').toLowerCase() || 'open',
+      status: safeText(body.status || 'pending').toLowerCase() || 'pending',
       priority: safeText(body.priority || 'normal').toLowerCase() || 'normal',
       assigneeUid: safeText(body.assigneeUid || context.uid),
       createdBy: context.uid,
@@ -117,18 +131,29 @@ export async function PATCH(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}))
-    const id = safeText(body.id)
+    const id = safeText(body.id || body.taskId)
     if (!id) return NextResponse.json({ ok: false, error: 'id is required' }, { status: 400 })
+
+    const taskRef = db.collection('office_crm_tasks').doc(id)
+    const taskSnap = await taskRef.get()
+    if (!taskSnap.exists) {
+      return NextResponse.json({ ok: false, error: 'Task not found' }, { status: 404 })
+    }
+
+    const taskData = taskSnap.data() as Record<string, any>
+    if (safeText(taskData.officeId) !== context.officeId) {
+      return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
+    }
 
     const update: Record<string, any> = {
       updatedAt: Timestamp.now(),
     }
 
     if (typeof body.status !== 'undefined') {
-      update.status = safeText(body.status || 'open').toLowerCase() || 'open'
+      update.status = safeText(body.status || 'pending').toLowerCase() || 'pending'
     }
 
-    await db.collection('office_crm_tasks').doc(id).set(update, { merge: true })
+    await taskRef.set(update, { merge: true })
     return NextResponse.json({ ok: true })
   } catch (error: any) {
     console.error('[api/broker/crm/tasks] PATCH error', error)

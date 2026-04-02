@@ -27,7 +27,7 @@ export default function BrokersPage() {
 
       const brokersList = (json.data || []).map((broker: any) => ({
         ...broker,
-        photo: broker.profileImage || broker.companyLogo || '/brokerage-placeholder.jpg',
+        photo: broker.profileImage || broker.companyLogo || '/placeholder.png',
         area: broker.area || broker.markets || broker.city || 'República Dominicana',
         rating: broker.rating || 4.7,
         teamSize: broker.teamSize || broker.agents || 0,

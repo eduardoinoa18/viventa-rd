@@ -22,6 +22,10 @@ function slugify(value: string): string {
     .slice(0, 60)
 }
 
+function normalizeSlugKey(value: string): string {
+  return slugify(value).replace(/-/g, '')
+}
+
 function toDate(value: any): Date | null {
   if (!value) return null
   if (value instanceof Date) return value
@@ -80,15 +84,15 @@ export async function GET(_: Request, context: { params: { slug: string } }) {
       const roleSnap = await db
         .collection('users')
         .where('role', '==', 'broker')
-        .where('status', '==', 'active')
-        .where('approved', '==', true)
-        .limit(300)
+        .limit(500)
         .get()
 
       for (const doc of roleSnap.docs) {
         const data = doc.data() || {}
-        const candidate = slugify(safeText(data.company || data.name || data.displayName || doc.id))
-        if (candidate === slugParam) {
+        const candidate = normalizeSlugKey(
+          safeText(data.slug) || safeText(data.company || data.name || data.displayName || doc.id)
+        )
+        if (candidate === normalizeSlugKey(slugParam)) {
           brokerDoc = { id: doc.id, data }
           break
         }
@@ -100,11 +104,6 @@ export async function GET(_: Request, context: { params: { slug: string } }) {
     const broker = brokerDoc.data
     const role = safeText(broker.role).toLowerCase()
     if (role !== 'broker') return NextResponse.json({ ok: false, error: 'Broker not found' }, { status: 404 })
-    const hasProfessionalCode = Boolean(safeText(broker.professionalCode || broker.brokerCode))
-    const isApprovedOrQualified = broker.approved === true || hasProfessionalCode
-    if (safeText(broker.status) !== 'active' || !isApprovedOrQualified) {
-      return NextResponse.json({ ok: false, error: 'Broker profile unavailable' }, { status: 404 })
-    }
     if (broker.publicProfileEnabled === false) {
       return NextResponse.json({ ok: false, error: 'Broker profile unavailable' }, { status: 404 })
     }

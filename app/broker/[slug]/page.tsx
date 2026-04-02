@@ -177,7 +177,7 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
             <div className="bg-gradient-to-r from-[#0B2545] to-[#3BAFDA] p-6 text-white">
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <img
-                  src={profile?.image || '/brokerage-placeholder.jpg'}
+                  src={profile?.image || '/placeholder.png'}
                   alt={profile?.name || 'Broker'}
                   className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover border-4 border-white shadow-lg"
                 />

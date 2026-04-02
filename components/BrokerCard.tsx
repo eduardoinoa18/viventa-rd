@@ -27,11 +27,11 @@ export default function BrokerCard({ broker }: { broker: any }) {
       <div className="relative -mt-10 flex justify-center">
         <div className="relative">
           <img 
-            src={broker.photo || broker.companyLogo || '/brokerage-placeholder.jpg'} 
+            src={broker.photo || broker.companyLogo || '/placeholder.png'} 
             alt={broker.name || broker.company} 
             className="w-20 h-20 rounded-lg object-cover border-4 border-white shadow-lg bg-white"
             onError={(e) => {
-              e.currentTarget.src = '/brokerage-placeholder.jpg'
+              e.currentTarget.src = '/placeholder.png'
             }}
           />
         </div>
