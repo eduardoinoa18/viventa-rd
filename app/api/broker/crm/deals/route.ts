@@ -311,3 +311,132 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'Failed to convert lead into deal' }, { status: 500 })
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    const db = getAdminDb()
+    if (!db) return NextResponse.json({ ok: false, error: 'Server config error' }, { status: 500 })
+
+    const session = await getSessionFromRequest(req)
+    if (!session?.uid) return NextResponse.json({ ok: false, error: 'Authentication required' }, { status: 401 })
+
+    const context = await getListingAccessUserContext(db, session.uid, (session.role as any) || 'buyer')
+    if (context.role !== 'broker' && context.role !== 'agent') {
+      return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
+    }
+    if (!context.officeId) {
+      return NextResponse.json({ ok: false, error: 'Broker office assignment required' }, { status: 403 })
+    }
+
+    const body = await req.json().catch(() => ({}))
+    const id = safeText(body.id)
+    if (!id) {
+      return NextResponse.json({ ok: false, error: 'id is required' }, { status: 400 })
+    }
+
+    const txRef = db.collection('transactions').doc(id)
+    const txSnap = await txRef.get()
+    if (!txSnap.exists) {
+      return NextResponse.json({ ok: false, error: 'Deal not found' }, { status: 404 })
+    }
+
+    const tx = txSnap.data() as Record<string, any>
+    if (safeText(tx.officeId) !== context.officeId) {
+      return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
+    }
+    if (context.role === 'agent' && safeText(tx.agentId) && safeText(tx.agentId) !== context.uid) {
+      return NextResponse.json({ ok: false, error: 'Agents can only update their own deals' }, { status: 403 })
+    }
+
+    const prevStage = normalizeCrmDealStage(tx.stage)
+    const nextStage = body.stage !== undefined ? normalizeCrmDealStage(body.stage) : prevStage
+    const update: Record<string, any> = {
+      updatedAt: new Date(),
+      updatedBy: context.uid,
+    }
+
+    if (body.stage !== undefined) update.stage = nextStage
+    if (body.notes !== undefined) update.notes = safeText(body.notes) || null
+    if (body.commissionStatus !== undefined) {
+      const status = safeText(body.commissionStatus).toLowerCase()
+      if (!['pending', 'paid', 'pagada'].includes(status)) {
+        return NextResponse.json({ ok: false, error: 'Invalid commissionStatus' }, { status: 400 })
+      }
+      update.commissionStatus = status === 'pagada' ? 'paid' : status
+    }
+
+    await txRef.set(update, { merge: true })
+
+    if (nextStage !== prevStage) {
+      const canonicalDealId = safeText(tx.dealId) || id
+      await emitActivityEvent(db, {
+        type: 'deal_stage_changed',
+        actorId: context.uid,
+        actorRole: context.role,
+        entityType: 'transaction',
+        entityId: id,
+        transactionId: id,
+        dealId: canonicalDealId,
+        listingId: safeText(tx.propertyId || tx.listingId) || null,
+        projectId: safeText(tx.projectId) || null,
+        brokerId: safeText(tx.brokerId) || null,
+        agentId: safeText(tx.agentId) || null,
+        officeId: context.officeId,
+        metadata: {
+          from: prevStage,
+          to: nextStage,
+          clientName: safeText(tx.clientName) || null,
+          salePrice: toNumber(tx.salePrice),
+          eventVersion: 1,
+        },
+      })
+
+      const linkedLeadId = safeText(tx.leadId)
+      if (linkedLeadId) {
+        const syncedLeadStage = mapCrmDealStageToLeadStage(nextStage)
+        await db.collection('leads').doc(linkedLeadId).set(
+          {
+            leadStage: syncedLeadStage,
+            status: stageToLegacyStatus(syncedLeadStage),
+            legacyStatus: stageToLegacyStatus(syncedLeadStage),
+            stageChangedAt: new Date(),
+            stageChangedBy: context.uid,
+            stageChangeReason: 'crm_deal_stage_sync',
+            linkedDealId: canonicalDealId,
+            linkedTransactionId: id,
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        )
+      }
+    }
+
+    if (update.commissionStatus === 'paid') {
+      await emitActivityEvent(db, {
+        type: 'commission_paid',
+        actorId: context.uid,
+        actorRole: context.role,
+        entityType: 'commission',
+        entityId: id,
+        transactionId: id,
+        dealId: safeText(tx.dealId) || id,
+        listingId: safeText(tx.propertyId || tx.listingId) || null,
+        projectId: safeText(tx.projectId) || null,
+        brokerId: safeText(tx.brokerId) || null,
+        agentId: safeText(tx.agentId) || null,
+        officeId: context.officeId,
+        metadata: {
+          totalCommission: toNumber(tx.totalCommission),
+          agentCommission: toNumber(tx.agentCommission),
+          brokerCommission: toNumber(tx.brokerCommission),
+        },
+      })
+    }
+
+    const saved = await txRef.get()
+    return NextResponse.json({ ok: true, deal: toDealRecord(id, saved.data() as Record<string, any>) })
+  } catch (error: any) {
+    console.error('[api/broker/crm/deals] PATCH error', error)
+    return NextResponse.json({ ok: false, error: 'Failed to update CRM deal' }, { status: 500 })
+  }
+}

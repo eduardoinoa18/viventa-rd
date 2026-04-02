@@ -152,6 +152,7 @@ function DealStageBadge({ stage }: { stage: CrmDealStage }) {
 export default function BrokerCrmPage() {
   const [leads, setLeads]                       = useState<Lead[]>([])
   const [deals, setDeals]                       = useState<Deal[]>([])
+  const [dealStageDraftById, setDealStageDraftById] = useState<Record<string, CrmDealStage>>({})
   const [tasks, setTasks]                       = useState<Task[]>([])
   const [loading, setLoading]                   = useState(true)
   const [activeTab, setActiveTab]               = useState<'pipeline' | 'deals' | 'tasks' | 'activity'>('pipeline')
@@ -179,6 +180,7 @@ export default function BrokerCrmPage() {
   const [quickPriority, setQuickPriority]       = useState<'low' | 'normal' | 'high'>('normal')
   const [updatingLead, setUpdatingLead]         = useState(false)
   const [convertingLead, setConvertingLead]     = useState(false)
+  const [updatingDealId, setUpdatingDealId]     = useState<string | null>(null)
   const [dealSalePrice, setDealSalePrice]       = useState('')
   const [dealCommissionPercent, setDealCommissionPercent] = useState('5')
   const [dealAgentSplitPercent, setDealAgentSplitPercent] = useState('70')
@@ -201,7 +203,15 @@ export default function BrokerCrmPage() {
         fetch('/api/broker/crm/tasks').then((r) => r.json()),
       ])
       if (leadsRes.status === 'fulfilled') setLeads(leadsRes.value?.leads ?? [])
-      if (dealsRes.status === 'fulfilled') setDeals(dealsRes.value?.deals ?? [])
+      if (dealsRes.status === 'fulfilled') {
+        const nextDeals: Deal[] = dealsRes.value?.deals ?? []
+        setDeals(nextDeals)
+        const drafts: Record<string, CrmDealStage> = {}
+        nextDeals.forEach((deal) => {
+          drafts[deal.id] = deal.stage
+        })
+        setDealStageDraftById(drafts)
+      }
       if (tasksRes.status === 'fulfilled') setTasks(tasksRes.value?.tasks ?? [])
     } catch { /* noop */ }
     setLoading(false)
@@ -360,6 +370,30 @@ export default function BrokerCrmPage() {
       toast.error('Error de red')
     }
     setConvertingLead(false)
+  }
+
+  async function updateDealStage(dealId: string) {
+    const stage = dealStageDraftById[dealId]
+    if (!stage) return
+
+    setUpdatingDealId(dealId)
+    try {
+      const res = await fetch('/api/broker/crm/deals', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: dealId, stage }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        toast.error(json?.error || 'No se pudo actualizar la etapa del deal')
+      } else {
+        toast.success('Etapa del deal actualizada')
+        await load()
+      }
+    } catch {
+      toast.error('Error de red')
+    }
+    setUpdatingDealId(null)
   }
 
   async function addTask() {
@@ -711,6 +745,26 @@ export default function BrokerCrmPage() {
                         <p className="text-xs uppercase tracking-wide text-gray-500">Comisión</p>
                         <p className="mt-1 font-semibold text-gray-900">{fmtCurrency(deal.totalCommission, deal.currency)}</p>
                       </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+                      <select
+                        value={dealStageDraftById[deal.id] || deal.stage}
+                        onChange={(e) => setDealStageDraftById((prev) => ({ ...prev, [deal.id]: e.target.value as CrmDealStage }))}
+                        title="Etapa del deal"
+                        aria-label="Etapa del deal"
+                        className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {CRM_DEAL_STAGES.map((stage) => (
+                          <option key={stage} value={stage}>{CRM_DEAL_STAGE_LABELS[stage]}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => updateDealStage(deal.id)}
+                        disabled={updatingDealId === deal.id}
+                        className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        {updatingDealId === deal.id ? 'Guardando...' : 'Guardar'}
+                      </button>
                     </div>
                     <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
                       <span>{deal.commissionStatus === 'paid' ? 'Comisión pagada' : 'Comisión pendiente'}</span>
