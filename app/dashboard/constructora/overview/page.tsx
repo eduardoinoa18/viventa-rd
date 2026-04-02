@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { FiLayers, FiPackage, FiCalendar, FiCheckCircle } from 'react-icons/fi'
+import { FiLayers, FiPackage, FiCalendar, FiCheckCircle, FiAlertTriangle, FiCheckSquare } from 'react-icons/fi'
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiGrid, KpiCard } from '@/components/ui/KpiCard'
 
@@ -14,6 +14,12 @@ type OverviewState = {
   reservedUnits: number
   soldUnits: number
   inProcessUnits: number
+  totalTasks: number
+  pendingTasks: number
+  inProgressTasks: number
+  doneTasks: number
+  overdueTasks: number
+  automationOpenTasks: number
 }
 
 export default function ConstructoraOverviewPage() {
@@ -27,6 +33,12 @@ export default function ConstructoraOverviewPage() {
     reservedUnits: 0,
     soldUnits: 0,
     inProcessUnits: 0,
+    totalTasks: 0,
+    pendingTasks: 0,
+    inProgressTasks: 0,
+    doneTasks: 0,
+    overdueTasks: 0,
+    automationOpenTasks: 0,
   })
 
   useEffect(() => {
@@ -54,6 +66,12 @@ export default function ConstructoraOverviewPage() {
           reservedUnits: Number(data.reservedUnits || 0),
           soldUnits: Number(data.soldUnits || 0),
           inProcessUnits: Number(data.inProcessUnits || 0),
+          totalTasks: Number(data.totalTasks || 0),
+          pendingTasks: Number(data.pendingTasks || 0),
+          inProgressTasks: Number(data.inProgressTasks || 0),
+          doneTasks: Number(data.doneTasks || 0),
+          overdueTasks: Number(data.overdueTasks || 0),
+          automationOpenTasks: Number(data.automationOpenTasks || 0),
         })
       } catch (loadError: any) {
         if (!active) return
@@ -112,10 +130,41 @@ export default function ConstructoraOverviewPage() {
           </div>
         )}
       </section>
+
+      <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-[#0B2545]">Health de Tasks</h3>
+          <Link href="/dashboard/constructora/tasks" className="text-xs font-semibold text-blue-700 hover:underline">Abrir Tasks</Link>
+        </div>
+        {loading ? (
+          <div className="space-y-2">{[1,2].map(i => <div key={i} className="h-10 animate-pulse rounded-lg bg-gray-100" />)}</div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+            <Metric label="Total Tasks" value={summary.totalTasks} />
+            <Metric label="Pendientes" value={summary.pendingTasks} />
+            <Metric label="En Progreso" value={summary.inProgressTasks} />
+            <Metric label="Completadas" value={summary.doneTasks} />
+          </div>
+        )}
+        {!loading && (
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Link href="/dashboard/constructora/tasks?status=all" className="flex items-center justify-between rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 hover:bg-amber-100">
+              <span className="inline-flex items-center gap-2"><FiAlertTriangle /> Overdue Tasks</span>
+              <span>{summary.overdueTasks}</span>
+            </Link>
+            <Link href="/dashboard/constructora/tasks?status=pending" className="flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-800 hover:bg-blue-100">
+              <span className="inline-flex items-center gap-2"><FiCheckSquare /> Automatizadas Abiertas</span>
+              <span>{summary.automationOpenTasks}</span>
+            </Link>
+          </div>
+        )}
+      </section>
+
       <div className="mt-4 flex flex-wrap gap-2">
         <Link href="/dashboard/constructora/projects" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Ir a Proyectos</Link>
         <Link href="/dashboard/constructora/units" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Ir a Unidades</Link>
         <Link href="/dashboard/constructora/reservations" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Ir a Reservas</Link>
+        <Link href="/dashboard/constructora/tasks" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Ir a Tasks</Link>
       </div>
     </div>
   )

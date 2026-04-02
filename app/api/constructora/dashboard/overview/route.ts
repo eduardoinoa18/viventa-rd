@@ -115,6 +115,44 @@ export async function GET(req: Request) {
 
     const activeProjects = projects.filter((project) => project.status === 'active').length
 
+    const scopedCode = safeText(context.constructoraCode || context.professionalCode || context.uid)
+    let tasksSnap: FirebaseFirestore.QuerySnapshot
+    try {
+      tasksSnap = await db
+        .collection('constructora_crm_tasks')
+        .where('constructoraCode', '==', scopedCode)
+        .orderBy('createdAt', 'desc')
+        .limit(2000)
+        .get()
+    } catch {
+      tasksSnap = await db
+        .collection('constructora_crm_tasks')
+        .where('constructoraCode', '==', scopedCode)
+        .limit(2000)
+        .get()
+    }
+
+    let totalTasks = 0
+    let pendingTasks = 0
+    let inProgressTasks = 0
+    let doneTasks = 0
+    let overdueTasks = 0
+    let automationOpenTasks = 0
+
+    const nowMs = Date.now()
+    for (const taskDoc of tasksSnap.docs) {
+      const task = taskDoc.data() as Record<string, any>
+      const status = safeLower(task.status || 'pending') || 'pending'
+      totalTasks += 1
+      if (status === 'pending') pendingTasks += 1
+      else if (status === 'in_progress') inProgressTasks += 1
+      else if (status === 'done') doneTasks += 1
+
+      const dueAtMs = toMillis(task.dueAt)
+      if (dueAtMs > 0 && status !== 'done' && dueAtMs < nowMs) overdueTasks += 1
+      if (safeLower(task.source) === 'deal_automation' && status !== 'done') automationOpenTasks += 1
+    }
+
     return NextResponse.json({
       ok: true,
       summary: {
@@ -125,6 +163,12 @@ export async function GET(req: Request) {
         reservedUnits,
         soldUnits,
         inProcessUnits,
+        totalTasks,
+        pendingTasks,
+        inProgressTasks,
+        doneTasks,
+        overdueTasks,
+        automationOpenTasks,
       },
       topCities,
       recentProjects,
