@@ -14,6 +14,8 @@ const SYSTEM_ACTOR_ID = 'system:deal-automation'
 const ALERT_REPEAT_HOURS = 24
 const MAX_BROKER_ALERTS_PER_RUN = 120
 const MAX_CONSTRUCTORA_ALERTS_PER_RUN = 120
+const MAX_BROKER_TASKS_PER_RUN = 80
+const TASK_REPEAT_HOURS = 24
 
 function safeText(value: unknown): string {
   return String(value ?? '').trim()
@@ -36,6 +38,111 @@ function shouldEmitAlert(lastStatus: string, lastAt: Date | null, nextStatus: 'a
   if (!lastAt) return true
   const nextAllowedAt = lastAt.getTime() + ALERT_REPEAT_HOURS * 60 * 60 * 1000
   return Date.now() >= nextAllowedAt
+}
+
+function shouldCreateTask(lastStatus: string, lastAt: Date | null, nextStatus: 'attention' | 'overdue'): boolean {
+  if (!lastStatus) return true
+  if (lastStatus !== nextStatus) return true
+  if (!lastAt) return true
+  const nextAllowedAt = lastAt.getTime() + TASK_REPEAT_HOURS * 60 * 60 * 1000
+  return Date.now() >= nextAllowedAt
+}
+
+function isTaskOpen(status: unknown): boolean {
+  const normalized = safeText(status).toLowerCase()
+  return normalized !== 'done' && normalized !== 'closed' && normalized !== 'cancelled'
+}
+
+function resolvePreferredAssigneeIds(tx: Record<string, any>): string[] {
+  const result: string[] = []
+  const push = (value: unknown) => {
+    const uid = safeText(value)
+    if (uid && !result.includes(uid)) result.push(uid)
+  }
+
+  push(tx.agentId)
+  push(tx.ownerAgentId)
+  push(tx.assignedTo)
+  push(tx.brokerId)
+  return result
+}
+
+async function getOfficeMemberIds(db: FirebaseFirestore.Firestore, officeId: string): Promise<Set<string>> {
+  const [byBrokerId, byBrokerageId] = await Promise.all([
+    db.collection('users').where('brokerId', '==', officeId).limit(500).get(),
+    db.collection('users').where('brokerageId', '==', officeId).limit(500).get(),
+  ])
+
+  const memberIds = new Set<string>()
+  for (const snap of [byBrokerId, byBrokerageId]) {
+    for (const doc of snap.docs) {
+      const user = doc.data() as Record<string, any>
+      const role = safeText(user.role).toLowerCase()
+      const status = safeText(user.status).toLowerCase()
+      if ((role === 'agent' || role === 'broker') && status !== 'disabled' && status !== 'blocked') {
+        memberIds.add(doc.id)
+      }
+    }
+  }
+
+  return memberIds
+}
+
+async function getOfficeOpenTaskCounts(
+  db: FirebaseFirestore.Firestore,
+  officeId: string
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>()
+
+  let snap: FirebaseFirestore.QuerySnapshot
+  try {
+    snap = await db
+      .collection('office_crm_tasks')
+      .where('officeId', '==', officeId)
+      .orderBy('createdAt', 'desc')
+      .limit(2000)
+      .get()
+  } catch {
+    snap = await db.collection('office_crm_tasks').where('officeId', '==', officeId).limit(2000).get()
+  }
+
+  for (const doc of snap.docs) {
+    const task = doc.data() as Record<string, any>
+    if (!isTaskOpen(task.status)) continue
+    const assigneeUid = safeText(task.assigneeUid)
+    if (!assigneeUid) continue
+    counts.set(assigneeUid, (counts.get(assigneeUid) || 0) + 1)
+  }
+
+  return counts
+}
+
+function chooseTaskAssignee(params: {
+  officeMemberIds: Set<string>
+  preferredAssigneeIds: string[]
+  openTaskCountByAssignee: Map<string, number>
+}): string | null {
+  const { officeMemberIds, preferredAssigneeIds, openTaskCountByAssignee } = params
+  const candidates = Array.from(officeMemberIds)
+  if (!candidates.length) return null
+
+  let minAssignee = candidates[0]
+  let minCount = openTaskCountByAssignee.get(minAssignee) || 0
+  for (const candidate of candidates) {
+    const count = openTaskCountByAssignee.get(candidate) || 0
+    if (count < minCount) {
+      minCount = count
+      minAssignee = candidate
+    }
+  }
+
+  for (const preferred of preferredAssigneeIds) {
+    if (!officeMemberIds.has(preferred)) continue
+    const preferredCount = openTaskCountByAssignee.get(preferred) || 0
+    if (preferredCount <= minCount + 2) return preferred
+  }
+
+  return minAssignee
 }
 
 function assertCronSecret(req: NextRequest) {
@@ -66,6 +173,10 @@ export async function GET(req: NextRequest) {
     let brokerAlerted = 0
     let brokerOverdue = 0
     let brokerAttention = 0
+    let brokerTasksCreated = 0
+
+    const officeMembersByOfficeId = new Map<string, Set<string>>()
+    const openTaskCountByOfficeId = new Map<string, Map<string, number>>()
 
     for (const doc of transactionsSnap.docs) {
       const tx = doc.data() as Record<string, any>
@@ -128,6 +239,95 @@ export async function GET(req: NextRequest) {
         },
         { merge: true }
       )
+
+      if (brokerTasksCreated < MAX_BROKER_TASKS_PER_RUN) {
+        const lastTaskStatus = safeText(tx.dealHealthTaskStatus)
+        const lastTaskAt = toDate(tx.dealHealthTaskAt)
+        if (shouldCreateTask(lastTaskStatus, lastTaskAt, nextStatus)) {
+          let officeMemberIds = officeMembersByOfficeId.get(officeId)
+          if (!officeMemberIds) {
+            officeMemberIds = await getOfficeMemberIds(db, officeId)
+            officeMembersByOfficeId.set(officeId, officeMemberIds)
+          }
+
+          let openTaskCountByAssignee = openTaskCountByOfficeId.get(officeId)
+          if (!openTaskCountByAssignee) {
+            openTaskCountByAssignee = await getOfficeOpenTaskCounts(db, officeId)
+            openTaskCountByOfficeId.set(officeId, openTaskCountByAssignee)
+          }
+
+          const assigneeUid = chooseTaskAssignee({
+            officeMemberIds,
+            preferredAssigneeIds: resolvePreferredAssigneeIds(tx),
+            openTaskCountByAssignee,
+          })
+
+          if (assigneeUid) {
+            const dueAt = new Date(now.getTime() + (nextStatus === 'overdue' ? 6 : 12) * 60 * 60 * 1000)
+            const priority = nextStatus === 'overdue' ? 'high' : 'normal'
+            const taskRef = await db.collection('office_crm_tasks').add({
+              officeId,
+              title:
+                nextStatus === 'overdue'
+                  ? `Escalar deal vencido (${dealId})`
+                  : `Revisar deal en riesgo (${dealId})`,
+              dueAt,
+              status: 'pending',
+              priority,
+              assigneeUid,
+              createdBy: SYSTEM_ACTOR_ID,
+              createdAt: now,
+              updatedAt: now,
+              linkedDealId: dealId,
+              linkedTransactionId: doc.id,
+              source: 'deal_automation',
+              metadata: {
+                dealId,
+                transactionId: doc.id,
+                dealHealthStatus: nextStatus,
+                stage,
+                stageAgeDays,
+              },
+            })
+
+            await doc.ref.set(
+              {
+                dealHealthTaskStatus: nextStatus,
+                dealHealthTaskAt: now,
+                dealHealthTaskId: taskRef.id,
+                dealHealthTaskAssigneeUid: assigneeUid,
+              },
+              { merge: true }
+            )
+
+            openTaskCountByAssignee.set(assigneeUid, (openTaskCountByAssignee.get(assigneeUid) || 0) + 1)
+            brokerTasksCreated += 1
+
+            await emitActivityEvent(db, {
+              type: 'deal_updated',
+              actorId: SYSTEM_ACTOR_ID,
+              actorRole: 'system',
+              entityType: 'transaction',
+              entityId: doc.id,
+              transactionId: doc.id,
+              dealId,
+              listingId: safeText(tx.propertyId || tx.listingId) || null,
+              projectId: safeText(tx.projectId) || null,
+              brokerId: safeText(tx.brokerId) || null,
+              agentId: assigneeUid,
+              officeId,
+              metadata: {
+                alertType: `deal_${nextStatus}_task_created`,
+                stage,
+                stageAgeDays,
+                taskId: taskRef.id,
+                assigneeUid,
+                fromAutomation: true,
+              },
+            })
+          }
+        }
+      }
 
       brokerAlerted += 1
     }
@@ -212,6 +412,7 @@ export async function GET(req: NextRequest) {
         broker: brokerAlerted,
         brokerOverdue,
         brokerAttention,
+        brokerTasksCreated,
         constructora: constructoraAlerted,
         constructoraOverdue,
         constructoraAttention,
@@ -219,6 +420,7 @@ export async function GET(req: NextRequest) {
       limits: {
         broker: MAX_BROKER_ALERTS_PER_RUN,
         constructora: MAX_CONSTRUCTORA_ALERTS_PER_RUN,
+        brokerTasks: MAX_BROKER_TASKS_PER_RUN,
       },
     })
 
@@ -233,6 +435,7 @@ export async function GET(req: NextRequest) {
         broker: brokerAlerted,
         brokerOverdue,
         brokerAttention,
+        brokerTasksCreated,
         constructora: constructoraAlerted,
         constructoraOverdue,
         constructoraAttention,
