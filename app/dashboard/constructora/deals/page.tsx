@@ -15,6 +15,11 @@ type DealItem = {
   price: number
   currency: string
   status: string
+  timelineStage?: string
+  timelineLabel?: string
+  healthStatus?: 'healthy' | 'attention' | 'overdue' | 'complete'
+  healthLabel?: string
+  stageAgeDays?: number
   createdAt: any
   updatedAt: any
 }
@@ -228,6 +233,7 @@ export default function ConstructoraDealsPage() {
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Broker</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Price</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Timeline</th>
                 <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Action</th>
               </tr>
             </thead>
@@ -240,6 +246,13 @@ export default function ConstructoraDealsPage() {
                   <td className="px-3 py-2 text-sm text-gray-700">{deal.brokerName || '—'}</td>
                   <td className="px-3 py-2 text-sm text-gray-700">{Number(deal.price || 0).toLocaleString()} {deal.currency || 'USD'}</td>
                   <td className="px-3 py-2 text-sm"><span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">{deal.status}</span></td>
+                  <td className="px-3 py-2 text-sm">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">{deal.timelineLabel || deal.timelineStage || '—'}</span>
+                      {deal.healthLabel ? <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${deal.healthStatus === 'overdue' ? 'bg-rose-50 text-rose-700' : deal.healthStatus === 'attention' ? 'bg-amber-50 text-amber-700' : deal.healthStatus === 'complete' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>{deal.healthLabel}</span> : null}
+                      {typeof deal.stageAgeDays === 'number' ? <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">{deal.stageAgeDays}d</span> : null}
+                    </div>
+                  </td>
                   <td className="px-3 py-2 text-right">
                     <Link href={`/dashboard/constructora/deals/${deal.id}`} className="inline-flex items-center rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">View</Link>
                   </td>

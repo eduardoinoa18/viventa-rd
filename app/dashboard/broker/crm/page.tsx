@@ -60,6 +60,11 @@ type Deal = {
   commissionStatus: 'pending' | 'paid'
   updatedAt?: string | null
   createdAt?: string | null
+  timelineStage?: string
+  timelineLabel?: string
+  healthStatus?: 'healthy' | 'attention' | 'overdue' | 'complete'
+  healthLabel?: string
+  stageAgeDays?: number
 }
 
 type Task = {
@@ -153,6 +158,7 @@ export default function BrokerCrmPage() {
   const [leads, setLeads]                       = useState<Lead[]>([])
   const [deals, setDeals]                       = useState<Deal[]>([])
   const [dealStageDraftById, setDealStageDraftById] = useState<Record<string, CrmDealStage>>({})
+  const [selectedDealIds, setSelectedDealIds]   = useState<string[]>([])
   const [tasks, setTasks]                       = useState<Task[]>([])
   const [loading, setLoading]                   = useState(true)
   const [activeTab, setActiveTab]               = useState<'pipeline' | 'deals' | 'tasks' | 'activity'>('pipeline')
@@ -181,6 +187,7 @@ export default function BrokerCrmPage() {
   const [updatingLead, setUpdatingLead]         = useState(false)
   const [convertingLead, setConvertingLead]     = useState(false)
   const [updatingDealId, setUpdatingDealId]     = useState<string | null>(null)
+  const [bulkDealStage, setBulkDealStage]       = useState<CrmDealStage>('lead')
   const [dealSalePrice, setDealSalePrice]       = useState('')
   const [dealCommissionPercent, setDealCommissionPercent] = useState('5')
   const [dealAgentSplitPercent, setDealAgentSplitPercent] = useState('70')
@@ -206,6 +213,7 @@ export default function BrokerCrmPage() {
       if (dealsRes.status === 'fulfilled') {
         const nextDeals: Deal[] = dealsRes.value?.deals ?? []
         setDeals(nextDeals)
+        setSelectedDealIds((prev) => prev.filter((dealId) => nextDeals.some((deal) => deal.id === dealId)))
         const drafts: Record<string, CrmDealStage> = {}
         nextDeals.forEach((deal) => {
           drafts[deal.id] = deal.stage
@@ -226,9 +234,10 @@ export default function BrokerCrmPage() {
     const qualified = leads.filter((l) => l.leadStage === 'qualified').length
     const negotiating  = leads.filter((l) => l.leadStage === 'negotiating').length
     const openDeals = deals.filter((deal) => deal.stage !== 'completed').length
+    const atRiskDeals = deals.filter((deal) => deal.healthStatus === 'attention' || deal.healthStatus === 'overdue').length
     const pending = tasks.filter((t) => t.status === 'pending').length
     const overdue = tasks.filter((t) => t.status === 'pending' && t.dueAt && new Date(t.dueAt) < new Date()).length
-    return { active, qualified, negotiating, openDeals, pending, overdue }
+    return { active, qualified, negotiating, openDeals, atRiskDeals, pending, overdue }
   }, [deals, leads, tasks])
 
   // ─── Filtered leads ─────────────────────────────────────────────────────────
@@ -262,6 +271,8 @@ export default function BrokerCrmPage() {
       return acc
     }, {} as Record<CrmDealStage, number>)
   }, [deals])
+
+  const allDealsSelected = deals.length > 0 && selectedDealIds.length === deals.length
 
   // ─── Actions ────────────────────────────────────────────────────────────────
 
@@ -394,6 +405,41 @@ export default function BrokerCrmPage() {
       toast.error('Error de red')
     }
     setUpdatingDealId(null)
+  }
+
+  async function applyBulkDealStage() {
+    if (!selectedDealIds.length) {
+      toast.error('Selecciona al menos un deal')
+      return
+    }
+
+    setUpdatingDealId('bulk')
+    try {
+      const res = await fetch('/api/broker/crm/deals', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedDealIds, stage: bulkDealStage }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        toast.error(json?.error || 'No se pudieron actualizar los deals seleccionados')
+      } else {
+        toast.success(`${json?.updatedCount || selectedDealIds.length} deals actualizados`)
+        setSelectedDealIds([])
+        await load()
+      }
+    } catch {
+      toast.error('Error de red')
+    }
+    setUpdatingDealId(null)
+  }
+
+  function toggleDealSelection(dealId: string) {
+    setSelectedDealIds((prev) => prev.includes(dealId) ? prev.filter((id) => id !== dealId) : [...prev, dealId])
+  }
+
+  function toggleAllDeals() {
+    setSelectedDealIds((prev) => (prev.length === deals.length ? [] : deals.map((deal) => deal.id)))
   }
 
   async function addTask() {
@@ -534,12 +580,12 @@ export default function BrokerCrmPage() {
           { label: 'Calificados',    value: kpi.qualified, icon: FiHome,        color: 'text-violet-600'  },
           { label: 'Negociación',    value: kpi.negotiating,  icon: FiDollarSign,  color: 'text-amber-600'   },
           { label: 'Deals Abiertos', value: kpi.openDeals,  icon: FiBriefcase,  color: 'text-emerald-600' },
-          { label: 'Tareas',         value: kpi.pending, icon: FiCheckSquare, color: 'text-gray-600'    },
+          { label: 'Deals Riesgo',   value: kpi.atRiskDeals, icon: FiAlertCircle, color: kpi.atRiskDeals > 0 ? 'text-rose-600' : 'text-gray-400' },
           {
-            label: 'Vencidas',
-            value: kpi.overdue,
-            icon: FiAlertCircle,
-            color: kpi.overdue > 0 ? 'text-red-600' : 'text-gray-400',
+            label: 'Tareas',
+            value: kpi.pending,
+            icon: FiCheckSquare,
+            color: 'text-gray-600',
           },
         ].map((k) => {
           const Icon = k.icon
@@ -717,6 +763,46 @@ export default function BrokerCrmPage() {
               ))}
             </div>
 
+            {deals.length > 0 ? (
+              <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={allDealsSelected}
+                        onChange={toggleAllDeals}
+                        aria-label="Seleccionar todos los deals"
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      Seleccionar todos
+                    </label>
+                    <span>{selectedDealIds.length} seleccionados</span>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <select
+                      value={bulkDealStage}
+                      onChange={(e) => setBulkDealStage(e.target.value as CrmDealStage)}
+                      title="Etapa masiva"
+                      aria-label="Etapa masiva"
+                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {CRM_DEAL_STAGES.map((stage) => (
+                        <option key={stage} value={stage}>{CRM_DEAL_STAGE_LABELS[stage]}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={applyBulkDealStage}
+                      disabled={!selectedDealIds.length || updatingDealId === 'bulk'}
+                      className="rounded-lg bg-[#0B2545] px-4 py-2 text-sm font-semibold text-white hover:bg-[#12355f] disabled:opacity-50"
+                    >
+                      {updatingDealId === 'bulk' ? 'Actualizando...' : 'Aplicar cambio masivo'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             {loading ? (
               <div className="text-center text-gray-400 py-16">Cargando deals...</div>
             ) : deals.length === 0 ? (
@@ -730,11 +816,32 @@ export default function BrokerCrmPage() {
                 {deals.map((deal) => (
                   <div key={deal.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
+                      <label className="mt-1 inline-flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedDealIds.includes(deal.id)}
+                          onChange={() => toggleDealSelection(deal.id)}
+                          aria-label={`Seleccionar deal ${deal.clientName}`}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </label>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{deal.clientName}</p>
                         <p className="mt-1 text-xs text-gray-500">Actualizado {fmtDateTime(deal.updatedAt || deal.createdAt)}</p>
                       </div>
                       <DealStageBadge stage={deal.stage} />
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {deal.healthLabel ? (
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${deal.healthStatus === 'overdue' ? 'bg-rose-50 text-rose-700' : deal.healthStatus === 'attention' ? 'bg-amber-50 text-amber-700' : deal.healthStatus === 'complete' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+                          {deal.healthLabel}
+                        </span>
+                      ) : null}
+                      {typeof deal.stageAgeDays === 'number' ? (
+                        <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                          {deal.stageAgeDays}d en etapa
+                        </span>
+                      ) : null}
                     </div>
                     <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                       <div className="rounded-xl bg-gray-50 p-3">
@@ -760,7 +867,7 @@ export default function BrokerCrmPage() {
                       </select>
                       <button
                         onClick={() => updateDealStage(deal.id)}
-                        disabled={updatingDealId === deal.id}
+                        disabled={updatingDealId === deal.id || updatingDealId === 'bulk'}
                         className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                       >
                         {updatingDealId === deal.id ? 'Guardando...' : 'Guardar'}

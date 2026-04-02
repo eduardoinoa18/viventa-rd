@@ -4,6 +4,7 @@ import { getSessionFromRequest } from '@/lib/auth/session'
 import { getListingAccessUserContext } from '@/lib/listingOwnership'
 import { DEAL_STATUSES, type DealStatus } from '@/lib/domain/deal'
 import { emitActivityEvent } from '@/lib/activityEvents'
+import { getUnifiedDealAgeDays, getUnifiedDealHealth, getUnifiedDealHealthLabel, getUnifiedDealTimelineLabel, normalizeConstructoraDealTimelineStage } from '@/lib/domain/unifiedDeal'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +41,9 @@ function toMillis(value: any): number {
 }
 
 function asDeal(id: string, data: Record<string, any>) {
+  const status = normalizeDealStatus(data.status)
+  const timelineStage = normalizeConstructoraDealTimelineStage(status)
+  const health = getUnifiedDealHealth(timelineStage, data.updatedAt || data.createdAt)
   return {
     id,
     dealId: id,
@@ -52,12 +56,17 @@ function asDeal(id: string, data: Record<string, any>) {
     brokerName: safeText(data.brokerName),
     price: toNumber(data.price),
     currency: safeText(data.currency || 'USD') || 'USD',
-    status: normalizeDealStatus(data.status),
+    status,
     constructoraCode: safeText(data.constructoraCode),
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
     createdBy: safeText(data.createdBy),
     updatedBy: safeText(data.updatedBy),
+    timelineStage,
+    timelineLabel: getUnifiedDealTimelineLabel(timelineStage),
+    healthStatus: health,
+    healthLabel: getUnifiedDealHealthLabel(health),
+    stageAgeDays: getUnifiedDealAgeDays(data.updatedAt || data.createdAt),
   }
 }
 

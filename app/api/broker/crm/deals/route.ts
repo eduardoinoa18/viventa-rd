@@ -5,6 +5,7 @@ import { getListingAccessUserContext } from '@/lib/listingOwnership'
 import { emitActivityEvent } from '@/lib/activityEvents'
 import { normalizeLeadStage, stageToLegacyStatus } from '@/lib/leadLifecycle'
 import { CRM_DEAL_STAGE_LABELS, mapCrmDealStageToLeadStage, normalizeCrmDealStage, type CrmDealRecord, type CrmDealStage } from '@/lib/domain/crmDeal'
+import { getUnifiedDealAgeDays, getUnifiedDealHealth, getUnifiedDealHealthLabel, getUnifiedDealTimelineLabel, normalizeBrokerDealTimelineStage } from '@/lib/domain/unifiedDeal'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,6 +58,9 @@ function mapLeadStageToDealStage(leadStage: string): CrmDealStage {
 }
 
 function toDealRecord(id: string, data: Record<string, any>): CrmDealRecord {
+  const stage = normalizeCrmDealStage(data.stage)
+  const timelineStage = normalizeBrokerDealTimelineStage(stage)
+  const health = getUnifiedDealHealth(timelineStage, data.updatedAt || data.createdAt)
   return {
     id,
     dealId: safeText(data.dealId) || id,
@@ -64,7 +68,7 @@ function toDealRecord(id: string, data: Record<string, any>): CrmDealRecord {
     clientName: safeText(data.clientName) || 'Cliente',
     clientEmail: safeText(data.clientEmail) || null,
     clientPhone: safeText(data.clientPhone) || null,
-    stage: normalizeCrmDealStage(data.stage),
+    stage,
     salePrice: toNumber(data.salePrice),
     currency: safeText(data.currency).toUpperCase() === 'DOP' ? 'DOP' : 'USD',
     totalCommission: toNumber(data.totalCommission),
@@ -76,7 +80,119 @@ function toDealRecord(id: string, data: Record<string, any>): CrmDealRecord {
     notes: safeText(data.notes) || null,
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
+    timelineStage,
+    timelineLabel: getUnifiedDealTimelineLabel(timelineStage),
+    healthStatus: health,
+    healthLabel: getUnifiedDealHealthLabel(health),
+    stageAgeDays: getUnifiedDealAgeDays(data.updatedAt || data.createdAt),
   }
+}
+
+async function updateSingleDeal(params: {
+  db: FirebaseFirestore.Firestore
+  context: Awaited<ReturnType<typeof getListingAccessUserContext>>
+  id: string
+  stage?: CrmDealStage
+  notes?: string | null
+  commissionStatus?: 'pending' | 'paid'
+}) {
+  const { db, context, id, stage, notes, commissionStatus } = params
+  const txRef = db.collection('transactions').doc(id)
+  const txSnap = await txRef.get()
+  if (!txSnap.exists) {
+    return { ok: false as const, error: 'Deal not found', status: 404 }
+  }
+
+  const tx = txSnap.data() as Record<string, any>
+  if (safeText(tx.officeId) !== context.officeId) {
+    return { ok: false as const, error: 'Forbidden', status: 403 }
+  }
+  if (context.role === 'agent' && safeText(tx.agentId) && safeText(tx.agentId) !== context.uid) {
+    return { ok: false as const, error: 'Agents can only update their own deals', status: 403 }
+  }
+
+  const prevStage = normalizeCrmDealStage(tx.stage)
+  const nextStage = stage ?? prevStage
+  const now = new Date()
+  const update: Record<string, any> = {
+    updatedAt: now,
+    updatedBy: context.uid,
+  }
+
+  if (stage !== undefined) update.stage = nextStage
+  if (notes !== undefined) update.notes = notes
+  if (commissionStatus !== undefined) update.commissionStatus = commissionStatus
+
+  await txRef.set(update, { merge: true })
+
+  if (nextStage !== prevStage) {
+    const canonicalDealId = safeText(tx.dealId) || id
+    await emitActivityEvent(db, {
+      type: 'deal_stage_changed',
+      actorId: context.uid,
+      actorRole: context.role,
+      entityType: 'transaction',
+      entityId: id,
+      transactionId: id,
+      dealId: canonicalDealId,
+      listingId: safeText(tx.propertyId || tx.listingId) || null,
+      projectId: safeText(tx.projectId) || null,
+      brokerId: safeText(tx.brokerId) || null,
+      agentId: safeText(tx.agentId) || null,
+      officeId: context.officeId,
+      metadata: {
+        from: prevStage,
+        to: nextStage,
+        clientName: safeText(tx.clientName) || null,
+        salePrice: toNumber(tx.salePrice),
+        eventVersion: 1,
+      },
+    })
+
+    const linkedLeadId = safeText(tx.leadId)
+    if (linkedLeadId) {
+      const syncedLeadStage = mapCrmDealStageToLeadStage(nextStage)
+      await db.collection('leads').doc(linkedLeadId).set(
+        {
+          leadStage: syncedLeadStage,
+          status: stageToLegacyStatus(syncedLeadStage),
+          legacyStatus: stageToLegacyStatus(syncedLeadStage),
+          stageChangedAt: now,
+          stageChangedBy: context.uid,
+          stageChangeReason: 'crm_deal_stage_sync',
+          linkedDealId: canonicalDealId,
+          linkedTransactionId: id,
+          updatedAt: now,
+        },
+        { merge: true }
+      )
+    }
+  }
+
+  if (commissionStatus === 'paid') {
+    await emitActivityEvent(db, {
+      type: 'commission_paid',
+      actorId: context.uid,
+      actorRole: context.role,
+      entityType: 'commission',
+      entityId: id,
+      transactionId: id,
+      dealId: safeText(tx.dealId) || id,
+      listingId: safeText(tx.propertyId || tx.listingId) || null,
+      projectId: safeText(tx.projectId) || null,
+      brokerId: safeText(tx.brokerId) || null,
+      agentId: safeText(tx.agentId) || null,
+      officeId: context.officeId,
+      metadata: {
+        totalCommission: toNumber(tx.totalCommission),
+        agentCommission: toNumber(tx.agentCommission),
+        brokerCommission: toNumber(tx.brokerCommission),
+      },
+    })
+  }
+
+  const saved = await txRef.get()
+  return { ok: true as const, deal: toDealRecord(id, saved.data() as Record<string, any>) }
 }
 
 export async function GET(req: Request) {
@@ -329,112 +445,49 @@ export async function PATCH(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}))
+    const ids: string[] = Array.isArray(body.ids)
+      ? body.ids.map((value: unknown) => safeText(value)).filter(Boolean)
+      : []
     const id = safeText(body.id)
-    if (!id) {
-      return NextResponse.json({ ok: false, error: 'id is required' }, { status: 400 })
+    const targetIds: string[] = ids.length ? Array.from(new Set(ids)) : (id ? [id] : [])
+    if (!targetIds.length) {
+      return NextResponse.json({ ok: false, error: 'id or ids is required' }, { status: 400 })
     }
 
-    const txRef = db.collection('transactions').doc(id)
-    const txSnap = await txRef.get()
-    if (!txSnap.exists) {
-      return NextResponse.json({ ok: false, error: 'Deal not found' }, { status: 404 })
-    }
-
-    const tx = txSnap.data() as Record<string, any>
-    if (safeText(tx.officeId) !== context.officeId) {
-      return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
-    }
-    if (context.role === 'agent' && safeText(tx.agentId) && safeText(tx.agentId) !== context.uid) {
-      return NextResponse.json({ ok: false, error: 'Agents can only update their own deals' }, { status: 403 })
-    }
-
-    const prevStage = normalizeCrmDealStage(tx.stage)
-    const nextStage = body.stage !== undefined ? normalizeCrmDealStage(body.stage) : prevStage
-    const update: Record<string, any> = {
-      updatedAt: new Date(),
-      updatedBy: context.uid,
-    }
-
-    if (body.stage !== undefined) update.stage = nextStage
-    if (body.notes !== undefined) update.notes = safeText(body.notes) || null
+    let nextCommissionStatus: 'pending' | 'paid' | undefined
     if (body.commissionStatus !== undefined) {
       const status = safeText(body.commissionStatus).toLowerCase()
       if (!['pending', 'paid', 'pagada'].includes(status)) {
         return NextResponse.json({ ok: false, error: 'Invalid commissionStatus' }, { status: 400 })
       }
-      update.commissionStatus = status === 'pagada' ? 'paid' : status
+      nextCommissionStatus = status === 'pagada' ? 'paid' : 'pending'
+      if (status === 'paid') nextCommissionStatus = 'paid'
     }
 
-    await txRef.set(update, { merge: true })
+    const nextStage = body.stage !== undefined ? normalizeCrmDealStage(body.stage) : undefined
+    const nextNotes = body.notes !== undefined ? (safeText(body.notes) || null) : undefined
 
-    if (nextStage !== prevStage) {
-      const canonicalDealId = safeText(tx.dealId) || id
-      await emitActivityEvent(db, {
-        type: 'deal_stage_changed',
-        actorId: context.uid,
-        actorRole: context.role,
-        entityType: 'transaction',
-        entityId: id,
-        transactionId: id,
-        dealId: canonicalDealId,
-        listingId: safeText(tx.propertyId || tx.listingId) || null,
-        projectId: safeText(tx.projectId) || null,
-        brokerId: safeText(tx.brokerId) || null,
-        agentId: safeText(tx.agentId) || null,
-        officeId: context.officeId,
-        metadata: {
-          from: prevStage,
-          to: nextStage,
-          clientName: safeText(tx.clientName) || null,
-          salePrice: toNumber(tx.salePrice),
-          eventVersion: 1,
-        },
-      })
+    const results = await Promise.all(
+      targetIds.map((targetId) => updateSingleDeal({
+        db,
+        context,
+        id: targetId,
+        stage: nextStage,
+        notes: nextNotes,
+        commissionStatus: nextCommissionStatus,
+      }))
+    )
 
-      const linkedLeadId = safeText(tx.leadId)
-      if (linkedLeadId) {
-        const syncedLeadStage = mapCrmDealStageToLeadStage(nextStage)
-        await db.collection('leads').doc(linkedLeadId).set(
-          {
-            leadStage: syncedLeadStage,
-            status: stageToLegacyStatus(syncedLeadStage),
-            legacyStatus: stageToLegacyStatus(syncedLeadStage),
-            stageChangedAt: new Date(),
-            stageChangedBy: context.uid,
-            stageChangeReason: 'crm_deal_stage_sync',
-            linkedDealId: canonicalDealId,
-            linkedTransactionId: id,
-            updatedAt: new Date(),
-          },
-          { merge: true }
-        )
-      }
+    const failed = results.find((result) => !result.ok)
+    if (failed && !failed.ok) {
+      return NextResponse.json({ ok: false, error: failed.error }, { status: failed.status })
     }
 
-    if (update.commissionStatus === 'paid') {
-      await emitActivityEvent(db, {
-        type: 'commission_paid',
-        actorId: context.uid,
-        actorRole: context.role,
-        entityType: 'commission',
-        entityId: id,
-        transactionId: id,
-        dealId: safeText(tx.dealId) || id,
-        listingId: safeText(tx.propertyId || tx.listingId) || null,
-        projectId: safeText(tx.projectId) || null,
-        brokerId: safeText(tx.brokerId) || null,
-        agentId: safeText(tx.agentId) || null,
-        officeId: context.officeId,
-        metadata: {
-          totalCommission: toNumber(tx.totalCommission),
-          agentCommission: toNumber(tx.agentCommission),
-          brokerCommission: toNumber(tx.brokerCommission),
-        },
-      })
+    const deals = results.filter((result): result is { ok: true; deal: CrmDealRecord } => result.ok).map((result) => result.deal)
+    if (deals.length === 1) {
+      return NextResponse.json({ ok: true, deal: deals[0] })
     }
-
-    const saved = await txRef.get()
-    return NextResponse.json({ ok: true, deal: toDealRecord(id, saved.data() as Record<string, any>) })
+    return NextResponse.json({ ok: true, deals, updatedCount: deals.length })
   } catch (error: any) {
     console.error('[api/broker/crm/deals] PATCH error', error)
     return NextResponse.json({ ok: false, error: 'Failed to update CRM deal' }, { status: 500 })

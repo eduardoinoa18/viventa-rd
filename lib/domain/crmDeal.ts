@@ -32,6 +32,11 @@ export interface CrmDealRecord {
   notes?: string | null
   createdAt: TimestampLike
   updatedAt: TimestampLike
+  timelineStage?: string | null
+  timelineLabel?: string | null
+  healthStatus?: 'healthy' | 'attention' | 'overdue' | 'complete' | null
+  healthLabel?: string | null
+  stageAgeDays?: number | null
 }
 
 function safeText(value: unknown): string {
