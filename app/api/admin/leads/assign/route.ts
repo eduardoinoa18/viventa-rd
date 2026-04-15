@@ -4,6 +4,7 @@ import { Timestamp } from 'firebase-admin/firestore'
 import crypto from 'crypto'
 import { requireMasterAdmin } from '@/lib/requireMasterAdmin'
 import { isLeadTerminalStage, normalizeLeadStage, stageSlaDueAt, stageToLegacyStatus } from '@/lib/leadLifecycle'
+import { FieldValue } from 'firebase-admin/firestore'
 
 export const dynamic = 'force-dynamic'
 
@@ -141,6 +142,26 @@ export async function POST(req: NextRequest) {
       requestId,
       createdAt: now,
     })
+
+    // Notify the agent — they receive the buyer as a referral from VIVENTA
+    try {
+      await adminDb.collection('notifications').add({
+        type: 'lead_referral',
+        title: '📋 Nuevo lead asignado por VIVENTA',
+        body: `Se te asignó un lead de ${lead.buyerName}${note ? `: ${note}` : ''}. Contáctalos a la brevedad posible.`,
+        icon: '/icons/icon-192x192.png',
+        url: `/agent/leads?leadId=${leadId}`,
+        refId: leadId,
+        recipientId: agentId,
+        source: 'viventa_referral',
+        conversationId,
+        createdAt: FieldValue.serverTimestamp(),
+        readBy: [],
+        audience: ['agent'],
+      })
+    } catch (notifyErr) {
+      console.warn('[assign] Failed to create agent notification:', notifyErr)
+    }
 
     return NextResponse.json({
       ok: true,

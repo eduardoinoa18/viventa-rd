@@ -141,7 +141,7 @@ export default function HitCard({ hit }: any){
           </Link>
           <div className="w-36">
             <WhatsAppButton
-              phoneNumber={hit.agent?.phone || hit.agent_phone || '+18095551234'}
+              phoneNumber=""
               propertyTitle={hit.title}
               propertyId={hit.objectID}
               propertyPrice={String(hit.price_usd || '')}

@@ -311,11 +311,11 @@ export async function POST(req: NextRequest) {
         <strong>VIVENTA</strong> - Plataforma Inmobiliaria #1 en República Dominicana
       </p>
       <p style="margin: 0 0 10px 0;">
-        📧 viventa.rd@gmail.com | 📱 +1 (809) 555-VIVENTA
+        📧 info@viventa.com | 📱 +1 (978) 390-5523
       </p>
       <p style="margin: 15px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.6);">
         Este correo fue enviado desde noreply@viventa-rd.com<br/>
-        Para consultas, responde a viventa.rd@gmail.com
+        Para consultas, escríbenos a info@viventa.com
       </p>
     </div>
   </div>
@@ -327,7 +327,7 @@ export async function POST(req: NextRequest) {
       await sendEmail({
         to: email,
         from: 'noreply@viventa-rd.com',
-        replyTo: 'viventa.rd@gmail.com',
+        replyTo: process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com',
         subject,
         html
       })

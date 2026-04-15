@@ -87,7 +87,7 @@ export async function sendApplicationConfirmation(
           <p><strong>VIVENTA</strong> - Plataforma Inmobiliaria Líder</p>
           <p>República Dominicana</p>
           <p style="margin-top: 15px;">
-            ¿Tienes preguntas? Contáctanos en <a href="mailto:viventa.rd@gmail.com">viventa.rd@gmail.com</a>
+            ¿Tienes preguntas? Contáctanos en <a href="mailto:info@viventa.com">info@viventa.com</a>
           </p>
         </div>
         <div class="caribbean-wave"></div>
@@ -184,7 +184,7 @@ export async function sendProfessionalCredentials(
           <p><strong>VIVENTA</strong> - Plataforma Inmobiliaria Líder</p>
           <p>República Dominicana</p>
           <p style="margin-top: 15px;">
-            ¿Necesitas ayuda? Contáctanos en <a href="mailto:viventa.rd@gmail.com">viventa.rd@gmail.com</a>
+            ¿Necesitas ayuda? Contáctanos en <a href="mailto:info@viventa.com">info@viventa.com</a>
           </p>
         </div>
         <div class="caribbean-wave"></div>

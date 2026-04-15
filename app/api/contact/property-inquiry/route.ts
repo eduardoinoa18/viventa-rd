@@ -114,17 +114,14 @@ export async function POST(request: Request) {
     }
 
     // Email notifications
+    // VIVENTA captures all leads first — agents are notified only AFTER
+    // VIVENTA assigns the lead as a referral from the master dashboard.
     const masterEmail = process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com'
     const adminList = (process.env.ADMIN_NOTIFICATION_EMAILS || '')
       .split(',')
       .map(e => e.trim())
       .filter(Boolean)
-    
-    const notifyEmails = Array.from(new Set([
-      masterEmail, 
-      ...adminList,
-      ...(resolvedAgentEmail ? [resolvedAgentEmail] : [])
-    ]))
+    const notifyEmails = Array.from(new Set([masterEmail, ...adminList]))
 
     try {
       const html = `
@@ -213,7 +210,7 @@ export async function POST(request: Request) {
           subject: `🏠 Nueva Consulta: ${resolvedTitle}`,
           html,
           from: 'noreply@viventa.com',
-          replyTo: email // Allow admin/agent to reply directly to the inquirer
+          replyTo: masterEmail
         })
       }
 
@@ -237,7 +234,8 @@ export async function POST(request: Request) {
         refId: inquiryRef.id,
         propertyId,
         createdAt: FieldValue.serverTimestamp(),
-        audience: ['admin', 'agent'],
+        // Only notify admins; agents receive notification only after referral assignment
+        audience: ['admin'],
         readBy: [],
       })
     } catch (e) {

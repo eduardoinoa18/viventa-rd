@@ -114,7 +114,7 @@ export default function PropertyCard({ property }: { property: any }) {
         {/* Hover Overlay with Quick WhatsApp CTA */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 items-end justify-center p-4 hidden md:flex">
           <a
-            href={`https://wa.me/18095551234?text=Me interesa esta propiedad: ${displayTitle}`}
+            href={`https://wa.me/19783905523?text=${encodeURIComponent(`Me interesa esta propiedad: ${displayTitle}`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all"

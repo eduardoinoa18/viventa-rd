@@ -144,8 +144,8 @@ export async function POST(req: NextRequest) {
         Nuestro equipo está aquí para ayudarte en cada paso del camino:
       </p>
       <ul>
-        <li>📧 Email: <a href="mailto:viventa.rd@gmail.com" style="color: #00A676;">viventa.rd@gmail.com</a></li>
-        <li>📱 WhatsApp: +1 (809) 555-VIVENTA</li>
+        <li>📧 Email: <a href="mailto:info@viventa.com" style="color: #00A676;">info@viventa.com</a></li>
+        <li>📱 WhatsApp: +1 (978) 390-5523</li>
         <li>💬 Chat en vivo (próximamente)</li>
         <li>📚 <a href="https://viventa-rd.com/help" style="color: #00A676;">Centro de Ayuda</a></li>
       </ul>
@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
       
       <p style="margin: 15px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.6);">
         Este es un correo automático enviado desde noreply@viventa-rd.com<br/>
-        Para consultas, escríbenos a viventa.rd@gmail.com
+        Para consultas, escríbenos a info@viventa.com
       </p>
     </div>
   </div>
@@ -201,7 +201,7 @@ export async function POST(req: NextRequest) {
     await sendEmail({
       to: email,
       from: 'noreply@viventa-rd.com',
-      replyTo: 'viventa.rd@gmail.com',
+      replyTo: process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com',
       subject,
       html,
     })

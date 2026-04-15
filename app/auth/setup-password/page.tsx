@@ -188,7 +188,7 @@ export default function PasswordSetupPage() {
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          ¿Necesitas ayuda? <a href="mailto:viventa.rd@gmail.com" className="text-[#00A676] font-semibold">Contáctanos</a>
+          ¿Necesitas ayuda? <a href="mailto:info@viventa.com" className="text-[#00A676] font-semibold">Contáctanos</a>
         </p>
       </div>
     </div>

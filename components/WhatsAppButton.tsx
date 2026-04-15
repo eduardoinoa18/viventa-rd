@@ -1,9 +1,11 @@
 'use client'
 import { FaWhatsapp } from 'react-icons/fa'
 import { trackWhatsAppClick, getCurrentUserInfo } from '@/lib/analyticsService'
+import { VIVENTA_PHONE_E164, buildPropertyWhatsAppMessage } from '@/lib/contact'
 
 interface WhatsAppButtonProps {
-  phoneNumber: string
+  /** Ignored — all contacts are routed through VIVENTA's central number. */
+  phoneNumber?: string
   propertyTitle?: string
   propertyId?: string
   propertyPrice?: string
@@ -12,13 +14,14 @@ interface WhatsAppButtonProps {
   agentId?: string
 }
 
+// phoneNumber is kept for API compatibility but all traffic is routed to VIVENTA central
 export default function WhatsAppButton({
-  phoneNumber,
+  phoneNumber: _phoneNumber,
   propertyTitle,
   propertyId,
-  propertyPrice,
+  propertyPrice: _propertyPrice,
   className = '',
-  agentName = 'el agente',
+  agentName: _agentName = 'el agente',
   agentId
 }: WhatsAppButtonProps) {
   
@@ -27,34 +30,13 @@ export default function WhatsAppButton({
     const { userId, userRole } = getCurrentUserInfo()
     trackWhatsAppClick(propertyId, agentId, userId, userRole)
     // Format phone number (remove spaces, dashes, add country code if needed)
-    let formattedPhone = phoneNumber.replace(/[\s-]/g, '')
+    // Always route to VIVENTA central number — leads are captured first
+    const formattedPhone = VIVENTA_PHONE_E164
     
-    // Add Dominican Republic country code if not present
-    if (!formattedPhone.startsWith('+') && !formattedPhone.startsWith('1')) {
-      formattedPhone = '1' + formattedPhone
-    }
     
-    // Pre-filled message template
-    let message = `Hola ${agentName}, estoy interesado en `
+    const message = buildPropertyWhatsAppMessage(propertyTitle, propertyId)
     
-    if (propertyTitle) {
-      message += `la propiedad "${propertyTitle}"`
-    } else {
-      message += 'una de las propiedades publicadas'
-    }
-    
-    if (propertyPrice) {
-      message += ` con precio de ${propertyPrice}`
-    }
-    
-    if (propertyId) {
-      message += `. Ref: ${propertyId}`
-    }
-    
-    message += '. ¿Podría darme más información?'
-    
-    const encodedMessage = encodeURIComponent(message)
-    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`
     
     // Track analytics
     if (typeof window !== 'undefined' && (window as any).gtag) {

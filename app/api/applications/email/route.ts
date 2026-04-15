@@ -121,8 +121,8 @@ export async function POST(req: NextRequest) {
         Si tienes alguna pregunta sobre tu solicitud o necesitas asistencia, no dudes en contactarnos:
       </p>
       <ul>
-        <li>📧 Email: <a href="mailto:viventa.rd@gmail.com">viventa.rd@gmail.com</a></li>
-        <li>📱 WhatsApp: +1 (809) 555-VIVENTA</li>
+        <li>📧 Email: <a href="mailto:info@viventa.com">info@viventa.com</a></li>
+        <li>📱 WhatsApp: +1 (978) 390-5523</li>
         <li>🌐 Web: <a href="https://viventa-rd.com">viventa-rd.com</a></li>
       </ul>
 
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
       </p>
       <p style="margin: 0; font-size: 12px; color: #999;">
         Este es un correo automático, por favor no respondas a esta dirección. 
-        Para cualquier consulta, escríbenos a viventa.rd@gmail.com
+        Para cualquier consulta, escríbenos a info@viventa.com
       </p>
     </div>
   </div>

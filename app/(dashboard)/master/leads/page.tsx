@@ -1372,7 +1372,10 @@ export default function LeadsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Asignar lead a agente</h2>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Asignar como referido</h2>
+                <p className="text-xs text-gray-500 mt-0.5">El agente recibe el lead de VIVENTA y hace el seguimiento</p>
+              </div>
               <button
                 onClick={() => {
                   setShowAssignModal(false)
@@ -1389,7 +1392,7 @@ export default function LeadsPage() {
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Selecciona un agente</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Selecciona el agente para el referido</label>
                 {agentsLoading ? (
                   <div className="text-sm text-gray-500">Cargando agentes...</div>
                 ) : agents.length === 0 ? (
@@ -1411,11 +1414,11 @@ export default function LeadsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Razon de asignacion (opcional)</label>
-                <textarea
-                  value={assignNote}
-                  onChange={(e) => setAssignNote(e.target.value)}
-                  placeholder="Explica por que es la asignacion optima..."
+                <label className="block text-sm font-medium text-gray-700 mb-2">Instrucciones para el agente (opcional)</label>
+                  <textarea
+                    value={assignNote}
+                    onChange={(e) => setAssignNote(e.target.value)}
+                    placeholder="Ej: Comprador calificado con carta bancaria. Prefiere verse la próxima semana..."
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                 />

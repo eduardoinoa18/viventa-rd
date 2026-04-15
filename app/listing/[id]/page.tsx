@@ -1152,7 +1152,7 @@ export default function ListingDetail(){
                 {/* Contact Actions */}
                 <div className="space-y-3">
                   <WhatsAppButton 
-                    phoneNumber={listing.agentPhone || '+18095551234'}
+                    phoneNumber=""
                     propertyTitle={listing.title}
                     propertyId={listing.id}
                     propertyPrice={String(ctaPriceSource || listing.price || 0)}
@@ -1348,7 +1348,8 @@ export default function ListingDetail(){
             <div className="flex items-center gap-3">
               <button
                 onClick={() => {
-                  const whatsappUrl = `https://wa.me/${(listing.agentPhone || '+18095551234').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola, estoy interesado en ${listing.title} (${listing.id})`)}`;
+                  // All buyer contacts are routed through VIVENTA central — lead is captured then assigned to agent
+                  const whatsappUrl = `https://wa.me/19783905523?text=${encodeURIComponent(`Hola VIVENTA, me interesa la propiedad "${listing.title}" (Ref: ${listing.id}). ¿Pueden darme más información?`)}`;
                   window.open(whatsappUrl, '_blank');
                 }}
                 className="flex-1 px-4 py-3 bg-[#25D366] hover:bg-[#20BA59] text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"

@@ -272,14 +272,14 @@ export default function MasterListingsPage() {
   }
 
   return (
-    <main className="p-3 sm:p-6 bg-gray-50 min-h-screen dark:bg-slate-950 dark:text-slate-100">
+    <main className="p-3 sm:p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#0B2545] dark:text-slate-100">Gestión de Propiedades</h1>
-              <p className="text-gray-600 mt-1 text-sm sm:text-base dark:text-slate-400">Administra y aprueba publicaciones de propiedades</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#0B2545]">Gestión de Propiedades</h1>
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">Administra y aprueba publicaciones de propiedades</p>
             </div>
             <Link
               href="/master/listings/create"
@@ -290,11 +290,11 @@ export default function MasterListingsPage() {
           </div>
 
           <div className="mb-4 flex flex-wrap gap-2">
-            <Link href="/master/leads" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">Leads</Link>
-            <Link href="/master/applications" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">Applications</Link>
-            <Link href="/master/users" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">People</Link>
-            <Link href="/master/inbox" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">Inbox</Link>
-            <Link href="/master/settings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">Settings</Link>
+            <Link href="/master/leads" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Leads</Link>
+            <Link href="/master/applications" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Aplicaciones</Link>
+            <Link href="/master/users" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Personas</Link>
+            <Link href="/master/inbox" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Inbox</Link>
+            <Link href="/master/settings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Configuración</Link>
           </div>
 
           {/* Stats Cards */}
@@ -314,7 +314,7 @@ export default function MasterListingsPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <FiClock className="text-amber-500" />
-                <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">Cola de Aprobación</h2>
+                <h2 className="text-lg font-bold text-gray-900">Cola de Aprobación</h2>
                 {pending.length > 0 && (
                   <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{pending.length}</span>
                 )}
@@ -325,12 +325,12 @@ export default function MasterListingsPage() {
             </div>
 
             {pendingLoading ? (
-              <div className="bg-white border border-amber-100 rounded-2xl p-6 text-center text-gray-400 text-sm dark:bg-slate-900 dark:border-amber-800/40 dark:text-slate-400">Cargando cola pendiente...</div>
+              <div className="bg-white border border-amber-100 rounded-2xl p-6 text-center text-gray-400 text-sm">Cargando cola pendiente...</div>
             ) : (
-              <div className="bg-white border border-amber-100 rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900 dark:border-amber-800/40">
-                <div className="divide-y divide-gray-100 dark:divide-slate-800">
+              <div className="bg-white border border-amber-100 rounded-2xl overflow-hidden shadow-sm">
+                <div className="divide-y divide-gray-100">
                   {pending.map((item) => (
-                    <div key={item.id} className="p-4 hover:bg-amber-50 transition-colors dark:hover:bg-slate-800">
+                    <div key={item.id} className="p-4 hover:bg-amber-50 transition-colors">
                       <div className="flex gap-4 items-start">
                         {/* Thumbnail */}
                         <div className="w-20 h-16 shrink-0 rounded-lg overflow-hidden bg-gray-100">
@@ -456,16 +456,16 @@ export default function MasterListingsPage() {
         {hasActiveFilters && (
           <div className="mb-4 rounded-lg border border-gray-200 bg-white p-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Active filters</span>
-              {statusFilter !== 'all' && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">Status: {statusFilter}</span>}
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Filtros activos</span>
+              {statusFilter !== 'all' && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">Estado: {statusFilter}</span>}
               {intelligencePreset !== 'all' && <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">Preset: {intelligencePreset.replace(/_/g, ' ')}</span>}
-              {searchQuery.trim() && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">Search: “{searchQuery.trim()}”</span>}
+              {searchQuery.trim() && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">Búsqueda: &ldquo;{searchQuery.trim()}&rdquo;</span>}
               <button
                 onClick={clearFilters}
                 className="ml-auto inline-flex items-center rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                title="Clear all filters"
+                title="Limpiar filtros"
               >
-                Clear all
+                Limpiar
               </button>
             </div>
           </div>
