@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { FiAlertTriangle, FiCheckSquare, FiTarget, FiHome, FiClock, FiTrendingUp } from 'react-icons/fi'
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiGrid, KpiCard } from '@/components/ui/KpiCard'
+import WorkspaceCommandCenter from '@/components/WorkspaceCommandCenter'
 
 type SummaryState = {
   myListings: number
@@ -99,6 +100,28 @@ export default function AgentOverviewPage() {
         actions={[
           { label: '+ Create Listing', href: '/dashboard/listings/create' },
           { label: 'View CRM', href: '/dashboard/agent/crm', variant: 'secondary' },
+        ]}
+      />
+
+      <WorkspaceCommandCenter
+        eyebrow="Agent Command Center"
+        title="Enfoca tu dia en velocidad comercial y seguimiento impecable"
+        description="Tu ventaja en RD depende de responder rapido, mover leads con criterio y mantener claridad entre inventario, tareas y cierres activos."
+        highlightLabel="Leads activos"
+        highlightValue={summary.leadsAssigned}
+        highlightDetail={`${summary.newLeadsLast30Days} nuevos en los ultimos 30 dias`}
+        marketNote="Cuando la demanda se acelera, el agente que convierte no es el que recibe mas leads: es el que responde antes, hace mejor follow-up y presenta inventario con contexto local."
+        priorities={[
+          { label: 'Respuesta promedio', value: `${summary.avgResponseMinutes} min`, hint: 'Tiempo medio de reaccion', tone: summary.avgResponseMinutes <= 15 ? 'good' : summary.avgResponseMinutes <= 45 ? 'warn' : 'urgent' },
+          { label: 'Leads ganados', value: summary.leadsWon, hint: 'Negocios ya convertidos', tone: summary.leadsWon > 0 ? 'good' : 'neutral' },
+          { label: 'Inventario propio', value: summary.myListings, hint: 'Propiedades activas en tu cartera', tone: summary.myListings > 0 ? 'good' : 'warn' },
+          { label: 'Tareas vencidas', value: taskHealth.overdue, hint: 'Seguimientos que requieren atencion', tone: taskHealth.overdue > 0 ? 'urgent' : 'good' },
+        ]}
+        quickActions={[
+          { label: 'Crear propiedad', href: '/dashboard/listings/create' },
+          { label: 'Abrir CRM', href: '/dashboard/agent/crm' },
+          { label: 'Ver tareas', href: '/dashboard/agent/tasks' },
+          { label: 'Ver negocios', href: '/dashboard/agent/deals' },
         ]}
       />
 

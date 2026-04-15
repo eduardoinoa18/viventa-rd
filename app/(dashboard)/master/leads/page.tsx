@@ -132,12 +132,12 @@ const STAGE_TRANSITIONS: Record<LeadStage, LeadStage[]> = {
 
 const FILTER_STAGES: LeadStage[] = ['new', 'assigned', 'contacted', 'qualified', 'negotiating', 'won', 'lost', 'archived']
 const PIPELINE_COLUMNS: Array<{ key: PipelineStage; label: string }> = [
-  { key: 'new', label: 'New' },
-  { key: 'assigned', label: 'Assigned' },
-  { key: 'contacted', label: 'Contacted' },
-  { key: 'qualified', label: 'Qualified' },
-  { key: 'won', label: 'Won' },
-  { key: 'lost', label: 'Lost' },
+  { key: 'new', label: 'Nuevo' },
+  { key: 'assigned', label: 'Asignado' },
+  { key: 'contacted', label: 'Contactado' },
+  { key: 'qualified', label: 'Calificado' },
+  { key: 'won', label: 'Ganado' },
+  { key: 'lost', label: 'Perdido' },
 ]
 
 function formatSla(secondsToBreach: number | null | undefined) {
@@ -146,7 +146,7 @@ function formatSla(secondsToBreach: number | null | undefined) {
   const abs = Math.abs(secondsToBreach)
   const hours = Math.floor(abs / 3600)
   const minutes = Math.floor((abs % 3600) / 60)
-  const suffix = isOverdue ? 'overdue' : 'left'
+  const suffix = isOverdue ? 'vencido' : 'restante'
   return `${hours}h ${minutes}m ${suffix}`
 }
 
@@ -156,15 +156,15 @@ function formatRelative(value?: string | null) {
   if (!Number.isFinite(parsed.getTime())) return '—'
 
   const diffMs = Date.now() - parsed.getTime()
-  if (diffMs < 0) return 'just now'
+  if (diffMs < 0) return 'ahora mismo'
   const minutes = Math.floor(diffMs / (1000 * 60))
   const hours = Math.floor(minutes / 60)
   const days = Math.floor(hours / 24)
 
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  if (hours < 24) return `${hours}h ago`
-  return `${days}d ago`
+  if (minutes < 1) return 'ahora mismo'
+  if (minutes < 60) return `hace ${minutes}m`
+  if (hours < 24) return `hace ${hours}h`
+  return `hace ${days}d`
 }
 
 function formatAvgResponse(minutes: number) {
@@ -176,15 +176,15 @@ function formatAvgResponse(minutes: number) {
 }
 
 function formatJobLabel(job: AutomationRun['job']) {
-  if (job === 'scheduledLeadAutoAssign') return 'Auto-Assign'
-  return 'SLA Escalation'
+  if (job === 'scheduledLeadAutoAssign') return 'Auto-Asignar'
+  return 'Escalacion SLA'
 }
 
 function formatRunMetrics(run: AutomationRun) {
   if (run.job === 'scheduledLeadAutoAssign') {
-    return `scanned ${run.scanned} · assigned ${run.assigned}`
+    return `escaneados ${run.scanned} · asignados ${run.assigned}`
   }
-  return `scanned ${run.scanned} · escalated ${run.escalated}`
+  return `escaneados ${run.scanned} · escalados ${run.escalated}`
 }
 
 function formatRunDuration(durationMs: number) {
@@ -195,7 +195,7 @@ function formatRunDuration(durationMs: number) {
 
 function formatCooldown(seconds: number | null | undefined) {
   const value = Number(seconds || 0)
-  if (!value || value <= 0) return 'ready'
+  if (!value || value <= 0) return 'listo'
   const mins = Math.floor(value / 60)
   const secs = value % 60
   return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
@@ -412,11 +412,11 @@ export default function LeadsPage() {
           setAutomationSafeguards(null)
         }
       } else {
-        toast.error(data.error || 'Unable to load leads')
+        toast.error(data.error || 'No se pudieron cargar los leads')
       }
     } catch (err) {
       console.error('Error fetching leads:', err)
-      toast.error('Unable to load leads')
+      toast.error('No se pudieron cargar los leads')
     } finally {
       setLoading(false)
     }
@@ -481,17 +481,17 @@ export default function LeadsPage() {
 
       const data = await res.json()
       if (data.ok) {
-        toast.success('Lead assigned successfully')
+        toast.success('Lead asignado correctamente')
         setShowAssignModal(false)
         setSelectedLeadId(null)
         setAssignNote('')
         fetchLeads()
       } else {
-        toast.error(data.error || 'Unable to assign lead')
+        toast.error(data.error || 'No se pudo asignar el lead')
       }
     } catch (err) {
       console.error('Error assigning lead:', err)
-      toast.error('Unable to assign lead')
+      toast.error('No se pudo asignar el lead')
     }
   }
 
@@ -516,23 +516,23 @@ export default function LeadsPage() {
 
       const data = await res.json()
       if (data.ok) {
-        toast.success('Lead stage updated')
+        toast.success('Etapa del lead actualizada')
         fetchLeads()
       } else {
-        toast.error(data.error || 'Unable to update stage')
+        toast.error(data.error || 'No se pudo actualizar la etapa')
       }
     } catch (err) {
       console.error('Error updating stage:', err)
-      toast.error('Unable to update stage')
+      toast.error('No se pudo actualizar la etapa')
     }
   }
 
   const handleDeleteLead = async (leadId: string) => {
     if (isBrokerScoped) {
-      toast.error('Delete is disabled for broker queue')
+      toast.error('Eliminar esta deshabilitado para la cola del broker')
       return
     }
-    if (!confirm('Are you sure you want to delete this lead?')) return
+    if (!confirm('Seguro que deseas eliminar este lead?')) return
 
     try {
       const res = await fetch('/api/admin/leads/queue', {
@@ -543,14 +543,14 @@ export default function LeadsPage() {
 
       const data = await res.json()
       if (data.ok) {
-        toast.success('Lead deleted')
+        toast.success('Lead eliminado')
         fetchLeads()
       } else {
-        toast.error(data.error || 'Unable to delete lead')
+        toast.error(data.error || 'No se pudo eliminar el lead')
       }
     } catch (err) {
       console.error('Error deleting lead:', err)
-      toast.error('Unable to delete lead')
+      toast.error('No se pudo eliminar el lead')
     }
   }
 
@@ -773,28 +773,28 @@ export default function LeadsPage() {
   const emptyStateMessage = useMemo(() => {
     if (!hasActiveFilters) {
       return {
-        title: 'No leads yet',
-        body: 'New inquiries appear here as soon as they enter the system.',
+        title: 'Sin leads aun',
+        body: 'Las nuevas consultas apareceran aqui cuando ingresen al sistema.',
       }
     }
 
     if (ownerFilter === 'unassigned') {
       return {
-        title: 'No unassigned leads',
-        body: 'All leads currently have an owner assigned.',
+        title: 'Sin leads sin asignar',
+        body: 'Todos los leads tienen un propietario asignado.',
       }
     }
 
     if (slaOnly) {
       return {
-        title: 'No SLA breaches',
-        body: 'No breached leads match the current filters.',
+        title: 'Sin incumplimientos de SLA',
+        body: 'Ningun lead incumplido coincide con los filtros actuales.',
       }
     }
 
     return {
-      title: 'No matching leads',
-      body: 'No results for current filters. Adjust criteria to expand the view.',
+      title: 'Sin leads coincidentes',
+      body: 'Sin resultados para los filtros actuales. Ajusta los criterios.',
     }
   }, [hasActiveFilters, ownerFilter, slaOnly])
 
@@ -810,17 +810,17 @@ export default function LeadsPage() {
   }
 
   const kpiCards = [
-    { label: 'Total Leads', value: stats.metrics.totalLeads, tone: 'text-gray-900', hint: 'Current filtered queue size' },
-    { label: 'Unassigned', value: stats.metrics.unassigned, tone: 'text-amber-600', hint: 'Needs ownership now' },
-    { label: 'SLA Breached', value: stats.metrics.slaBreached, tone: 'text-red-600', hint: 'Past stage SLA due time' },
-    { label: 'Escalations Open', value: stats.metrics.escalationsOpen, tone: 'text-red-700', hint: 'Open escalation status' },
+    { label: 'Total Leads', value: stats.metrics.totalLeads, tone: 'text-gray-900', hint: 'Tamano actual de la cola' },
+    { label: 'Sin asignar', value: stats.metrics.unassigned, tone: 'text-amber-600', hint: 'Requiere asignacion urgente' },
+    { label: 'SLA Vencido', value: stats.metrics.slaBreached, tone: 'text-red-600', hint: 'Superaron el SLA de la etapa' },
+    { label: 'Escalaciones Abiertas', value: stats.metrics.escalationsOpen, tone: 'text-red-700', hint: 'Escalaciones abiertas' },
     {
-      label: 'Conversion Rate',
+      label: 'Conversion',
       value: stats.metrics.conversionRate === null ? '—' : `${stats.metrics.conversionRate}%`,
       tone: 'text-green-700',
-      hint: 'Won / assigned funnel',
+      hint: 'Ganados del funnel asignado',
     },
-    { label: 'Avg Response Time', value: formatAvgResponse(stats.metrics.avgResponseTimeMinutes), tone: 'text-[#0B2545]', hint: 'Assigned latency windowed 30d' },
+    { label: 'Tiempo Respuesta', value: formatAvgResponse(stats.metrics.avgResponseTimeMinutes), tone: 'text-[#0B2545]', hint: 'Latencia de asignacion 30d' },
   ]
 
   const brokerAutoAssignCooldown = Number(automationSafeguards?.autoAssign?.remainingSeconds || 0)
@@ -844,13 +844,13 @@ export default function LeadsPage() {
       return
     }
 
-    toast('No detailed view is available for this lead yet')
+    toast('Sin vista detallada disponible para este lead aun')
   }
 
   const renderOwner = (lead: LeadRecord) => {
     const ownerId = lead.ownerAgentId || lead.assignedTo || ''
     if (!ownerId) {
-      return <span className="text-xs font-medium text-amber-700">Unassigned</span>
+      return <span className="text-xs font-medium text-amber-700">Sin asignar</span>
     }
 
     const owner = ownerMap.get(ownerId)
@@ -888,7 +888,7 @@ export default function LeadsPage() {
       >
         {options.map((stage) => (
           <option key={stage} value={stage}>
-            Move: {stage}
+            Mover: {stage}
           </option>
         ))}
       </select>
@@ -919,21 +919,21 @@ export default function LeadsPage() {
   return (
     <div className="space-y-6 p-6 max-w-7xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Lead Queue Management</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Gestion de Cola de Leads</h1>
         <button
           onClick={() => fetchLeads()}
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
         >
-          Refresh
+          Actualizar
         </button>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Link href="/master/listings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Listings</Link>
-        <Link href="/master/applications" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Applications</Link>
-        <Link href="/master/users" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">People</Link>
-        <Link href="/master/inbox" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Inbox</Link>
-        <Link href="/master/settings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Settings</Link>
+        <Link href="/master/listings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Propiedades</Link>
+        <Link href="/master/applications" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Solicitudes</Link>
+        <Link href="/master/users" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Personas</Link>
+        <Link href="/master/inbox" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Mensajes</Link>
+        <Link href="/master/settings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Configuracion</Link>
       </div>
 
       {isBrokerScoped && (
@@ -955,7 +955,7 @@ export default function LeadsPage() {
 
       {stats.metrics.totalLeads > 0 && stats.metrics.totalLeads < 10 && (
         <div className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
-          Low dataset — metrics stabilizing
+          Datos insuficientes — metricas estabilizandose
         </div>
       )}
 
@@ -963,10 +963,10 @@ export default function LeadsPage() {
         <div className="bg-white border border-gray-200 rounded-lg p-4 xl:col-span-2">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-gray-900">Automation Controls</h2>
-              <p className="text-xs text-gray-500 mt-1">Run assignment and escalation routines without leaving the queue.</p>
+              <h2 className="text-sm font-semibold text-gray-900">Control de Automatizacion</h2>
+              <p className="text-xs text-gray-500 mt-1">Ejecuta rutinas de asignacion y escalacion sin salir de la cola.</p>
             </div>
-            <div className="text-xs text-gray-600">Auto-assignable: <span className="font-semibold">{stats.metrics.autoAssignable}</span></div>
+            <div className="text-xs text-gray-600">Auto-asignables: <span className="font-semibold">{stats.metrics.autoAssignable}</span></div>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
@@ -975,14 +975,14 @@ export default function LeadsPage() {
               disabled={autoAssignDisabled}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#0B2545] rounded-lg hover:bg-[#12355f] disabled:opacity-50"
             >
-              <FiZap /> {runningAutoAssign ? 'Running...' : isBrokerScoped && brokerAutoAssignCooldown > 0 ? `Cooldown ${formatCooldown(brokerAutoAssignCooldown)}` : 'Run auto-assign'}
+              <FiZap /> {runningAutoAssign ? 'Ejecutando...' : isBrokerScoped && brokerAutoAssignCooldown > 0 ? `Cooldown ${formatCooldown(brokerAutoAssignCooldown)}` : 'Ejecutar auto-asignacion'}
             </button>
             <button
               onClick={handleRunEscalation}
               disabled={escalationDisabled}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50"
             >
-              {runningEscalation ? 'Running...' : isBrokerScoped && brokerEscalationCooldown > 0 ? `Cooldown ${formatCooldown(brokerEscalationCooldown)}` : 'Run SLA escalation'}
+              {runningEscalation ? 'Ejecutando...' : isBrokerScoped && brokerEscalationCooldown > 0 ? `Cooldown ${formatCooldown(brokerEscalationCooldown)}` : 'Ejecutar escalacion SLA'}
             </button>
           </div>
 
@@ -994,10 +994,10 @@ export default function LeadsPage() {
           )}
 
           <div className="mt-4 border-t border-gray-100 pt-3">
-            <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Recent automation activity</div>
+            <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Actividad reciente de automatizacion</div>
             <div className="mt-2 space-y-2">
               {automationRuns.length === 0 ? (
-                <div className="text-xs text-gray-500">No scheduled jobs have run yet.</div>
+                <div className="text-xs text-gray-500">Ningun proceso programado ha ejecutado aun.</div>
               ) : (
                 automationRuns.map((run) => (
                   <div key={run.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 px-2 py-1.5">
@@ -1018,12 +1018,12 @@ export default function LeadsPage() {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">{isBrokerScoped ? 'Top performing team' : 'Top performing brokers'}</h2>
-          <p className="text-xs text-gray-500 mt-1">Ranked by conversion rate and deal volume</p>
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">{isBrokerScoped ? 'Equipo con mejor rendimiento' : 'Brokers con mejor rendimiento'}</h2>
+          <p className="text-xs text-gray-500 mt-1">Clasificados por tasa de conversion y volumen</p>
 
           <div className="mt-3 space-y-2">
             {stats.metrics.topBrokers.length === 0 ? (
-              <div className="text-xs text-gray-500">No broker performance data yet.</div>
+              <div className="text-xs text-gray-500">Sin datos de rendimiento de brokers aun.</div>
             ) : (
               stats.metrics.topBrokers.map((broker, index) => (
                 <div key={`${broker.broker}-${index}`} className="flex items-center justify-between rounded-md border border-gray-200 p-2">
@@ -1048,7 +1048,7 @@ export default function LeadsPage() {
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search by name, email, phone, or agent"
+              placeholder="Buscar por nombre, email, telefono o agente"
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A676]/30"
             />
           </div>
@@ -1059,8 +1059,8 @@ export default function LeadsPage() {
             className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
             aria-label="Filter by owner"
           >
-            <option value="all">All agents</option>
-            <option value="unassigned">Unassigned</option>
+            <option value="all">Todos los agentes</option>
+            <option value="unassigned">Sin asignar</option>
             {agents.map((agent) => (
               <option key={agent.id} value={agent.id}>
                 {agent.name}
@@ -1074,7 +1074,7 @@ export default function LeadsPage() {
             className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
             aria-label="Filter by source"
           >
-            <option value="all">All sources</option>
+            <option value="all">Todas las fuentes</option>
             {sourceOptions.map((source) => (
               <option key={source} value={source}>
                 {source}
@@ -1108,7 +1108,7 @@ export default function LeadsPage() {
               className="rounded border-gray-300"
               aria-label="Filter by SLA breached status"
             />
-            Show SLA breaches only
+            Solo incumplimientos SLA
           </label>
 
           <button
@@ -1116,7 +1116,7 @@ export default function LeadsPage() {
             className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
             title="Clear all active filters"
           >
-            Clear filters
+            Limpiar filtros
           </button>
         </div>
 
@@ -1141,7 +1141,7 @@ export default function LeadsPage() {
               onClick={() => setViewMode('table')}
               className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md ${viewMode === 'table' ? 'bg-[#0B2545] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
             >
-              <FiList /> Table
+              <FiList /> Tabla
             </button>
             <button
               onClick={() => setViewMode('pipeline')}
@@ -1154,14 +1154,14 @@ export default function LeadsPage() {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-10 text-center text-gray-500">Loading lead queue...</div>
+        <div className="bg-white rounded-lg border border-gray-200 p-10 text-center text-gray-500">Cargando leads...</div>
       ) : (
         <>
           {detectedDuplicates.length > 0 && showDuplicates && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-amber-900">Potential Duplicates Detected</h3>
+                  <h3 className="text-sm font-semibold text-amber-900">Posibles Duplicados Detectados</h3>
                   <p className="text-xs text-amber-700 mt-1">{detectedDuplicates.length} duplicate lead group{detectedDuplicates.length !== 1 ? 's' : ''} found by email or phone</p>
                 </div>
                 <button
@@ -1226,7 +1226,7 @@ export default function LeadsPage() {
               <div className="p-3 space-y-3 max-h-[520px] overflow-y-auto">
                 {pipelineGroups[column.key].length === 0 ? (
                   <div className="text-xs text-gray-500 border border-dashed border-gray-200 rounded-lg p-3">
-                    No leads in this column
+                    Sin leads en esta columna
                   </div>
                 ) : (
                   pipelineGroups[column.key].map((lead) => {
@@ -1246,11 +1246,11 @@ export default function LeadsPage() {
                         </div>
 
                         <div className="text-xs text-gray-600">
-                          <div className="font-medium mb-1">Owner</div>
+                          <div className="font-medium mb-1">Dueno</div>
                           {renderOwner(lead)}
                         </div>
 
-                        <div className="text-[11px] text-gray-500">Last activity: {formatRelative(lead.lastActivityAt || lead.updatedAt)}</div>
+                        <div className="text-[11px] text-gray-500">Ultima actividad: {formatRelative(lead.lastActivityAt || lead.updatedAt)}</div>
                         <div className="space-y-0.5">
                           {buildLeadTimeline(lead).map((event) => (
                             <div key={`${lead.id}-${event}`} className="text-[11px] text-gray-500">• {event}</div>
@@ -1263,14 +1263,14 @@ export default function LeadsPage() {
                               onClick={() => openAssignModal(lead.id)}
                               className="inline-flex items-center px-2.5 py-1 text-[11px] font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
                             >
-                              Assign
+                              Asignar
                             </button>
                           )}
                           <button
                             onClick={() => handleViewLead(lead)}
                             className="inline-flex items-center px-2.5 py-1 text-[11px] font-medium text-[#0B2545] bg-[#0B2545]/10 rounded-md hover:bg-[#0B2545]/20"
                           >
-                            View
+                            Ver
                           </button>
                           {renderMoveStage(lead)}
                         </div>
@@ -1288,13 +1288,13 @@ export default function LeadsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Contact Info</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Stage</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Owner</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">SLA Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Activity</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Nombre</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Contacto</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Etapa</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Dueno</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">SLA</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actividad</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -1305,7 +1305,7 @@ export default function LeadsPage() {
                     <tr key={lead.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{lead.buyerName}</div>
-                        <div className="text-xs text-gray-500">Source: {lead.source}</div>
+                        <div className="text-xs text-gray-500">Fuente: {lead.source}</div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="text-xs text-gray-600">
@@ -1337,14 +1337,14 @@ export default function LeadsPage() {
                               onClick={() => openAssignModal(lead.id)}
                               className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
                             >
-                              Assign
+                              Asignar
                             </button>
                           )}
                           <button
                             onClick={() => handleViewLead(lead)}
                             className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-[#0B2545] bg-[#0B2545]/10 rounded-md hover:bg-[#0B2545]/20"
                           >
-                            View
+                            Ver
                           </button>
                           {renderMoveStage(lead)}
                           {!isBrokerScoped && (
@@ -1352,7 +1352,7 @@ export default function LeadsPage() {
                               onClick={() => handleDeleteLead(lead.id)}
                               className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100"
                             >
-                              Delete
+                              Eliminar
                             </button>
                           )}
                         </div>
@@ -1372,7 +1372,7 @@ export default function LeadsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Assign lead to agent</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Asignar lead a agente</h2>
               <button
                 onClick={() => {
                   setShowAssignModal(false)
@@ -1389,11 +1389,11 @@ export default function LeadsPage() {
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select an agent</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Selecciona un agente</label>
                 {agentsLoading ? (
-                  <div className="text-sm text-gray-500">Loading available agents...</div>
+                  <div className="text-sm text-gray-500">Cargando agentes...</div>
                 ) : agents.length === 0 ? (
-                  <div className="text-sm text-red-600">No agents available</div>
+                  <div className="text-sm text-red-600">Sin agentes disponibles</div>
                 ) : (
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {agents.map((agent) => (
@@ -1411,11 +1411,11 @@ export default function LeadsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Assignment reason (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Razon de asignacion (opcional)</label>
                 <textarea
                   value={assignNote}
                   onChange={(e) => setAssignNote(e.target.value)}
-                  placeholder="Explain why this is the best assignment..."
+                  placeholder="Explica por que es la asignacion optima..."
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                 />

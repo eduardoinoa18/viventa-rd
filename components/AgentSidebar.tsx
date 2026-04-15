@@ -13,21 +13,21 @@ import BrandLogo from '@/components/BrandLogo'
 type NavItem = { href: string; label: string; icon: React.ReactNode; badge?: number }
 
 const PRIMARY: NavItem[] = [
-  { href: '/dashboard/agent/overview',    label: 'Overview',  icon: <FiGrid /> },
-  { href: '/dashboard/agent/crm',         label: 'Leads',     icon: <FiTarget /> },
-  { href: '/dashboard/listings',          label: 'Listings',  icon: <FiHome /> },
+  { href: '/dashboard/agent/overview',    label: 'Resumen',      icon: <FiGrid /> },
+  { href: '/dashboard/agent/crm',         label: 'Leads',        icon: <FiTarget /> },
+  { href: '/dashboard/listings',          label: 'Propiedades',  icon: <FiHome /> },
 ]
 
 const SECONDARY: NavItem[] = [
-  { href: '/dashboard/agent/profile',     label: 'Profile',   icon: <FiSettings /> },
-  { href: '/dashboard/agent/deals',       label: 'Deals',       icon: <FiTrendingUp /> },
-  { href: '/dashboard/agent/clients',     label: 'Clients',     icon: <FiUsers /> },
-  { href: '/dashboard/agent/commissions', label: 'Commissions', icon: <FiBarChart2 /> },
+  { href: '/dashboard/agent/profile',     label: 'Perfil',       icon: <FiSettings /> },
+  { href: '/dashboard/agent/deals',       label: 'Negocios',     icon: <FiTrendingUp /> },
+  { href: '/dashboard/agent/clients',     label: 'Clientes',     icon: <FiUsers /> },
+  { href: '/dashboard/agent/commissions', label: 'Comisiones',   icon: <FiBarChart2 /> },
 ]
 
 const SYSTEM: NavItem[] = [
-  { href: '/dashboard/agent/tasks',       label: 'Tasks',     icon: <FiCheckSquare /> },
-  { href: '/dashboard/agent/activity',    label: 'Activity',  icon: <FiActivity /> },
+  { href: '/dashboard/agent/tasks',       label: 'Tareas',       icon: <FiCheckSquare /> },
+  { href: '/dashboard/agent/activity',    label: 'Actividad',    icon: <FiActivity /> },
 ]
 
 function SidebarLink({ item, collapsed, pathname }: { item: NavItem; collapsed: boolean; pathname: string }) {
@@ -130,13 +130,13 @@ export default function AgentSidebar() {
           <div className="mb-2 text-xs font-bold tracking-wide text-blue-900">SHORTCUTS</div>
           <div className="space-y-2">
             <Link href="/dashboard/listings/create" className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline">
-              <FiPlusSquare className="text-blue-600" /> <span>Create Listing</span>
+              <FiPlusSquare className="text-blue-600" /> <span>Crear propiedad</span>
             </Link>
             <Link href="/dashboard/settings" className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline">
-              <FiSettings className="text-blue-600" /> <span>Profile</span>
+              <FiSettings className="text-blue-600" /> <span>Perfil</span>
             </Link>
             <Link href="/messages" className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline">
-              <FiMessageSquare className="text-blue-600" /> <span>Messages</span>
+              <FiMessageSquare className="text-blue-600" /> <span>Mensajes</span>
             </Link>
             <Link href="/" className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline">
               <span>🌐</span> <span>Public Site</span>

@@ -9,22 +9,22 @@ import BrandLogo from '@/components/BrandLogo'
 type NavItem = { href: string; label: string; icon: React.ReactNode; badge?: number }
 
 const PRIMARY: NavItem[] = [
-  { href: '/dashboard/broker/overview',     label: 'Overview',    icon: <FiGrid /> },
+  { href: '/dashboard/broker/overview',     label: 'Resumen',     icon: <FiGrid /> },
   { href: '/dashboard/broker/pipeline',     label: 'Pipeline',    icon: <FiLayout /> },
-  { href: '/dashboard/broker/transactions', label: 'Deals',       icon: <FiTrendingUp /> },
-  { href: '/dashboard/listings',            label: 'Listings',    icon: <FiHome /> },
+  { href: '/dashboard/broker/transactions', label: 'Negocios',    icon: <FiTrendingUp /> },
+  { href: '/dashboard/listings',            label: 'Propiedades', icon: <FiHome /> },
 ]
 
 const SECONDARY: NavItem[] = [
-  { href: '/dashboard/broker/profile',      label: 'Profile',     icon: <FiSettings /> },
+  { href: '/dashboard/broker/profile',      label: 'Perfil',      icon: <FiSettings /> },
   { href: '/dashboard/broker/crm',          label: 'CRM',         icon: <FiUsers /> },
-  { href: '/dashboard/broker/team',         label: 'Agents',      icon: <FiClipboard /> },
-  { href: '/dashboard/broker/commissions',  label: 'Commissions', icon: <FiBarChart2 /> },
+  { href: '/dashboard/broker/team',         label: 'Equipo',      icon: <FiClipboard /> },
+  { href: '/dashboard/broker/commissions',  label: 'Comisiones',  icon: <FiBarChart2 /> },
 ]
 
 const SYSTEM: NavItem[] = [
-  { href: '/dashboard/broker/tasks',        label: 'Tasks',       icon: <FiCheckSquare /> },
-  { href: '/dashboard/broker/activity',     label: 'Activity',    icon: <FiActivity /> },
+  { href: '/dashboard/broker/tasks',        label: 'Tareas',      icon: <FiCheckSquare /> },
+  { href: '/dashboard/broker/activity',     label: 'Actividad',   icon: <FiActivity /> },
 ]
 
 function SidebarLink({ item, collapsed, pathname }: { item: NavItem; collapsed: boolean; pathname: string }) {
@@ -130,13 +130,13 @@ export default function BrokerSidebar() {
           <div className="mb-2 text-xs font-bold tracking-wide text-blue-900">SHORTCUTS</div>
           <div className="space-y-2">
             <Link href="/dashboard/listings/create" className="flex items-center gap-2 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
-              <FiPlusSquare className="text-blue-600" /> <span>Create Listing</span>
+              <FiPlusSquare className="text-blue-600" /> <span>Crear propiedad</span>
             </Link>
             <Link href="/messages" className="flex items-center gap-2 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
-              <FiMessageSquare className="text-blue-600" /> <span>Messages</span>
+              <FiMessageSquare className="text-blue-600" /> <span>Mensajes</span>
             </Link>
             <Link href="/dashboard/billing" className="flex items-center gap-2 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
-              <FiDollarSign className="text-blue-600" /> <span>Billing</span>
+              <FiDollarSign className="text-blue-600" /> <span>Facturacion</span>
             </Link>
             <Link href="/" className="flex items-center gap-2 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
               <span>🌐</span> <span>Public Site</span>

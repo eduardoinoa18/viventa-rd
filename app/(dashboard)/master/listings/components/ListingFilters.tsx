@@ -64,12 +64,12 @@ export default function ListingFilters({
             aria-label="Filtrar por preset de inteligencia"
             title="Filter by moderation and quality presets"
           >
-            <option value="all">All quality presets</option>
-            <option value="pending_verification">Pending verification</option>
-            <option value="missing_photos">Missing photos</option>
-            <option value="price_anomaly">Price anomaly</option>
-            <option value="no_assigned_broker">No assigned broker</option>
-            <option value="duplicate_risk">Duplicate risk</option>
+            <option value="all">Todos los presets</option>
+            <option value="pending_verification">Pendiente verificacion</option>
+            <option value="missing_photos">Fotos faltantes</option>
+            <option value="price_anomaly">Anomalia de precio</option>
+            <option value="no_assigned_broker">Sin broker asignado</option>
+            <option value="duplicate_risk">Riesgo duplicado</option>
           </select>
 
           {/* View Mode Toggle */}

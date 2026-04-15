@@ -117,43 +117,43 @@ export default function MasterBuyersPage() {
               <FiUsers />
             </span>
             <div>
-              <h1 className="text-3xl font-bold text-[#0B2545]">Buyers</h1>
-              <p className="text-sm text-gray-600">Manage buyer profiles and criteria.</p>
+              <h1 className="text-3xl font-bold text-[#0B2545]">Compradores</h1>
+              <p className="text-sm text-gray-600">Gestiona perfiles y criterios de compradores.</p>
             </div>
           </div>
           <button
             onClick={fetchBuyers}
             className="px-4 py-2 text-sm font-medium text-[#0B2545] border border-gray-300 rounded-lg hover:bg-gray-100"
           >
-            Refresh
+            Actualizar
           </button>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="text-sm text-gray-500">Total Buyers</div>
+            <div className="text-sm text-gray-500">Total Compradores</div>
             <div className="text-2xl font-bold text-[#0B2545]">{buyers.length}</div>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="text-sm text-gray-500">With Criteria</div>
+            <div className="text-sm text-gray-500">Con Criterios</div>
             <div className="text-2xl font-bold text-[#0B2545]">
               {buyers.filter((buyer) => buyer.criteria && Object.keys(buyer.criteria).length > 0).length}
             </div>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="text-sm text-gray-500">Active Filters</div>
+            <div className="text-sm text-gray-500">Filtros Activos</div>
             <div className="text-2xl font-bold text-[#0B2545]">
               {[locationFilter, purposeFilter, search].filter((value) => value.trim()).length}
             </div>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="text-sm text-gray-500">High Priority</div>
+            <div className="text-sm text-gray-500">Alta Prioridad</div>
             <div className="text-2xl font-bold text-red-700">
               {buyers.filter((buyer) => buyer.priority === 'high').length}
             </div>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="text-sm text-gray-500">Follow-up Due</div>
+            <div className="text-sm text-gray-500">Seguimiento Pendiente</div>
             <div className="text-2xl font-bold text-amber-600">
               {buyers.filter((buyer) => buyer.nextFollowUpAt && new Date(buyer.nextFollowUpAt).getTime() <= Date.now()).length}
             </div>
@@ -163,7 +163,7 @@ export default function MasterBuyersPage() {
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-2 text-sm font-semibold text-[#0B2545]">
-              <FiFilter /> Filters
+              <FiFilter /> Filtros
             </div>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
               <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
@@ -171,7 +171,7 @@ export default function MasterBuyersPage() {
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search by name, email, or phone"
+                  placeholder="Buscar por nombre, email o telefono"
                   className="w-full border-0 bg-transparent p-0 text-sm focus:outline-none"
                   aria-label="Search buyers"
                 />
@@ -182,7 +182,7 @@ export default function MasterBuyersPage() {
                 className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                 aria-label="Filter buyers by location"
               >
-                <option value="">All locations</option>
+                <option value="">Todas las ubicaciones</option>
                 {locationOptions.map((location) => (
                   <option key={location} value={location}>
                     {location}
@@ -195,7 +195,7 @@ export default function MasterBuyersPage() {
                 className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                 aria-label="Filter buyers by purpose"
               >
-                <option value="">All purposes</option>
+                <option value="">Todos los propositos</option>
                 {purposeOptions.map((purpose) => (
                   <option key={purpose} value={purpose}>
                     {purpose}
@@ -211,26 +211,26 @@ export default function MasterBuyersPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
-                  <th className="px-5 py-3 text-left">Buyer</th>
-                  <th className="px-5 py-3 text-left">Contact</th>
-                  <th className="px-5 py-3 text-left">Location</th>
-                  <th className="px-5 py-3 text-left">Budget</th>
-                  <th className="px-5 py-3 text-left">Lifecycle</th>
+                  <th className="px-5 py-3 text-left">Comprador</th>
+                  <th className="px-5 py-3 text-left">Contacto</th>
+                  <th className="px-5 py-3 text-left">Ubicacion</th>
+                  <th className="px-5 py-3 text-left">Presupuesto</th>
+                  <th className="px-5 py-3 text-left">Ciclo de Vida</th>
                   <th className="px-5 py-3 text-left">Engagement</th>
-                  <th className="px-5 py-3 text-left">Actions</th>
+                  <th className="px-5 py-3 text-left">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
                   <tr>
                     <td colSpan={7} className="px-5 py-8 text-center text-gray-500">
-                      Loading buyers...
+                      Cargando compradores...
                     </td>
                   </tr>
                 ) : filteredBuyers.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-5 py-8 text-center text-gray-500">
-                      No buyers found.
+                      No se encontraron compradores.
                     </td>
                   </tr>
                 ) : (
@@ -247,7 +247,7 @@ export default function MasterBuyersPage() {
                       <td className="px-5 py-4">
                         <div className="text-gray-700">{buyer.criteria?.location || '—'}</div>
                         {buyer.criteria?.projectOnly && (
-                          <div className="text-xs text-blue-600">Project only</div>
+                          <div className="text-xs text-blue-600">Solo proyectos</div>
                         )}
                       </td>
                       <td className="px-5 py-4">
@@ -273,9 +273,9 @@ export default function MasterBuyersPage() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="space-y-1 text-xs text-gray-600">
-                          <div>Score: <span className="font-semibold text-[#0B2545]">{buyer.engagementScore ?? 50}</span>/100</div>
-                          <div>Owner: {buyer.assignedAgentName || 'Unassigned'}</div>
-                          <div>Next: {formatRelativeDate(buyer.nextFollowUpAt)}</div>
+                          <div>Puntaje: <span className="font-semibold text-[#0B2545]">{buyer.engagementScore ?? 50}</span>/100</div>
+                          <div>Dueno: {buyer.assignedAgentName || 'Sin asignar'}</div>
+                          <div>Prox.: {formatRelativeDate(buyer.nextFollowUpAt)}</div>
                         </div>
                       </td>
                       <td className="px-5 py-4">
@@ -283,7 +283,7 @@ export default function MasterBuyersPage() {
                           href={`/master/buyers/${buyer.id}`}
                           className="inline-flex rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-[#0B2545] hover:bg-gray-100"
                         >
-                          View Details
+                          Ver Detalles
                         </Link>
                       </td>
                     </tr>

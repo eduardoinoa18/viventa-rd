@@ -13,21 +13,21 @@ import BrandLogo from './BrandLogo'
 type NavItem = { href: string; label: string; icon: React.ReactNode; badge?: number }
 
 const PRIMARY: NavItem[] = [
-  { href: '/dashboard/constructora/overview',     label: 'Overview',    icon: <FiGrid /> },
+  { href: '/dashboard/constructora/overview',     label: 'Resumen',     icon: <FiGrid /> },
   { href: '/dashboard/constructora/projects',     label: 'Proyectos',   icon: <FiLayers /> },
-  { href: '/dashboard/constructora/deals',        label: 'Deals',       icon: <FiTrendingUp /> },
+  { href: '/dashboard/constructora/deals',        label: 'Negocios',    icon: <FiTrendingUp /> },
 ]
 
 const SECONDARY: NavItem[] = [
   { href: '/dashboard/constructora/units',        label: 'Inventario',  icon: <FiPackage /> },
   { href: '/dashboard/constructora/reservations', label: 'Reservas',    icon: <FiCalendar /> },
-  { href: '/dashboard/listings',                  label: 'Listings',    icon: <FiHome /> },
+  { href: '/dashboard/listings',                  label: 'Propiedades', icon: <FiHome /> },
 ]
 
 const SYSTEM: NavItem[] = [
-  { href: '/dashboard/constructora/tasks',        label: 'Tasks',       icon: <FiCheckSquare /> },
-  { href: '/dashboard/constructora/clients',      label: 'Clients',     icon: <FiUsers /> },
-  { href: '/dashboard/constructora/activity',     label: 'Activity',    icon: <FiActivity /> },
+  { href: '/dashboard/constructora/tasks',        label: 'Tareas',      icon: <FiCheckSquare /> },
+  { href: '/dashboard/constructora/clients',      label: 'Clientes',    icon: <FiUsers /> },
+  { href: '/dashboard/constructora/activity',     label: 'Actividad',   icon: <FiActivity /> },
 ]
 
 function SidebarLink({ item, collapsed, pathname }: { item: NavItem; collapsed: boolean; pathname: string }) {
@@ -72,17 +72,33 @@ function NavSection({ items, label, collapsed, pathname }: { items: NavItem[]; l
 export default function ConstructoraSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+  const [unreadActivity, setUnreadActivity] = useState(0)
 
   useEffect(() => {
     const saved = localStorage.getItem('constructora_sidebar_collapsed')
     if (saved) setCollapsed(saved === '1')
   }, [])
 
+  useEffect(() => {
+    fetch('/api/activity-events/summary', { cache: 'no-store' })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({}))
+        if (!response.ok || !payload?.ok) return
+        setUnreadActivity(Number(payload?.summary?.unreadActivity || 0))
+      })
+      .catch(() => {})
+  }, [pathname])
+
   function toggle() {
     const next = !collapsed
     setCollapsed(next)
     try { localStorage.setItem('constructora_sidebar_collapsed', next ? '1' : '0') } catch {}
   }
+
+  const systemWithBadge = SYSTEM.map((item) =>
+    item.href === '/dashboard/constructora/activity' && unreadActivity > 0
+      ? { ...item, badge: unreadActivity }
+      : item)
 
   return (
     <aside className={`${collapsed ? 'w-16' : 'w-64'} min-h-screen border-r border-gray-200 bg-gradient-to-b from-white to-gray-50 p-3 shadow-lg transition-all duration-300`}>
@@ -105,9 +121,9 @@ export default function ConstructoraSidebar() {
       </div>
 
       <nav>
-        <NavSection items={PRIMARY}   label="PRIMARY"   collapsed={collapsed} pathname={pathname} />
-        <NavSection items={SECONDARY} label="SECONDARY" collapsed={collapsed} pathname={pathname} />
-        <NavSection items={SYSTEM}    label="SYSTEM"    collapsed={collapsed} pathname={pathname} />
+        <NavSection items={PRIMARY}   label="PRINCIPAL" collapsed={collapsed} pathname={pathname} />
+        <NavSection items={SECONDARY} label="GESTION"    collapsed={collapsed} pathname={pathname} />
+        <NavSection items={systemWithBadge} label="SISTEMA"  collapsed={collapsed} pathname={pathname} />
       </nav>
 
       {!collapsed && (
@@ -121,7 +137,7 @@ export default function ConstructoraSidebar() {
               <FiMessageSquare className="text-blue-600" /> <span>Mensajes</span>
             </Link>
             <Link href="/dashboard/billing" className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline">
-              <FiDollarSign className="text-blue-600" /> <span>Billing</span>
+              <FiDollarSign className="text-blue-600" /> <span>Facturacion</span>
             </Link>
             <Link href="/constructoras" className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline">
               <FiUsers className="text-blue-600" /> <span>Directorio</span>

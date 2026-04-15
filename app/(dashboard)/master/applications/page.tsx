@@ -55,10 +55,10 @@ type RejectionReasonCode =
   | 'other'
 
 const HARD_REQUIREMENT_OPTIONS = [
-  { key: 'identity', label: 'Identity/KYC validation' },
-  { key: 'license', label: 'Valid license or registration' },
-  { key: 'documents', label: 'Required legal documents' },
-  { key: 'compliance', label: 'Compliance risk threshold' },
+  { key: 'identity', label: 'Validacion de identidad/KYC' },
+  { key: 'license', label: 'Licencia o registro valido' },
+  { key: 'documents', label: 'Documentos legales requeridos' },
+  { key: 'compliance', label: 'Umbral de riesgo de cumplimiento' },
 ] as const
 
 export default function ApplicationsPage() {
@@ -244,27 +244,27 @@ export default function ApplicationsPage() {
     if (!selectedApp) return
 
     if (!selectedApp.email || !selectedApp.contact) {
-      toast.error('Missing required application data')
+      toast.error('Faltan datos requeridos de la solicitud')
       return
     }
 
     if (status === 'approved' && reviewScore < 75) {
-      toast.error('Approval requires at least 75 review score (3 of 4 criteria).')
+      toast.error('Aprobacion requiere puntaje minimo de 75 (3 de 4 criterios).')
       return
     }
 
     if (status === 'rejected' && reviewNotes.trim().length < 10) {
-      toast.error('Please provide a clear rejection reason (at least 10 characters).')
+      toast.error('Provee una razon de rechazo clara (minimo 10 caracteres).')
       return
     }
 
     if (status === 'rejected' && !rejectionReason) {
-      toast.error('Please select a structured rejection reason.')
+      toast.error('Selecciona una razon estructurada de rechazo.')
       return
     }
 
     if (status === 'rejected' && failedRequirements.length === 0) {
-      toast.error('Select at least one failed hard requirement.')
+      toast.error('Selecciona al menos un requisito que haya fallado.')
       return
     }
 
@@ -305,25 +305,25 @@ export default function ApplicationsPage() {
       
       if (res.ok && json.ok) {
         if (status === 'approved') {
-          toast.success(`${selectedApp.contact} approved! Credentials email sent.`)
+          toast.success(`${selectedApp.contact} aprobado. Credenciales enviadas por email.`)
         } else if (status === 'rejected') {
-          toast.success(`${selectedApp.contact} rejected`)
+          toast.success(`${selectedApp.contact} rechazado`)
         } else {
-          toast.success('Sent request for more info')
+          toast.success('Solicitud de mas informacion enviada')
         }
         closeReview()
         loadApplications()
       } else {
         const issue = mapOfficeQuotaIssue(json || {}, {
           context: 'agent-seat',
-          fallbackMessage: 'Failed to update application review',
+            fallbackMessage: 'No se pudo actualizar la revision',
         })
         toast.error(issue.message)
         setReviewQuotaIssue(issue)
       }
     } catch (e) {
       console.error('Failed to update application review', e)
-      toast.error('Failed to update application review')
+      toast.error('No se pudo actualizar la revision')
     } finally {
       setProcessingId(null)
     }
@@ -331,7 +331,7 @@ export default function ApplicationsPage() {
 
   // Handle delete application
   async function handleDelete(app: Application) {
-    if (!confirm(`Delete application from ${app.contact}? This cannot be undone.`)) return
+    if (!confirm(`Eliminar solicitud de ${app.contact}? Esta accion no se puede deshacer.`)) return
 
     setProcessingId(app.id)
     try {
@@ -348,14 +348,14 @@ export default function ApplicationsPage() {
       const json = await res.json()
       
       if (res.ok && json.ok) {
-        toast.success('Application deleted')
+        toast.success('Solicitud eliminada')
         loadApplications()
       } else {
-        toast.error(json.error || 'Failed to delete application')
+        toast.error(json.error || 'No se pudo eliminar la solicitud')
       }
     } catch (e) {
       console.error('Failed to delete application', e)
-      toast.error('Failed to delete application')
+      toast.error('No se pudo eliminar la solicitud')
     } finally {
       setProcessingId(null)
     }
@@ -363,8 +363,8 @@ export default function ApplicationsPage() {
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      agent: '🏢 Agent',
-      'new-agent': '🌱 New Agent',
+      agent: '🏢 Agente',
+      'new-agent': '🌱 Agente Nuevo',
       broker: '🏛️ Brokerage',
       constructora: '🏗️ Constructora',
     }
@@ -373,9 +373,9 @@ export default function ApplicationsPage() {
 
   const getSourceBadge = (source?: string) => {
     if (source === 'subscription_request') {
-      return { className: 'bg-indigo-100 text-indigo-800', label: 'Billing Intake' }
+      return { className: 'bg-indigo-100 text-indigo-800', label: 'Suscripcion' }
     }
-    return { className: 'bg-slate-100 text-slate-700', label: 'Direct Application' }
+    return { className: 'bg-slate-100 text-slate-700', label: 'Solicitud Directa' }
   }
 
   const getReviewBadge = (score?: number) => {
@@ -393,10 +393,10 @@ export default function ApplicationsPage() {
       more_info: 'bg-blue-100 text-blue-800',
     }
     const labels: Record<string, string> = {
-      pending: 'Pending Review',
-      approved: 'Approved',
-      rejected: 'Rejected',
-      more_info: 'More Info Needed',
+      pending: 'Pendiente',
+      approved: 'Aprobado',
+      rejected: 'Rechazado',
+      more_info: 'Mas Informacion',
     }
     return { style: styles[status] || 'bg-gray-100 text-gray-800', label: labels[status] || status }
   }
@@ -416,13 +416,13 @@ export default function ApplicationsPage() {
       <div className="flex-1 overflow-auto">
         <div className="max-w-4xl mx-auto p-8">
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
-            <h1 className="text-2xl font-bold text-amber-900">Applications Review is admin-only</h1>
+            <h1 className="text-2xl font-bold text-amber-900">Las solicitudes son solo para administradores</h1>
             <p className="mt-2 text-sm text-amber-800">
-              Broker/agent/constructora roles now follow the operational dashboard flow. Application intake and approvals stay with admin reviewers.
+              Los roles broker/agente/constructora siguen el flujo del dashboard operativo. La revision de solicitudes es exclusiva de los administradores.
             </p>
             <div className="mt-4 flex gap-2">
-              <Link href="/dashboard" className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium hover:bg-[#12355f]">Go to My Dashboard</Link>
-              <Link href="/master/leads" className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Go to Leads</Link>
+              <Link href="/dashboard" className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium hover:bg-[#12355f]">Ir al Dashboard</Link>
+              <Link href="/master/leads" className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Ir a Leads</Link>
             </div>
           </div>
         </div>
@@ -435,24 +435,24 @@ export default function ApplicationsPage() {
       <div className="max-w-7xl mx-auto p-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Professional Applications</h1>
-          <p className="text-gray-600">Review and manage agent, broker, and constructora applications with criteria-based decisions</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Solicitudes Profesionales</h1>
+          <p className="text-gray-600">Revisa y gestiona solicitudes de agentes, brokers y constructoras con criterios estructurados</p>
         </div>
 
         <div className="mb-6 flex flex-wrap gap-2">
           <Link href="/master/leads" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Leads</Link>
-          <Link href="/master/listings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Listings</Link>
-          <Link href="/master/users" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">People</Link>
-          <Link href="/master/inbox" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Inbox</Link>
-          <Link href="/master/settings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Settings</Link>
+          <Link href="/master/listings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Propiedades</Link>
+          <Link href="/master/users" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Personas</Link>
+          <Link href="/master/inbox" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Mensajes</Link>
+          <Link href="/master/settings" className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Configuracion</Link>
         </div>
 
         <div className="mb-6 rounded-lg border border-[#0B2545]/20 bg-[#0B2545]/5 p-4">
-          <div className="text-sm font-semibold text-[#0B2545]">Onboarding Review Guide</div>
+          <div className="text-sm font-semibold text-[#0B2545]">Guia de Revision de Solicitudes</div>
           <div className="mt-2 grid grid-cols-1 gap-2 text-xs text-gray-700 md:grid-cols-3">
-            <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2"><span className="font-semibold">Agent:</span> verify identity, experience, readiness, then assign office.</div>
-            <div className="rounded border border-purple-200 bg-purple-50 px-3 py-2"><span className="font-semibold">Broker:</span> verify legal profile, compliance and operating structure before activation.</div>
-            <div className="rounded border border-orange-200 bg-orange-50 px-3 py-2"><span className="font-semibold">Constructora:</span> verify company docs, project readiness and publication governance.</div>
+            <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2"><span className="font-semibold">Agente:</span> verifica identidad, experiencia y disposicion; luego asigna oficina.</div>
+            <div className="rounded border border-purple-200 bg-purple-50 px-3 py-2"><span className="font-semibold">Broker:</span> verifica perfil legal, cumplimiento y estructura operativa antes de activar.</div>
+            <div className="rounded border border-orange-200 bg-orange-50 px-3 py-2"><span className="font-semibold">Constructora:</span> verifica documentos, disposicion de proyectos y gobernanza de publicacion.</div>
           </div>
         </div>
 
@@ -465,28 +465,28 @@ export default function ApplicationsPage() {
           <div className="bg-white rounded-lg border border-yellow-200 p-4 cursor-pointer hover:border-yellow-300" onClick={() => setStatusFilter('pending')}>
             <div className="text-sm font-medium text-yellow-700 flex items-center gap-2">
               <FiClock className="w-4 h-4" />
-              Pending
+              Pendiente
             </div>
             <div className="text-3xl font-bold text-yellow-900">{stats.pending}</div>
           </div>
           <div className="bg-white rounded-lg border border-green-200 p-4 cursor-pointer hover:border-green-300" onClick={() => setStatusFilter('approved')}>
             <div className="text-sm font-medium text-green-700 flex items-center gap-2">
               <FiCheck className="w-4 h-4" />
-              Approved
+              Aprobado
             </div>
             <div className="text-3xl font-bold text-green-900">{stats.approved}</div>
           </div>
           <div className="bg-white rounded-lg border border-red-200 p-4 cursor-pointer hover:border-red-300" onClick={() => setStatusFilter('rejected')}>
             <div className="text-sm font-medium text-red-700 flex items-center gap-2">
               <FiX className="w-4 h-4" />
-              Rejected
+              Rechazado
             </div>
             <div className="text-3xl font-bold text-red-900">{stats.rejected}</div>
           </div>
           <div className="bg-white rounded-lg border border-blue-200 p-4 cursor-pointer hover:border-blue-300" onClick={() => setStatusFilter('more_info')}>
             <div className="text-sm font-medium text-blue-700 flex items-center gap-2">
               <FiAlertCircle className="w-4 h-4" />
-              Info Needed
+              Mas Info
             </div>
             <div className="text-3xl font-bold text-blue-900">{stats.moreInfo}</div>
           </div>
@@ -499,7 +499,7 @@ export default function ApplicationsPage() {
               <FiSearch className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name, email, phone, or company..."
+                placeholder="Buscar por nombre, email, telefono o empresa..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -513,9 +513,9 @@ export default function ApplicationsPage() {
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-label="Filter by applicant type"
               >
-                <option value="all">All Types</option>
-                <option value="agent">Agent</option>
-                <option value="new-agent">New Agent</option>
+                <option value="all">Todos los tipos</option>
+                <option value="agent">Agente</option>
+                <option value="new-agent">Agente Nuevo</option>
                 <option value="broker">Broker</option>
                 <option value="constructora">Constructora</option>
               </select>
@@ -525,27 +525,27 @@ export default function ApplicationsPage() {
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-label="Filtrar por estado"
               >
-                <option value="all">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="more_info">More Info</option>
+                <option value="all">Todos los estados</option>
+                <option value="pending">Pendiente</option>
+                <option value="approved">Aprobado</option>
+                <option value="rejected">Rechazado</option>
+                <option value="more_info">Mas Info</option>
               </select>
             </div>
           </div>
 
           {hasActiveFilters && (
             <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
-              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Active filters</span>
-              {statusFilter !== 'all' && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">Status: {statusFilter.replace('_', ' ')}</span>}
-              {typeFilter !== 'all' && <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">Type: {typeFilter}</span>}
-              {searchQuery.trim() && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">Search: “{searchQuery.trim()}”</span>}
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Filtros activos</span>
+              {statusFilter !== 'all' && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">Estado: {statusFilter.replace('_', ' ')}</span>}
+              {typeFilter !== 'all' && <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">Tipo: {typeFilter}</span>}
+              {searchQuery.trim() && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">Busqueda: "{searchQuery.trim()}"</span>}
               <button
                 onClick={clearFilters}
                 className="ml-auto inline-flex items-center rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
                 title="Clear all filters"
               >
-                Clear all
+                Limpiar
               </button>
             </div>
           )}
@@ -576,13 +576,13 @@ export default function ApplicationsPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Applicant</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Company/Market</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Criteria</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Applied</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Solicitante</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tipo</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Empresa</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Criterios</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Fecha</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estado</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -605,7 +605,7 @@ export default function ApplicationsPage() {
                             {getSourceBadge(app.source).label}
                           </span>
                           {app.pathway === 'new_agent_program' && (
-                            <span className="block text-xs text-blue-600">New Agent Program</span>
+                            <span className="block text-xs text-blue-600">Programa Agente Nuevo</span>
                           )}
                         </td>
                         <td className="px-6 py-4">
@@ -621,13 +621,13 @@ export default function ApplicationsPage() {
                               Score: {typeof app.reviewScore === 'number' ? app.reviewScore : 0}
                             </span>
                             {app.reviewRecommendation && (
-                              <p className="mt-1 text-xs text-gray-500">Recommendation: {app.reviewRecommendation.replace('_', ' ')}</p>
+                              <p className="mt-1 text-xs text-gray-500">Recomendacion: {app.reviewRecommendation.replace('_', ' ')}</p>
                             )}
                             {app.rejectionReasonCode && (
-                              <p className="mt-1 text-xs text-rose-700">Reason: {app.rejectionReasonCode.replace(/_/g, ' ')}</p>
+                              <p className="mt-1 text-xs text-rose-700">Razon: {app.rejectionReasonCode.replace(/_/g, ' ')}</p>
                             )}
                             {Array.isArray(app.failedRequirements) && app.failedRequirements.length > 0 && (
-                              <p className="mt-1 text-xs text-rose-600">Failed: {app.failedRequirements.join(', ')}</p>
+                              <p className="mt-1 text-xs text-rose-600">Fallidos: {app.failedRequirements.join(', ')}</p>
                             )}
                           </div>
                         </td>
@@ -647,7 +647,7 @@ export default function ApplicationsPage() {
                               className="inline-flex items-center gap-2 px-3 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                             >
                               <FiAlertCircle className="w-4 h-4" />
-                              {isPending ? 'Review' : 'Open'}
+                              {isPending ? 'Revisar' : 'Ver'}
                             </button>
                             <button
                               onClick={() => handleDelete(app)}
@@ -673,35 +673,35 @@ export default function ApplicationsPage() {
       {showReviewModal && selectedApp && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Review Application</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Revisar Solicitud</h3>
             <p className="text-gray-600 mb-4">
-              Reviewing <strong>{selectedApp.contact}</strong> ({getTypeLabel(selectedApp.type)})
+              Revisando <strong>{selectedApp.contact}</strong> ({getTypeLabel(selectedApp.type)})
             </p>
 
             <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">Submitted Information</h4>
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">Informacion Enviada</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                <p><span className="text-gray-500">Source:</span> <span className="font-medium text-gray-900">{getSourceBadge(selectedApp.source).label}</span></p>
-                <p><span className="text-gray-500">Status:</span> <span className="font-medium text-gray-900">{selectedApp.status}</span></p>
-                <p><span className="text-gray-500">Name:</span> <span className="font-medium text-gray-900">{selectedApp.contact || '—'}</span></p>
+                <p><span className="text-gray-500">Fuente:</span> <span className="font-medium text-gray-900">{getSourceBadge(selectedApp.source).label}</span></p>
+                <p><span className="text-gray-500">Estado:</span> <span className="font-medium text-gray-900">{selectedApp.status}</span></p>
+                <p><span className="text-gray-500">Nombre:</span> <span className="font-medium text-gray-900">{selectedApp.contact || '—'}</span></p>
                 <p><span className="text-gray-500">Email:</span> <span className="font-medium text-gray-900">{selectedApp.email || '—'}</span></p>
-                <p><span className="text-gray-500">Phone:</span> <span className="font-medium text-gray-900">{selectedApp.phone || '—'}</span></p>
-                <p><span className="text-gray-500">Type:</span> <span className="font-medium text-gray-900">{getTypeLabel(selectedApp.type)}</span></p>
-                <p><span className="text-gray-500">Company:</span> <span className="font-medium text-gray-900">{selectedApp.company || '—'}</span></p>
-                <p><span className="text-gray-500">Contact Person:</span> <span className="font-medium text-gray-900">{selectedApp.contactPerson || '—'}</span></p>
-                <p><span className="text-gray-500">Years:</span> <span className="font-medium text-gray-900">{selectedApp.years ?? '—'}</span></p>
-                <p><span className="text-gray-500">Markets:</span> <span className="font-medium text-gray-900">{selectedApp.markets || '—'}</span></p>
+                <p><span className="text-gray-500">Telefono:</span> <span className="font-medium text-gray-900">{selectedApp.phone || '—'}</span></p>
+                <p><span className="text-gray-500">Tipo:</span> <span className="font-medium text-gray-900">{getTypeLabel(selectedApp.type)}</span></p>
+                <p><span className="text-gray-500">Empresa:</span> <span className="font-medium text-gray-900">{selectedApp.company || '—'}</span></p>
+                <p><span className="text-gray-500">Contacto:</span> <span className="font-medium text-gray-900">{selectedApp.contactPerson || '—'}</span></p>
+                <p><span className="text-gray-500">Anos exp.:</span> <span className="font-medium text-gray-900">{selectedApp.years ?? '—'}</span></p>
+                <p><span className="text-gray-500">Mercados:</span> <span className="font-medium text-gray-900">{selectedApp.markets || '—'}</span></p>
                 <p><span className="text-gray-500">Volume 12m:</span> <span className="font-medium text-gray-900">{selectedApp.volume12m ?? '—'}</span></p>
-                <p><span className="text-gray-500">Website:</span> {selectedApp.website ? <a className="font-medium text-blue-700 hover:underline" href={selectedApp.website} target="_blank" rel="noreferrer">Open</a> : <span className="font-medium text-gray-900">—</span>}</p>
+                <p><span className="text-gray-500">Sitio Web:</span> {selectedApp.website ? <a className="font-medium text-blue-700 hover:underline" href={selectedApp.website} target="_blank" rel="noreferrer">Abrir</a> : <span className="font-medium text-gray-900">—</span>}</p>
                 <p><span className="text-gray-500">Plan ID:</span> <span className="font-medium text-gray-900">{selectedApp.planId || '—'}</span></p>
-                <p><span className="text-gray-500">Linked User:</span> <span className="font-medium text-gray-900">{selectedApp.userId || '—'}</span></p>
-                <p><span className="text-gray-500">Submitted:</span> <span className="font-medium text-gray-900">{formatDate(selectedApp.createdAt)}</span></p>
-                <p><span className="text-gray-500">Approved At:</span> <span className="font-medium text-gray-900">{formatDate(selectedApp.approvedAt)}</span></p>
-                <p><span className="text-gray-500">Resume:</span> {selectedApp.resumeUrl ? <a className="font-medium text-blue-700 hover:underline" href={selectedApp.resumeUrl} target="_blank" rel="noreferrer">Open file</a> : <span className="font-medium text-gray-900">—</span>}</p>
-                <p><span className="text-gray-500">Document:</span> {selectedApp.documentUrl ? <a className="font-medium text-blue-700 hover:underline" href={selectedApp.documentUrl} target="_blank" rel="noreferrer">Open file</a> : <span className="font-medium text-gray-900">—</span>}</p>
+                <p><span className="text-gray-500">Usuario:</span> <span className="font-medium text-gray-900">{selectedApp.userId || '—'}</span></p>
+                <p><span className="text-gray-500">Enviado:</span> <span className="font-medium text-gray-900">{formatDate(selectedApp.createdAt)}</span></p>
+                <p><span className="text-gray-500">Aprobado:</span> <span className="font-medium text-gray-900">{formatDate(selectedApp.approvedAt)}</span></p>
+                <p><span className="text-gray-500">Curriculum:</span> {selectedApp.resumeUrl ? <a className="font-medium text-blue-700 hover:underline" href={selectedApp.resumeUrl} target="_blank" rel="noreferrer">Abrir archivo</a> : <span className="font-medium text-gray-900">—</span>}</p>
+                <p><span className="text-gray-500">Documento:</span> {selectedApp.documentUrl ? <a className="font-medium text-blue-700 hover:underline" href={selectedApp.documentUrl} target="_blank" rel="noreferrer">Abrir archivo</a> : <span className="font-medium text-gray-900">—</span>}</p>
               </div>
               <details className="mt-3">
-                <summary className="cursor-pointer text-xs text-gray-600">View full submitted payload</summary>
+                <summary className="cursor-pointer text-xs text-gray-600">Ver datos completos de la solicitud</summary>
                 <pre className="mt-2 p-3 bg-white border border-gray-200 rounded text-[11px] text-gray-700 overflow-auto">{JSON.stringify(selectedApp, null, 2)}</pre>
               </details>
             </div>
@@ -714,7 +714,7 @@ export default function ApplicationsPage() {
                   disabled={!isPendingSelection}
                   onChange={(e) => setReviewCriteria(prev => ({ ...prev, identityVerified: e.target.checked }))}
                 />
-                Identity and contact verified
+                Identidad y contacto verificados
               </label>
               <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input
@@ -723,7 +723,7 @@ export default function ApplicationsPage() {
                   disabled={!isPendingSelection}
                   onChange={(e) => setReviewCriteria(prev => ({ ...prev, businessProfileValid: e.target.checked }))}
                 />
-                Business profile and market fit valid
+                Perfil de negocio y mercado validos
               </label>
               <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input
@@ -732,7 +732,7 @@ export default function ApplicationsPage() {
                   disabled={!isPendingSelection}
                   onChange={(e) => setReviewCriteria(prev => ({ ...prev, documentationComplete: e.target.checked }))}
                 />
-                Documentation is complete
+                Documentacion completa
               </label>
               <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input
@@ -741,13 +741,13 @@ export default function ApplicationsPage() {
                   disabled={!isPendingSelection}
                   onChange={(e) => setReviewCriteria(prev => ({ ...prev, readinessSignal: e.target.checked }))}
                 />
-                Operational readiness confirmed
+                Disposicion operacional confirmada
               </label>
             </div>
 
             <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
               <p className="text-sm text-gray-700">
-                Review score: <strong>{reviewScore}</strong> • Recommendation: <strong>{reviewRecommendation.replace('_', ' ')}</strong>
+                Puntaje: <strong>{reviewScore}</strong> • Recomendacion: <strong>{reviewRecommendation.replace('_', ' ')}</strong>
               </p>
             </div>
 
@@ -767,15 +767,15 @@ export default function ApplicationsPage() {
             <textarea
               value={reviewNotes}
               onChange={(e) => setReviewNotes(e.target.value)}
-              placeholder="Reviewer notes (required for rejection, optional otherwise)..."
+              placeholder="Notas del revisor (requeridas para rechazo, opcional en otros casos)..."
               rows={4}
               disabled={!isPendingSelection}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
             />
-            <p className="text-xs text-gray-500 mt-2">These notes and criteria are stored in the application review record.</p>
+            <p className="text-xs text-gray-500 mt-2">Estas notas y criterios se guardan en el registro de revision.</p>
 
             <div className="mt-4 rounded-lg border border-gray-200 p-3">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Structured rejection reason (required to reject)</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Razon de rechazo estructurada (requerida para rechazar)</label>
               <select
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value as RejectionReasonCode | '')}
@@ -783,16 +783,16 @@ export default function ApplicationsPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 aria-label="Structured rejection reason"
               >
-                <option value="">Select a reason</option>
-                <option value="kyc_failed">KYC/identity failed</option>
-                <option value="missing_required_documents">Missing required documents</option>
-                <option value="license_or_registration_invalid">License/registration invalid</option>
-                <option value="market_fit_insufficient">Market fit insufficient</option>
-                <option value="compliance_risk_high">Compliance risk too high</option>
-                <option value="other">Other</option>
+                <option value="">Selecciona una razon</option>
+                <option value="kyc_failed">KYC/identidad fallida</option>
+                <option value="missing_required_documents">Documentos requeridos faltantes</option>
+                <option value="license_or_registration_invalid">Licencia/registro invalido</option>
+                <option value="market_fit_insufficient">Mercado insuficiente</option>
+                <option value="compliance_risk_high">Riesgo de cumplimiento muy alto</option>
+                <option value="other">Otro</option>
               </select>
 
-              <p className="mt-3 text-sm font-semibold text-gray-700">Hard requirements failed</p>
+              <p className="mt-3 text-sm font-semibold text-gray-700">Requisitos obligatorios fallidos</p>
               <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
                 {HARD_REQUIREMENT_OPTIONS.map((option) => (
                   <label key={option.key} className="flex items-center gap-2 text-sm text-gray-700">
@@ -813,7 +813,7 @@ export default function ApplicationsPage() {
                 onClick={closeReview}
                 className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
               >
-                Cancel
+                Cancelar
               </button>
               {isPendingSelection && (
                 <>
@@ -822,21 +822,21 @@ export default function ApplicationsPage() {
                     disabled={processingId === selectedApp.id}
                     className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
                   >
-                    {processingId === selectedApp.id ? 'Processing...' : 'Request Info'}
+                    {processingId === selectedApp.id ? 'Procesando...' : 'Pedir Mas Info'}
                   </button>
                   <button
                     onClick={() => submitReviewDecision('rejected')}
                     disabled={processingId === selectedApp.id}
                     className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
                   >
-                    {processingId === selectedApp.id ? 'Rejecting...' : 'Reject'}
+                    {processingId === selectedApp.id ? 'Rechazando...' : 'Rechazar'}
                   </button>
                   <button
                     onClick={() => submitReviewDecision('approved')}
                     disabled={processingId === selectedApp.id || reviewScore < 75}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
                   >
-                    {processingId === selectedApp.id ? 'Approving...' : 'Approve'}
+                    {processingId === selectedApp.id ? 'Aprobando...' : 'Aprobar'}
                   </button>
                 </>
               )}

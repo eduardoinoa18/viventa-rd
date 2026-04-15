@@ -41,23 +41,23 @@ export default function AdminSidebar() {
   
   // Define navigation based on role — three-tier hierarchy
   const allPrimary = [
-    { href: '/master',            label: 'Dashboard',   icon: <FiGrid />,     roles: ['master_admin', 'admin'] },
-    { href: '/master/listings',   label: userRole === 'agent' ? 'My Properties' : userRole === 'broker' ? 'Team Properties' : userRole === 'constructora' ? 'Project Listings' : 'Properties', icon: <FiHome />, roles: ['master_admin', 'admin', 'agent', 'broker', 'constructora'] },
-    { href: '/master/leads',      label: userRole === 'agent' ? 'My Leads' : userRole === 'constructora' ? 'Project Leads' : 'Leads', icon: <FiTarget />, roles: ['master_admin', 'admin', 'agent', 'broker', 'constructora'] },
+    { href: '/master',            label: 'Panel',   icon: <FiGrid />,     roles: ['master_admin', 'admin'] },
+    { href: '/master/listings',   label: userRole === 'agent' ? 'Mis Propiedades' : userRole === 'broker' ? 'Propiedades Equipo' : userRole === 'constructora' ? 'Propiedades Proyecto' : 'Propiedades', icon: <FiHome />, roles: ['master_admin', 'admin', 'agent', 'broker', 'constructora'] },
+    { href: '/master/leads',      label: userRole === 'agent' ? 'Mis Leads' : userRole === 'constructora' ? 'Leads Proyecto' : 'Leads', icon: <FiTarget />, roles: ['master_admin', 'admin', 'agent', 'broker', 'constructora'] },
   ]
 
   const allSecondary = [
-    { href: '/master/users',      label: 'People',      icon: <FiUsers />,    roles: ['master_admin', 'admin', 'broker'] },
-    { href: '/master/buyers',     label: 'Buyers',      icon: <FiUser />,     roles: ['master_admin', 'admin', 'broker'] },
-    { href: '/master/offices',    label: 'Offices',     icon: <FiMap />,      roles: ['master_admin', 'admin'] },
-    { href: '/master/applications', label: 'Applications', icon: <FiClipboard />, roles: ['master_admin', 'admin'] },
+    { href: '/master/users',      label: 'Personas',      icon: <FiUsers />,    roles: ['master_admin', 'admin', 'broker'] },
+    { href: '/master/buyers',     label: 'Compradores',   icon: <FiUser />,     roles: ['master_admin', 'admin', 'broker'] },
+    { href: '/master/offices',    label: 'Oficinas',      icon: <FiMap />,      roles: ['master_admin', 'admin'] },
+    { href: '/master/applications', label: 'Solicitudes', icon: <FiClipboard />, roles: ['master_admin', 'admin'] },
   ]
 
   const allSystem = [
-    { href: '/master/overview',         label: 'Intelligence',    icon: <FiTrendingUp />, roles: ['master_admin'] },
-    { href: '/master/activity',         label: 'Activity',        icon: <FiActivity />,   roles: ['master_admin', 'admin'] },
-    { href: '/master/automation',       label: 'Automation',      icon: <FiZap />,        roles: ['master_admin'] },
-    { href: '/master/recommendations',  label: 'Recommendations', icon: <FiMail />,       roles: ['master_admin'] },
+    { href: '/master/overview',         label: 'Inteligencia',     icon: <FiTrendingUp />, roles: ['master_admin'] },
+    { href: '/master/activity',         label: 'Actividad',        icon: <FiActivity />,   roles: ['master_admin', 'admin'] },
+    { href: '/master/automation',       label: 'Automatizacion',   icon: <FiZap />,        roles: ['master_admin'] },
+    { href: '/master/recommendations',  label: 'Recomendaciones',  icon: <FiMail />,       roles: ['master_admin'] },
   ]
 
   const primary   = allPrimary.filter(l => l.roles.includes(userRole))
@@ -84,11 +84,11 @@ export default function AdminSidebar() {
         </button>
       </div>
       <nav>
-        {/* PRIMARY */}
+        {/* PRINCIPAL */}
         <div className="mt-0">
-          {!collapsed && <div className="mb-1 px-3 text-[10px] font-bold tracking-widest text-gray-400">PRIMARY</div>}
+          {!collapsed && <div className="mb-1 px-3 text-[10px] font-bold tracking-widest text-gray-400">PRINCIPAL</div>}
           {primary.map(link => {
-            const active = pathname === link.href
+            const active = pathname === link.href || pathname.startsWith(link.href + '/')
             return (
               <Link key={link.href} href={link.href}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 ${active ? 'bg-gradient-to-r from-[#00A676] to-[#008F64] text-white font-semibold shadow-md' : 'text-gray-600 hover:translate-x-0.5 hover:bg-gray-100 hover:text-gray-900'}`}
@@ -99,11 +99,11 @@ export default function AdminSidebar() {
             )
           })}
         </div>
-        {/* SECONDARY */}
+        {/* GESTION */}
         <div className="mt-3">
-          {!collapsed && <div className="mb-1 px-3 text-[10px] font-bold tracking-widest text-gray-400">SECONDARY</div>}
+          {!collapsed && <div className="mb-1 px-3 text-[10px] font-bold tracking-widest text-gray-400">GESTION</div>}
           {secondary.map(link => {
-            const active = pathname === link.href
+            const active = pathname === link.href || pathname.startsWith(link.href + '/')
             return (
               <Link key={link.href} href={link.href}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 ${active ? 'bg-gradient-to-r from-[#00A676] to-[#008F64] text-white font-semibold shadow-md' : 'text-gray-600 hover:translate-x-0.5 hover:bg-gray-100 hover:text-gray-900'}`}
@@ -114,11 +114,11 @@ export default function AdminSidebar() {
             )
           })}
         </div>
-        {/* SYSTEM */}
+        {/* SISTEMA */}
         <div className="mt-3">
-          {!collapsed && <div className="mb-1 px-3 text-[10px] font-bold tracking-widest text-gray-400">SYSTEM</div>}
+          {!collapsed && <div className="mb-1 px-3 text-[10px] font-bold tracking-widest text-gray-400">SISTEMA</div>}
           {system.map(link => {
-            const active = pathname === link.href
+            const active = pathname === link.href || pathname.startsWith(link.href + '/')
             const badge = link.href === '/master/activity' && unreadActivity > 0 ? unreadActivity : 0
             return (
               <Link key={link.href} href={link.href}
@@ -147,36 +147,36 @@ export default function AdminSidebar() {
             )}
             {['master_admin'].includes(userRole) && (
               <Link href="/master/revenue" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-                <FiDollarSign className="text-blue-600" /> <span>Revenue</span>
+                <FiDollarSign className="text-blue-600" /> <span>Ingresos</span>
               </Link>
             )}
             {['master_admin'].includes(userRole) && (
               <Link href="/master/reviews" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-                <FiShield className="text-blue-600" /> <span>Reviews</span>
+                <FiShield className="text-blue-600" /> <span>Resenas</span>
               </Link>
             )}
             {['master_admin'].includes(userRole) && (
               <Link href="/master/settings" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-                <FiSettings className="text-blue-600" /> <span>Settings</span>
+                <FiSettings className="text-blue-600" /> <span>Configuracion</span>
               </Link>
             )}
             {['master_admin', 'admin', 'agent', 'broker', 'constructora'].includes(userRole) && (
               <Link href="/master/listings/create" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-                <FiPlusSquare className="text-blue-600" /> <span>Create Property</span>
+                <FiPlusSquare className="text-blue-600" /> <span>Crear Propiedad</span>
               </Link>
             )}
             {['master_admin', 'admin', 'broker'].includes(userRole) && (
               <Link href="/master/users" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-                <FiUsers className="text-blue-600" /> <span>Manage {userRole === 'broker' ? 'Team' : 'People'}</span>
+                <FiUsers className="text-blue-600" /> <span>{userRole === 'broker' ? 'Gestionar Equipo' : 'Gestionar Personas'}</span>
               </Link>
             )}
             {['master_admin', 'admin', 'agent', 'broker', 'constructora'].includes(userRole) && (
               <Link href="/master/leads" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-                <FiTarget className="text-blue-600" /> <span>Manage Leads</span>
+                <FiTarget className="text-blue-600" /> <span>Gestionar Leads</span>
               </Link>
             )}
             <Link href="/" className="text-sm text-blue-700 hover:text-blue-900 hover:underline transition-colors duration-150 flex items-center gap-2">
-              <span>🌐</span> View Public Site
+              <span>🌐</span> Ver Sitio Publico
             </Link>
           </div>
         </div>

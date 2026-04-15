@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { FiUsers, FiHome, FiDollarSign, FiClock, FiUserPlus, FiActivity, FiCheckCircle, FiXCircle, FiMail } from 'react-icons/fi'
+import WorkspaceCommandCenter from '@/components/WorkspaceCommandCenter'
 
 export default function MasterOverviewPage() {
   const [loading, setLoading] = useState(true)
@@ -194,6 +195,28 @@ export default function MasterOverviewPage() {
           {error}
         </div>
       )}
+
+      <WorkspaceCommandCenter
+        eyebrow="Master Admin"
+        title="Controla la red inmobiliaria dominicana desde una sola consola"
+        description="Moderacion, crecimiento, actividad y rendimiento comercial deben leerse juntos. Esta capa ejecutiva te ayuda a atacar primero la friccion que mas afecta confianza, velocidad y expansion de la plataforma."
+        highlightLabel="Cola de moderacion"
+        highlightValue={stats.pendingApprovals}
+        highlightDetail={`${stats.pendingApplications} solicitudes en revision y ${activitySummary.unreadActivity} eventos sin leer`}
+        marketNote="Para que VIVENTA se sienta como el referente tecnologico de RD, el panel maestro debe anticipar cuellos de botella operativos antes de que lleguen al usuario, al broker o a la constructora."
+        priorities={[
+          { label: 'Nuevos leads', value: timeWindow === 'all' ? stats.leads : stats.newLeads, hint: 'Presion comercial en la ventana activa', tone: (timeWindow === 'all' ? stats.leads : stats.newLeads) > 0 ? 'good' : 'neutral' },
+          { label: 'Actividad sin leer', value: activitySummary.unreadActivity, hint: 'Operaciones que requieren supervision', tone: activitySummary.unreadActivity > 0 ? 'warn' : 'good' },
+          { label: 'Usuarios nuevos', value: stats.newUsers, hint: 'Crecimiento del ecosistema', tone: stats.newUsers > 0 ? 'good' : 'neutral' },
+          { label: 'Revenue mensual', value: new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(stats.monthlyRevenueUSD || 0), hint: 'Monetizacion actual', tone: stats.monthlyRevenueUSD > 0 ? 'good' : 'warn' },
+        ]}
+        quickActions={[
+          { label: 'Revisar listados', href: '/master/listings' },
+          { label: 'Abrir solicitudes', href: '/master/applications' },
+          { label: 'Ver actividad', href: '/master/activity' },
+          { label: 'Recomendaciones', href: '/master/recommendations' },
+        ]}
+      />
 
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">

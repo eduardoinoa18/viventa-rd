@@ -115,10 +115,10 @@ export default function ListingTable({
                       </div>
                     )}
                     <div className="flex flex-wrap gap-1">
-                      {listing.duplicateRisk && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700">Duplicate risk</span>}
-                      {listing.missingPhotos && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Missing photos</span>}
-                      {listing.missingGeocode && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Missing geocode</span>}
-                      {!listing.hasAssignedBroker && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">No assigned broker</span>}
+                      {listing.duplicateRisk && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700">Riesgo duplicado</span>}
+                      {listing.missingPhotos && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Fotos faltantes</span>}
+                      {listing.missingGeocode && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Sin geocodigo</span>}
+                      {!listing.hasAssignedBroker && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">Sin broker asignado</span>}
                     </div>
                   </div>
 
@@ -205,14 +205,14 @@ export default function ListingTable({
                       Quality: {(listing.qualityScore ?? Math.round(computeQualityScore(listing as any) * 100)).toFixed(0)}
                     </span>
                     <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700" title="Visibility score">
-                      Visibility: {(listing.visibilityScore ?? 0).toFixed(0)}
+                      Visibilidad: {(listing.visibilityScore ?? 0).toFixed(0)}
                     </span>
                     <span className="text-xs px-2 py-1 rounded bg-indigo-100 text-indigo-700" title="SEO score">
                       SEO: {(listing.seoScore ?? 0).toFixed(0)}
                     </span>
-                    {listing.duplicateRisk && <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700">Duplicate risk</span>}
-                    {listing.missingPhotos && <span className="text-xs px-2 py-1 rounded bg-amber-100 text-amber-700">Missing photos</span>}
-                    {!listing.hasAssignedBroker && <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700">No assigned broker</span>}
+                    {listing.duplicateRisk && <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700">Riesgo duplicado</span>}
+                    {listing.missingPhotos && <span className="text-xs px-2 py-1 rounded bg-amber-100 text-amber-700">Fotos faltantes</span>}
+                    {!listing.hasAssignedBroker && <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700">Sin broker asignado</span>}
                   </div>
 
                   <div className="text-gray-600 space-y-1 mb-2 sm:mb-3 text-sm">

@@ -7,7 +7,7 @@ import { formatCurrency, formatFeatures, formatArea, convertCurrency, type Curre
 import useCurrency from '@/hooks/useCurrency';
 import { analytics } from '@/lib/analytics';
 import { trackPropertyCardClick, getCurrentUserInfo } from '@/lib/analyticsService';
-import { FiCheckCircle, FiHeart } from 'react-icons/fi';
+import { FiCheckCircle, FiHeart, FiMapPin } from 'react-icons/fi';
 import { isPropertySaved, toggleSavedProperty } from '@/lib/buyerPreferences';
 
 export default function PropertyCard({ property }: { property: any }) {
@@ -29,6 +29,10 @@ export default function PropertyCard({ property }: { property: any }) {
   // Verification status (placeholder logic - will be replaced with real data)
   const isVerified = property.propertyVerificationStatus === 'verified' || property.verified === true;
   const isFeatured = property.featured || property.featured_until && new Date(property.featured_until) > new Date();
+  const propertyType: string = property.propertyType || property.listingType || '';
+  const pricePerM2 = displayArea > 0 && displayPrice > 0
+    ? Math.round((displayCurrency === 'USD' ? displayPrice : displayPrice / 58) / displayArea)
+    : 0;
 
   useEffect(() => {
     if (!listingId) return;
@@ -143,7 +147,7 @@ export default function PropertyCard({ property }: { property: any }) {
 
         {/* Location */}
         <div className="text-xs sm:text-sm text-gray-600 mb-2.5 flex items-center gap-1 min-h-[20px]">
-          <span>📍</span>
+          <FiMapPin className="shrink-0 text-[#00A676]" />
           <span className="line-clamp-1">
             {displayCity}{displayNeighborhood ? `, ${displayNeighborhood}` : ''}
           </span>
@@ -167,6 +171,22 @@ export default function PropertyCard({ property }: { property: any }) {
             </span>
           )}
         </div>
+
+        {/* Investor Signal: price/m² + type badge */}
+        {(pricePerM2 > 0 || propertyType) && (
+          <div className="mb-3 flex items-center gap-2 flex-wrap">
+            {pricePerM2 > 0 && (
+              <span className="rounded-md bg-[#0B2545]/5 px-2 py-0.5 text-[11px] font-semibold text-[#0B2545]">
+                ${pricePerM2.toLocaleString('en-US')}/m²
+              </span>
+            )}
+            {propertyType && (
+              <span className="rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-medium capitalize text-gray-600">
+                {propertyType}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* CTA Button */}
         <Link 

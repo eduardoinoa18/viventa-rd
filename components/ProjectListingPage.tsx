@@ -394,10 +394,10 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         <div className="flex gap-1 border-b border-gray-200">
           {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'units', label: `Units (${project.units.length})` },
-            { id: 'amenities', label: 'Amenities' },
-            { id: 'financing', label: 'Financing' },
+            { id: 'overview', label: 'Resumen' },
+            { id: 'units', label: `Unidades (${project.units.length})` },
+            { id: 'amenities', label: 'Amenidades' },
+            { id: 'financing', label: 'Financiamiento' },
           ].map((tab) => (
             <button
               key={tab.id}

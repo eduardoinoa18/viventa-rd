@@ -5,6 +5,7 @@ import { FiAlertTriangle, FiCheckSquare, FiTrendingUp, FiHome, FiDollarSign, FiC
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiGrid, KpiCard } from '@/components/ui/KpiCard'
 import InviteModal from '@/components/InviteModal'
+import WorkspaceCommandCenter from '@/components/WorkspaceCommandCenter'
 import type { RevenueMetrics, TopBrokerRevenueRow } from '@/lib/domain/transaction'
 
 type SummaryState = {
@@ -208,6 +209,28 @@ export default function BrokerOverviewPage() {
           { label: 'View Listings', href: '/dashboard/listings', variant: 'secondary' },
           { label: 'Team & Invites', href: '/dashboard/broker/team', variant: 'secondary' },
           { label: 'Invite Agent', onClick: () => setShowInviteModal(true) },
+        ]}
+      />
+
+      <WorkspaceCommandCenter
+        eyebrow="Broker Command Center"
+        title="Coordina inventario, equipo y pipeline como una oficina premium"
+        description="Este resumen prioriza lo que mueve ingresos en una oficina dominicana de alto desempeno: cobertura de inventario, cumplimiento operativo y velocidad para convertir leads en cierres."
+        highlightLabel="Comision esperada"
+        highlightValue={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.expectedCommission || 0)}
+        highlightDetail={`${summary.activeDeals} deals activos y ${summary.dealsClosingThisMonth} cierres esperados este mes`}
+        marketNote="La ventaja de un broker no viene solo del volumen; viene de alinear inventario, tareas automaticas, cobertura del equipo y respuesta comercial antes que la competencia."
+        priorities={[
+          { label: 'Deals activos', value: summary.activeDeals, hint: 'Negocios en pipeline ahora mismo', tone: summary.activeDeals > 0 ? 'good' : 'warn' },
+          { label: 'SLA vencido', value: summary.overdue, hint: 'Leads con riesgo de fuga', tone: summary.overdue > 0 ? 'urgent' : 'good' },
+          { label: 'Equipo activo', value: teamSummary.activeMembers, hint: `${teamSummary.totalMembers} miembros totales`, tone: teamSummary.activeMembers > 0 ? 'good' : 'warn' },
+          { label: 'Tareas vencidas', value: taskHealth.overdue, hint: `${taskHealth.automationOpen} abiertas por automatizacion`, tone: taskHealth.overdue > 0 ? 'urgent' : taskHealth.automationOpen > 0 ? 'warn' : 'good' },
+        ]}
+        quickActions={[
+          { label: 'Crear deal', href: '/dashboard/broker/transactions' },
+          { label: 'Abrir pipeline', href: '/dashboard/broker/pipeline' },
+          { label: 'Gestionar equipo', href: '/dashboard/broker/team' },
+          { label: 'Ver tareas', href: '/dashboard/broker/tasks' },
         ]}
       />
 

@@ -128,7 +128,7 @@ export default function MasterReviewsPage() {
       <div className="max-w-7xl mx-auto p-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[#0B2545]">Review Moderation</h1>
+            <h1 className="text-3xl font-bold text-[#0B2545]">Moderacion de Resenas</h1>
             <p className="text-gray-600 mt-1">Aprueba o rechaza reseñas públicas de agentes, brokers y constructoras.</p>
           </div>
         </div>
@@ -139,15 +139,15 @@ export default function MasterReviewsPage() {
             <p className="text-2xl font-bold text-[#0B2545]">{stats.total}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <p className="text-sm text-gray-600">Pending</p>
+            <p className="text-sm text-gray-600">Pendientes</p>
             <p className="text-2xl font-bold text-amber-600">{stats.pending}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <p className="text-sm text-gray-600">Published</p>
+            <p className="text-sm text-gray-600">Publicadas</p>
             <p className="text-2xl font-bold text-emerald-600">{stats.published}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <p className="text-sm text-gray-600">Rejected</p>
+            <p className="text-sm text-gray-600">Rechazadas</p>
             <p className="text-2xl font-bold text-rose-600">{stats.rejected}</p>
           </div>
         </div>

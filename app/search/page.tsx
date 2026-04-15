@@ -53,10 +53,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
           <div className="mb-4 sm:mb-6">
             <h1 className="text-2xl sm:text-3xl font-bold text-[#0B2545] mb-1 sm:mb-2">
-              Buscar propiedades
+              Oportunidades inmobiliarias en RD
             </h1>
             <p className="text-gray-600 text-sm sm:text-base">
-              Encuentra tu propiedad ideal en República Dominicana
+              Inventario verificado en los mercados de mayor crecimiento de la Republica Dominicana
             </p>
           </div>
 

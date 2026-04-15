@@ -9,17 +9,17 @@ type ActivitySummary = {
 }
 
 const PRIMARY_NAV_ITEMS = [
-  { href: '/dashboard/broker/overview', label: 'Overview' },
+  { href: '/dashboard/broker/overview', label: 'Resumen' },
   { href: '/dashboard/broker/crm', label: 'CRM' },
-  { href: '/dashboard/broker/transactions', label: 'Transactions' },
-  { href: '/dashboard/broker/activity', label: 'Activity' },
-  { href: '/dashboard/broker/team', label: 'Team' },
+  { href: '/dashboard/broker/transactions', label: 'Transacciones' },
+  { href: '/dashboard/broker/activity', label: 'Actividad' },
+  { href: '/dashboard/broker/team', label: 'Equipo' },
 ]
 
 const SECONDARY_NAV_ITEMS = [
-  { href: '/dashboard/listings', label: 'Listings' },
-  { href: '/dashboard/listings/create', label: 'Crear Listing' },
-  { href: '/dashboard/billing', label: 'Billing' },
+  { href: '/dashboard/listings', label: 'Propiedades' },
+  { href: '/dashboard/listings/create', label: 'Crear Propiedad' },
+  { href: '/dashboard/billing', label: 'Facturacion' },
   { href: '/messages', label: 'Mensajes' },
 ]
 

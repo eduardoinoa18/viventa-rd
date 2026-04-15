@@ -82,15 +82,15 @@ export default function MasterUsersPage() {
   const isBrokerView = sessionRole === 'broker'
   const canViewPeople = sessionRole === 'master_admin' || sessionRole === 'admin' || sessionRole === 'broker'
   const masterOpsLinks = [
-    { href: '/master/offices', label: 'Offices' },
-    { href: '/master/users', label: 'People' },
-    { href: '/master/buyers', label: 'Buyers' },
-    { href: '/master/applications', label: 'Applications' },
+    { href: '/master/offices', label: 'Oficinas' },
+    { href: '/master/users', label: 'Personas' },
+    { href: '/master/buyers', label: 'Compradores' },
+    { href: '/master/applications', label: 'Solicitudes' },
     { href: '/master/leads', label: 'Leads' },
-    { href: '/master/listings', label: 'Listings' },
-    { href: '/master/activity', label: 'Activity' },
-    { href: '/master/analytics', label: 'Analytics' },
-    { href: '/master/settings', label: 'Settings' },
+    { href: '/master/listings', label: 'Propiedades' },
+    { href: '/master/activity', label: 'Actividad' },
+    { href: '/master/analytics', label: 'Analitica' },
+    { href: '/master/settings', label: 'Configuracion' },
   ]
 
   // Stats

@@ -101,7 +101,7 @@ export default function MasterOfficesPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#0B2545]">Offices Registry</h1>
+          <h1 className="text-2xl font-bold text-[#0B2545]">Registro de Oficinas</h1>
           <p className="text-sm text-gray-600 mt-1">Motor de oficinas con suscripción independiente por oficina.</p>
         </div>
         <Link href="/master" className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#0B2545]">Volver al dashboard</Link>

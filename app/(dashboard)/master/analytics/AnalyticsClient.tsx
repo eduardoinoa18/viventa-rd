@@ -237,7 +237,7 @@ export default function AnalyticsClient() {
                 className="inline-flex items-center gap-2 rounded-lg bg-[#00A676] px-3 py-2 text-sm font-semibold text-white hover:bg-[#008f64] disabled:opacity-50"
               >
                 <FiDownload />
-                Export CSV
+                Exportar CSV
               </button>
             </div>
           </div>
@@ -304,16 +304,16 @@ export default function AnalyticsClient() {
           </article>
 
           <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Conversion Funnel</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Embudo de Conversion</h2>
             <div className="mt-4 space-y-3 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-slate-600">Views</span>
+                <span className="text-slate-600">Vistas</span>
                 <span className="font-semibold text-slate-900">
                   {toNumber(data?.conversionMetrics?.window?.views ?? data?.conversionMetrics?.totalViews).toLocaleString()}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-600">Contacts</span>
+                <span className="text-slate-600">Contactos</span>
                 <span className="font-semibold text-slate-900">
                   {toNumber(data?.conversionMetrics?.window?.contacts ?? data?.conversionMetrics?.totalContacts).toLocaleString()}
                 </span>
@@ -326,13 +326,13 @@ export default function AnalyticsClient() {
               </div>
               <hr className="my-2 border-slate-200" />
               <div className="flex items-center justify-between">
-                <span className="text-slate-600">View to Contact</span>
+                <span className="text-slate-600">Vista a Contacto</span>
                 <span className="font-semibold text-[#0B2545]">
                   {data?.conversionMetrics?.window?.viewToContactRate || data?.conversionMetrics?.viewToContactRate || '0.00%'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-600">Contact to Lead</span>
+                <span className="text-slate-600">Contacto a Lead</span>
                 <span className="font-semibold text-[#0B2545]">
                   {data?.conversionMetrics?.window?.contactToLeadRate || data?.conversionMetrics?.contactToLeadRate || '0.00%'}
                 </span>
@@ -342,10 +342,10 @@ export default function AnalyticsClient() {
         </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Role Mix</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Mezcla de Roles</h2>
           <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             <div className="rounded-lg bg-slate-50 p-4">
-              <div className="text-xs text-slate-500">Agents</div>
+              <div className="text-xs text-slate-500">Agentes</div>
               <div className="text-2xl font-bold text-slate-900">{toNumber(data?.roleCounts?.agents).toLocaleString()}</div>
             </div>
             <div className="rounded-lg bg-slate-50 p-4">
@@ -353,7 +353,7 @@ export default function AnalyticsClient() {
               <div className="text-2xl font-bold text-slate-900">{toNumber(data?.roleCounts?.brokers).toLocaleString()}</div>
             </div>
             <div className="rounded-lg bg-slate-50 p-4">
-              <div className="text-xs text-slate-500">Users</div>
+              <div className="text-xs text-slate-500">Usuarios</div>
               <div className="text-2xl font-bold text-slate-900">{toNumber(data?.roleCounts?.users).toLocaleString()}</div>
             </div>
             <div className="rounded-lg bg-slate-50 p-4">

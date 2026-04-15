@@ -4,14 +4,15 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const PRIMARY_NAV_ITEMS = [
-  { href: '/dashboard/agent/overview', label: 'Overview' },
+  { href: '/dashboard/agent/overview', label: 'Resumen' },
   { href: '/dashboard/agent/crm', label: 'CRM' },
-  { href: '/dashboard/agent/commissions', label: 'Commissions' },
-  { href: '/dashboard/listings', label: 'Listings' },
+  { href: '/dashboard/agent/commissions', label: 'Comisiones' },
+  { href: '/dashboard/agent/activity', label: 'Actividad' },
+  { href: '/dashboard/listings', label: 'Propiedades' },
 ]
 
 const SECONDARY_NAV_ITEMS = [
-  { href: '/dashboard/listings/create', label: 'Crear Listing' },
+  { href: '/dashboard/listings/create', label: 'Crear Propiedad' },
   { href: '/dashboard/settings', label: 'Perfil' },
   { href: '/messages', label: 'Mensajes' },
   { href: '/notifications', label: 'Alertas' },
@@ -22,7 +23,7 @@ export default function AgentWorkspaceNav() {
 
   return (
     <div className="mt-4 space-y-2 text-sm">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         {PRIMARY_NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href
           return (

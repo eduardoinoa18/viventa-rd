@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { FiLayers, FiPackage, FiCalendar, FiCheckCircle, FiAlertTriangle, FiCheckSquare } from 'react-icons/fi'
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiGrid, KpiCard } from '@/components/ui/KpiCard'
+import WorkspaceCommandCenter from '@/components/WorkspaceCommandCenter'
 
 type OverviewState = {
   totalProjects: number
@@ -96,6 +97,28 @@ export default function ConstructoraOverviewPage() {
         actions={[
           { label: '+ Nuevo Proyecto', href: '/dashboard/constructora/projects' },
           { label: 'Ver Inventario', href: '/dashboard/constructora/units', variant: 'secondary' },
+        ]}
+      />
+
+      <WorkspaceCommandCenter
+        eyebrow="Constructora Command Center"
+        title="Opera inventario, reservas y follow-up comercial con rigor de proyecto"
+        description="La constructora necesita una vista clara de absorcion, unidades disponibles y tareas operativas para vender con consistencia y proteger velocidad de cierre."
+        highlightLabel="Inventario disponible"
+        highlightValue={summary.availableUnits}
+        highlightDetail={`${summary.activeProjects} proyectos activos y ${summary.reservedUnits} unidades reservadas`}
+        marketNote="En preventa y desarrollo vertical, el liderazgo no lo define solo el volumen de unidades, sino la disciplina para convertir reservas en cierres y sostener respuesta comercial."
+        priorities={[
+          { label: 'Unidades vendidas', value: summary.soldUnits, hint: 'Cierres consolidados', tone: summary.soldUnits > 0 ? 'good' : 'neutral' },
+          { label: 'En proceso', value: summary.inProcessUnits, hint: 'Inventario moviendose a siguiente etapa', tone: summary.inProcessUnits > 0 ? 'good' : 'warn' },
+          { label: 'Tasks vencidas', value: summary.overdueTasks, hint: 'Pendientes operativos urgentes', tone: summary.overdueTasks > 0 ? 'urgent' : 'good' },
+          { label: 'Automatizadas abiertas', value: summary.automationOpenTasks, hint: 'Seguimientos creados por el sistema', tone: summary.automationOpenTasks > 0 ? 'warn' : 'good' },
+        ]}
+        quickActions={[
+          { label: 'Ver proyectos', href: '/dashboard/constructora/projects' },
+          { label: 'Abrir inventario', href: '/dashboard/constructora/units' },
+          { label: 'Ver reservas', href: '/dashboard/constructora/reservations' },
+          { label: 'Ver tareas', href: '/dashboard/constructora/tasks' },
         ]}
       />
 

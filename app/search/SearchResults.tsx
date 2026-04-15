@@ -1,13 +1,23 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import Link from 'next/link'
 import PropertyCard from '@/components/PropertyCard'
 import AdvancedFilters from '@/components/AdvancedFilters'
 import type { Listing } from '@/types/listing'
-import { FiSearch } from 'react-icons/fi'
+import { FiMapPin, FiSearch } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { useSearchParams } from 'next/navigation'
 import { useSavedSearches } from '@/hooks/useSavedSearches'
+
+const MARKET_ZONES = [
+  { label: 'Santo Domingo', city: 'Santo Domingo' },
+  { label: 'Punta Cana', city: 'Punta Cana' },
+  { label: 'Santiago', city: 'Santiago' },
+  { label: 'Cap Cana', city: 'Cap Cana' },
+  { label: 'Las Terrenas', city: 'Las Terrenas' },
+  { label: 'La Romana', city: 'La Romana' },
+]
 
 interface SearchResultsProps {
   initialListings: Listing[]
@@ -133,6 +143,30 @@ export default function SearchResults({ initialListings, initialTotal }: SearchR
 
   return (
     <>
+      {/* Market Zone Pills */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <span className="flex items-center gap-1 text-xs font-semibold text-gray-500">
+          <FiMapPin className="text-[#00A676]" /> Mercados:
+        </span>
+        {MARKET_ZONES.map((zone) => {
+          const activeCity = searchParams.get('city')
+          const isActive = activeCity?.toLowerCase() === zone.city.toLowerCase()
+          return (
+            <Link
+              key={zone.city}
+              href={isActive ? '/search' : `/search?city=${encodeURIComponent(zone.city)}`}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                isActive
+                  ? 'border-[#00A676] bg-[#00A676] text-white'
+                  : 'border-gray-300 bg-white text-gray-700 hover:border-[#00A676] hover:text-[#00A676]'
+              }`}
+            >
+              {zone.label}
+            </Link>
+          )
+        })}
+      </div>
+
       {/* Search and Filters */}
       <div className="mb-4 space-y-3">
         {/* Search Bar */}

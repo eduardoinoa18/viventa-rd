@@ -6,13 +6,13 @@ import { FiGrid, FiUsers, FiHome, FiBarChart2, FiClipboard, FiTarget, FiInbox } 
 import BrandLogo from './BrandLogo'
 
 const navigation = [
-  { href: '/master', label: 'Overview', icon: FiGrid },
-  { href: '/master/listings', label: 'Listings', icon: FiHome },
-  { href: '/master/applications', label: 'Applications', icon: FiClipboard },
+  { href: '/master', label: 'Panel', icon: FiGrid },
+  { href: '/master/listings', label: 'Propiedades', icon: FiHome },
+  { href: '/master/applications', label: 'Solicitudes', icon: FiClipboard },
   { href: '/master/leads', label: 'Leads', icon: FiTarget },
-  { href: '/master/inbox', label: 'Inbox', icon: FiInbox },
-  { href: '/master/users', label: 'Users', icon: FiUsers },
-  { href: '/master/analytics', label: 'Analytics', icon: FiBarChart2 },
+  { href: '/master/inbox', label: 'Mensajes', icon: FiInbox },
+  { href: '/master/users', label: 'Personas', icon: FiUsers },
+  { href: '/master/analytics', label: 'Analitica', icon: FiBarChart2 },
 ]
 
 export default function MasterSidebar() {
@@ -69,7 +69,7 @@ export default function MasterSidebar() {
           href="/search"
           className="flex items-center gap-2 px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
         >
-          ← Back to Site
+          ← Ver Sitio
         </Link>
       </div>
     </aside>
