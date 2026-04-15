@@ -7,7 +7,9 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   const session = await getServerSession()
   if (!session) {
-    return NextResponse.json({ ok: false, session: null }, { status: 401 })
+    // Return 200 (not 401) so browsers don't log an error on every public page load.
+    // Callers detect unauthenticated state via ok: false / session: null in the body.
+    return NextResponse.json({ ok: false, session: null }, { status: 200 })
   }
   return NextResponse.json({ ok: true, session })
 }

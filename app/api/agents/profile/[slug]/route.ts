@@ -43,11 +43,12 @@ export async function GET(_: Request, context: { params: { slug: string } }) {
     }
 
     if (!agentDoc) {
+      // Query all agents by role only — status/approved filters are too strict and cause
+      // 404s for agents whose documents were created without those flags (e.g. dev accounts).
+      // Visibility is enforced below via the publicProfileEnabled check.
       const roleSnap = await db
         .collection('users')
         .where('role', '==', 'agent')
-        .where('status', '==', 'active')
-        .where('approved', '==', true)
         .limit(500)
         .get()
 
@@ -66,6 +67,12 @@ export async function GET(_: Request, context: { params: { slug: string } }) {
     const data = agentDoc.data
     if (safeText(data.role).toLowerCase() !== 'agent') {
       return NextResponse.json({ ok: false, error: 'Agent not found' }, { status: 404 })
+    }
+
+    // Block explicitly suspended/banned agents (allow missing status as active)
+    const agentStatus = safeText(data.status).toLowerCase()
+    if (agentStatus && agentStatus !== 'active') {
+      return NextResponse.json({ ok: false, error: 'Agent profile unavailable' }, { status: 404 })
     }
 
     if (data.publicProfileEnabled === false) {
