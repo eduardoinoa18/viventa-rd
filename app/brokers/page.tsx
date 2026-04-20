@@ -27,7 +27,7 @@ export default function BrokersPage() {
 
       const brokersList = (json.data || []).map((broker: any) => ({
         ...broker,
-        photo: broker.profileImage || broker.companyLogo || '/placeholder.png',
+        photo: broker.companyLogo || broker.profileImage || '/placeholder.png',
         area: broker.area || broker.markets || broker.city || 'República Dominicana',
         rating: broker.rating || 4.7,
         teamSize: broker.teamSize || broker.agents || 0,
@@ -83,7 +83,7 @@ export default function BrokersPage() {
               <input
                 value={q}
                 onChange={e=>setQ(e.target.value)}
-                placeholder="Buscar por nombre de brokerage, zona o email"
+                placeholder="Buscar por nombre de empresa, zona o email"
                 className="w-full pl-10 pr-3 py-2 border rounded focus:ring-2 focus:ring-[#3BAFDA] focus:border-transparent"
               />
             </div>

@@ -178,14 +178,11 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <img
                   src={profile?.image || '/placeholder.png'}
-                  alt={profile?.name || 'Broker'}
+                  alt={profile?.company || profile?.name || 'Brokerage'}
                   className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover border-4 border-white shadow-lg"
                 />
                 <div className="text-center sm:text-left flex-1 min-w-0">
-                  <h1 className="text-2xl sm:text-3xl font-bold break-words">{profile?.name}</h1>
-                  {profile?.company && profile.company !== profile.name && (
-                    <p className="text-blue-100 mt-1 break-words">{profile.company}</p>
-                  )}
+                  <h1 className="text-2xl sm:text-3xl font-bold break-words">{profile?.company || profile?.name}</h1>
                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-2 text-blue-100">
                     <FiMapPin />
                     <span className="break-words">{profile?.areasServed || 'República Dominicana'}</span>
@@ -261,7 +258,7 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
               <div className="rounded-xl border border-[#D7ECFA] bg-[#F4FAFF] p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-[#0B2545]">Acciones rápidas</p>
-                  <p className="text-xs text-gray-600">Contacta al broker y navega oportunidades activas en su zona.</p>
+                  <p className="text-xs text-gray-600">Contacta la oficina y navega oportunidades activas en su zona.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Link href={`/search?broker=${encodeURIComponent(profile?.slug || params.slug)}`} className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-xs font-semibold">
@@ -274,7 +271,7 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
                       rel="noopener noreferrer"
                       className="px-3 py-2 rounded-lg bg-[#3BAFDA] text-white text-xs font-semibold"
                     >
-                      WhatsApp
+                      WhatsApp a la oficina
                     </a>
                   ) : null}
                 </div>
@@ -300,8 +297,8 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
 
             <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
               <section className="lg:col-span-2">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Perfil profesional</h2>
-                <p className="text-gray-700 leading-relaxed break-words">{profile?.bio || 'Este broker aún no ha completado su biografía pública.'}</p>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Sobre la oficina</h2>
+                <p className="text-gray-700 leading-relaxed break-words">{profile?.bio || 'Esta oficina aún no ha completado su descripción pública.'}</p>
 
                 {profile?.specialties?.length ? (
                   <div className="mt-4">
@@ -332,7 +329,7 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
               </section>
 
               <aside className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Contactar</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Contactar oficina</h2>
                 <div className="space-y-3">
                   {profile?.phone ? (
                     <a href={`tel:${profile.phone}`} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-[#3BAFDA] transition-all">
