@@ -28,12 +28,6 @@ function estimateMortgage(price: number, annualRate = 8.5, years = 20, downPayme
   return (principal * monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1)
 }
 
-function estimateClosingCosts(price: number) {
-  const low = price * 0.04
-  const high = price * 0.07
-  return { low, high }
-}
-
 function zoneMomentum(city: string) {
   const c = city.toLowerCase()
   if (c.includes('punta cana') || c.includes('bavaro') || c.includes('bávaro')) return { label: 'Alta traccion turistica', mood: 'hot' as const }
@@ -55,7 +49,7 @@ export default function BuyerClarityPanel({
 }: BuyerClarityPanelProps) {
   const safePrice = Number(price || 0)
   const monthlyMortgage = estimateMortgage(safePrice)
-  const closing = estimateClosingCosts(safePrice)
+  const initialReference = safePrice * 0.2
   const pricePerMt2 = area && area > 0 ? safePrice / area : 0
   const momentum = zoneMomentum(String(city || ''))
 
@@ -88,9 +82,9 @@ export default function BuyerClarityPanel({
         </article>
 
         <article className="rounded-xl border border-[#0B2545]/10 bg-white p-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#0B2545]">Gastos de cierre</p>
-          <p className="mt-1 text-lg font-bold text-[#0B2545]">{formatMoney(closing.low, currency)} - {formatMoney(closing.high, currency)}</p>
-          <p className="mt-1 text-xs text-gray-500">Rango estimado del 4% al 7% del valor</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#0B2545]">Inicial referencial</p>
+          <p className="mt-1 text-lg font-bold text-[#0B2545]">{formatMoney(initialReference, currency)}</p>
+          <p className="mt-1 text-xs text-gray-500">Guia base para comenzar la conversacion financiera.</p>
         </article>
 
         <article className="rounded-xl border border-[#0B2545]/10 bg-white p-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">

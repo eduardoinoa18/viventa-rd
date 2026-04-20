@@ -539,7 +539,7 @@ export default function ApplicationsPage() {
               <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Filtros activos</span>
               {statusFilter !== 'all' && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">Estado: {statusFilter.replace('_', ' ')}</span>}
               {typeFilter !== 'all' && <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">Tipo: {typeFilter}</span>}
-              {searchQuery.trim() && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">Busqueda: "{searchQuery.trim()}"</span>}
+              {searchQuery.trim() && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">Busqueda: &quot;{searchQuery.trim()}&quot;</span>}
               <button
                 onClick={clearFilters}
                 className="ml-auto inline-flex items-center rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"

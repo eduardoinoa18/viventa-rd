@@ -26,13 +26,6 @@ function estimateMortgage(price: number, annualRate = 8.5, years = 20, downPayme
   return (principal * monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1)
 }
 
-function estimateClosingCosts(price: number) {
-  return {
-    low: price * 0.04,
-    high: price * 0.07,
-  }
-}
-
 function getPublishedDate(createdAt?: { seconds?: number } | string | null) {
   if (!createdAt) return null
   if (typeof createdAt === 'string') {
@@ -56,7 +49,7 @@ function getNegotiationSignal(daysOnMarket: number | null, listingType: string) 
   if (daysOnMarket === null) {
     return {
       label: 'Sin historial suficiente',
-      hint: listingType === 'rent' ? 'Pregunta por terminos y mantenimiento incluido.' : 'Pregunta por margen de negociacion y gastos de cierre.',
+      hint: listingType === 'rent' ? 'Pregunta por terminos y mantenimiento incluido.' : 'Pregunta por margen de negociacion y documentos necesarios para cerrar.',
       tone: 'neutral' as const,
     }
   }
@@ -114,14 +107,13 @@ export default function BuyerReadinessPanel({
   city,
 }: BuyerReadinessPanelProps) {
   const safePrice = Number(price || 0)
-  const closing = estimateClosingCosts(safePrice)
   const estimatedMortgage = estimateMortgage(safePrice)
   const estimatedMonthly = listingType === 'rent'
     ? safePrice + Number(maintenanceFee || 0)
     : estimatedMortgage + Number(maintenanceFee || 0)
   const upfrontCash = listingType === 'rent'
     ? safePrice * 2
-    : safePrice * 0.2 + closing.high
+    : safePrice * 0.2
   const daysOnMarket = getDaysOnMarket(createdAt)
   const negotiation = getNegotiationSignal(daysOnMarket, String(listingType || 'sale'))
   const docs = getDocChecklist(deslindadoStatus)
@@ -144,7 +136,7 @@ export default function BuyerReadinessPanel({
           <p className="text-xs font-semibold uppercase tracking-wide text-[#0B2545]">Caja inicial sugerida</p>
           <p className="mt-1 text-lg font-bold text-[#0B2545]">{formatMoney(upfrontCash, currency)}</p>
           <p className="mt-1 text-xs text-gray-500">
-            {listingType === 'rent' ? 'Referencia de 2 meses para renta y arranque.' : '20% inicial mas cierre alto estimado para ir seguro.'}
+            {listingType === 'rent' ? 'Referencia de 2 meses para renta y arranque.' : 'Referencia simple: inicial aproximado de 20% para comenzar evaluacion.'}
           </p>
         </article>
 
@@ -189,9 +181,9 @@ export default function BuyerReadinessPanel({
             <p className="mt-1 text-xs text-gray-600">{getCityAngle(city)}</p>
           </div>
           <div className="mt-3 rounded-lg bg-white/80 p-3 border border-white">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#0B2545]">Gastos de cierre</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#0B2545]">Cierre</p>
             <p className="mt-1 text-xs text-gray-600">
-              Rango de referencia: {formatMoney(closing.low, currency)} - {formatMoney(closing.high, currency)}
+              Los costos pueden variar segun el caso. Coordinamos una estimacion puntual cuando avances con una oferta.
             </p>
           </div>
         </div>
