@@ -6,6 +6,7 @@ import Footer from '../../components/Footer';
 import toast from 'react-hot-toast';
 import { FiArrowLeft, FiMail, FiPhone, FiMapPin, FiClock, FiMessageCircle, FiSend } from 'react-icons/fi';
 import { trackContactSubmission, getCurrentUserInfo } from '@/lib/analyticsService';
+import { VIVENTA_PHONE_E164, VIVENTA_PHONE_DISPLAY, VIVENTA_EMAIL_DISPLAY } from '@/lib/contact';
 
 export default function ContactPage() {
   const router = useRouter()
@@ -239,25 +240,25 @@ export default function ContactPage() {
               <h2 className="text-lg font-bold text-[#0B2545] mb-4">Contacto directo</h2>
               
               <div className="space-y-4">
-                <a href="mailto:contacto@viventa.com.do" className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors active:scale-98">
+                <a href={`mailto:${VIVENTA_EMAIL_DISPLAY}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors active:scale-98">
                   <div className="flex-shrink-0 w-10 h-10 bg-[#004AAD] rounded-full flex items-center justify-center text-white">
                     <FiMail />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 text-sm">Email</h3>
-                    <p className="text-gray-600 text-sm truncate">contacto@viventa.com.do</p>
+                    <p className="text-gray-600 text-sm truncate">{VIVENTA_EMAIL_DISPLAY}</p>
                   </div>
                 </a>
 
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                <a href={`https://wa.me/${VIVENTA_PHONE_E164}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-green-50 transition-colors active:scale-98">
                   <div className="flex-shrink-0 w-10 h-10 bg-[#00A676] rounded-full flex items-center justify-center text-white">
                     <FiPhone />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 text-sm">Teléfono</h3>
-                    <p className="text-gray-600 text-sm">+1 (809) 555-VIVENTA</p>
+                    <h3 className="font-semibold text-gray-900 text-sm">WhatsApp / Teléfono</h3>
+                    <p className="text-gray-600 text-sm">{VIVENTA_PHONE_DISPLAY}</p>
                   </div>
-                </div>
+                </a>
               </div>
             </div>
 
@@ -292,8 +293,10 @@ export default function ContactPage() {
               <p className="text-sm text-gray-600 mb-4">
                 Nuestro equipo está listo para asistirte con cualquier consulta inmediata.
               </p>
-              <div className="block text-center bg-[#00A676] text-white px-4 py-3 rounded-xl font-bold opacity-80">
-                Teléfono: +1 (809) 555-VIVENTA
+              <div className="block text-center bg-[#00A676] text-white px-4 py-3 rounded-xl font-bold">
+                <a href={`https://wa.me/${VIVENTA_PHONE_E164}`} target="_blank" rel="noopener noreferrer" className="block">
+                  WhatsApp: {VIVENTA_PHONE_DISPLAY}
+                </a>
               </div>
             </div>
           </div>

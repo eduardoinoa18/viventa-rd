@@ -23,18 +23,18 @@ export default function HeroSection() {
       <div className="relative z-10 mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.9fr)] lg:px-8 lg:py-24">
         <div className="text-white">
           <div className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-100 backdrop-blur-sm">
-            MLS + CRM + inteligencia de inversion para RD
+            MLS + CRM + inteligencia de inversión para RD
           </div>
 
           <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
             Descubre, analiza y negocia la mejor inversion inmobiliaria en
             <span className="block bg-gradient-to-r from-[#67E8F9] via-[#FDE68A] to-[#FDBA74] bg-clip-text text-transparent">
-              Republica Dominicana
+              República Dominicana
             </span>
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-slate-100 sm:text-lg">
-            VIVENTA une inventario verificado, constructoras, agentes, brokers y senales de demanda para que compradores e inversionistas tomen decisiones con criterio local, velocidad comercial y confianza operativa.
+            VIVENTA une inventario verificado, constructoras, agentes, brokers y señales de demanda para que compradores e inversionistas tomen decisiones con criterio local, velocidad comercial y confianza operativa.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-2.5 text-sm text-white/90">
@@ -51,7 +51,7 @@ export default function HeroSection() {
                 <FiSearch className="text-xl" />
               </span>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold">Busca por ciudad, proyecto, sector o perfil de inversion</div>
+                <div className="text-sm font-semibold">Busca por ciudad, proyecto, sector o perfil de inversión</div>
                 <div className="truncate text-sm text-slate-500">Santo Domingo, Punta Cana, apartamento, preconstruccion, renta corta...</div>
               </div>
               <FiArrowRight className="hidden text-lg text-slate-400 sm:block" />
@@ -73,15 +73,15 @@ export default function HeroSection() {
 
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
-              <div className="flex items-center gap-2 text-cyan-100"><FiCheckCircle /> Verificacion</div>
-              <div className="mt-2 text-sm text-slate-100">Listados revisados, senales de calidad y equipos profesionales aprobados.</div>
+              <div className="flex items-center gap-2 text-cyan-100"><FiCheckCircle /> Verificación</div>
+              <div className="mt-2 text-sm text-slate-100">Listados revisados, señales de calidad y equipos profesionales aprobados.</div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
               <div className="flex items-center gap-2 text-cyan-100"><FiBarChart2 /> Inteligencia</div>
               <div className="mt-2 text-sm text-slate-100">Demand signals, comparables y contexto para compra patrimonial o renta.</div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
-              <div className="flex items-center gap-2 text-cyan-100"><FiCompass /> Ejecucion</div>
+              <div className="flex items-center gap-2 text-cyan-100"><FiCompass /> Ejecución</div>
               <div className="mt-2 text-sm text-slate-100">Workspaces para agentes, brokers, constructoras y control maestro en una sola red.</div>
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function HeroSection() {
                   <FiCompass className="text-amber-200" />
                 </div>
                 <div className="mt-2 text-xl font-semibold">Inversionistas, familias y compradores globales</div>
-                <div className="mt-1 text-sm text-slate-300">Desde vivienda principal hasta renta corta, reventa y preconstruccion.</div>
+                <div className="mt-1 text-sm text-slate-300">Desde vivienda principal hasta renta corta, reventa y preconstrucción.</div>
               </div>
             </div>
           </div>

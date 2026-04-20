@@ -7,7 +7,7 @@ import NotificationCenter from './NotificationCenter'
 import BrandLogo from './BrandLogo'
 import { useEffect, useState } from 'react'
 import { getSession, clearSession } from '../lib/authSession'
-import { FiMenu, FiX, FiLogOut, FiUser, FiHelpCircle } from 'react-icons/fi'
+import { FiMenu, FiX, FiLogOut, FiUser, FiHelpCircle, FiGrid } from 'react-icons/fi'
 
 export default function Header() {
   const pathname = usePathname()
@@ -82,7 +82,17 @@ export default function Header() {
               <Link href="/search" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Buscar</Link>
               <Link href="/agents" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Agentes</Link>
               <Link href="/brokers" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Brokerages</Link>
-              <Link href="/contact" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Contacto</Link>
+              {(() => {
+                const role = session?.role
+                const panelHref = role === 'master_admin' || role === 'admin' ? '/master'
+                  : role === 'agent' ? '/dashboard/agent'
+                  : role === 'broker' ? '/dashboard/broker'
+                  : role === 'constructora' ? '/dashboard/constructora'
+                  : '/dashboard'
+                return (
+                  <Link href={panelHref} className="text-viventa-turquoise hover:text-viventa-navy transition-colors font-semibold">Mi Panel</Link>
+                )
+              })()}
             </>
           )}
         </nav>
@@ -218,6 +228,24 @@ export default function Header() {
               <FiUser className="text-xl text-viventa-ocean" />
               <span className="font-medium text-viventa-navy">Explorar propiedades</span>
             </Link>
+            {(() => {
+              const role = session?.role
+              const panelHref = role === 'master_admin' || role === 'admin' ? '/master'
+                : role === 'agent' ? '/dashboard/agent'
+                : role === 'broker' ? '/dashboard/broker'
+                : role === 'constructora' ? '/dashboard/constructora'
+                : '/dashboard'
+              return (
+                <Link
+                  href={panelHref}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-viventa-sand transition-colors"
+                >
+                  <FiGrid className="text-xl text-viventa-turquoise" />
+                  <span className="font-medium text-viventa-navy">Mi Panel</span>
+                </Link>
+              )
+            })()}
             <Link
               href="/contact"
               onClick={() => setMobileMenuOpen(false)}

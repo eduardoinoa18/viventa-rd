@@ -83,7 +83,7 @@ export default function UnifiedLoginPage() {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#0B2545] to-[#00A676] rounded-full mb-4 shadow-lg">
               <span className="text-4xl text-white font-bold">V</span>
             </div>
-            <h1 className="text-3xl font-bold text-[#0B2545]">Viventa RD</h1>
+            <h1 className="text-3xl font-bold text-[#0B2545]">VIVENTA</h1>
             <p className="text-gray-600 mt-2">Inicia sesión en tu cuenta</p>
           </div>
 

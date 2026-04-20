@@ -9,6 +9,7 @@ import {
   FiArrowLeft, FiMail, FiMapPin, FiPhone, FiShield, FiStar,
   FiTrendingUp, FiHome, FiAward, FiGlobe,
 } from 'react-icons/fi'
+import { VIVENTA_PHONE_E164, VIVENTA_PHONE_DISPLAY, VIVENTA_EMAIL_DISPLAY } from '@/lib/contact'
 
 type AgentPublicProfile = {
   id: string
@@ -230,16 +231,14 @@ export default function AgentSlugProfilePage({ params }: { params: { slug: strin
                   <Link href={`/search?agent=${encodeURIComponent(profile?.slug || params.slug)}`} className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-xs font-semibold">
                     Ver listados activos
                   </Link>
-                  {profile?.phone ? (
-                    <a
-                      href={`https://wa.me/${profile.phone.replace(/[^\d]/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-2 rounded-lg bg-[#00A676] text-white text-xs font-semibold"
-                    >
-                      WhatsApp
-                    </a>
-                  ) : null}
+                  <a
+                    href={`https://wa.me/${VIVENTA_PHONE_E164}?text=${encodeURIComponent(`Hola VIVENTA, me interesa contactar al agente ${profile?.name || ''}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 rounded-lg bg-[#00A676] text-white text-xs font-semibold"
+                  >
+                    WhatsApp a VIVENTA
+                  </a>
                 </div>
               </div>
             </div>
@@ -285,31 +284,27 @@ export default function AgentSlugProfilePage({ params }: { params: { slug: strin
               </section>
 
               <aside className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Contactar</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Contactar a través de VIVENTA</h2>
                 <div className="space-y-3">
-                  {profile?.phone ? (
-                    <a href={`tel:${profile.phone}`} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-[#00A676] transition-all">
-                      <div className="w-10 h-10 bg-[#0B2545] rounded-full flex items-center justify-center text-white">
-                        <FiPhone className="text-lg" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-gray-500">Teléfono</div>
-                        <div className="font-semibold text-gray-900 truncate">{profile.phone}</div>
-                      </div>
-                    </a>
-                  ) : null}
+                  <a href={`https://wa.me/${VIVENTA_PHONE_E164}?text=${encodeURIComponent(`Hola VIVENTA, me interesa este agente: ${profile?.name || ''}`)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-[#00A676] transition-all">
+                    <div className="w-10 h-10 bg-[#00A676] rounded-full flex items-center justify-center text-white">
+                      <FiPhone className="text-lg" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-500">WhatsApp VIVENTA</div>
+                      <div className="font-semibold text-gray-900 truncate">{VIVENTA_PHONE_DISPLAY}</div>
+                    </div>
+                  </a>
 
-                  {profile?.email ? (
-                    <a href={`mailto:${profile.email}`} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-[#0B2545] transition-all">
-                      <div className="w-10 h-10 bg-[#00A676] rounded-full flex items-center justify-center text-white">
-                        <FiMail className="text-lg" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-gray-500">Email</div>
-                        <div className="font-semibold text-gray-900 truncate">{profile.email}</div>
-                      </div>
-                    </a>
-                  ) : null}
+                  <a href={`mailto:${VIVENTA_EMAIL_DISPLAY}`} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-[#0B2545] transition-all">
+                    <div className="w-10 h-10 bg-[#0B2545] rounded-full flex items-center justify-center text-white">
+                      <FiMail className="text-lg" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-500">Email</div>
+                      <div className="font-semibold text-gray-900 truncate">{VIVENTA_EMAIL_DISPLAY}</div>
+                    </div>
+                  </a>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-600 space-y-1">

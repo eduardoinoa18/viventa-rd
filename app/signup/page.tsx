@@ -88,7 +88,7 @@ export default function SignupPage() {
     <div className="bg-[#FAFAFA] min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 max-w-md mx-auto px-4 py-8 sm:py-12 w-full">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-[#0B2545]">Crear cuenta en Viventa RD</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-[#0B2545]">Crea tu cuenta en VIVENTA</h1>
         <form className="bg-white rounded-lg shadow p-4 sm:p-6 flex flex-col gap-4" onSubmit={handleSignup}>
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">

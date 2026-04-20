@@ -4,7 +4,6 @@
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import BottomNav from '../components/BottomNav';
-import PropertyCard from '../components/PropertyCard';
 import AgentCard from '../components/AgentCard';
 import StructuredData from '../components/StructuredData';
 import RegistrationPrompt from '../components/RegistrationPrompt';
@@ -13,23 +12,7 @@ import PlatformStatsWidget from '../components/PlatformStatsWidget';
 import FeaturedProperties from '../components/FeaturedProperties';
 import FeaturedProjects from '../components/FeaturedProjects';
 import { useState, useEffect } from 'react';
-import { FiSearch, FiUsers, FiCheckCircle, FiShield, FiLock, FiTrendingUp, FiStar, FiMail } from 'react-icons/fi'
-
-type Property = {
-  id: string;
-  listingId?: string;
-  title: string;
-  price: number;
-  currency?: string;
-  propertyType?: string;
-  city?: string;
-  sector?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  area?: number;
-  images?: string[];
-  agentId?: string;
-};
+import { FiCheckCircle, FiUsers, FiShield, FiStar, FiArrowRight, FiSearch } from 'react-icons/fi'
 
 type Agent = {
   id: string;
@@ -43,69 +26,20 @@ type Agent = {
 };
 
 export default function HomePage() {
-  const [filters, setFilters] = useState({ location: "", type: "", minPrice: "", maxPrice: "" });
-  const [stats, setStats] = useState<any>(null);
-  const [properties, setProperties] = useState<Property[]>([]);
   const [topAgents, setTopAgents] = useState<Agent[]>([]);
-  const [loadingProps, setLoadingProps] = useState(true);
   const [loadingAgents, setLoadingAgents] = useState(true);
 
+  // Load top agents
   useEffect(() => {
-    fetch('/api/stats/homepage')
-      .then(r => r.json())
-      .then(data => setStats(data.stats))
-      .catch(() => {})
-  }, [])
-
-  // Load active properties (ensure always showing at least some)
-  useEffect(() => {
-    setLoadingProps(true)
-    fetch('/api/properties?limit=12')
-      .then(r => r.json())
-      .then(data => {
-        const list: Property[] = (data.properties || []).map((p: any) => ({
-          id: p.id,
-          listingId: p.listingId,
-          title: p.title || p.name || 'Propiedad',
-          price: p.price || 0,
-          currency: p.currency || 'USD',
-          propertyType: p.propertyType || p.type,
-          city: p.city,
-          sector: p.sector,
-          bedrooms: p.bedrooms,
-          bathrooms: p.bathrooms,
-          area: p.area,
-          images: p.images || [],
-          agentId: p.agentId,
-        }))
-        setProperties(list)
-      })
-      .catch(() => {})
-      .finally(() => setLoadingProps(false))
-  }, [])
-
-  // Load agents (prefer verified, but fallback to active; prefer agents with active listings; must be approved)
-  useEffect(() => {
-    setLoadingAgents(true)
-    fetch('/api/agents?limit=200')
+    fetch('/api/agents?limit=8')
       .then(r => r.json())
       .then(data => {
         const all: any[] = data?.data || []
-        // Filter for active, approved agents (with email verification preference)
-        const verifiedActive = all.filter((u: any) => u.status === 'active' && u.approved === true && (u.verified || u.emailVerified))
-        const activeApproved = all.filter((u: any) => u.status === 'active' && u.approved === true)
-        const preferred = verifiedActive.length ? verifiedActive : activeApproved
-
-        // Prefer agents who currently have active listings on the site (derived from loaded properties)
-        const activeAgentIds = new Set((properties || []).map((p) => p.agentId).filter(Boolean) as string[])
-        let filtered = preferred
-        if (activeAgentIds.size > 0) {
-          const byActiveListings = preferred.filter((u: any) => activeAgentIds.has(u.id))
-          // If filtering removes everyone (e.g., agents not linked yet), keep the preferred list
-          if (byActiveListings.length) filtered = byActiveListings
-        }
-
-        const agents: Agent[] = filtered.map((u: any) => ({
+        const active = all
+          .filter((u: any) => u.status === 'active' && u.approved === true)
+          .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
+          .slice(0, 8)
+        const agents: Agent[] = active.map((u: any) => ({
           id: u.id,
           name: u.name || u.displayName || 'Agente',
           photo: u.photoURL || u.photo || u.profileImage,
@@ -113,26 +47,13 @@ export default function HomePage() {
           email: u.email,
           phone: u.phone,
           agentCode: u.professionalCode || u.agentCode,
-          rating: 4.8,
+          rating: u.rating || 4.8,
         }))
         setTopAgents(agents)
       })
       .catch(() => {})
       .finally(() => setLoadingAgents(false))
   }, [])
-
-  const filtered = properties.filter((p) => {
-    const matchesType = filters.type ? (p.propertyType === filters.type) : true;
-    const matchesMin = filters.minPrice ? p.price >= parseInt(filters.minPrice) : true;
-    const matchesMax = filters.maxPrice ? p.price <= parseInt(filters.maxPrice) : true;
-    const matchesLocation = filters.location
-      ? (
-          (p.city || '').toLowerCase().includes(filters.location.toLowerCase()) ||
-          (p.sector || '').toLowerCase().includes(filters.location.toLowerCase())
-        )
-      : true;
-    return matchesType && matchesMin && matchesMax && matchesLocation;
-  });
 
   // Structured data for organization
   const organizationSchema = {
@@ -323,27 +244,46 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Affiliated Companies + CTA */}
+        {/* Brokerages CTA */}
         <section className="bg-gradient-to-br from-viventa-navy to-viventa-ocean py-12 md:py-16">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-3 text-white">Empresas Afiliadas</h2>
-              <p className="text-viventa-sand/90 max-w-2xl mx-auto">
-                Trabajamos con brókers líderes en República Dominicana
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center">
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">RE/MAX RD</span></div>
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Century 21 Dominicana</span></div>
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Keller Williams RD</span></div>
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center h-24 hover:scale-105 transition-transform shadow-lg"><span className="font-bold text-xl text-gray-700">Santo Domingo Sotheby&apos;s</span></div>
-            </div>
-            
-            <div className="text-center mt-10">
-              <h3 className="text-xl font-semibold text-white mb-2">¿Eres agente, bróker o desarrollador?</h3>
-              <p className="text-viventa-sand/90 mb-4">Hablemos sobre tu proyecto y la mejor forma de colaborar.</p>
-              <a href="/contact" className="inline-block px-8 py-3 bg-white text-viventa-ocean font-bold rounded-xl shadow-lg hover:scale-105 transition-all">Contactar al equipo</a>
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold mb-3 text-white">Red de Brokerages Certificados</h2>
+                <p className="text-viventa-sand/90 mb-6 max-w-lg">
+                  Trabajamos con brokerages verificados en toda República Dominicana. Desde Santo Domingo hasta Punta Cana, nuestros socios están listos para ayudarte.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <a href="/brokers" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-viventa-ocean font-bold rounded-xl shadow-lg hover:scale-105 transition-all">
+                    Ver brokerages <FiArrowRight />
+                  </a>
+                  <a href="/contact" className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 border border-white/30 text-white font-semibold rounded-xl hover:bg-white/15 transition-all">
+                    Hablar con VIVENTA
+                  </a>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/10 border border-white/10 rounded-2xl p-5 text-white">
+                  <FiUsers className="text-2xl mb-2 text-cyan-200" />
+                  <div className="font-bold text-lg">Agentes verificados</div>
+                  <div className="text-sm text-slate-300 mt-1">Profesionales aprobados con historial comprobado</div>
+                </div>
+                <div className="bg-white/10 border border-white/10 rounded-2xl p-5 text-white">
+                  <FiStar className="text-2xl mb-2 text-amber-300" />
+                  <div className="font-bold text-lg">Calidad garantizada</div>
+                  <div className="text-sm text-slate-300 mt-1">Evaluamos cada brokerage antes de listarlo</div>
+                </div>
+                <div className="bg-white/10 border border-white/10 rounded-2xl p-5 text-white">
+                  <FiCheckCircle className="text-2xl mb-2 text-green-300" />
+                  <div className="font-bold text-lg">Inventario activo</div>
+                  <div className="text-sm text-slate-300 mt-1">Propiedades reales y actualizadas en todo momento</div>
+                </div>
+                <div className="bg-white/10 border border-white/10 rounded-2xl p-5 text-white">
+                  <FiShield className="text-2xl mb-2 text-blue-300" />
+                  <div className="font-bold text-lg">Proceso seguro</div>
+                  <div className="text-sm text-slate-300 mt-1">Transacciones protegidas y transparentes</div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

@@ -56,7 +56,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               Oportunidades inmobiliarias en RD
             </h1>
             <p className="text-gray-600 text-sm sm:text-base">
-              Inventario verificado en los mercados de mayor crecimiento de la Republica Dominicana
+              Inventario verificado en los mercados de mayor crecimiento de la República Dominicana
             </p>
           </div>
 
