@@ -80,6 +80,7 @@ button {
 	cursor: pointer;
 	background: transparent;
 	border: none;
+}
 
 /* Mobile touch optimization */
 @media (hover: none) and (pointer: coarse) {
@@ -105,7 +106,6 @@ button {
 	touch-action: manipulation;
 	-webkit-user-select: none;
 	user-select: none;
-}
 }
 
 /* Gamification & PWA Animations */
