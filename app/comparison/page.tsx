@@ -125,21 +125,71 @@ export default function PropertyComparison() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Comparación de Propiedades</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Comparación de Propiedades</h1>
             <p className="text-gray-600 mt-1">{properties.length} propiedades</p>
           </div>
-          <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700">
+          <div className="flex w-full sm:w-auto gap-2">
+            <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700">
               <FiDownload /> Descargar
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700">
+            <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700">
               <FiShare2 /> Compartir
             </button>
           </div>
         </div>
 
+        {/* Mobile Comparison Cards */}
+        <div className="space-y-4 md:hidden">
+          {properties.map((p) => (
+            <article key={p.id} className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+              <div className="relative h-44 bg-gray-100">
+                <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
+                <button
+                  onClick={() => removeProperty(p.id)}
+                  className="absolute top-2 right-2 p-2 rounded-full bg-white/95 text-gray-600 shadow hover:text-red-600"
+                  aria-label="Remover"
+                >
+                  <FiX />
+                </button>
+              </div>
+              <div className="p-4 space-y-3">
+                <Link href={`/listing/${p.id}`} className="block font-bold text-[#0B2545] leading-tight hover:underline">
+                  {p.title}
+                </Link>
+                <p className="text-xs text-gray-500">{p.city}, {p.sector}</p>
+
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="rounded-md bg-gray-50 p-2">
+                    <p className="text-[11px] text-gray-500">Precio</p>
+                    <p className="font-bold text-[#FF6B35]">{p.currency === 'USD' ? '$' : 'RD$'} {p.price.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-md bg-gray-50 p-2">
+                    <p className="text-[11px] text-gray-500">Precio/m²</p>
+                    <p className="font-semibold text-[#0B2545]">{p.currency === 'USD' ? '$' : 'RD$'} {Math.round(pricePerM2[properties.indexOf(p)]).toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-md bg-gray-50 p-2">
+                    <p className="text-[11px] text-gray-500">Hab / Baños</p>
+                    <p className="font-semibold text-[#0B2545]">{p.bedrooms || '—'} / {p.bathrooms || '—'}</p>
+                  </div>
+                  <div className="rounded-md bg-gray-50 p-2">
+                    <p className="text-[11px] text-gray-500">Metraje</p>
+                    <p className="font-semibold text-[#0B2545]">{p.area.toLocaleString()} m²</p>
+                  </div>
+                </div>
+
+                <Link
+                  href={`/listing/${p.id}`}
+                  className="block w-full px-4 py-2 bg-[#00A676] text-white rounded-lg text-center font-semibold hover:bg-[#008f64] transition"
+                >
+                  Ver Detalles
+                </Link>
+              </div>
+            </article>
+          ))}
+        </div>
+
         {/* Comparison Table - Scrollable on Mobile */}
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <div className="hidden md:block overflow-x-auto bg-white rounded-lg shadow">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>

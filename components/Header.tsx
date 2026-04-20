@@ -31,7 +31,7 @@ export default function Header() {
   if (!mounted) {
     return (
       <header className="sticky top-0 z-50 bg-gradient-to-r from-white to-viventa-sand/20 shadow-md border-b border-viventa-turquoise/10">
-        <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
           <Link href="/" className="flex items-center">
             <BrandLogo className="h-10 w-auto sm:h-12 md:h-14" priority />
           </Link>
@@ -42,9 +42,11 @@ export default function Header() {
             <Link href="/brokers" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Brokerages</Link>
             <Link href="/contact" className="text-viventa-navy hover:text-viventa-turquoise transition-colors font-medium">Contacto</Link>
           </nav>
-          <div className="flex items-center gap-3">
-            <LocaleSwitcher />
-            <CurrencySwitcher />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden sm:flex items-center gap-2">
+              <LocaleSwitcher />
+              <CurrencySwitcher />
+            </div>
           {/* Back to Admin button for admins on user-facing pages */}
           {session && session.role === 'master_admin' && !pathname?.startsWith('/master') && (
             <Link 
@@ -63,7 +65,7 @@ export default function Header() {
   }
   return (
     <header className="sticky top-0 z-50 bg-gradient-to-r from-white to-viventa-sand/20 shadow-md border-b border-viventa-turquoise/10">
-      <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
         <Link href="/" className="flex items-center">
           <BrandLogo className="h-10 w-auto sm:h-12 md:h-14" priority />
         </Link>
@@ -96,9 +98,11 @@ export default function Header() {
             </>
           )}
         </nav>
-        <div className="flex items-center gap-3">
-          <LocaleSwitcher />
-          <CurrencySwitcher />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden sm:flex items-center gap-2">
+            <LocaleSwitcher />
+            <CurrencySwitcher />
+          </div>
           {/* Back to Admin button for admins on user-facing pages */}
           {session && session.role === 'master_admin' && !pathname?.startsWith('/master') && (
             <Link 
@@ -160,6 +164,10 @@ export default function Header() {
       {!session && mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
           <div className="max-w-7xl mx-auto px-4 py-3 space-y-2">
+            <div className="flex items-center gap-2 rounded-lg border border-gray-200 p-2 bg-gray-50">
+              <LocaleSwitcher />
+              <CurrencySwitcher />
+            </div>
             <Link
               href="/"
               onClick={() => setMobileMenuOpen(false)}
@@ -220,6 +228,10 @@ export default function Header() {
       {session && mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
           <div className="max-w-7xl mx-auto px-4 py-3 space-y-2">
+            <div className="flex items-center gap-2 rounded-lg border border-gray-200 p-2 bg-gray-50">
+              <LocaleSwitcher />
+              <CurrencySwitcher />
+            </div>
             <Link
               href="/search"
               onClick={() => setMobileMenuOpen(false)}
