@@ -201,6 +201,18 @@ const STEPS = [
   { label: 'Publicar', emoji: '🚀', desc: 'Revisión y publicación' },
 ]
 
+function getStepProgressWidthClass(currentStep: number): string {
+  const classes = ['w-0', 'w-1/5', 'w-2/5', 'w-3/5', 'w-4/5', 'w-full']
+  return classes[currentStep] || 'w-0'
+}
+
+function getScoreProgressWidthClass(score: number): string {
+  const safe = Math.max(0, Math.min(100, Number(score) || 0))
+  const bucket = Math.round(safe / 10)
+  const classes = ['w-0', 'w-[10%]', 'w-[20%]', 'w-[30%]', 'w-[40%]', 'w-[50%]', 'w-[60%]', 'w-[70%]', 'w-[80%]', 'w-[90%]', 'w-full']
+  return classes[bucket] || 'w-0'
+}
+
 export default function CreateProfessionalListingPage() {
   const router = useRouter()
   const [accessChecking, setAccessChecking] = useState(true)
@@ -545,6 +557,8 @@ export default function CreateProfessionalListingPage() {
     : null
 
   const propTypeLabel = PROPERTY_TYPES.find((t) => t.value === form.propertyType)
+  const stepProgressWidthClass = getStepProgressWidthClass(currentStep)
+  const scoreProgressWidthClass = getScoreProgressWidthClass(completion.score)
 
   if (accessChecking) {
     return (
@@ -603,8 +617,7 @@ export default function CreateProfessionalListingPage() {
           <div className="relative flex items-center justify-between">
             <div className="absolute left-0 right-0 top-[18px] h-0.5 bg-gray-200 z-0" />
             <div
-              className="absolute left-0 top-[18px] h-0.5 bg-gradient-to-r from-[#0B2545] to-[#00A676] z-0 transition-all duration-500"
-              style={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
+              className={`absolute left-0 top-[18px] h-0.5 bg-gradient-to-r from-[#0B2545] to-[#00A676] z-0 transition-all duration-500 ${stepProgressWidthClass}`}
             />
             {STEPS.map((step, idx) => (
               <button
@@ -643,8 +656,7 @@ export default function CreateProfessionalListingPage() {
             </div>
             <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#0B2545] via-[#00A676] to-[#00A6A6] transition-all duration-700"
-                style={{ width: `${completion.score}%` }}
+                className={`h-full rounded-full bg-gradient-to-r from-[#0B2545] via-[#00A676] to-[#00A6A6] transition-all duration-700 ${scoreProgressWidthClass}`}
               />
             </div>
           </div>
@@ -778,8 +790,11 @@ export default function CreateProfessionalListingPage() {
 
                     {/* Status */}
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">Estado inicial</label>
+                      <label htmlFor="listing-status" className="block text-xs font-semibold text-gray-700 mb-1">Estado inicial</label>
                       <select
+                        id="listing-status"
+                        title="Estado inicial"
+                        aria-label="Estado inicial"
                         value={form.status}
                         onChange={(e) => update('status', e.target.value as CreateForm['status'])}
                         className="w-full sm:w-48 px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none"
@@ -956,8 +971,11 @@ export default function CreateProfessionalListingPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">Deslinde</label>
+                        <label htmlFor="listing-deslinde" className="block text-xs font-semibold text-gray-700 mb-1">Deslinde</label>
                         <select
+                          id="listing-deslinde"
+                          title="Deslinde"
+                          aria-label="Deslinde"
                           value={form.deslindadoStatus}
                           onChange={(e) => update('deslindadoStatus', e.target.value as CreateForm['deslindadoStatus'])}
                           className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none"
@@ -969,8 +987,11 @@ export default function CreateProfessionalListingPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">Amueblado</label>
+                        <label htmlFor="listing-furnished" className="block text-xs font-semibold text-gray-700 mb-1">Amueblado</label>
                         <select
+                          id="listing-furnished"
+                          title="Amueblado"
+                          aria-label="Amueblado"
                           value={form.furnishedStatus}
                           onChange={(e) => update('furnishedStatus', e.target.value as CreateForm['furnishedStatus'])}
                           className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none"
@@ -1007,8 +1028,11 @@ export default function CreateProfessionalListingPage() {
                       <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide mb-3">🏗️ Inventario / Proyecto</p>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
-                          <label className="block text-xs text-gray-600 mb-1">Modo</label>
+                          <label htmlFor="listing-inventory-mode" className="block text-xs text-gray-600 mb-1">Modo</label>
                           <select
+                            id="listing-inventory-mode"
+                            title="Modo de inventario"
+                            aria-label="Modo de inventario"
                             value={form.inventoryMode}
                             onChange={(e) => update('inventoryMode', e.target.value as 'single' | 'project')}
                             className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none bg-white"
@@ -1221,6 +1245,9 @@ export default function CreateProfessionalListingPage() {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
+                          id="listing-mls-only"
+                          title="Solo MLS"
+                          aria-label="Solo MLS"
                           type="checkbox"
                           checked={form.mlsOnly}
                           onChange={(e) => update('mlsOnly', e.target.checked)}
@@ -1505,8 +1532,7 @@ export default function CreateProfessionalListingPage() {
                   </div>
                   <div className="h-1 rounded-full bg-gray-100 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#0B2545] to-[#00A676] transition-all duration-700"
-                      style={{ width: `${completion.score}%` }}
+                      className={`h-full rounded-full bg-gradient-to-r from-[#0B2545] to-[#00A676] transition-all duration-700 ${scoreProgressWidthClass}`}
                     />
                   </div>
                 </div>
