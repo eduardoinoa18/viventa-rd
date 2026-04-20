@@ -5,6 +5,9 @@
 import { storage } from './firebaseClient'
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject, UploadTaskSnapshot } from 'firebase/storage'
 
+const MAX_LISTING_UPLOAD_SIZE_BYTES = 4 * 1024 * 1024
+const MAX_LISTING_SOURCE_SIZE_BYTES = 20 * 1024 * 1024
+
 export interface UploadProgress {
   progress: number
   status: 'uploading' | 'success' | 'error'
@@ -88,11 +91,21 @@ export async function uploadMultipleImages(
   folderPath: string,
   onProgressUpdate?: (index: number, progress: number) => void
 ): Promise<string[]> {
+  const optimizedFiles: File[] = []
+
+  for (let index = 0; index < files.length; index++) {
+    const optimized = await optimizeListingImage(files[index])
+    if (optimized.size > MAX_LISTING_UPLOAD_SIZE_BYTES) {
+      throw new Error(`Imagen ${index + 1}: no se pudo optimizar por debajo de 4MB. Prueba con una imagen de menor resolución.`)
+    }
+    optimizedFiles.push(optimized)
+  }
+
   const formData = new FormData()
   formData.append('folderPath', folderPath)
-  files.forEach((file) => formData.append('files', file))
+  optimizedFiles.forEach((file) => formData.append('files', file))
 
-  files.forEach((_, index) => {
+  optimizedFiles.forEach((_, index) => {
     if (onProgressUpdate) onProgressUpdate(index, 10)
   })
 
@@ -108,7 +121,7 @@ export async function uploadMultipleImages(
     throw new Error(errorMsg)
   }
 
-  files.forEach((_, index) => {
+  optimizedFiles.forEach((_, index) => {
     if (onProgressUpdate) onProgressUpdate(index, 100)
   })
 
@@ -140,7 +153,6 @@ export async function deleteMultipleImages(imageUrls: string[]): Promise<void> {
  * Validate image file
  */
 export function validateImageFile(file: File): { valid: boolean; error?: string } {
-  const maxSize = 4 * 1024 * 1024 // 4MB (Next.js body limit constraint)
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
   if (!allowedTypes.includes(file.type)) {
@@ -150,14 +162,96 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
     }
   }
 
-  if (file.size > maxSize) {
+  if (file.size > MAX_LISTING_SOURCE_SIZE_BYTES) {
     return {
       valid: false,
-      error: 'File too large. Maximum size is 4MB.'
+      error: 'File too large. Maximum source size is 20MB.'
     }
   }
 
   return { valid: true }
+}
+
+async function optimizeListingImage(file: File): Promise<File> {
+  if (file.size <= MAX_LISTING_UPLOAD_SIZE_BYTES) {
+    return file
+  }
+
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return file
+  }
+
+  return compressImageToSize(file, MAX_LISTING_UPLOAD_SIZE_BYTES)
+}
+
+async function compressImageToSize(file: File, targetBytes: number): Promise<File> {
+  const image = await loadImage(file)
+  let quality = 0.86
+  let scale = 1
+  let bestBlob: Blob | null = null
+
+  for (let attempt = 0; attempt < 9; attempt++) {
+    const width = Math.max(320, Math.round(image.width * scale))
+    const height = Math.max(320, Math.round(image.height * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) break
+
+    ctx.drawImage(image, 0, 0, width, height)
+    const blob = await canvasToBlob(canvas, 'image/webp', quality)
+    if (!blob) break
+
+    bestBlob = !bestBlob || blob.size < bestBlob.size ? blob : bestBlob
+
+    if (blob.size <= targetBytes) {
+      return blobToFile(blob, file.name)
+    }
+
+    if (quality > 0.52) {
+      quality -= 0.08
+    } else {
+      scale *= 0.82
+    }
+  }
+
+  if (bestBlob) {
+    return blobToFile(bestBlob, file.name)
+  }
+
+  return file
+}
+
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve(img)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('No se pudo leer la imagen para optimizarla.'))
+    }
+    img.src = objectUrl
+  })
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, quality: number): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), mimeType, quality)
+  })
+}
+
+function blobToFile(blob: Blob, originalName: string): File {
+  const safeBase = originalName.replace(/\.[^.]+$/, '') || 'image'
+  return new File([blob], `${safeBase}.webp`, {
+    type: 'image/webp',
+    lastModified: Date.now(),
+  })
 }
 
 /**
