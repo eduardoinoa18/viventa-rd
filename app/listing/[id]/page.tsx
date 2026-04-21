@@ -7,6 +7,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Head from 'next/head'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
+import BottomNav from '../../../components/BottomNav'
 import WhatsAppButton from '../../../components/WhatsAppButton'
 import PropertyInquiryForm from '../../../components/PropertyInquiryForm'
 import StructuredData from '../../../components/StructuredData'
@@ -1401,6 +1402,7 @@ export default function ListingDetail(){
         />
       )}
       <Footer />
+      <BottomNav />
     </>
   )
 }

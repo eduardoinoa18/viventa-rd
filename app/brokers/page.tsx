@@ -1,6 +1,7 @@
 "use client"
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
+import BottomNav from '../../components/BottomNav'
 import BrokerCard from '../../components/BrokerCard'
 import { useMemo, useState, useEffect } from 'react'
 import { FiSearch, FiStar, FiUsers } from 'react-icons/fi'
@@ -156,6 +157,7 @@ export default function BrokersPage() {
         )}
       </main>
       <Footer />
+      <BottomNav />
     </div>
   )
 }

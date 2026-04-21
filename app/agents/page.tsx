@@ -1,6 +1,7 @@
 "use client"
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
+import BottomNav from '../../components/BottomNav'
 import AgentCard from '../../components/AgentCard'
 import { useMemo, useState, useEffect } from 'react'
 import { FiSearch, FiStar } from 'react-icons/fi'
@@ -226,6 +227,7 @@ export default function AgentsPage() {
         )}
       </main>
       <Footer />
+      <BottomNav />
     </div>
   )
 }

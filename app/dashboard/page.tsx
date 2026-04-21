@@ -400,10 +400,14 @@ export default function BuyerDashboardPage() {
   }, [session])
 
   useEffect(() => {
-    if (session?.role !== 'broker') return
+    if (!session?.role) return
     if (typeof window === 'undefined') return
     if (window.location.pathname !== '/dashboard') return
-    window.location.replace('/dashboard/broker/overview')
+    if (session.role === 'broker') {
+      window.location.replace('/dashboard/broker/overview')
+    } else if (session.role === 'buyer' || session.role === 'user') {
+      window.location.replace('/dashboard/buyer')
+    }
   }, [session?.role])
 
   useEffect(() => {

@@ -90,6 +90,7 @@ export default function Header() {
                   : role === 'agent' ? '/dashboard/agent'
                   : role === 'broker' ? '/dashboard/broker'
                   : role === 'constructora' ? '/dashboard/constructora'
+                  : role === 'buyer' || role === 'user' ? '/dashboard/buyer'
                   : '/dashboard'
                 return (
                   <Link href={panelHref} className="text-viventa-turquoise hover:text-viventa-navy transition-colors font-semibold">Mi Panel</Link>

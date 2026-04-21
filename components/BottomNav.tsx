@@ -64,15 +64,15 @@ export default function BottomNav() {
             active: pathname?.startsWith('/projects')
           },
           {
-            name: 'Favoritos',
+            name: 'Guardados',
             icon: FiUsers,
-            path: '/favorites',
-            active: pathname?.startsWith('/favorites')
+            path: '/dashboard/buyer',
+            active: pathname?.startsWith('/dashboard/buyer') || pathname?.startsWith('/favorites')
           },
           {
             name: 'Panel',
             icon: FiUser,
-            path: '/dashboard',
+            path: '/dashboard/buyer',
             active: pathname?.startsWith('/dashboard')
           },
           {

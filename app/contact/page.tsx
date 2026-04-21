@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import BottomNav from '../../components/BottomNav';
 import toast from 'react-hot-toast';
 import { FiArrowLeft, FiMail, FiPhone, FiMapPin, FiClock, FiMessageCircle, FiSend } from 'react-icons/fi';
 import { trackContactSubmission, getCurrentUserInfo } from '@/lib/analyticsService';
@@ -303,6 +304,7 @@ export default function ContactPage() {
         </div>
       </main>
       <Footer />
+      <BottomNav />
     </div>
   );
 }
