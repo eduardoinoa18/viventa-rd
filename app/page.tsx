@@ -113,21 +113,21 @@ export default function HomePage() {
 
         {/* Search CTA Section (simplified) */}
         <section className="max-w-7xl mx-auto py-12 px-4">
-          <div className="bg-gradient-to-br from-[#0B2545] to-[#00A6A6] rounded-3xl p-8 md:p-12 text-white shadow-2xl">
+          <div className="bg-gradient-to-br from-[#0B2545] to-[#00A6A6] rounded-3xl p-6 sm:p-8 md:p-12 text-white shadow-2xl">
             <div className="text-center max-w-3xl mx-auto">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">¿Listo para encontrar tu propiedad ideal?</h2>
-              <p className="text-lg mb-6 text-gray-100">Explora miles de opciones verificadas en toda República Dominicana</p>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">¿Listo para encontrar tu propiedad ideal?</h2>
+              <p className="text-base sm:text-lg mb-6 text-gray-100">Explora miles de opciones verificadas en toda República Dominicana</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <a 
                   href="/search" 
-                  className="px-8 py-4 bg-white text-[#0B2545] hover:bg-gray-100 font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center gap-2"
+                  className="px-6 sm:px-8 py-4 bg-white text-[#0B2545] hover:bg-gray-100 font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center gap-2"
                 >
                   <FiSearch className="text-xl" /> 
                   <span>Buscar Propiedades</span>
                 </a>
                 <a 
                   href="/agents" 
-                  className="px-8 py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 border-2 border-white/30 font-bold rounded-xl transition-all duration-300 inline-flex items-center justify-center gap-2"
+                  className="px-6 sm:px-8 py-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 border-2 border-white/30 font-bold rounded-xl transition-all duration-300 inline-flex items-center justify-center gap-2"
                 >
                   <FiUsers className="text-xl" /> 
                   <span>Hablar con un Agente</span>
@@ -141,7 +141,7 @@ export default function HomePage() {
         <section className="bg-gradient-to-br from-viventa-sand/30 to-white py-12 md:py-16">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-8">
-              <h2 className="text-3xl md:text-4xl font-bold mb-3 text-viventa-navy">Agentes Destacados</h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 text-viventa-navy">Agentes Destacados</h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
                 Conoce a nuestros mejores agentes con años de experiencia ayudando a familias a encontrar su hogar ideal
               </p>
@@ -162,7 +162,7 @@ export default function HomePage() {
 
         {/* Why Choose VIVENTA */}
         <section className="max-w-7xl mx-auto px-4 py-12">
-          <h2 className="text-2xl font-bold mb-6 text-[#0B2545]">¿Por qué elegir VIVENTA?</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-6 text-[#0B2545]">¿Por qué elegir VIVENTA?</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
                 <FiCheckCircle className="text-4xl text-[#00A6A6] mb-2" />
@@ -247,22 +247,22 @@ export default function HomePage() {
         {/* Brokerages CTA */}
         <section className="bg-gradient-to-br from-viventa-navy to-viventa-ocean py-12 md:py-16">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold mb-3 text-white">Red de Brokerages Certificados</h2>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 text-white">Red de Brokerages Certificados</h2>
                 <p className="text-viventa-sand/90 mb-6 max-w-lg">
                   Trabajamos con brokerages verificados en toda República Dominicana. Desde Santo Domingo hasta Punta Cana, nuestros socios están listos para ayudarte.
                 </p>
-                <div className="flex flex-wrap gap-3">
-                  <a href="/brokers" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-viventa-ocean font-bold rounded-xl shadow-lg hover:scale-105 transition-all">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+                  <a href="/brokers" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 bg-white text-viventa-ocean font-bold rounded-xl shadow-lg hover:scale-105 transition-all">
                     Ver brokerages <FiArrowRight />
                   </a>
-                  <a href="/contact" className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 border border-white/30 text-white font-semibold rounded-xl hover:bg-white/15 transition-all">
+                  <a href="/contact" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 bg-white/10 border border-white/30 text-white font-semibold rounded-xl hover:bg-white/15 transition-all">
                     Hablar con VIVENTA
                   </a>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-white/10 border border-white/10 rounded-2xl p-5 text-white">
                   <FiUsers className="text-2xl mb-2 text-cyan-200" />
                   <div className="font-bold text-lg">Agentes verificados</div>

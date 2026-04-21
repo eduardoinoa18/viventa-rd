@@ -155,10 +155,10 @@ export default function PlatformStatsWidget() {
           </div>
         </div>
 
-        <div className="mt-8 sm:mt-10 text-center">
-          <Link href="/confianza" className="inline-flex items-center gap-2 text-[#00A6A6] hover:text-[#008c8c] font-semibold text-sm sm:text-base transition-colors group">
+        <div className="mt-8 sm:mt-10 text-center px-2">
+          <Link href="/confianza" className="inline-flex flex-wrap items-center justify-center gap-2 text-[#00A6A6] hover:text-[#008c8c] font-semibold text-sm sm:text-base transition-colors group text-center">
             <FiCheckCircle className="group-hover:scale-110 transition-transform" />
-            <span>Ver como funciona la verificacion y la confianza de VIVENTA</span>
+            <span className="break-words">Ver como funciona la verificacion y la confianza de VIVENTA</span>
             <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
