@@ -57,7 +57,7 @@ export default function AgentsPage() {
       if (!res.ok || !json?.ok) throw new Error(json?.error || 'Failed')
       setAgents((json.data || []).map((a: any) => ({
         ...a,
-        photo: a.profileImage || a.photo || '/agent-placeholder.jpg',
+        photo: a.photoURL || a.profileImage || a.photo || '',
         area: a.area || a.city || 'República Dominicana',
         rating: a.rating || 4.5,
       })))

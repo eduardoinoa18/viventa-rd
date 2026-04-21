@@ -64,7 +64,7 @@ export default function BrokersPage() {
       if (!res.ok || !json?.ok) throw new Error(json?.error || 'Failed')
       setBrokers((json.data || []).map((b: any) => ({
         ...b,
-        companyLogo: b.companyLogo || b.photo || '/placeholder.png',
+        companyLogo: b.companyLogo || b.photoURL || b.photo || '',
         area: b.area || b.city || 'República Dominicana',
         rating: b.rating || 4.7,
         teamSize: b.teamSize || b.agents || 0,

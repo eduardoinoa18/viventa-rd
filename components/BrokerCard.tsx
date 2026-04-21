@@ -31,7 +31,8 @@ export default function BrokerCard({ broker }: { broker: any }) {
             alt={broker.company || broker.name} 
             className="w-20 h-20 rounded-lg object-cover border-4 border-white shadow-lg bg-white"
             onError={(e) => {
-              e.currentTarget.src = '/placeholder.png'
+              e.currentTarget.onerror = null
+              e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' rx='10' fill='%23e2e8f0'/%3E%3Crect x='20' y='20' width='40' height='30' rx='4' fill='%2394a3b8'/%3E%3Crect x='15' y='50' width='50' height='20' rx='4' fill='%2394a3b8'/%3E%3C/svg%3E`
             }}
           />
         </div>

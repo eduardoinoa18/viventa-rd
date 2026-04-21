@@ -26,7 +26,9 @@ export default function AgentCard({ agent }: { agent: any }) {
             alt={agent.name} 
             className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
             onError={(e) => {
-              e.currentTarget.src = '/agent-placeholder.jpg'
+              // Prevent infinite loop if placeholder itself fails
+              e.currentTarget.onerror = null
+              e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' rx='40' fill='%23e2e8f0'/%3E%3Ccircle cx='40' cy='30' r='14' fill='%2394a3b8'/%3E%3Cellipse cx='40' cy='65' rx='22' ry='18' fill='%2394a3b8'/%3E%3C/svg%3E`
             }}
           />
           {/* Presence badge */}

@@ -5,10 +5,11 @@ import Link from 'next/link'
 import {
   FiUser, FiPhone, FiMail, FiHome, FiActivity, FiCheckSquare,
   FiClock, FiTrendingUp, FiAlertCircle, FiPlusCircle,
-  FiDollarSign, FiSearch, FiRefreshCw, FiBriefcase,
+  FiDollarSign, FiSearch, FiRefreshCw, FiBriefcase, FiCalendar, FiLayers,
 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { CRM_DEAL_STAGES, CRM_DEAL_STAGE_LABELS, type CrmDealStage } from '@/lib/domain/crmDeal'
+import BusinessCalendar, { type CalendarEvent } from '@/components/BusinessCalendar'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -161,7 +162,10 @@ export default function BrokerCrmPage() {
   const [selectedDealIds, setSelectedDealIds]   = useState<string[]>([])
   const [tasks, setTasks]                       = useState<Task[]>([])
   const [loading, setLoading]                   = useState(true)
-  const [activeTab, setActiveTab]               = useState<'pipeline' | 'deals' | 'tasks' | 'activity'>('pipeline')
+  const [activeTab, setActiveTab]               = useState<'pipeline' | 'deals' | 'transactions' | 'tasks' | 'calendar'>('pipeline')
+
+  // Transaction state
+  const [transactions, setTransactions]         = useState<Array<{ id: string; clientName?: string; stage?: string; salePrice?: number; currency?: string; pendingCommission?: number }>>([])
   const [selectedLead, setSelectedLead]         = useState<Lead | null>(null)
   const [leadActivity, setLeadActivity]         = useState<LeadActivity[]>([])
   const [loadingLeadActivity, setLoadingLeadActivity] = useState(false)
@@ -204,10 +208,11 @@ export default function BrokerCrmPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [leadsRes, dealsRes, tasksRes] = await Promise.allSettled([
+      const [leadsRes, dealsRes, tasksRes, txRes] = await Promise.allSettled([
         fetch('/api/broker/leads').then((r) => r.json()),
         fetch('/api/broker/crm/deals').then((r) => r.json()),
         fetch('/api/broker/crm/tasks').then((r) => r.json()),
+        fetch('/api/broker/transactions', { cache: 'no-store' }).then((r) => r.json()),
       ])
       if (leadsRes.status === 'fulfilled') setLeads(leadsRes.value?.leads ?? [])
       if (dealsRes.status === 'fulfilled') {
@@ -221,6 +226,7 @@ export default function BrokerCrmPage() {
         setDealStageDraftById(drafts)
       }
       if (tasksRes.status === 'fulfilled') setTasks(tasksRes.value?.tasks ?? [])
+      if (txRes.status === 'fulfilled') setTransactions(txRes.value?.transactions ?? [])
     } catch { /* noop */ }
     setLoading(false)
   }, [])
@@ -271,6 +277,68 @@ export default function BrokerCrmPage() {
       return acc
     }, {} as Record<CrmDealStage, number>)
   }, [deals])
+
+  const calendarEvents = useMemo<CalendarEvent[]>(() => {
+    const events: CalendarEvent[] = []
+    tasks.forEach((t) => {
+      if (t.dueAt) {
+        events.push({
+          id: `task-${t.id}`,
+          title: t.title,
+          date: t.dueAt.slice(0, 10),
+          type: 'task',
+          status: t.status === 'done' ? 'done' : new Date(t.dueAt) < new Date() ? 'overdue' : 'pending',
+          priority: t.priority,
+        })
+      }
+    })
+    leads.forEach((l) => {
+      if (l.followUpAt) {
+        events.push({
+          id: `lead-${l.id}`,
+          title: `Follow-up: ${l.buyerName ?? 'Lead'}`,
+          date: l.followUpAt.slice(0, 10),
+          type: 'follow_up',
+          note: l.nextActionNote ?? undefined,
+          status: new Date(l.followUpAt) < new Date() ? 'overdue' : 'pending',
+        })
+      }
+    })
+    deals.forEach((d) => {
+      if (d.updatedAt) {
+        events.push({
+          id: `deal-${d.id}`,
+          title: `Deal: ${d.clientName}`,
+          date: d.updatedAt.slice(0, 10),
+          type: d.stage === 'closing' ? 'closing' : 'deal',
+          status: d.stage === 'completed' ? 'done' : 'pending',
+        })
+      }
+    })
+    return events
+  }, [tasks, leads, deals])
+
+  async function addCalendarEvent(date: string, title: string, type: CalendarEvent['type']) {
+    const taskTypes: Array<CalendarEvent['type']> = ['task', 'follow_up', 'meeting', 'other']
+    if (taskTypes.includes(type)) {
+      try {
+        const res = await fetch('/api/broker/crm/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, dueAt: date, priority: 'normal' }),
+        })
+        const json = await res.json()
+        if (res.ok && json.ok) {
+          toast.success('Tarea agregada al calendario')
+          load()
+        } else {
+          toast.error(json.error ?? 'Error al crear tarea')
+        }
+      } catch { toast.error('Error de red') }
+    } else {
+      toast('Tipo de evento registrado en calendario', { icon: '📅' })
+    }
+  }
 
   const allDealsSelected = deals.length > 0 && selectedDealIds.length === deals.length
 
@@ -602,20 +670,26 @@ export default function BrokerCrmPage() {
 
       {/* Tabs */}
       <div className="bg-white border-b border-gray-200 px-6">
-        <nav className="flex gap-6">
-          {(['pipeline', 'deals', 'tasks', 'activity'] as const).map((tab) => {
-            const labels: Record<string, string> = { pipeline: 'Pipeline', deals: 'Deals', tasks: 'Tareas', activity: 'Actividad' }
+        <nav className="flex gap-1 overflow-x-auto">
+          {([
+            { id: 'pipeline',     label: 'CRM Pipeline',    icon: FiUser },
+            { id: 'deals',        label: 'Deals',           icon: FiBriefcase },
+            { id: 'transactions', label: 'Transacciones',   icon: FiLayers },
+            { id: 'tasks',        label: 'Tareas',          icon: FiCheckSquare },
+            { id: 'calendar',     label: 'Calendario',      icon: FiCalendar },
+          ] as const).map((tab) => {
+            const Icon = tab.icon
             return (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab
-                    ? 'border-blue-600 text-blue-600'
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 py-3 px-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-[#00A676] text-[#00A676]'
                     : 'border-transparent text-gray-500 hover:text-gray-800'
                 }`}
               >
-                {labels[tab]}
+                <Icon className="w-4 h-4" /> {tab.label}
               </button>
             )
           })}
@@ -979,17 +1053,99 @@ export default function BrokerCrmPage() {
           </div>
         )}
 
-        {/* ── Activity Tab ─────────────────────────────────────────────────── */}
-        {activeTab === 'activity' && (
-          <div className="max-w-2xl">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center text-gray-400">
-              <FiActivity className="w-10 h-10 mx-auto mb-3 opacity-20" />
-              <p className="font-medium text-gray-600">Historial de Actividad</p>
-              <p className="text-sm mt-1">
-                Las actividades del equipo aparecerán aquí próximamente.
-              </p>
+        {/* ── Transactions Tab ──────────────────────────────────────────── */}
+        {activeTab === 'transactions' && (
+          <div className="space-y-5">
+            {/* Summary */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { label: 'Total Pipeline', value: transactions.length, color: 'text-[#0B2545]' },
+                { label: 'Leads', value: transactions.filter(t => t.stage === 'lead').length, color: 'text-slate-600' },
+                { label: 'En Contrato', value: transactions.filter(t => t.stage === 'contract').length, color: 'text-blue-600' },
+                { label: 'Completados', value: transactions.filter(t => t.stage === 'completed').length, color: 'text-emerald-600' },
+              ].map(stat => (
+                <div key={stat.label} className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
+                  <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
+                </div>
+              ))}
             </div>
+
+            {/* Kanban-style stage columns */}
+            {loading ? (
+              <div className="text-center text-gray-400 py-16">Cargando transacciones...</div>
+            ) : transactions.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center text-gray-400">
+                <FiLayers className="mx-auto mb-3 h-12 w-12 opacity-20" />
+                <p className="font-medium text-gray-600">Sin transacciones activas.</p>
+                <Link href="/dashboard/broker/transactions" className="mt-3 inline-block text-sm font-semibold text-[#00A676] hover:underline">
+                  Ir al board completo →
+                </Link>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                      <tr>
+                        {['Cliente', 'Etapa', 'Valor', 'Comisión Pend.'].map(h => (
+                          <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {transactions.map(tx => {
+                        const stageLabel: Record<string, string> = {
+                          lead: 'Lead', showing: 'Visita', offer: 'Oferta',
+                          reservation: 'Reserva', contract: 'Contrato',
+                          closing: 'Cierre', completed: 'Completado',
+                        }
+                        const stageColor: Record<string, string> = {
+                          lead: 'bg-slate-100 text-slate-700',
+                          showing: 'bg-violet-50 text-violet-700',
+                          offer: 'bg-amber-50 text-amber-700',
+                          reservation: 'bg-orange-50 text-orange-700',
+                          contract: 'bg-blue-50 text-blue-700',
+                          closing: 'bg-teal-50 text-teal-700',
+                          completed: 'bg-emerald-50 text-emerald-700',
+                        }
+                        return (
+                          <tr key={tx.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-medium text-gray-900">{tx.clientName ?? '—'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${stageColor[tx.stage ?? 'lead'] ?? 'bg-gray-100 text-gray-600'}`}>
+                                {stageLabel[tx.stage ?? 'lead'] ?? tx.stage}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-700">
+                              {tx.salePrice ? `$${Number(tx.salePrice).toLocaleString()}` : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-gray-700">
+                              {tx.pendingCommission ? `$${Number(tx.pendingCommission).toLocaleString()}` : '—'}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="text-right">
+                  <Link href="/dashboard/broker/transactions" className="inline-flex items-center gap-1 text-sm font-semibold text-[#00A676] hover:underline">
+                    Abrir board completo →
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
+        )}
+
+        {/* ── Calendar Tab ──────────────────────────────────────────────── */}
+        {activeTab === 'calendar' && (
+          <BusinessCalendar
+            events={calendarEvents}
+            onAddEvent={addCalendarEvent}
+            loading={loading}
+          />
         )}
       </main>
 

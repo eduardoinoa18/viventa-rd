@@ -12,6 +12,7 @@ import {
   FiUser,
   FiGlobe,
 } from 'react-icons/fi'
+import { FiSearch } from 'react-icons/fi'
 
 type AgentProfile = {
   id: string
@@ -19,6 +20,8 @@ type AgentProfile = {
   email: string
   phone: string
   company: string
+  brokerId?: string
+  brokerName?: string
   bio: string
   profileImage: string
   city: string
@@ -39,6 +42,9 @@ export default function AgentProfilePage() {
   const [saving, setSaving] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [brokers, setBrokers] = useState<Array<{ id: string; name: string; city?: string; companyName?: string }>>([])
+  const [brokerSearch, setBrokerSearch] = useState('')
+  const [brokerDropdownOpen, setBrokerDropdownOpen] = useState(false)
 
   const suggestedLanguages = ['Espanol', 'Ingles', 'Frances', 'Italiano']
   const suggestedSpecialties = ['Apartamentos', 'Casas', 'Terrenos', 'Comercial', 'Inversion']
@@ -59,6 +65,7 @@ export default function AgentProfilePage() {
 
         if (res.ok && json?.ok && json?.agent) {
           setProfile(json.agent)
+          setBrokerSearch(json.agent?.brokerName ?? json.agent?.company ?? '')
         } else {
           setMessage({ type: 'error', text: 'No se pudo cargar el perfil' })
         }
@@ -70,6 +77,23 @@ export default function AgentProfilePage() {
     }
 
     load()
+
+    async function loadBrokers() {
+      try {
+        const res = await fetch('/api/brokers?limit=200', { cache: 'no-store' })
+        const json = await res.json().catch(() => ({}))
+        if (res.ok && Array.isArray(json?.brokers)) {
+          setBrokers(json.brokers.map((b: any) => ({
+            id: b.id,
+            name: b.name ?? b.companyName ?? b.displayName ?? 'Broker',
+            city: b.city ?? '',
+            companyName: b.companyName ?? b.name ?? '',
+          })))
+        }
+      } catch { /* noop */ }
+    }
+
+    loadBrokers()
   }, [router])
 
   const handleChange = (field: string, value: any) => {
@@ -281,7 +305,14 @@ export default function AgentProfilePage() {
             <div className="space-y-3 text-sm">
               <div>
                 <label className="block text-gray-600 mb-1">Código Profesional</label>
-                <p className="text-gray-900 font-mono">{profile.professionalCode || 'No asignado'}</p>
+                <input
+                  type="text"
+                  value={profile.professionalCode || ''}
+                  onChange={(e) => handleChange('professionalCode', e.target.value.toUpperCase())}
+                  placeholder="Ej: VIV-AG-001"
+                  className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#00A676]"
+                />
+                <p className="text-xs text-gray-400 mt-1">Tu código único de identificación profesional.</p>
               </div>
               <div>
                 <label className="block text-gray-600 mb-1">Slug (URLs públicas)</label>
@@ -344,13 +375,65 @@ export default function AgentProfilePage() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Inmobiliaria / Broker</label>
-                  <input
-                    type="text"
-                    title="Empresa o broker"
-                    value={profile.company}
-                    onChange={(e) => handleChange('company', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div className="relative">
+                    <div className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                      <FiSearch className="w-4 h-4 text-gray-400 shrink-0" />
+                      <input
+                        type="text"
+                        value={brokerSearch}
+                        onChange={(e) => { setBrokerSearch(e.target.value); setBrokerDropdownOpen(true) }}
+                        onFocus={() => setBrokerDropdownOpen(true)}
+                        placeholder="Buscar o escribir nombre del broker..."
+                        className="flex-1 outline-none text-sm bg-transparent"
+                      />
+                    </div>
+                    {brokerDropdownOpen && (
+                      <div className="absolute z-20 mt-1 w-full rounded-xl border border-gray-200 bg-white shadow-lg max-h-52 overflow-y-auto">
+                        {brokers
+                          .filter(b =>
+                            !brokerSearch ||
+                            b.name.toLowerCase().includes(brokerSearch.toLowerCase()) ||
+                            (b.city ?? '').toLowerCase().includes(brokerSearch.toLowerCase())
+                          )
+                          .slice(0, 20)
+                          .map(b => (
+                            <button
+                              key={b.id}
+                              type="button"
+                              onClick={() => {
+                                handleChange('brokerId', b.id)
+                                handleChange('brokerName', b.name)
+                                handleChange('company', b.companyName || b.name)
+                                setBrokerSearch(b.name)
+                                setBrokerDropdownOpen(false)
+                              }}
+                              className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-[#00A676]/5"
+                            >
+                              <span className="font-medium text-sm text-gray-900">{b.name}</span>
+                              {b.city && <span className="text-xs text-gray-400 ml-1">• {b.city}</span>}
+                            </button>
+                          ))}
+                        {brokers.filter(b => !brokerSearch || b.name.toLowerCase().includes(brokerSearch.toLowerCase())).length === 0 && (
+                          <div className="px-4 py-3 text-sm text-gray-400">Sin resultados.</div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleChange('company', brokerSearch)
+                            handleChange('brokerId', '')
+                            handleChange('brokerName', brokerSearch)
+                            setBrokerDropdownOpen(false)
+                          }}
+                          className="flex w-full items-center gap-2 border-t border-gray-100 px-4 py-2.5 text-sm text-[#00A676] hover:bg-[#00A676]/5 font-medium"
+                        >
+                          + Usar &quot;{brokerSearch}&quot; tal como está
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {profile.brokerId && (
+                    <p className="text-xs text-[#00A676] mt-1">✓ Vinculado a broker registrado en VIVENTA</p>
+                  )}
                 </div>
 
                 <div>
