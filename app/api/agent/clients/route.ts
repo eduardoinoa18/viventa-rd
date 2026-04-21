@@ -62,9 +62,10 @@ export async function GET(req: Request) {
       .get()
 
     const agentLeads = leadsSnap.docs
-      .map((doc) => ({ id: doc.id, ...(doc.data() as Record<string, any>) }))
+      .map((doc) => ({ id: doc.id, ...(doc.data() as Record<string, any>) } as Record<string, any>))
       .filter((lead) => {
-        const ownerId = safeText(lead.ownerAgentId || lead.assignedTo || lead.assignedTo?.uid)
+        const assignedTo = lead.assignedTo
+        const ownerId = safeText(lead.ownerAgentId || (typeof assignedTo === 'string' ? assignedTo : assignedTo?.uid) || '')
         return ownerId === context.uid
       })
 

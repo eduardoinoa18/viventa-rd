@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+﻿import { Suspense } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import BottomNav from '@/components/BottomNav'
@@ -28,7 +28,6 @@ interface SearchPageProps {
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  // Build filters from URL params
   const filters: ListingFilters = {
     city: searchParams.city,
     sector: searchParams.sector,
@@ -43,24 +42,36 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     bathrooms: searchParams.bathrooms ? Number(searchParams.bathrooms) : undefined,
   }
 
-  // Server-side data fetch
   const { listings, total } = await getListings(filters, 100)
 
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50 pb-20 md:pb-0">
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
-          <div className="mb-4 sm:mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#0B2545] mb-1 sm:mb-2">
-              Oportunidades inmobiliarias en RD
+      <main className="min-h-screen bg-[#F7F8FA] pb-24 md:pb-0">
+        {/* Page header */}
+        <div className="bg-gradient-to-r from-[#0B2545] to-[#134074] px-4 py-8 md:py-10">
+          <div className="mx-auto max-w-7xl">
+            <h1 className="text-2xl font-extrabold text-white md:text-4xl">
+              {searchParams.city
+                ? `Propiedades en ${searchParams.city}`
+                : 'Oportunidades Inmobiliarias en RD'}
             </h1>
-            <p className="text-gray-600 text-sm sm:text-base">
-              Inventario verificado en los mercados de mayor crecimiento de la República Dominicana
+            <p className="mt-1 text-sm text-white/70 md:text-base">
+              {total > 0
+                ? `${total} propiedades verificadas en los mejores mercados`
+                : 'Inventario verificado en los mercados de mayor crecimiento de la República Dominicana'}
             </p>
           </div>
+        </div>
 
-          <Suspense fallback={<div className="text-center py-12">Cargando...</div>}>
+        <div className="mx-auto max-w-7xl px-3 py-6 sm:px-4">
+          <Suspense fallback={
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="animate-pulse rounded-2xl bg-gray-200 h-72" />
+              ))}
+            </div>
+          }>
             <SearchResults initialListings={listings} initialTotal={total} />
           </Suspense>
         </div>
