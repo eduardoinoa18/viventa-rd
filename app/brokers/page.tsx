@@ -74,7 +74,7 @@ export default function BrokersPage() {
 
   const filtered = useMemo(() => {
     const term = q.toLowerCase()
-    let list = brokers.filter(b =>
+    const list = brokers.filter(b =>
       (!term || (b.company || b.name || '').toLowerCase().includes(term) || (b.area || '').toLowerCase().includes(term)) &&
       (b.teamSize || 0) >= minTeamSize &&
       (!area || (b.area || '').toString() === area)

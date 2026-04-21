@@ -74,7 +74,7 @@ export default function AgentsPage() {
 
   const filteredSorted = useMemo(() => {
     const term = q.toLowerCase()
-    let list = agents.filter(a =>
+    const list = agents.filter(a =>
       (!term || (a.name || '').toLowerCase().includes(term) || (a.area || '').toLowerCase().includes(term)) &&
       (!area || (a.area || '').toString() === area) &&
       (!language || String(a.languages || '').split(',').map((s: string) => s.trim()).includes(language))
