@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
-  FiActivity, FiBarChart2, FiCheckSquare, FiChevronLeft, FiDollarSign,
+  FiActivity, FiBarChart2, FiChevronLeft, FiDollarSign,
   FiGrid, FiHome, FiMessageSquare, FiPlusSquare, FiSettings,
-  FiTarget, FiTrendingUp, FiUsers,
+  FiTarget, FiUsers,
 } from 'react-icons/fi'
 import BrandLogo from '@/components/BrandLogo'
 
@@ -14,19 +14,17 @@ type NavItem = { href: string; label: string; icon: React.ReactNode; badge?: num
 
 const PRIMARY: NavItem[] = [
   { href: '/dashboard/agent/overview',    label: 'Resumen',      icon: <FiGrid /> },
-  { href: '/dashboard/agent/crm',         label: 'Leads',        icon: <FiTarget /> },
+  { href: '/dashboard/agent/crm',         label: 'CRM',          icon: <FiTarget /> },
   { href: '/dashboard/listings',          label: 'Propiedades',  icon: <FiHome /> },
 ]
 
 const SECONDARY: NavItem[] = [
   { href: '/dashboard/agent/profile',     label: 'Perfil',       icon: <FiSettings /> },
-  { href: '/dashboard/agent/deals',       label: 'Negocios',     icon: <FiTrendingUp /> },
   { href: '/dashboard/agent/clients',     label: 'Clientes',     icon: <FiUsers /> },
   { href: '/dashboard/agent/commissions', label: 'Comisiones',   icon: <FiBarChart2 /> },
 ]
 
 const SYSTEM: NavItem[] = [
-  { href: '/dashboard/agent/tasks',       label: 'Tareas',       icon: <FiCheckSquare /> },
   { href: '/dashboard/agent/activity',    label: 'Actividad',    icon: <FiActivity /> },
 ]
 

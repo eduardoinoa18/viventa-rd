@@ -195,7 +195,7 @@ export default function FeaturedProjects() {
           </div>
 
           <Link
-            href="/search?mode=projects"
+            href="/projects"
             className="mt-4 md:mt-0 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-viventa-ocean to-viventa-turquoise text-white rounded-xl font-semibold hover:shadow-lg transition-all"
           >
             Ver todos los proyectos

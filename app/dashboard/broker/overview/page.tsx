@@ -205,7 +205,7 @@ export default function BrokerOverviewPage() {
         title="Overview"
         description="Métricas de rendimiento, crecimiento del equipo y pipeline de tu oficina"
         actions={[
-          { label: '+ Create Deal', href: '/dashboard/broker/transactions' },
+          { label: '+ Create Deal', href: '/dashboard/broker/crm' },
           { label: 'View Listings', href: '/dashboard/listings', variant: 'secondary' },
           { label: 'Team & Invites', href: '/dashboard/broker/team', variant: 'secondary' },
           { label: 'Invite Agent', onClick: () => setShowInviteModal(true) },
@@ -227,10 +227,10 @@ export default function BrokerOverviewPage() {
           { label: 'Tareas vencidas', value: taskHealth.overdue, hint: `${taskHealth.automationOpen} abiertas por automatizacion`, tone: taskHealth.overdue > 0 ? 'urgent' : taskHealth.automationOpen > 0 ? 'warn' : 'good' },
         ]}
         quickActions={[
-          { label: 'Crear deal', href: '/dashboard/broker/transactions' },
-          { label: 'Abrir pipeline', href: '/dashboard/broker/pipeline' },
+          { label: 'Crear deal', href: '/dashboard/broker/crm' },
+          { label: 'Abrir CRM', href: '/dashboard/broker/crm' },
           { label: 'Gestionar equipo', href: '/dashboard/broker/team' },
-          { label: 'Ver tareas', href: '/dashboard/broker/tasks' },
+          { label: 'Ver tareas', href: '/dashboard/broker/crm' },
         ]}
       />
 

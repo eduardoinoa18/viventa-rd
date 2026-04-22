@@ -120,8 +120,8 @@ export default function AgentOverviewPage() {
         quickActions={[
           { label: 'Crear propiedad', href: '/dashboard/listings/create' },
           { label: 'Abrir CRM', href: '/dashboard/agent/crm' },
-          { label: 'Ver tareas', href: '/dashboard/agent/tasks' },
-          { label: 'Ver negocios', href: '/dashboard/agent/deals' },
+          { label: 'Seguimientos', href: '/dashboard/agent/crm' },
+          { label: 'Negocios', href: '/dashboard/agent/crm' },
         ]}
       />
 

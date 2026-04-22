@@ -11,7 +11,6 @@ type ActivitySummary = {
 const PRIMARY_NAV_ITEMS = [
   { href: '/dashboard/broker/overview', label: 'Resumen' },
   { href: '/dashboard/broker/crm', label: 'CRM' },
-  { href: '/dashboard/broker/transactions', label: 'Transacciones' },
   { href: '/dashboard/broker/activity', label: 'Actividad' },
   { href: '/dashboard/broker/team', label: 'Equipo' },
 ]
@@ -39,7 +38,7 @@ export default function BrokerWorkspaceNav() {
 
   return (
     <div className="mt-4 space-y-2 text-sm">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2">
       {PRIMARY_NAV_ITEMS.map((item) => {
         const isActive = pathname === item.href
         const isActivity = item.href === '/dashboard/broker/activity'

@@ -3,27 +3,24 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { FiActivity, FiBarChart2, FiCheckSquare, FiChevronLeft, FiClipboard, FiGrid, FiHome, FiLayout, FiMessageSquare, FiPlusSquare, FiTrendingUp, FiUsers, FiDollarSign, FiSettings } from 'react-icons/fi'
+import { FiActivity, FiBarChart2, FiChevronLeft, FiClipboard, FiGrid, FiHome, FiMessageSquare, FiPlusSquare, FiUsers, FiDollarSign, FiSettings } from 'react-icons/fi'
 import BrandLogo from '@/components/BrandLogo'
 
 type NavItem = { href: string; label: string; icon: React.ReactNode; badge?: number }
 
 const PRIMARY: NavItem[] = [
   { href: '/dashboard/broker/overview',     label: 'Resumen',     icon: <FiGrid /> },
-  { href: '/dashboard/broker/pipeline',     label: 'Pipeline',    icon: <FiLayout /> },
-  { href: '/dashboard/broker/transactions', label: 'Negocios',    icon: <FiTrendingUp /> },
+  { href: '/dashboard/broker/crm',          label: 'CRM',         icon: <FiUsers /> },
   { href: '/dashboard/listings',            label: 'Propiedades', icon: <FiHome /> },
 ]
 
 const SECONDARY: NavItem[] = [
   { href: '/dashboard/broker/profile',      label: 'Perfil',      icon: <FiSettings /> },
-  { href: '/dashboard/broker/crm',          label: 'CRM',         icon: <FiUsers /> },
   { href: '/dashboard/broker/team',         label: 'Equipo',      icon: <FiClipboard /> },
   { href: '/dashboard/broker/commissions',  label: 'Comisiones',  icon: <FiBarChart2 /> },
 ]
 
 const SYSTEM: NavItem[] = [
-  { href: '/dashboard/broker/tasks',        label: 'Tareas',      icon: <FiCheckSquare /> },
   { href: '/dashboard/broker/activity',     label: 'Actividad',   icon: <FiActivity /> },
 ]
 
