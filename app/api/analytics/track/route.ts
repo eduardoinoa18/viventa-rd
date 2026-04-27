@@ -63,16 +63,11 @@ export async function POST(req: NextRequest) {
       ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.ip || null,
     }
 
-    try {
-      await db.collection('analytics_events').add(eventData)
-    } catch (e) {
-      // Firebase not configured or error, just log
-      console.log('[Analytics Event]', eventName, uid, metadata || data)
-    }
+    await db.collection('analytics_events').add(eventData)
 
     return NextResponse.json({ ok: true })
   } catch (e: any) {
-    console.error('analytics track POST error', e)
-    return NextResponse.json({ ok: false, error: 'Failed to track event' }, { status: 500 })
+    console.error('Analytics query failed:', e)
+    return NextResponse.json({ ok: false, error: 'Data temporarily unavailable' }, { status: 500 })
   }
 }
