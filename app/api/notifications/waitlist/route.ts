@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     // Rate limit: 10 waitlist submissions per hour per email/IP
     const rlKey = keyFromRequest(req, email)
-    const rl = rateLimit(rlKey, 10, 60 * 60 * 1000)
+    const rl = await rateLimit(rlKey, 10, 60 * 60 * 1000)
     if (!rl.allowed) {
       return NextResponse.json({ ok: false, error: 'Rate limit exceeded. Please try again later.' }, { status: 429 })
     }

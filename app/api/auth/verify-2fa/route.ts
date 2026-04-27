@@ -1,160 +1,126 @@
 /**
  * 2FA Verification API
- * Verifies code and updates custom claims
- * Recreates session cookie with twoFactorVerified=true
+ * Verifies code, updates custom claims, and recreates session cookie.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth } from '@/lib/firebaseAdmin'
 import { getServerSession, createSessionCookie } from '@/lib/auth/session'
 import { verificationCodes } from '@/lib/verificationStore'
+import { keyFromRequest, rateLimit } from '@/lib/rateLimiter'
+
+async function signInWithCustomToken(apiKey: string, token: string): Promise<{ idToken: string }> {
+  const res = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, returnSecureToken: true }),
+    }
+  )
+
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data?.error?.message || 'CUSTOM_TOKEN_EXCHANGE_FAILED')
+  }
+
+  return data as { idToken: string }
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { code } = await req.json()
+    const payload = await req.json().catch(() => null)
+    const code = String(payload?.code || '').trim()
 
     if (!code) {
-      return NextResponse.json(
-        { ok: false, error: 'Código requerido' },
-        { status: 400 }
-      )
+      return NextResponse.json({ ok: false, error: 'Codigo requerido' }, { status: 400 })
     }
 
-    // 1. Get current session from cookie
     const session = await getServerSession()
-
-    if (!session) {
+    if (!session || !session.uid || !session.email) {
       return NextResponse.json(
-        { ok: false, error: 'Sesión no encontrada. Inicia sesión nuevamente.' },
+        { ok: false, error: 'Sesion no encontrada. Inicia sesion nuevamente.' },
         { status: 401 }
       )
     }
 
-    const { uid, email } = session
-
-    if (!email) {
-      return NextResponse.json(
-        { ok: false, error: 'Email no encontrado en sesión' },
-        { status: 400 }
-      )
-    }
-
-    // 2. Verify user is master_admin
     if (session.role !== 'master_admin') {
+      return NextResponse.json({ ok: false, error: 'Solo master admin requiere 2FA' }, { status: 403 })
+    }
+
+    const rl = await rateLimit(keyFromRequest(req, session.email), 8, 60_000)
+    if (!rl.allowed) {
       return NextResponse.json(
-        { ok: false, error: 'Solo master admin requiere 2FA' },
-        { status: 403 }
+        { ok: false, error: 'Demasiados intentos. Intenta mas tarde.' },
+        { status: 429 }
       )
     }
 
-    // 3. Fetch stored 2FA code from in-memory store (keyed by email)
-    const emailKey = email.toLowerCase()
+    const emailKey = session.email.toLowerCase()
     const codeData = verificationCodes.get(emailKey)
-
     if (!codeData) {
-      return NextResponse.json(
-        { ok: false, error: 'Código no encontrado o expirado' },
-        { status: 404 }
-      )
+      return NextResponse.json({ ok: false, error: 'Codigo no encontrado o expirado' }, { status: 404 })
     }
 
-    const storedCode = codeData.code
-    const expiresAt = codeData.expiresAt
+    if (Date.now() > codeData.expiresAt) {
+      verificationCodes.delete(emailKey)
+      return NextResponse.json({ ok: false, error: 'Codigo expirado. Solicita uno nuevo.' }, { status: 401 })
+    }
 
-    // 4. Validate code and expiration
-    if (code !== storedCode) {
-      // Increment attempts
-      codeData.attempts++
+    if (code !== codeData.code) {
+      codeData.attempts += 1
       if (codeData.attempts >= 3) {
         verificationCodes.delete(emailKey)
         return NextResponse.json(
-          { ok: false, error: 'Demasiados intentos. Solicita un nuevo código.' },
+          { ok: false, error: 'Demasiados intentos. Solicita un nuevo codigo.' },
           { status: 401 }
         )
       }
-      return NextResponse.json(
-        { ok: false, error: 'Código inválido' },
-        { status: 401 }
-      )
+      return NextResponse.json({ ok: false, error: 'Codigo invalido' }, { status: 401 })
     }
 
-    if (Date.now() > expiresAt) {
-      verificationCodes.delete(emailKey)
-      return NextResponse.json(
-        { ok: false, error: 'Código expirado. Solicita uno nuevo.' },
-        { status: 401 }
-      )
-    }
-
-    // 5. Update custom claims (CRITICAL: Mark 2FA as verified)
     const adminAuth = getAdminAuth()
     if (!adminAuth) {
       return NextResponse.json(
-        { ok: false, error: 'Error de configuración del servidor' },
+        { ok: false, error: 'Error de configuracion del servidor' },
         { status: 500 }
       )
     }
 
-    await adminAuth.setCustomUserClaims(uid, {
+    await adminAuth.setCustomUserClaims(session.uid, {
       role: 'master_admin',
-      twoFactorVerified: true, // NOW VERIFIED
+      twoFactorVerified: true,
       lastVerified: Date.now(),
     })
 
-    // 6. Create custom token and exchange for ID token with updated claims
-    const customToken = await adminAuth.createCustomToken(uid)
-    
-    console.log('✅ Created custom token for UID:', uid)
-    
-    // Import client auth to sign in with custom token
-    const { signInWithCustomToken } = await import('firebase/auth')
-    const { auth } = await import('@/lib/firebaseClient')
-    
-    if (!auth) {
-      console.error('❌ Firebase client auth not initialized')
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+    if (!apiKey) {
       return NextResponse.json(
-        { ok: false, error: 'Error de configuración del servidor' },
+        { ok: false, error: 'Configuracion de Firebase incompleta' },
         { status: 500 }
       )
     }
-    
-    console.log('🔐 Signing in with custom token...')
-    
-    // Sign in with custom token to get ID token with updated claims
-    const userCredential = await signInWithCustomToken(auth, customToken)
-    const idToken = await userCredential.user.getIdToken(true)
-    
-    console.log('✅ Got ID token with updated claims')
-    
-    // 7. Create new session cookie with updated claims
-    const { value: sessionCookie, options } = await createSessionCookie(idToken)
-    
-    console.log('✅ Created new session cookie')
 
-    // 8. Clean up 2FA code from in-memory store
+    const customToken = await adminAuth.createCustomToken(session.uid)
+    const tokenData = await signInWithCustomToken(apiKey, customToken)
+    const { value: sessionCookie, options } = await createSessionCookie(tokenData.idToken)
+
     verificationCodes.delete(emailKey)
 
-    // 9. Return success and set new session cookie
     const response = NextResponse.json({
       ok: true,
       user: {
-        uid,
-        email,
+        uid: session.uid,
+        email: session.email,
         role: 'master_admin',
       },
       redirect: '/master',
     })
 
     response.cookies.set('__session', sessionCookie, options)
-    
-    console.log('✅ 2FA verification complete - redirecting to /master')
-
     return response
   } catch (error) {
     console.error('2FA verification error:', error)
-    return NextResponse.json(
-      { ok: false, error: 'Error del servidor' },
-      { status: 500 }
-    )
+    return NextResponse.json({ ok: false, error: 'Error del servidor' }, { status: 500 })
   }
 }

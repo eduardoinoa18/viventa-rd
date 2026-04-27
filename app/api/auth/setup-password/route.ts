@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const bodyText = await req.clone().text()
     let emailForKey = ''
     try { emailForKey = (JSON.parse(bodyText).email || '').toLowerCase() } catch {}
-    const rl = rateLimit(keyFromRequest(req, emailForKey), 5, 60_000)
+    const rl = await rateLimit(keyFromRequest(req, emailForKey), 5, 60_000)
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many attempts. Try again later.' }, { status: 429 })
     }

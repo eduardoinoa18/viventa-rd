@@ -19,6 +19,15 @@
                 "name": "@/lib/firebaseClient",
                 "message": "Use Admin SDK helpers from @/lib/firebaseAdmin in API routes."
               }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "**/lib/firebaseClient",
+                  "**/lib/firebaseClient/*"
+                ],
+                "message": "Use Admin SDK helpers from @/lib/firebaseAdmin in API routes."
+              }
             ]
           }
         ]

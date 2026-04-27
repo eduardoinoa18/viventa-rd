@@ -32,81 +32,55 @@ export async function GET(req: NextRequest) {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - days)
 
-    // Aggregate from analytics_events
-    try {
-      const eventsSnap = await db
-        .collection('analytics_events')
-        .where('data.agentId', '==', agentId)
-        .where('timestamp', '>=', cutoffDate)
-        .orderBy('timestamp', 'desc')
-        .get()
-      
-      const metrics = {
-        profileViews: 0,
-        propertyViews: 0,
-        contactRequests: 0,
-        favoritesGenerated: 0,
-        uniqueVisitors: new Set(),
-      }
+    const eventsSnap = await db
+      .collection('analytics_events')
+      .where('data.agentId', '==', agentId)
+      .where('timestamp', '>=', cutoffDate)
+      .orderBy('timestamp', 'desc')
+      .get()
 
-      eventsSnap.forEach((doc: any) => {
-        const evt = doc.data()
-        if (evt.event === 'agent_profile_view') metrics.profileViews++
-        if (evt.event === 'property_view' && evt.data?.agentId === agentId) metrics.propertyViews++
-        if (evt.event === 'agent_contact') metrics.contactRequests++
-        if (evt.event === 'property_favorite' && evt.data?.agentId === agentId) metrics.favoritesGenerated++
-        if (evt.userId && evt.userId !== 'anonymous') metrics.uniqueVisitors.add(evt.userId)
-      })
-
-      // Get property stats
-      const propsSnap = await db.collection('properties').where('agentId', '==', agentId).get()
-      const properties = propsSnap.docs.map((d: any) => d.data())
-
-      const performance = {
-        agentId,
-        period: `${days} days`,
-        metrics: {
-          profileViews: metrics.profileViews,
-          propertyViews: metrics.propertyViews,
-          contactRequests: metrics.contactRequests,
-          favoritesGenerated: metrics.favoritesGenerated,
-          uniqueVisitors: metrics.uniqueVisitors.size,
-        },
-        properties: {
-          total: properties.length,
-          active: properties.filter((p: any) => p.status === 'active').length,
-          sold: properties.filter((p: any) => p.status === 'sold').length,
-        },
-        conversionRate: metrics.contactRequests > 0 ? ((metrics.contactRequests / metrics.propertyViews) * 100).toFixed(2) : '0.00',
-      }
-
-      return NextResponse.json({ ok: true, performance })
-    } catch (e) {
-      // Firestore not configured, return mock
-      return NextResponse.json({
-        ok: true,
-        performance: {
-          agentId,
-          period: `${days} days`,
-          metrics: {
-            profileViews: 42,
-            propertyViews: 320,
-            contactRequests: 18,
-            favoritesGenerated: 45,
-            uniqueVisitors: 87,
-          },
-          properties: {
-            total: 12,
-            active: 8,
-            sold: 4,
-          },
-          conversionRate: '5.63',
-        },
-        note: 'Mock data - Firebase not configured'
-      })
+    const metrics = {
+      profileViews: 0,
+      propertyViews: 0,
+      contactRequests: 0,
+      favoritesGenerated: 0,
+      uniqueVisitors: new Set(),
     }
+
+    eventsSnap.forEach((doc: any) => {
+      const evt = doc.data()
+      if (evt.event === 'agent_profile_view') metrics.profileViews++
+      if (evt.event === 'property_view' && evt.data?.agentId === agentId) metrics.propertyViews++
+      if (evt.event === 'agent_contact') metrics.contactRequests++
+      if (evt.event === 'property_favorite' && evt.data?.agentId === agentId) metrics.favoritesGenerated++
+      if (evt.userId && evt.userId !== 'anonymous') metrics.uniqueVisitors.add(evt.userId)
+    })
+
+    // Get property stats
+    const propsSnap = await db.collection('properties').where('agentId', '==', agentId).get()
+    const properties = propsSnap.docs.map((d: any) => d.data())
+
+    const performance = {
+      agentId,
+      period: `${days} days`,
+      metrics: {
+        profileViews: metrics.profileViews,
+        propertyViews: metrics.propertyViews,
+        contactRequests: metrics.contactRequests,
+        favoritesGenerated: metrics.favoritesGenerated,
+        uniqueVisitors: metrics.uniqueVisitors.size,
+      },
+      properties: {
+        total: properties.length,
+        active: properties.filter((p: any) => p.status === 'active').length,
+        sold: properties.filter((p: any) => p.status === 'sold').length,
+      },
+      conversionRate: metrics.contactRequests > 0 ? ((metrics.contactRequests / metrics.propertyViews) * 100).toFixed(2) : '0.00',
+    }
+
+    return NextResponse.json({ ok: true, performance })
   } catch (e: any) {
-    console.error('agent-performance GET error', e)
-    return NextResponse.json({ ok: false, error: 'Failed to get performance data' }, { status: 500 })
+    console.error('Analytics query failed:', e)
+    return NextResponse.json({ ok: false, error: 'Data temporarily unavailable' }, { status: 500 })
   }
 }

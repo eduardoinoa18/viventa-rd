@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     
     // Rate limit: 3 applications per hour per email/IP
     const rlKey = email ? keyFromRequest(req, email) : keyFromRequest(req)
-    const rl = rateLimit(rlKey, 3, 60 * 60 * 1000)
+    const rl = await rateLimit(rlKey, 3, 60 * 60 * 1000)
     if (!rl.allowed) {
       return NextResponse.json({ ok: false, error: 'Rate limit exceeded. Please try again later.' }, { status: 429 })
     }

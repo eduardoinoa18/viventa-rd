@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     const key = keyFromRequest(req, 'firebase-cleanup')
-    const { allowed } = rateLimit(key, 1, 60 * 60 * 1000)
+    const { allowed } = await rateLimit(key, 1, 60 * 60 * 1000)
     if (!allowed) {
       return adminErrorResponse('RATE_LIMIT', undefined, 'Cleanup can only run once per hour')
     }

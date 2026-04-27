@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db, isFirebaseConfigured } from '../../../lib/firebaseClient'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 import { ingestLead } from '@/lib/leadIngestion'
 
 export async function POST(request: NextRequest) {
@@ -13,20 +12,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Check if Firebase is configured
-    if (!isFirebaseConfigured || !db) {
-      console.error('Firebase not configured; contact form submission blocked')
+    const db = getAdminDb()
+    if (!db) {
+      console.error('Firebase Admin not configured; contact form submission blocked')
       return NextResponse.json({ error: 'Firebase not configured' }, { status: 500 })
     }
 
     // Save to Firestore
-    await addDoc(collection(db, 'marketing_leads'), {
+    await db.collection('marketing_leads').add({
       name,
       email,
       phone: phone || '',
       type,
       message: message || '',
-      createdAt: serverTimestamp()
+      createdAt: new Date(),
     })
 
     try {

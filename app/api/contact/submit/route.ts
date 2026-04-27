@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     // Basic rate limit: 10 submissions per hour per IP
-    const rl = rateLimit(keyFromRequest(request), 10, 60 * 60 * 1000)
+    const rl = await rateLimit(keyFromRequest(request), 10, 60 * 60 * 1000)
     if (!rl.allowed) {
       return NextResponse.json({ ok: false, error: 'Rate limit exceeded' }, { status: 429 })
     }

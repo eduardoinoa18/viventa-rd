@@ -9,6 +9,7 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin'
 import { createSessionCookie } from '@/lib/auth/session'
 import { normalizeLifecycleStatus } from '@/lib/userLifecycle'
+import { keyFromRequest, rateLimit } from '@/lib/rateLimiter'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -102,6 +103,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { ok: false, error: 'Email y contraseña son requeridos' },
         { status: 400 }
+      )
+    }
+
+    const rateLimitKey = keyFromRequest(req, email)
+    const rateLimitResult = await rateLimit(rateLimitKey, 10, 60_000)
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { ok: false, error: 'Demasiados intentos. Intenta más tarde.' },
+        { status: 429 }
       )
     }
 

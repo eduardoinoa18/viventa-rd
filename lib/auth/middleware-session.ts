@@ -1,10 +1,11 @@
 /**
  * Middleware-safe session validation
- * Decodes session cookie payload (JWT-based)
+ * Verifies session cookie signature (JWT-based)
  * Edge runtime compatible
  */
 
 import { NextRequest } from 'next/server'
+import { createRemoteJWKSet, jwtVerify } from 'jose'
 
 export interface MiddlewareSession {
   uid: string
@@ -13,10 +14,21 @@ export interface MiddlewareSession {
   twoFactorVerified: boolean
 }
 
+const GOOGLE_JWKS = createRemoteJWKSet(
+  new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com')
+)
+
+function getProjectId(): string | null {
+  return (
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.FIREBASE_ADMIN_PROJECT_ID ||
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    null
+  )
+}
+
 /**
- * Decodes session cookie in middleware (edge runtime)
- * Session cookies are JWTs - we can decode the payload without verification
- * The cookie is httpOnly and was created server-side, so it's safe to trust
+ * Verifies and decodes session cookie in middleware (edge runtime)
  */
 export async function getMiddlewareSession(
   req: NextRequest
@@ -27,16 +39,35 @@ export async function getMiddlewareSession(
     return null
   }
 
+  const projectId = getProjectId()
+  if (!projectId) {
+    console.error('Missing Firebase project id for middleware session verification')
+    return null
+  }
+
   try {
-    // Decode JWT payload (base64url encoded)
-    // JWT format: header.payload.signature
-    const parts = sessionCookie.split('.')
-    if (parts.length !== 3) {
+    const { payload } = await jwtVerify(sessionCookie, GOOGLE_JWKS, {
+      algorithms: ['RS256'],
+      issuer: `https://session.firebase.google.com/${projectId}`,
+      audience: projectId,
+    })
+
+    const uid = String(payload.sub || payload.uid || '').trim()
+    if (!uid) {
       return null
     }
 
-    const payload = JSON.parse(
-      Buffer.from(parts[1], 'base64url').toString('utf-8')
+    return {
+      uid,
+      email: String(payload.email || ''),
+      role: String(payload.role || 'buyer'),
+      twoFactorVerified: payload.twoFactorVerified === true,
+    }
+  } catch (error) {
+    console.error('Session verification error:', error)
+    return null
+  }
+}
     )
 
     // Check expiration

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
   try {
-    const rl = rateLimit(keyFromRequest(request), 40, 60 * 60 * 1000)
+    const rl = await rateLimit(keyFromRequest(request), 40, 60 * 60 * 1000)
     if (!rl.allowed) {
       return NextResponse.json({ ok: false, error: 'Rate limit exceeded' }, { status: 429 })
     }
