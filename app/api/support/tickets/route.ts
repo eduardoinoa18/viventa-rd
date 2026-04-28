@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { getSessionFromRequest } from '@/lib/auth/session'
 
 export async function POST(req: Request) {
   try {
+    const session = await getSessionFromRequest(req)
+
     const body = await req.json().catch(() => ({})) as { subject?: string; message?: string; priority?: 'low' | 'normal' | 'high' }
     const subject = (body.subject || 'Ticket de soporte').toString().slice(0, 140)
     const message = (body.message || '').toString().slice(0, 4000)
     const priority = body.priority || 'normal'
 
-    const cookieStore = cookies()
-    const uid = cookieStore.get('viventa_uid')?.value
-    const name = cookieStore.get('viventa_name')?.value
+    const uid = session?.uid
+    const name = session?.email
 
     if (!uid) {
       return NextResponse.json({ ok: false, error: 'not-authenticated' }, { status: 401 })

@@ -4,12 +4,7 @@ export const revalidate = 0
 export const fetchCache = 'default-no-store'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
-
-function getCookie(req: NextRequest, name: string): string | null {
-  const cookie = req.headers.get('cookie') || ''
-  const match = cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'))
-  return match ? decodeURIComponent(match[1]) : null
-}
+import { getSessionFromRequest } from '@/lib/auth/session'
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,15 +13,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
     }
 
-    const uid = getCookie(req, 'viventa_uid')
-    const role = getCookie(req, 'viventa_role')
+    const session = await getSessionFromRequest(req)
+    const uid = session?.uid
+    const role = session?.role
 
     if (!uid || !['agent', 'broker', 'admin', 'master_admin'].includes(role || '')) {
       return NextResponse.json({ ok: false, error: 'Not authorized' }, { status: 403 })
     }
 
     const { searchParams } = new URL(req.url)
-    const agentId = searchParams.get('agentId') || uid
+    const requestedAgentId = (searchParams.get('agentId') || '').trim()
+    const agentId = requestedAgentId || uid
+    if (role === 'agent' && requestedAgentId && requestedAgentId !== uid) {
+      return NextResponse.json({ ok: false, error: 'Not authorized' }, { status: 403 })
+    }
     const days = parseInt(searchParams.get('days') || '30')
 
     const cutoffDate = new Date()
