@@ -6,6 +6,7 @@ import { emitActivityEvent } from '@/lib/activityEvents'
 import { TRANSACTION_STAGES, type TransactionStage } from '@/lib/domain/transaction'
 import { mapCrmDealStageToLeadStage } from '@/lib/domain/crmDeal'
 import { stageToLegacyStatus } from '@/lib/leadLifecycle'
+import { createStagePlaybookTasks } from '@/lib/stagePlaybooks'
 
 export const dynamic = 'force-dynamic'
 
@@ -131,6 +132,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           salePrice: Number(current.salePrice || 0),
           eventVersion: 1,
         },
+      })
+
+      await createStagePlaybookTasks({
+        db,
+        stage: nextStage,
+        dealId: getCanonicalDealId(current, params.id),
+        officeId: safeText(current.officeId),
+        agentId: safeText(current.agentId) || null,
+        createdBy: context.uid,
+        linkedTransactionId: params.id,
       })
 
       const linkedLeadId = safeText(current.leadId)

@@ -6,6 +6,7 @@ import { emitActivityEvent } from '@/lib/activityEvents'
 import { normalizeLeadStage, stageToLegacyStatus } from '@/lib/leadLifecycle'
 import { CRM_DEAL_STAGE_LABELS, mapCrmDealStageToLeadStage, normalizeCrmDealStage, type CrmDealRecord, type CrmDealStage } from '@/lib/domain/crmDeal'
 import { getUnifiedDealAgeDays, getUnifiedDealHealth, getUnifiedDealHealthLabel, getUnifiedDealTimelineLabel, normalizeBrokerDealTimelineStage } from '@/lib/domain/unifiedDeal'
+import { createStagePlaybookTasks } from '@/lib/stagePlaybooks'
 
 export const dynamic = 'force-dynamic'
 
@@ -157,6 +158,16 @@ async function updateSingleDeal(params: {
         salePrice: toNumber(tx.salePrice),
         eventVersion: 1,
       },
+    })
+
+    await createStagePlaybookTasks({
+      db,
+      stage: nextStage,
+      dealId: canonicalDealId,
+      officeId: context.officeId || '',
+      agentId: safeText(tx.agentId) || null,
+      createdBy: context.uid,
+      linkedTransactionId: id,
     })
 
     const linkedLeadId = safeText(tx.leadId)
