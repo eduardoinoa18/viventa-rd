@@ -11,6 +11,8 @@ export const CRM_DEAL_STAGE_LABELS: Record<CrmDealStage, string> = {
   contract: 'Contrato',
   closing: 'Cierre',
   completed: 'Completado',
+  lost: 'Perdido',
+  archived: 'Archivado',
 }
 
 export interface CrmDealRecord {
@@ -29,6 +31,8 @@ export interface CrmDealRecord {
   listingId?: string | null
   projectId?: string | null
   unitId?: string | null
+  lostReason?: string | null
+  lostAt?: TimestampLike
   notes?: string | null
   createdAt: TimestampLike
   updatedAt: TimestampLike
@@ -50,6 +54,8 @@ export function normalizeCrmDealStage(value: unknown): CrmDealStage {
   if (stage === 'contrato_firmado') return 'contract'
   if (stage === 'cierre') return 'closing'
   if (stage === 'cerrado' || stage === 'closed' || stage === 'completado' || stage === 'won') return 'completed'
+  if (stage === 'perdido' || stage === 'lost') return 'lost'
+  if (stage === 'archivado' || stage === 'archived') return 'archived'
   return 'lead'
 }
 
@@ -57,10 +63,11 @@ export function getCrmDealStageLabel(stage: CrmDealStage): string {
   return CRM_DEAL_STAGE_LABELS[stage] || CRM_DEAL_STAGE_LABELS.lead
 }
 
-export type LeadLifecycleStageFromDeal = 'assigned' | 'qualified' | 'negotiating' | 'won'
+export type LeadLifecycleStageFromDeal = 'assigned' | 'qualified' | 'negotiating' | 'won' | 'lost'
 
 export function mapCrmDealStageToLeadStage(stage: CrmDealStage): LeadLifecycleStageFromDeal {
   if (stage === 'completed') return 'won'
+  if (stage === 'lost' || stage === 'archived') return 'lost'
   if (stage === 'offer' || stage === 'reservation' || stage === 'contract' || stage === 'closing') return 'negotiating'
   if (stage === 'showing') return 'qualified'
   return 'assigned'

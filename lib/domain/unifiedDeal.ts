@@ -58,6 +58,7 @@ export function normalizeBrokerDealTimelineStage(value: unknown): UnifiedDealTim
   if (stage === 'contract') return 'contract'
   if (stage === 'closing') return 'closing'
   if (stage === 'completed' || stage === 'won' || stage === 'closed') return 'completed'
+  if (stage === 'lost' || stage === 'archived' || stage === 'cancelled' || stage === 'canceled') return 'cancelled'
   return 'lead'
 }
 

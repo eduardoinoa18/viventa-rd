@@ -66,6 +66,7 @@ type Deal = {
   healthStatus?: 'healthy' | 'attention' | 'overdue' | 'complete'
   healthLabel?: string
   stageAgeDays?: number
+  lostReason?: string | null
 }
 
 type Task = {
@@ -149,6 +150,8 @@ function DealStageBadge({ stage }: { stage: CrmDealStage }) {
     contract: 'bg-blue-50 text-blue-700',
     closing: 'bg-teal-50 text-teal-700',
     completed: 'bg-emerald-50 text-emerald-700',
+    lost: 'bg-rose-50 text-rose-700',
+    archived: 'bg-zinc-100 text-zinc-700',
   }
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${palette[stage]}`}>{CRM_DEAL_STAGE_LABELS[stage]}</span>
 }
@@ -455,12 +458,22 @@ export default function BrokerCrmPage() {
     const stage = dealStageDraftById[dealId]
     if (!stage) return
 
+    let lostReason: string | undefined
+    if (stage === 'lost') {
+      const requested = window.prompt('Motivo de perdida') || ''
+      if (!requested.trim()) {
+        toast.error('Motivo de perdida requerido')
+        return
+      }
+      lostReason = requested.trim()
+    }
+
     setUpdatingDealId(dealId)
     try {
       const res = await fetch('/api/broker/crm/deals', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: dealId, stage }),
+        body: JSON.stringify({ id: dealId, stage, lostReason }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
@@ -481,12 +494,22 @@ export default function BrokerCrmPage() {
       return
     }
 
+    let lostReason: string | undefined
+    if (bulkDealStage === 'lost') {
+      const requested = window.prompt('Motivo de perdida para los deals seleccionados') || ''
+      if (!requested.trim()) {
+        toast.error('Motivo de perdida requerido')
+        return
+      }
+      lostReason = requested.trim()
+    }
+
     setUpdatingDealId('bulk')
     try {
       const res = await fetch('/api/broker/crm/deals', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: selectedDealIds, stage: bulkDealStage }),
+        body: JSON.stringify({ ids: selectedDealIds, stage: bulkDealStage, lostReason }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {

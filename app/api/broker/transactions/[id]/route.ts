@@ -91,6 +91,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     if (body.stage !== undefined) {
       nextStage = normalizePipelineStage(body.stage)
+      if (nextStage === 'lost') {
+        const lostReason = safeText(body.lostReason)
+        if (!lostReason) {
+          return NextResponse.json({ ok: false, error: 'lostReason is required when stage is lost' }, { status: 400 })
+        }
+        update.lostReason = lostReason
+        update.lostAt = new Date()
+      }
+      if (nextStage === 'archived') {
+        update.archivedAt = new Date()
+      }
       update.stage = nextStage
     }
     if (body.notes !== undefined) update.notes = safeText(body.notes)

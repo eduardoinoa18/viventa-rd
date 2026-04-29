@@ -1,4 +1,4 @@
-export const TRANSACTION_STAGES = ['lead', 'showing', 'offer', 'reservation', 'contract', 'closing', 'completed'] as const
+export const TRANSACTION_STAGES = ['lead', 'showing', 'offer', 'reservation', 'contract', 'closing', 'completed', 'lost', 'archived'] as const
 export type TransactionStage = (typeof TRANSACTION_STAGES)[number]
 
 export type CommissionStatus = 'pending' | 'paid'
@@ -30,6 +30,9 @@ export interface TransactionRecord {
   agentCommission: number
   brokerCommission: number
   commissionStatus: CommissionStatus
+  lostReason?: string | null
+  lostAt?: TimestampLike
+  archivedAt?: TimestampLike
   notes?: string | null
   createdBy: string
   updatedBy: string

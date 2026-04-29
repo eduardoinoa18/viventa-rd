@@ -44,6 +44,8 @@ const STAGE_CONFIG: Record<TransactionStage, { label: string; color: string; bg:
   contract:    { label: 'Contract',    color: 'text-purple-700', bg: 'bg-purple-100',  dot: 'bg-purple-500' },
   closing:     { label: 'Closing',     color: 'text-orange-700', bg: 'bg-orange-100',  dot: 'bg-orange-500' },
   completed:   { label: 'Completed',   color: 'text-green-700',  bg: 'bg-green-50',    dot: 'bg-green-500'  },
+  lost:        { label: 'Lost',        color: 'text-rose-700',   bg: 'bg-rose-50',     dot: 'bg-rose-500'   },
+  archived:    { label: 'Archived',    color: 'text-zinc-700',   bg: 'bg-zinc-100',    dot: 'bg-zinc-500'   },
 }
 
 // ─── Row component ────────────────────────────────────────────────────────────
@@ -95,6 +97,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
   const [savingAction, setSavingAction] = useState(false)
   const [stageDraft, setStageDraft] = useState<TransactionStage>('lead')
   const [stageValue, setStageValue] = useState<TransactionStage>('lead')
+  const [lostReasonDraft, setLostReasonDraft] = useState('')
   const [noteDraft, setNoteDraft] = useState('')
   const [timelineLoading, setTimelineLoading] = useState(false)
   const [timelineError, setTimelineError] = useState('')
@@ -121,6 +124,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     setActionMode(null)
     setStageDraft(deal.stage)
     setStageValue(deal.stage)
+    setLostReasonDraft((deal as any).lostReason || '')
     setNoteDraft(deal.notes || '')
   }, [deal])
 
@@ -162,7 +166,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
   const stage = STAGE_CONFIG[stageValue] ?? STAGE_CONFIG.lead
 
-  async function updateDeal(payload: { stage?: TransactionStage; notes?: string }) {
+  async function updateDeal(payload: { stage?: TransactionStage; notes?: string; lostReason?: string }) {
     if (!deal?.id) return
     try {
       setSavingAction(true)
@@ -175,6 +179,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       if (!res.ok || !json?.ok) throw new Error(json?.error || 'Failed to update deal')
       if (payload.stage) {
         setStageValue(payload.stage)
+        if (payload.stage !== 'lost') setLostReasonDraft('')
         setActionMode(null)
       }
       if (payload.notes !== undefined) {
@@ -284,13 +289,22 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
               </select>
               <button
                 type="button"
-                onClick={() => updateDeal({ stage: stageDraft })}
-                disabled={savingAction}
+                onClick={() => updateDeal({ stage: stageDraft, lostReason: stageDraft === 'lost' ? lostReasonDraft : undefined })}
+                disabled={savingAction || (stageDraft === 'lost' && !lostReasonDraft.trim())}
                 className="rounded-lg bg-[#0B2545] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
               >
                 {savingAction ? 'Saving...' : 'Save'}
               </button>
             </div>
+            {stageDraft === 'lost' && (
+              <textarea
+                rows={2}
+                value={lostReasonDraft}
+                onChange={(e) => setLostReasonDraft(e.target.value)}
+                className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                placeholder="Motivo de perdida"
+              />
+            )}
           </div>
         )}
 

@@ -77,6 +77,8 @@ function toDealRecord(id: string, data: Record<string, any>): CrmDealRecord {
     listingId: safeText(data.propertyId || data.listingId) || null,
     projectId: safeText(data.projectId) || null,
     unitId: safeText(data.unitId) || null,
+    lostReason: safeText(data.lostReason) || null,
+    lostAt: data.lostAt || null,
     notes: safeText(data.notes) || null,
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
@@ -93,10 +95,11 @@ async function updateSingleDeal(params: {
   context: Awaited<ReturnType<typeof getListingAccessUserContext>>
   id: string
   stage?: CrmDealStage
+  lostReason?: string | null
   notes?: string | null
   commissionStatus?: 'pending' | 'paid'
 }) {
-  const { db, context, id, stage, notes, commissionStatus } = params
+  const { db, context, id, stage, lostReason, notes, commissionStatus } = params
   const txRef = db.collection('transactions').doc(id)
   const txSnap = await txRef.get()
   if (!txSnap.exists) {
@@ -120,6 +123,13 @@ async function updateSingleDeal(params: {
   }
 
   if (stage !== undefined) update.stage = nextStage
+  if (stage !== undefined && nextStage === 'lost') {
+    update.lostReason = safeText(lostReason) || null
+    update.lostAt = now
+  }
+  if (stage !== undefined && nextStage === 'archived') {
+    update.archivedAt = now
+  }
   if (notes !== undefined) update.notes = notes
   if (commissionStatus !== undefined) update.commissionStatus = commissionStatus
 
@@ -222,6 +232,7 @@ export async function GET(req: Request) {
         acc.total += 1
         acc.pipelineValue += deal.salePrice
         if (deal.stage === 'completed') acc.completed += 1
+        if (deal.stage === 'completed' || deal.stage === 'lost' || deal.stage === 'archived') acc.closed += 1
         else acc.open += 1
         acc.stages[deal.stage] += 1
         return acc
@@ -230,6 +241,7 @@ export async function GET(req: Request) {
         total: 0,
         open: 0,
         completed: 0,
+        closed: 0,
         pipelineValue: 0,
         stages: {
           lead: 0,
@@ -239,6 +251,8 @@ export async function GET(req: Request) {
           contract: 0,
           closing: 0,
           completed: 0,
+          lost: 0,
+          archived: 0,
         } as Record<CrmDealStage, number>,
       }
     )
@@ -465,6 +479,10 @@ export async function PATCH(req: Request) {
     }
 
     const nextStage = body.stage !== undefined ? normalizeCrmDealStage(body.stage) : undefined
+    const nextLostReason = body.lostReason !== undefined ? (safeText(body.lostReason) || null) : undefined
+    if (nextStage === 'lost' && !nextLostReason) {
+      return NextResponse.json({ ok: false, error: 'lostReason is required when stage is lost' }, { status: 400 })
+    }
     const nextNotes = body.notes !== undefined ? (safeText(body.notes) || null) : undefined
 
     const results = await Promise.all(
@@ -473,6 +491,7 @@ export async function PATCH(req: Request) {
         context,
         id: targetId,
         stage: nextStage,
+        lostReason: nextLostReason,
         notes: nextNotes,
         commissionStatus: nextCommissionStatus,
       }))
