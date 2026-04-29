@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import type { AnalyticsEventType } from '@/types/analytics'
+import { getSessionFromRequest } from '@/lib/auth/session'
 
 const VALID_EVENT_TYPES: AnalyticsEventType[] = [
   'page_view', 'login', 'signup', 'logout',
@@ -11,12 +12,6 @@ const VALID_EVENT_TYPES: AnalyticsEventType[] = [
   'application_submitted', 'conversion', 'error'
 ]
 
-function getCookie(req: NextRequest, name: string): string | null {
-  const cookie = req.headers.get('cookie') || ''
-  const match = cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'))
-  return match ? decodeURIComponent(match[1]) : null
-}
-
 export async function POST(req: NextRequest) {
   try {
     const db = getAdminDb()
@@ -25,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { eventType, event, userId, userRole, sessionId, metadata, data, page, referrer, userAgent: clientUserAgent } = body
+    const { eventType, event, sessionId, metadata, data, page, referrer, userAgent: clientUserAgent } = body
 
     // Support both new (eventType) and legacy (event) field names
     const eventName = eventType || event
@@ -39,8 +34,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: `Invalid eventType: ${eventName}` }, { status: 400 })
     }
 
-    const uid = userId || getCookie(req, 'viventa_uid') || null
-    const role = userRole || getCookie(req, 'viventa_role') || null
+    const session = await getSessionFromRequest(req)
+    const uid = session?.uid || null
+    const role = session?.role || null
 
     // Create timestamp for date/hour aggregation
     const now = new Date()
