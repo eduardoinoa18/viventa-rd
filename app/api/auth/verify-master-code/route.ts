@@ -4,10 +4,20 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { verificationCodes } from '@/lib/verificationStore'
 import { ActivityLogger } from '@/lib/activityLogger'
+import { keyFromRequest, rateLimit } from '@/lib/rateLimiter'
 
 export async function POST(request: Request) {
   try {
-  const { email, code, remember } = await request.json()
+    const { email, code, remember } = await request.json()
+
+    const rl = await rateLimit(
+      keyFromRequest(request, `master-code-verify:${String(email || '').trim().toLowerCase()}`),
+      10,
+      5 * 60 * 1000
+    )
+    if (!rl.allowed) {
+      return NextResponse.json({ ok: false, error: 'Too many attempts. Please try again later.' }, { status: 429 })
+    }
 
     const incoming = String(email || '').trim().toLowerCase()
     const cookies = request.headers.get('cookie') || ''
