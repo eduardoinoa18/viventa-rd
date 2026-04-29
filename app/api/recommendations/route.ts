@@ -4,6 +4,7 @@ export const revalidate = 0
 export const fetchCache = 'default-no-store'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
+import { getSessionFromRequest } from '@/lib/auth/session'
 
 type Property = {
   id: string
@@ -20,12 +21,6 @@ type Property = {
   agentName?: string
   featured?: boolean
   score?: number
-}
-
-function getCookie(req: NextRequest, name: string): string | null {
-  const cookie = req.headers.get('cookie') || ''
-  const match = cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'))
-  return match ? decodeURIComponent(match[1]) : null
 }
 
 async function getUserPreferences(userId: string) {
@@ -211,7 +206,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Server configuration error' }, { status: 500 })
     }
 
-    const uid = getCookie(req, 'viventa_uid')
+    const session = await getSessionFromRequest(req)
+    const uid = session?.uid
     if (!uid) {
       return NextResponse.json({ ok: false, error: 'Not authenticated' }, { status: 401 })
     }

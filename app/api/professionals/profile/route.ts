@@ -2,12 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getSessionFromRequest } from '@/lib/auth/session'
 
-function getAuthInfo(req: NextRequest) {
-  const role = req.cookies.get('viventa_role')?.value as string | undefined
-  const uid = req.cookies.get('viventa_uid')?.value
-  return { role, uid }
-}
-
 function canEdit(role?: string) {
   return role === 'agent' || role === 'broker' || role === 'constructora' || role === 'master_admin'
 }
@@ -39,9 +33,8 @@ const ALLOWED_FIELDS = new Set([
 export async function GET(req: NextRequest) {
   try {
     const session = await getSessionFromRequest(req)
-    const legacy = getAuthInfo(req)
-    const role = session?.role || legacy.role
-    const uid = session?.uid || legacy.uid
+    const role = session?.role
+    const uid = session?.uid
     if (!canEdit(role) || !uid) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
     const db = getAdminDb()
     if (!db) return NextResponse.json({ ok: false, error: 'DB unavailable' }, { status: 500 })
@@ -83,9 +76,8 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const session = await getSessionFromRequest(req)
-    const legacy = getAuthInfo(req)
-    const role = session?.role || legacy.role
-    const uid = session?.uid || legacy.uid
+    const role = session?.role
+    const uid = session?.uid
     if (!canEdit(role) || !uid) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
     const db = getAdminDb()
     if (!db) return NextResponse.json({ ok: false, error: 'DB unavailable' }, { status: 500 })

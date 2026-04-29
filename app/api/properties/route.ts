@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { cookies } from 'next/headers'
 import { ActivityLogger } from "@/lib/activityLogger"
 import { getAdminDb } from "@/lib/firebaseAdmin"
 import { getSessionFromRequest } from '@/lib/auth/session'
@@ -227,11 +226,9 @@ export async function POST(req: Request) {
     }
 
     // Basic role-based authorization
-    // Prefer verified __session claims; keep legacy cookie fallback for compatibility.
     const session = await getSessionFromRequest(req)
-    const cookieStore = cookies()
-    const role = session?.role || cookieStore.get('viventa_role')?.value
-    const uid = session?.uid || cookieStore.get('viventa_uid')?.value
+    const role = session?.role
+    const uid = session?.uid
     const isAdmin = role === 'master_admin' || role === 'admin'
     const isPro = role === 'agent' || role === 'broker' || role === 'constructora'
 
