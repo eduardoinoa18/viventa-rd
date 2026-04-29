@@ -5,7 +5,8 @@
  */
 
 import { NextRequest } from 'next/server'
-import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { createRemoteJWKSet } from 'jose/jwks/remote'
+import { jwtVerify } from 'jose/jwt/verify'
 
 export interface MiddlewareSession {
   uid: string
@@ -65,24 +66,6 @@ export async function getMiddlewareSession(
     }
   } catch (error) {
     console.error('Session verification error:', error)
-    return null
-  }
-}
-    )
-
-    // Check expiration
-    if (payload.exp && Date.now() >= payload.exp * 1000) {
-      return null
-    }
-
-    return {
-      uid: payload.sub || payload.uid,
-      email: payload.email || '',
-      role: payload.role || 'buyer',
-      twoFactorVerified: payload.twoFactorVerified === true,
-    }
-  } catch (error) {
-    console.error('Session decode error:', error)
     return null
   }
 }
