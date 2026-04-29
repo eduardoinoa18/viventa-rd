@@ -6,6 +6,8 @@ import {
   shouldCreateDealTask,
   shouldEmitDealAlert,
 } from '../lib/domain/dealAutomation'
+import { TRANSACTION_STAGES } from '../lib/domain/transaction'
+import { getStagePlaybookTemplates } from '../lib/stagePlaybooks'
 
 function assert(condition: unknown, message: string): void {
   if (!condition) throw new Error(message)
@@ -107,6 +109,18 @@ test('preferred assignee extraction for constructora records is stable and dedup
     constructoraUserId: 'c3',
   })
   assert(ids.join(',') === 'c1,c2,c3', `unexpected order/dedupe: ${ids.join(',')}`)
+})
+
+test('transaction stage enum includes terminal lifecycle states', () => {
+  assert(TRANSACTION_STAGES.includes('lost'), 'transaction stages should include lost')
+  assert(TRANSACTION_STAGES.includes('archived'), 'transaction stages should include archived')
+})
+
+test('stage playbooks exist only for contract and closing', () => {
+  assert(getStagePlaybookTemplates('contract').length > 0, 'contract should include playbook tasks')
+  assert(getStagePlaybookTemplates('closing').length > 0, 'closing should include playbook tasks')
+  assert(getStagePlaybookTemplates('lead').length === 0, 'lead should not include playbook tasks')
+  assert(getStagePlaybookTemplates('lost').length === 0, 'lost should not include playbook tasks')
 })
 
 if (process.exitCode && process.exitCode !== 0) {

@@ -5,7 +5,10 @@
     "moduleResolution": "node",
     "outDir": ".scripts-out",
     "rootDir": ".",
-    "paths": {}
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
   "include": ["scripts/**/*.ts"],
   "exclude": ["node_modules", ".next", "app", "components", "hooks", "lib", "types"]

@@ -1,7 +1,12 @@
 import { Timestamp } from 'firebase-admin/firestore'
-import type { TransactionStage } from '@/lib/domain/transaction'
+import type { TransactionStage } from './domain/transaction'
 
-const PLAYBOOK_TASKS: Record<string, Array<{ title: string; dueDaysFromNow: number }>> = {
+export interface StagePlaybookTaskTemplate {
+  title: string
+  dueDaysFromNow: number
+}
+
+const PLAYBOOK_TASKS: Record<'contract' | 'closing', StagePlaybookTaskTemplate[]> = {
   contract: [
     { title: 'Programar inspeccion del inmueble', dueDaysFromNow: 3 },
     { title: 'Solicitar estudio de titulo', dueDaysFromNow: 5 },
@@ -14,6 +19,13 @@ const PLAYBOOK_TASKS: Record<string, Array<{ title: string; dueDaysFromNow: numb
     { title: 'Coordinar transferencia de fondos', dueDaysFromNow: 3 },
     { title: 'Preparar checklist de documentos para firma', dueDaysFromNow: 1 },
   ],
+}
+
+export function getStagePlaybookTemplates(stage: TransactionStage): StagePlaybookTaskTemplate[] {
+  if (stage === 'contract' || stage === 'closing') {
+    return PLAYBOOK_TASKS[stage]
+  }
+  return []
 }
 
 function addDays(base: Date, days: number): Date {
@@ -32,7 +44,7 @@ export async function createStagePlaybookTasks(params: {
   linkedTransactionId?: string | null
 }) {
   const { db, stage, dealId, officeId, agentId, createdBy, linkedTransactionId } = params
-  const tasks = PLAYBOOK_TASKS[stage] || []
+  const tasks = getStagePlaybookTemplates(stage)
   if (!tasks.length) return
 
   const now = new Date()
