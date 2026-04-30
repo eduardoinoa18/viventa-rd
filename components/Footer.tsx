@@ -8,9 +8,12 @@ export default function Footer() {
   const publicLinks = [
     { href: '/', label: 'Inicio' },
     { href: '/search', label: 'Buscar' },
-    { href: '/apply', label: 'Aplicar como Profesional' },
+    { href: '/projects', label: 'Proyectos' },
     { href: '/agents', label: 'Agentes' },
     { href: '/brokers', label: 'Brokers' },
+    { href: '/professionals', label: 'Profesionales' },
+    { href: '/constructoras', label: 'Constructoras' },
+    { href: '/apply', label: 'Aplicar como Profesional' },
     { href: '/contact', label: 'Contacto' },
     { href: '/terminos', label: 'Términos' },
     { href: '/privacidad', label: 'Privacidad' },

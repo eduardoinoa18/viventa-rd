@@ -6,6 +6,8 @@ import { FiArrowRight, FiMapPin, FiSearch, FiTrendingUp, FiHome, FiSliders } fro
 import { formatArea, formatCurrency, convertCurrency, type Currency } from '@/lib/currency'
 import useCurrency from '@/hooks/useCurrency'
 import type { Project } from '@/types/project'
+import Header from '@/components/Header'
+import Footer from '@/components/Footer'
 
 type ProjectCard = Project & { hasPromotion?: boolean }
 
@@ -157,7 +159,9 @@ export default function ProjectsCatalogPage() {
   }, [projects])
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#ffffff_28%,_#f8fafc_100%)]">
+    <div className="bg-[#FAFAFA] min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 bg-[linear-gradient(180deg,_#f8fafc_0%,_#ffffff_28%,_#f8fafc_100%)]">
       <section className="relative overflow-hidden border-b border-slate-200 bg-[#0B2545] text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(0,166,118,0.35),_transparent_34%),radial-gradient(circle_at_bottom_left,_rgba(59,175,218,0.18),_transparent_28%)]" />
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
@@ -262,5 +266,7 @@ export default function ProjectsCatalogPage() {
         )}
       </section>
     </main>
+    <Footer />
+    </div>
   )
 }

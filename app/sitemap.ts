@@ -45,6 +45,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { route: '/brokers', priority: 0.8, changeFrequency: 'weekly' as const },
     { route: '/contact', priority: 0.6, changeFrequency: 'monthly' as const },
     { route: '/apply', priority: 0.6, changeFrequency: 'monthly' as const },
+    { route: '/professionals', priority: 0.7, changeFrequency: 'monthly' as const },
+    { route: '/constructoras', priority: 0.7, changeFrequency: 'monthly' as const },
+    { route: '/projects', priority: 0.8, changeFrequency: 'daily' as const },
     { route: '/disclosures', priority: 0.4, changeFrequency: 'yearly' as const },
     { route: '/login', priority: 0.3, changeFrequency: 'monthly' as const },
     { route: '/signup', priority: 0.3, changeFrequency: 'monthly' as const },
@@ -155,5 +158,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  return [...staticPages, ...propertyPages, ...agentPages, ...brokerPages]
+  // Dynamic project pages
+  let projectPages: MetadataRoute.Sitemap = []
+  try {
+    const db = initFirebase()
+    if (db) {
+      const projectsQ = query(
+        collection(db, 'projects'),
+        where('status', '==', 'active'),
+        limit(500)
+      )
+      const projectsSnap = await getDocs(projectsQ)
+      projectPages = projectsSnap.docs.map((doc: any) => {
+        const data = doc.data()
+        return {
+          url: `${baseUrl}/projects/${doc.id}`,
+          lastModified: data.updatedAt?.toDate() || new Date(),
+          changeFrequency: 'weekly' as const,
+          priority: 0.85,
+        }
+      })
+    }
+  } catch (error: any) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Sitemap: projects fetch skipped:', error?.code || error?.message || error)
+    }
+  }
+
+  return [...staticPages, ...propertyPages, ...agentPages, ...brokerPages, ...projectPages]
 }
