@@ -5,7 +5,7 @@ const withPWA = require('next-pwa')({
 	register: true,
 	skipWaiting: true,
 	sw: 'service-worker.js',
-	buildExcludes: [/middleware-manifest\.json$/],
+	buildExcludes: [/middleware-manifest\.json$/, /app-build-manifest\.json$/],
 	runtimeCaching: [
 		{
 			urlPattern: /^https?.*\/_next\/static\/.*/i,
