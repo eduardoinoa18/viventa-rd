@@ -9,7 +9,7 @@ export default function BrokerDashboardLayout({ children }: { children: React.Re
         <WorkspaceHeaderBar
           eyebrow="Portal del Bróker"
           title="Workspace del Bróker"
-          subtitle="Una sola navegación lateral para CRM, activity, transactions y team."
+          subtitle="Navegación lateral unificada para CRM, actividad, transacciones y equipo."
         />
         <div className="p-4 sm:p-6">{children}</div>
       </main>

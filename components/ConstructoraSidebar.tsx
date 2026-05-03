@@ -9,6 +9,7 @@ import {
   FiPlusSquare, FiTrendingUp, FiUsers,
 } from 'react-icons/fi'
 import BrandLogo from './BrandLogo'
+import { useUnreadActivity } from '@/hooks/useUnreadActivity'
 
 type NavItem = { href: string; label: string; icon: React.ReactNode; badge?: number }
 
@@ -72,22 +73,12 @@ function NavSection({ items, label, collapsed, pathname }: { items: NavItem[]; l
 export default function ConstructoraSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
-  const [unreadActivity, setUnreadActivity] = useState(0)
+  const unreadActivity = useUnreadActivity(pathname)
 
   useEffect(() => {
     const saved = localStorage.getItem('constructora_sidebar_collapsed')
     if (saved) setCollapsed(saved === '1')
   }, [])
-
-  useEffect(() => {
-    fetch('/api/activity-events/summary', { cache: 'no-store' })
-      .then(async (response) => {
-        const payload = await response.json().catch(() => ({}))
-        if (!response.ok || !payload?.ok) return
-        setUnreadActivity(Number(payload?.summary?.unreadActivity || 0))
-      })
-      .catch(() => {})
-  }, [pathname])
 
   function toggle() {
     const next = !collapsed
@@ -106,7 +97,7 @@ export default function ConstructoraSidebar() {
         {!collapsed ? (
           <div className="flex min-w-0 items-center gap-2">
             <BrandLogo className="h-7 w-auto" />
-            <span className="truncate text-xs font-bold tracking-wide text-[#0B2545]">CONSTRUCTORA</span>
+            <span className="truncate text-xs font-bold tracking-wide text-[#0B2545]">WORKSPACE CONSTRUCTORA</span>
           </div>
         ) : (
           <BrandLogo iconOnly className="h-7 w-7" />

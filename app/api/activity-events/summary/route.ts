@@ -5,6 +5,14 @@ import { getListingAccessUserContext } from '@/lib/listingOwnership'
 
 export const dynamic = 'force-dynamic'
 
+function noStoreJson(body: any, init?: ResponseInit) {
+  const response = NextResponse.json(body, init)
+  response.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+  response.headers.set('Pragma', 'no-cache')
+  response.headers.set('Expires', '0')
+  return response
+}
+
 type ActivityEventRow = {
   id: string
   createdAt?: unknown
@@ -36,10 +44,10 @@ function toMillis(value: any): number {
 
 async function getScopedEvents(req: Request) {
   const db = getAdminDb()
-  if (!db) return { error: NextResponse.json({ ok: false, error: 'Server config error' }, { status: 500 }) }
+  if (!db) return { error: noStoreJson({ ok: false, error: 'Server config error' }, { status: 500 }) }
 
   const session = await getSessionFromRequest(req)
-  if (!session?.uid) return { error: NextResponse.json({ ok: false, error: 'Authentication required' }, { status: 401 }) }
+  if (!session?.uid) return { error: noStoreJson({ ok: false, error: 'Authentication required' }, { status: 401 }) }
 
   const context = await getListingAccessUserContext(db, session.uid, (session.role as any) || 'buyer')
   const role = safeLower(context.role)
@@ -114,7 +122,7 @@ export async function GET(req: Request) {
       if (!readBy.includes(scoped.session.uid)) broadcastUnread += 1
     }
 
-    return NextResponse.json({
+    return noStoreJson({
       ok: true,
       summary: {
         unreadNotifications: personalUnreadSnap.size + broadcastUnread,
@@ -128,7 +136,7 @@ export async function GET(req: Request) {
     })
   } catch (error: any) {
     console.error('[api/activity-events/summary] GET error', error)
-    return NextResponse.json({ ok: false, error: 'Failed to load activity summary' }, { status: 500 })
+    return noStoreJson({ ok: false, error: 'Failed to load activity summary' }, { status: 500 })
   }
 }
 
@@ -140,7 +148,7 @@ export async function PATCH(req: Request) {
     const body = await req.json().catch(() => ({}))
     const action = safeLower(body?.action || 'markSeen')
     if (action !== 'markseen') {
-      return NextResponse.json({ ok: false, error: 'Unsupported action' }, { status: 400 })
+      return noStoreJson({ ok: false, error: 'Unsupported action' }, { status: 400 })
     }
 
     const now = new Date()
@@ -149,9 +157,9 @@ export async function PATCH(req: Request) {
       lastActivitySeenAt: now,
     }, { merge: true })
 
-    return NextResponse.json({ ok: true })
+    return noStoreJson({ ok: true })
   } catch (error: any) {
     console.error('[api/activity-events/summary] PATCH error', error)
-    return NextResponse.json({ ok: false, error: 'Failed to update activity last seen' }, { status: 500 })
+    return noStoreJson({ ok: false, error: 'Failed to update activity last seen' }, { status: 500 })
   }
 }

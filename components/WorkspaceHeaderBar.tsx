@@ -44,10 +44,10 @@ export default function WorkspaceHeaderBar({ eyebrow, title, subtitle, backHref 
               window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: isMac, ctrlKey: !isMac, bubbles: true }))
             }}
             className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-500 transition hover:border-gray-300 hover:text-gray-700 sm:inline-flex"
-            title="Open command palette"
+            title="Abrir paleta de comandos"
           >
             <FiSearch className="text-sm" />
-            <span>Search</span>
+            <span>Buscar</span>
             <kbd className="ml-1 rounded border border-gray-200 bg-gray-100 px-1 py-0.5 text-[10px]">⌘K</kbd>
           </button>
           <Link

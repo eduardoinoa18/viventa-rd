@@ -75,31 +75,17 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith('/master')) {
     const session = await getMiddlewareSession(req)
 
-    console.log('🔐 [MIDDLEWARE] Checking /master access')
-    console.log('  Session exists:', !!session)
-    if (session) {
-      console.log('  UID:', session.uid)
-      console.log('  Email:', session.email)
-      console.log('  Role:', session.role)
-      console.log('  2FA Verified:', session.twoFactorVerified)
-    }
-
     if (!session) {
-      console.log('  ❌ No session - redirecting to /login')
       return NextResponse.redirect(new URL('/login?next=' + encodeURIComponent(pathname), req.url))
     }
 
     if (!ADMIN_ROLES.has(session.role)) {
-      console.log('  ❌ Not an admin role - redirecting to /dashboard')
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
     if (session.role === 'master_admin' && !session.twoFactorVerified) {
-      console.log('  ❌ 2FA not verified - redirecting to /verify-2fa')
       return NextResponse.redirect(new URL('/verify-2fa', req.url))
     }
-
-    console.log('  ✅ Access granted to /master')
     return NextResponse.next()
   }
 

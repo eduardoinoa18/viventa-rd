@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { FiActivity, FiBarChart2, FiChevronLeft, FiClipboard, FiGrid, FiHome, FiMessageSquare, FiPlusSquare, FiUsers, FiDollarSign, FiSettings } from 'react-icons/fi'
 import BrandLogo from '@/components/BrandLogo'
+import { useUnreadActivity } from '@/hooks/useUnreadActivity'
 
 type NavItem = { href: string; label: string; icon: React.ReactNode; badge?: number }
 
@@ -66,22 +67,12 @@ function NavSection({ items, label, collapsed, pathname }: { items: NavItem[]; l
 export default function BrokerSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
-  const [unreadActivity, setUnreadActivity] = useState(0)
+  const unreadActivity = useUnreadActivity(pathname)
 
   useEffect(() => {
     const saved = localStorage.getItem('broker_sidebar_collapsed')
     if (saved) setCollapsed(saved === '1')
   }, [])
-
-  useEffect(() => {
-    fetch('/api/activity-events/summary', { cache: 'no-store' })
-      .then(async (r) => {
-        const body = await r.json().catch(() => ({}))
-        if (!r.ok || !body?.ok) return
-        setUnreadActivity(Number(body?.summary?.unreadActivity || 0))
-      })
-      .catch(() => {})
-  }, [pathname])
 
   function toggle() {
     const next = !collapsed
@@ -95,7 +86,7 @@ export default function BrokerSidebar() {
         {!collapsed ? (
           <div className="flex min-w-0 items-center gap-2">
             <BrandLogo className="h-7 w-auto" />
-            <span className="truncate text-xs font-bold tracking-wide text-[#0B2545]">BROKER WORKSPACE</span>
+            <span className="truncate text-xs font-bold tracking-wide text-[#0B2545]">WORKSPACE BROKER</span>
           </div>
         ) : (
           <BrandLogo iconOnly className="h-7 w-7" />
@@ -110,8 +101,8 @@ export default function BrokerSidebar() {
       </div>
 
       <nav>
-        <NavSection items={PRIMARY}   label="PRIMARY"   collapsed={collapsed} pathname={pathname} />
-        <NavSection items={SECONDARY} label="SECONDARY" collapsed={collapsed} pathname={pathname} />
+        <NavSection items={PRIMARY}   label="PRINCIPAL"   collapsed={collapsed} pathname={pathname} />
+        <NavSection items={SECONDARY} label="GESTION" collapsed={collapsed} pathname={pathname} />
         <NavSection
           items={SYSTEM.map((item) =>
             item.href === '/dashboard/broker/activity' && unreadActivity > 0
@@ -124,7 +115,7 @@ export default function BrokerSidebar() {
 
       {!collapsed && (
         <div className="mt-6 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-inner">
-          <div className="mb-2 text-xs font-bold tracking-wide text-blue-900">SHORTCUTS</div>
+          <div className="mb-2 text-xs font-bold tracking-wide text-blue-900">ACCESOS</div>
           <div className="space-y-2">
             <Link href="/dashboard/listings/create" className="flex items-center gap-2 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
               <FiPlusSquare className="text-blue-600" /> <span>Crear propiedad</span>
@@ -136,7 +127,7 @@ export default function BrokerSidebar() {
               <FiDollarSign className="text-blue-600" /> <span>Facturacion</span>
             </Link>
             <Link href="/" className="flex items-center gap-2 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
-              <span>🌐</span> <span>Public Site</span>
+              <span>Portal publico</span>
             </Link>
           </div>
         </div>

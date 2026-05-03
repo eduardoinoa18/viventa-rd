@@ -5,6 +5,14 @@ import { getSessionFromRequest } from '@/lib/auth/session'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
+function noStoreJson(body: any, init?: ResponseInit) {
+  const response = NextResponse.json(body, init)
+  response.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+  response.headers.set('Pragma', 'no-cache')
+  response.headers.set('Expires', '0')
+  return response
+}
+
 function toIso(value: any): string | null {
   const date = value?.toDate?.() instanceof Date ? value.toDate() : value instanceof Date ? value : null
   return date ? date.toISOString() : null
@@ -20,12 +28,12 @@ export async function GET(req: Request) {
   try {
     const session = await getSessionFromRequest(req)
     if (!session?.uid) {
-      return NextResponse.json({ ok: false, error: 'Authentication required' }, { status: 401 })
+      return noStoreJson({ ok: false, error: 'Authentication required' }, { status: 401 })
     }
 
     const db = getAdminDb()
     if (!db) {
-      return NextResponse.json({ ok: false, error: 'Firebase Admin not configured' }, { status: 500 })
+      return noStoreJson({ ok: false, error: 'Firebase Admin not configured' }, { status: 500 })
     }
 
     const [supportTicketsSnap, messagesSnap] = await Promise.all([
@@ -75,7 +83,7 @@ export async function GET(req: Request) {
     const unreadMessages = items.reduce((sum, item) => sum + Number(item.unreadCount || 0), 0)
     const latestConversationAt = items[0]?.lastAt || null
 
-    return NextResponse.json({
+    return noStoreJson({
       ok: true,
       conversations: items,
       summary: {
@@ -88,6 +96,6 @@ export async function GET(req: Request) {
     })
   } catch (error: any) {
     console.error('[api/messages/conversations] GET error:', error)
-    return NextResponse.json({ ok: false, error: error?.message || 'Failed to load conversations' }, { status: 500 })
+    return noStoreJson({ ok: false, error: error?.message || 'Failed to load conversations' }, { status: 500 })
   }
 }
