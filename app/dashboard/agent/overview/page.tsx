@@ -94,17 +94,17 @@ export default function AgentOverviewPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Agent Workspace"
-        title="Overview"
+        eyebrow="Workspace del Agente"
+        title="Resumen"
         description="Tu pipeline de leads, listados y comisiones"
         actions={[
-          { label: '+ Create Listing', href: '/dashboard/listings/create' },
-          { label: 'View CRM', href: '/dashboard/agent/crm', variant: 'secondary' },
+          { label: '+ Crear propiedad', href: '/dashboard/listings/create' },
+          { label: 'Abrir CRM', href: '/dashboard/agent/crm', variant: 'secondary' },
         ]}
       />
 
       <WorkspaceCommandCenter
-        eyebrow="Agent Command Center"
+        eyebrow="Command Center Agente"
         title="Enfoca tu dia en velocidad comercial y seguimiento impecable"
         description="Tu ventaja en RD depende de responder rapido, mover leads con criterio y mantener claridad entre inventario, tareas y cierres activos."
         highlightLabel="Leads activos"
@@ -126,10 +126,10 @@ export default function AgentOverviewPage() {
       />
 
       <KpiGrid cols={4}>
-        <KpiCard label="Leads Assigned"      value={summary.leadsAssigned}     icon={<FiTarget />}    accent loading={loading} />
-        <KpiCard label="New Leads (30d)"     value={summary.newLeadsLast30Days} icon={<FiTrendingUp />} loading={loading} />
-        <KpiCard label="Active Listings"     value={summary.myListings}         icon={<FiHome />}       loading={loading} />
-        <KpiCard label="Avg Response"        value={`${summary.avgResponseMinutes} min`} icon={<FiClock />}  loading={loading} />
+        <KpiCard label="Leads asignados"      value={summary.leadsAssigned}     icon={<FiTarget />}    accent loading={loading} />
+        <KpiCard label="Leads nuevos (30d)"   value={summary.newLeadsLast30Days} icon={<FiTrendingUp />} loading={loading} />
+        <KpiCard label="Listados activos"     value={summary.myListings}         icon={<FiHome />}       loading={loading} />
+        <KpiCard label="Resp. promedio"       value={`${summary.avgResponseMinutes} min`} icon={<FiClock />}  loading={loading} />
       </KpiGrid>
 
       {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
@@ -142,8 +142,8 @@ export default function AgentOverviewPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-            <Metric label="Office Listings"  value={summary.officeListings} />
-            <Metric label="Market Listings"  value={summary.marketListings} />
+            <Metric label="Listados de oficina"  value={summary.officeListings} />
+            <Metric label="Listados de mercado"  value={summary.marketListings} />
             <Metric label="Leads Ganados"    value={summary.leadsWon} />
             <Metric label="Resp. Promedio"   value={`${summary.avgResponseMinutes} min`} />
           </div>
@@ -159,17 +159,17 @@ export default function AgentOverviewPage() {
       {/* Task Health */}
       <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[#0B2545]">My Tasks</h3>
+          <h3 className="text-sm font-semibold text-[#0B2545]">Salud de tareas</h3>
           <a href="/dashboard/agent/tasks" className="text-xs font-medium text-[#00A676] hover:underline">
-            Ir a Tasks →
+            Ir a tareas →
           </a>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
-          <Metric label="Total Tasks"     value={taskHealth.total} />
-          <Metric label="Pending"         value={taskHealth.pending} />
-          <Metric label="In Progress"     value={taskHealth.inProgress} />
-          <Metric label="Overdue"         value={taskHealth.overdue} />
-          <Metric label="Automation Open" value={taskHealth.automationOpen} />
+          <Metric label="Total"     value={taskHealth.total} />
+          <Metric label="Pendientes"         value={taskHealth.pending} />
+          <Metric label="En progreso"     value={taskHealth.inProgress} />
+          <Metric label="Vencidas"         value={taskHealth.overdue} />
+          <Metric label="Automatizadas abiertas" value={taskHealth.automationOpen} />
         </div>
         {(taskHealth.overdue > 0 || taskHealth.automationOpen > 0) && !loading ? (
           <div className="mt-3 flex flex-wrap gap-2">

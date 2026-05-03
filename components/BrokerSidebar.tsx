@@ -107,7 +107,7 @@ export default function BrokerSidebar() {
           items={SYSTEM.map((item) =>
             item.href === '/dashboard/broker/activity' && unreadActivity > 0
               ? { ...item, badge: unreadActivity } : item)}
-          label="SYSTEM"
+          label="SISTEMA"
           collapsed={collapsed}
           pathname={pathname}
         />
@@ -124,10 +124,10 @@ export default function BrokerSidebar() {
               <FiMessageSquare className="text-blue-600" /> <span>Mensajes</span>
             </Link>
             <Link href="/dashboard/billing" className="flex items-center gap-2 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
-              <FiDollarSign className="text-blue-600" /> <span>Facturacion</span>
+              <FiDollarSign className="text-blue-600" /> <span>Facturación</span>
             </Link>
             <Link href="/" className="flex items-center gap-2 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
-              <span>Portal publico</span>
+              <span>Portal público</span>
             </Link>
           </div>
         </div>

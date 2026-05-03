@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useUnreadActivity } from '@/hooks/useUnreadActivity'
 
 type ActivitySummary = {
   unreadActivity: number
@@ -18,23 +19,13 @@ const PRIMARY_NAV_ITEMS = [
 const SECONDARY_NAV_ITEMS = [
   { href: '/dashboard/listings', label: 'Propiedades' },
   { href: '/dashboard/listings/create', label: 'Crear Propiedad' },
-  { href: '/dashboard/billing', label: 'Facturacion' },
+  { href: '/dashboard/billing', label: 'Facturación' },
   { href: '/messages', label: 'Mensajes' },
 ]
 
 export default function BrokerWorkspaceNav() {
   const pathname = usePathname()
-  const [summary, setSummary] = useState<ActivitySummary>({ unreadActivity: 0 })
-
-  useEffect(() => {
-    fetch('/api/activity-events/summary', { cache: 'no-store' })
-      .then(async (response) => {
-        const payload = await response.json().catch(() => ({}))
-        if (!response.ok || !payload?.ok) return
-        setSummary({ unreadActivity: Number(payload?.summary?.unreadActivity || 0) })
-      })
-      .catch(() => {})
-  }, [pathname])
+  const unreadActivity = useUnreadActivity(pathname)
 
   return (
     <div className="mt-4 space-y-2 text-sm">
@@ -42,7 +33,7 @@ export default function BrokerWorkspaceNav() {
       {PRIMARY_NAV_ITEMS.map((item) => {
         const isActive = pathname === item.href
         const isActivity = item.href === '/dashboard/broker/activity'
-        const unread = summary.unreadActivity
+        const unread = unreadActivity
 
         return (
           <Link

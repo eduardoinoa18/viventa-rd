@@ -129,7 +129,7 @@ export default function AgentSidebar() {
               <FiMessageSquare className="text-blue-600" /> <span>Mensajes</span>
             </Link>
             <Link href="/" className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline">
-              <span>Portal publico</span>
+              <span>Portal público</span>
             </Link>
           </div>
         </div>

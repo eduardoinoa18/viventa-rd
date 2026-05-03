@@ -201,19 +201,19 @@ export default function BrokerOverviewPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Broker Workspace"
-        title="Overview"
+        eyebrow="Workspace del Bróker"
+        title="Resumen"
         description="Métricas de rendimiento, crecimiento del equipo y pipeline de tu oficina"
         actions={[
-          { label: '+ Create Deal', href: '/dashboard/broker/crm' },
-          { label: 'View Listings', href: '/dashboard/listings', variant: 'secondary' },
-          { label: 'Team & Invites', href: '/dashboard/broker/team', variant: 'secondary' },
-          { label: 'Invite Agent', onClick: () => setShowInviteModal(true) },
+          { label: '+ Crear negocio', href: '/dashboard/broker/crm' },
+          { label: 'Ver listados', href: '/dashboard/listings', variant: 'secondary' },
+          { label: 'Equipo e invitaciones', href: '/dashboard/broker/team', variant: 'secondary' },
+          { label: 'Invitar agente', onClick: () => setShowInviteModal(true) },
         ]}
       />
 
       <WorkspaceCommandCenter
-        eyebrow="Broker Command Center"
+        eyebrow="Command Center Bróker"
         title="Coordina inventario, equipo y pipeline como una oficina premium"
         description="Este resumen prioriza lo que mueve ingresos en una oficina dominicana de alto desempeno: cobertura de inventario, cumplimiento operativo y velocidad para convertir leads en cierres."
         highlightLabel="Comision esperada"
@@ -236,43 +236,43 @@ export default function BrokerOverviewPage() {
 
       {/* KPI Cards */}
       <KpiGrid cols={4}>
-        <KpiCard label="Active Deals"         value={summary.activeDeals}          icon={<FiTrendingUp />} accent loading={loading} />
-        <KpiCard label="Active Listings"      value={summary.myListings}           icon={<FiHome />}       loading={loading} />
-        <KpiCard label="Expected Commission"  value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.expectedCommission || 0)} icon={<FiDollarSign />} loading={loading} />
-        <KpiCard label="Closing This Month"   value={summary.dealsClosingThisMonth} icon={<FiCalendar />}  loading={loading} />
+        <KpiCard label="Negocios activos"         value={summary.activeDeals}          icon={<FiTrendingUp />} accent loading={loading} />
+        <KpiCard label="Listados activos"      value={summary.myListings}           icon={<FiHome />}       loading={loading} />
+        <KpiCard label="Comisión esperada"  value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.expectedCommission || 0)} icon={<FiDollarSign />} loading={loading} />
+        <KpiCard label="Cierres este mes"   value={summary.dealsClosingThisMonth} icon={<FiCalendar />}  loading={loading} />
       </KpiGrid>
 
       {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
 
       {/* Secondary metrics */}
       <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="mb-3 text-sm font-semibold text-[#0B2545]">Pipeline Breakdown</h3>
+        <h3 className="mb-3 text-sm font-semibold text-[#0B2545]">Desglose del pipeline</h3>
         <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-          <Metric label="Office Listings"   value={summary.officeListings} />
-          <Metric label="Market Listings"   value={summary.marketListings} />
+          <Metric label="Listados de oficina"   value={summary.officeListings} />
+          <Metric label="Listados de mercado"   value={summary.marketListings} />
           <Metric label="Auto-Asignables"   value={summary.autoAssignable} />
           <Metric label="SLA Vencido"       value={summary.overdue} />
-          <Metric label="Follow-up Due"     value={summary.followUpDue} />
-          <Metric label="Pipeline Value"    value={summary.pipeline} />
+          <Metric label="Seguimientos vencidos"     value={summary.followUpDue} />
+          <Metric label="Valor del pipeline"    value={summary.pipeline} />
           <Metric label="Proyección"        value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.projectedValue || 0)} />
-          <Metric label="Office Pipeline"   value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.officePipelineValue || 0)} />
+          <Metric label="Pipeline de oficina"   value={new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(summary.officePipelineValue || 0)} />
         </div>
       </section>
 
       {/* Task Health */}
       <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[#0B2545]">Task Health</h3>
+          <h3 className="text-sm font-semibold text-[#0B2545]">Salud de tareas</h3>
           <a href="/dashboard/broker/tasks" className="text-xs font-medium text-[#00A676] hover:underline">
-            Ir a Tasks →
+            Ir a tareas →
           </a>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
-          <Metric label="Total Tasks"   value={taskHealth.total} />
-          <Metric label="Pending"       value={taskHealth.pending} />
-          <Metric label="In Progress"   value={taskHealth.inProgress} />
-          <Metric label="Overdue"       value={taskHealth.overdue} />
-          <Metric label="Automation Open" value={taskHealth.automationOpen} />
+          <Metric label="Total"   value={taskHealth.total} />
+          <Metric label="Pendientes"       value={taskHealth.pending} />
+          <Metric label="En progreso"   value={taskHealth.inProgress} />
+          <Metric label="Vencidas"       value={taskHealth.overdue} />
+          <Metric label="Automatizadas abiertas" value={taskHealth.automationOpen} />
         </div>
         {(taskHealth.overdue > 0 || taskHealth.automationOpen > 0) && !loading ? (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -301,7 +301,7 @@ export default function BrokerOverviewPage() {
       <section className="mt-4 rounded-xl border border-[#0B2545]/10 bg-gradient-to-r from-[#F6FBFF] to-[#F0FBF6] p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00A676]">Team growth</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00A676]">Crecimiento del equipo</p>
             <h3 className="mt-2 text-lg font-bold text-[#0B2545]">Haz crecer tu oficina desde el overview</h3>
             <p className="mt-1 max-w-2xl text-sm text-gray-600">
               Invita agentes, monitorea onboarding pendiente y mantén la estructura activa sin salir del panel principal.
@@ -345,35 +345,35 @@ export default function BrokerOverviewPage() {
 
       {/* Activity summary */}
       <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="mb-3 text-sm font-semibold text-[#0B2545]">Today&apos;s Activity</h3>
+        <h3 className="mb-3 text-sm font-semibold text-[#0B2545]">Actividad de hoy</h3>
         <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-6">
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">🔔 Notif: <span className="font-semibold text-[#0B2545]">{activitySummary.unreadNotifications}</span></div>
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">⚡ Activity: <span className="font-semibold text-[#0B2545]">{activitySummary.unreadActivity}</span></div>
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">Deals: <span className="font-semibold text-[#0B2545]">{activitySummary.todayDealsOpened}</span></div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">🔔 Notificaciones: <span className="font-semibold text-[#0B2545]">{activitySummary.unreadNotifications}</span></div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">⚡ Actividad: <span className="font-semibold text-[#0B2545]">{activitySummary.unreadActivity}</span></div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">Negocios: <span className="font-semibold text-[#0B2545]">{activitySummary.todayDealsOpened}</span></div>
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">Reservas: <span className="font-semibold text-[#0B2545]">{activitySummary.todayReservations}</span></div>
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">Docs: <span className="font-semibold text-[#0B2545]">{activitySummary.todayDocuments}</span></div>
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">Trans: <span className="font-semibold text-[#0B2545]">{activitySummary.todayTransactions}</span></div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">Documentos: <span className="font-semibold text-[#0B2545]">{activitySummary.todayDocuments}</span></div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">Transacciones: <span className="font-semibold text-[#0B2545]">{activitySummary.todayTransactions}</span></div>
         </div>
       </section>
 
       {/* Office subscription */}
       {office ? (
         <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-          <h3 className="mb-1 text-sm font-semibold text-[#0B2545]">Office Subscription</h3>
+          <h3 className="mb-1 text-sm font-semibold text-[#0B2545]">Suscripción de oficina</h3>
           <div className="text-sm font-semibold text-[#0B2545]">{office.name || 'Office'} ({office.officeCode || 'N/A'})</div>
           <div className="mt-0.5 text-xs text-gray-500">{office.brokerageName || 'Sin brokerage'} • {office.city || '—'}{office.province ? `, ${office.province}` : ''}</div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
             <Metric label="Plan"     value={office.subscription?.plan || 'basic'} />
             <Metric label="Estado"   value={office.subscription?.status || 'active'} />
-            <Metric label="Agents"   value={`${Number(office.subscription?.seatsUsed || 0)} / ${Number(office.subscription?.agentsLimit || 0)}`} />
-            <Metric label="Listings" value={Number(office.subscription?.listingsLimit || 0)} />
+            <Metric label="Agentes"   value={`${Number(office.subscription?.seatsUsed || 0)} / ${Number(office.subscription?.agentsLimit || 0)}`} />
+            <Metric label="Listados" value={Number(office.subscription?.listingsLimit || 0)} />
           </div>
         </section>
       ) : null}
 
       {/* Top brokers */}
       <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 className="mb-3 text-sm font-semibold text-[#0B2545]">Top Brokers by Commission</h3>
+        <h3 className="mb-3 text-sm font-semibold text-[#0B2545]">Top brokers por comisión</h3>
         {loading ? (
           <div className="space-y-2">
             {[1,2,3].map(i => <div key={i} className="h-12 animate-pulse rounded-lg bg-gray-100" />)}

@@ -128,7 +128,7 @@ export default function ConstructoraSidebar() {
               <FiMessageSquare className="text-blue-600" /> <span>Mensajes</span>
             </Link>
             <Link href="/dashboard/billing" className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline">
-              <FiDollarSign className="text-blue-600" /> <span>Facturacion</span>
+              <FiDollarSign className="text-blue-600" /> <span>Facturación</span>
             </Link>
             <Link href="/constructoras" className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline">
               <FiUsers className="text-blue-600" /> <span>Directorio</span>
