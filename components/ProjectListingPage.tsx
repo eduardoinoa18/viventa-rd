@@ -6,6 +6,8 @@ import { ProjectDetail } from '@/types/project';
 import { convertCurrency, formatCurrency, type Currency } from '@/lib/currency';
 import useCurrency from '@/hooks/useCurrency';
 import UnitInventoryTable from '@/components/UnitInventoryTable';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 interface ProjectListingPageProps {
   projectId: string;
@@ -65,21 +67,29 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading project...</p>
+      <div className="bg-[#FAFAFA] min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00A676] mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando proyecto...</p>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   if (!project) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Project not found</p>
+      <div className="bg-[#FAFAFA] min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-600">Proyecto no encontrado</p>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -170,7 +180,9 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
     : 0;
 
   return (
-    <main className="bg-gray-50 min-h-screen">
+    <div className="bg-[#FAFAFA] min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 bg-gray-50">
       {/* Hero Section */}
       <div className="relative h-96 w-full bg-gray-200 overflow-hidden">
         {project.featuredImage ? (
@@ -182,7 +194,7 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
           />
         ) : (
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-blue-400 to-blue-600">
-            <p className="text-white text-lg">No image available</p>
+            <p className="text-white text-lg">Imagen no disponible</p>
           </div>
         )}
         <div className="absolute inset-0 bg-black/30"></div>
@@ -208,15 +220,15 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg p-6 shadow-sm">
-            <p className="text-gray-600 text-sm">Total Units</p>
+            <p className="text-gray-600 text-sm">Total Unidades</p>
             <p className="text-3xl font-bold text-gray-900">{project.totalUnits}</p>
           </div>
           <div className="bg-white rounded-lg p-6 shadow-sm">
-            <p className="text-gray-600 text-sm">Available</p>
+            <p className="text-gray-600 text-sm">Disponibles</p>
             <p className="text-3xl font-bold text-green-600">{project.availableUnits}</p>
           </div>
           <div className="bg-white rounded-lg p-6 shadow-sm">
-            <p className="text-gray-600 text-sm">Starting From</p>
+            <p className="text-gray-600 text-sm">Desde</p>
             {hasOfferPrice ? (
               <div className="space-y-1">
                 <p className="text-sm text-gray-500 line-through">
@@ -241,7 +253,7 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
             )}
           </div>
           <div className="bg-white rounded-lg p-6 shadow-sm">
-            <p className="text-gray-600 text-sm">Views</p>
+            <p className="text-gray-600 text-sm">Visitas</p>
             <p className="text-3xl font-bold text-blue-600">{project.stats?.viewsLastWeek || 0}</p>
           </div>
         </div>
@@ -362,10 +374,10 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
       {/* Location Info */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         <div className="bg-white rounded-lg p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Ubicación</h2>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <p className="text-gray-600 text-sm">City</p>
+              <p className="text-gray-600 text-sm">Ciudad</p>
               <p className="text-gray-900 font-medium">{project.location.city}</p>
             </div>
             <div>
@@ -373,7 +385,7 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
               <p className="text-gray-900 font-medium">{project.location.sector}</p>
             </div>
             <div>
-              <p className="text-gray-600 text-sm">Address</p>
+              <p className="text-gray-600 text-sm">Dirección</p>
               <p className="text-gray-900 font-medium">{project.location.address}</p>
             </div>
           </div>
@@ -384,7 +396,7 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
               rel="noopener noreferrer"
               className="mt-4 text-blue-600 hover:text-blue-800 font-medium text-sm"
             >
-              View on Google Maps →
+              Ver en Google Maps →
             </a>
           )}
         </div>
@@ -419,13 +431,13 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
         {activeTab === 'overview' && (
           <div className="bg-white rounded-lg p-8 shadow-sm space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">About This Project</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Sobre este proyecto</h3>
               <p className="text-gray-700 whitespace-pre-wrap">{project.description}</p>
             </div>
 
             {project.deliveryDate && (
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">Delivery Date</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-3">Fecha de entrega</h3>
                 <p className="text-gray-700">
                   {new Date(project.deliveryDate).toLocaleDateString('es-DO', {
                     year: 'numeric',
@@ -439,15 +451,15 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
             {project.stats && (
               <div className="grid grid-cols-3 gap-4 pt-4 border-t">
                 <div>
-                  <p className="text-gray-600 text-sm">Units Sold</p>
+                  <p className="text-gray-600 text-sm">Unidades vendidas</p>
                   <p className="text-2xl font-bold text-gray-900">{project.stats.unitsSold || 0}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600 text-sm">Units Separated</p>
+                  <p className="text-gray-600 text-sm">Unidades separadas</p>
                   <p className="text-2xl font-bold text-gray-900">{project.stats.unitsSeparated || 0}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600 text-sm">Favorites</p>
+                  <p className="text-gray-600 text-sm">Favoritos</p>
                   <p className="text-2xl font-bold text-gray-900">{project.stats.favoritesCount || 0}</p>
                 </div>
               </div>
@@ -473,7 +485,7 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
                 ))}
               </div>
             ) : (
-              <p className="text-gray-600">No amenities listed</p>
+              <p className="text-gray-600">Sin amenidades listadas</p>
             )}
           </div>
         )}
@@ -486,22 +498,22 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
                   <div key={option.id} className="border border-gray-200 rounded-lg p-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
-                        <p className="text-gray-600 text-sm">Type</p>
+                        <p className="text-gray-600 text-sm">Tipo</p>
                         <p className="font-medium text-gray-900">{option.type}</p>
                       </div>
                       <div>
-                        <p className="text-gray-600 text-sm">Label</p>
+                        <p className="text-gray-600 text-sm">Etiqueta</p>
                         <p className="font-medium text-gray-900">{option.label}</p>
                       </div>
                       {option.percent && (
                         <div>
-                          <p className="text-gray-600 text-sm">Percentage</p>
+                          <p className="text-gray-600 text-sm">Porcentaje</p>
                           <p className="font-medium text-gray-900">{option.percent}%</p>
                         </div>
                       )}
                       {option.months && (
                         <div>
-                          <p className="text-gray-600 text-sm">Months</p>
+                          <p className="text-gray-600 text-sm">Meses</p>
                           <p className="font-medium text-gray-900">{option.months}</p>
                         </div>
                       )}
@@ -513,11 +525,13 @@ export default function ProjectListingPage({ projectId }: ProjectListingPageProp
                 ))}
               </div>
             ) : (
-              <p className="text-gray-600">No financing options configured</p>
+              <p className="text-gray-600">Sin opciones de financiamiento configuradas</p>
             )}
           </div>
         )}
       </div>
-    </main>
+      </main>
+      <Footer />
+    </div>
   );
 }
