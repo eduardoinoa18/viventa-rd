@@ -55,9 +55,22 @@ type PropertyItem = {
   images?: string[]
   status?: string
   verified?: boolean
+  createdAt?: unknown
 }
 
 type RecommendedProperty = PropertyItem
+
+type MessageSummary = {
+  totalConversations: number
+  unreadMessages: number
+  latestConversationAt: string | null
+}
+
+type MarketCitySnapshot = {
+  city: string
+  activeListings: number
+  averagePriceLabel: string
+}
 
 function formatPrice(price?: number, currency?: string): string {
   if (!price) return '—'
@@ -68,6 +81,24 @@ function formatPrice(price?: number, currency?: string): string {
     maximumFractionDigits: 0,
   })
   return formatter.format(price)
+}
+
+function toMillis(value: unknown): number {
+  if (!value) return 0
+  if (value instanceof Date) return value.getTime()
+  if (typeof (value as { toDate?: () => Date }).toDate === 'function') {
+    const parsed = (value as { toDate: () => Date }).toDate()
+    return parsed instanceof Date ? parsed.getTime() : 0
+  }
+  const parsed = new Date(value as string)
+  return Number.isFinite(parsed.getTime()) ? parsed.getTime() : 0
+}
+
+function formatShortDate(value: string | null): string {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  if (!Number.isFinite(parsed.getTime())) return '—'
+  return parsed.toLocaleDateString('es-DO', { day: 'numeric', month: 'short' })
 }
 
 // ─── Tab Navigation ──────────────────────────────────────────────────────────
@@ -251,6 +282,9 @@ function HomeTab({
   savedProperties,
   recommended,
   recommendedLoading,
+  unreadNotifications,
+  newListingsCount,
+  marketCities,
   onTabChange,
 }: {
   session: SessionData | null
@@ -259,6 +293,9 @@ function HomeTab({
   savedProperties: PropertyItem[]
   recommended: RecommendedProperty[]
   recommendedLoading: boolean
+  unreadNotifications: number
+  newListingsCount: number
+  marketCities: MarketCitySnapshot[]
   onTabChange: (t: Tab) => void
 }) {
   const firstName = session?.name?.split(' ')[0] || 'Comprador'
@@ -289,6 +326,12 @@ function HomeTab({
           >
             <FiTrendingUp /> Ver proyectos
           </Link>
+          <Link
+            href="/notifications"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold hover:bg-white/15 transition-colors"
+          >
+            <FiBell /> {unreadNotifications} alerta{unreadNotifications === 1 ? '' : 's'}
+          </Link>
         </div>
       </div>
 
@@ -314,9 +357,7 @@ function HomeTab({
           href="/search?sort=newest"
           className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center hover:shadow-md transition-shadow block"
         >
-          <div className="text-2xl font-bold text-[#00A6A6]">
-            <FiTrendingUp className="inline" />
-          </div>
+          <div className="text-2xl font-bold text-[#00A6A6]">{newListingsCount}</div>
           <div className="mt-0.5 text-xs text-gray-500 leading-tight">Nuevos hoy</div>
         </Link>
       </div>
@@ -444,20 +485,23 @@ function HomeTab({
 
       {/* Market pulse */}
       <div className="bg-gradient-to-r from-[#071a31] to-[#0B2545] rounded-2xl p-4 text-white">
-        <div className="text-xs font-semibold uppercase tracking-widest text-cyan-200 mb-2">Pulso del mercado RD</div>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          {[
-            { city: 'Sto. Domingo', trend: '+4.2%', label: 'Precio 30d' },
-            { city: 'Punta Cana', trend: '+7.1%', label: 'Demanda' },
-            { city: 'Santiago', trend: '+2.8%', label: 'Inventario' },
-          ].map((m) => (
-            <div key={m.city}>
-              <div className="text-[10px] text-white/60">{m.city}</div>
-              <div className="text-sm font-bold text-cyan-300 mt-0.5">{m.trend}</div>
-              <div className="text-[10px] text-white/50">{m.label}</div>
-            </div>
-          ))}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="text-xs font-semibold uppercase tracking-widest text-cyan-200">Pulso del mercado RD</div>
+          <div className="text-[10px] text-white/55">Basado en listados activos actuales</div>
         </div>
+        {marketCities.length > 0 ? (
+          <div className="grid grid-cols-3 gap-3 text-center">
+            {marketCities.map((market) => (
+              <div key={market.city}>
+                <div className="text-[10px] text-white/60 truncate">{market.city}</div>
+                <div className="text-sm font-bold text-cyan-300 mt-0.5">{market.activeListings}</div>
+                <div className="text-[10px] text-white/50 truncate">{market.averagePriceLabel}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-white/70">Todavía no hay suficiente data activa para mostrar ciudades destacadas.</div>
+        )}
         <Link href="/search" className="mt-3 inline-flex items-center gap-1 text-xs text-cyan-200 font-medium hover:text-white transition-colors">
           Explorar oportunidades <FiArrowRight />
         </Link>
@@ -631,7 +675,7 @@ function SearchesTab({
 }
 
 // ─── Messages Tab ─────────────────────────────────────────────────────────────
-function MessagesTab() {
+function MessagesTab({ summary }: { summary: MessageSummary }) {
   return (
     <div className="space-y-4 pb-4">
       <h2 className="font-bold text-[#0B2545] text-lg">Mensajes</h2>
@@ -639,8 +683,13 @@ function MessagesTab() {
         <FiMessageCircle className="text-4xl text-gray-200 mx-auto mb-3" />
         <h3 className="font-semibold text-[#0B2545]">Centro de mensajes</h3>
         <p className="text-sm text-gray-500 mt-1">
-          Todas tus conversaciones con agentes y propiedades en un solo lugar.
+          {summary.totalConversations > 0
+            ? `Tienes ${summary.totalConversations} conversación${summary.totalConversations === 1 ? '' : 'es'} activa${summary.totalConversations === 1 ? '' : 's'} y ${summary.unreadMessages} mensaje${summary.unreadMessages === 1 ? '' : 's'} sin leer.`
+            : 'Todas tus conversaciones con agentes y propiedades en un solo lugar.'}
         </p>
+        {summary.latestConversationAt ? (
+          <p className="text-xs text-gray-400 mt-2">Última actividad: {formatShortDate(summary.latestConversationAt)}</p>
+        ) : null}
         <Link href="/messages" className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2545] text-white text-sm font-semibold">
           <FiMessageCircle /> Abrir mensajes
         </Link>
@@ -765,6 +814,15 @@ export default function BuyerDashboardPage() {
   const [propertiesLoading, setPropertiesLoading] = useState(false)
   const [recommended, setRecommended] = useState<RecommendedProperty[]>([])
   const [recommendedLoading, setRecommendedLoading] = useState(false)
+  const [unreadMessages, setUnreadMessages] = useState(0)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [newListingsCount, setNewListingsCount] = useState(0)
+  const [marketCities, setMarketCities] = useState<MarketCitySnapshot[]>([])
+  const [messageSummary, setMessageSummary] = useState<MessageSummary>({
+    totalConversations: 0,
+    unreadMessages: 0,
+    latestConversationAt: null,
+  })
 
   const { searches: savedSearches, loading: searchesLoading, removeSearch } = useSavedSearches({
     autoLoad: Boolean(session?.uid),
@@ -832,19 +890,96 @@ export default function BuyerDashboardPage() {
     const load = async () => {
       setRecommendedLoading(true)
       try {
-        const res = await fetch('/api/properties?limit=6&sort=newest', { cache: 'no-store' })
-        const json = await res.json().catch(() => ({}))
+        const [propertiesRes, activityRes, conversationsRes] = await Promise.all([
+          fetch('/api/properties?limit=100&sort=newest', { cache: 'no-store' }),
+          fetch('/api/activity-events/summary', { cache: 'no-store' }),
+          fetch('/api/messages/conversations', { cache: 'no-store' }),
+        ])
+
+        const [propertiesJson, activityJson, conversationsJson] = await Promise.all([
+          propertiesRes.json().catch(() => ({})),
+          activityRes.json().catch(() => ({})),
+          conversationsRes.json().catch(() => ({})),
+        ])
         if (!active) return
-        setRecommended(Array.isArray(json?.data) ? json.data : [])
+
+        const properties = Array.isArray(propertiesJson?.properties)
+          ? propertiesJson.properties
+          : Array.isArray(propertiesJson?.data)
+            ? propertiesJson.data
+            : []
+        const savedIds = new Set(savedPropertyIds)
+        setRecommended(properties.filter((property: PropertyItem) => !savedIds.has(property.id)).slice(0, 6))
+
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        setNewListingsCount(
+          properties.filter((property: PropertyItem) => toMillis(property.createdAt) >= today.getTime()).length
+        )
+
+        const marketByCity = new Map<string, { count: number; prices: number[] }>()
+        properties.forEach((property: PropertyItem) => {
+          const city = String(property.city || '').trim()
+          if (!city) return
+          const bucket = marketByCity.get(city) || { count: 0, prices: [] }
+          bucket.count += 1
+          if (typeof property.price === 'number' && Number.isFinite(property.price) && property.price > 0) {
+            bucket.prices.push(property.price)
+          }
+          marketByCity.set(city, bucket)
+        })
+
+        setMarketCities(
+          Array.from(marketByCity.entries())
+            .sort((a, b) => b[1].count - a[1].count)
+            .slice(0, 3)
+            .map(([city, data]) => {
+              const avgPrice = data.prices.length
+                ? Math.round(data.prices.reduce((sum, value) => sum + value, 0) / data.prices.length)
+                : undefined
+              return {
+                city,
+                activeListings: data.count,
+                averagePriceLabel: avgPrice ? `Prom. ${formatPrice(avgPrice, 'USD')}` : 'Sin precio promedio',
+              }
+            })
+        )
+
+        if (activityRes.ok && activityJson?.ok) {
+          setUnreadNotifications(Number(activityJson?.summary?.unreadNotifications || 0))
+        } else {
+          setUnreadNotifications(0)
+        }
+
+        if (conversationsRes.ok && conversationsJson?.ok) {
+          const nextSummary = {
+            totalConversations: Number(conversationsJson?.summary?.totalConversations || 0),
+            unreadMessages: Number(conversationsJson?.summary?.unreadMessages || 0),
+            latestConversationAt: typeof conversationsJson?.summary?.latestConversationAt === 'string'
+              ? conversationsJson.summary.latestConversationAt
+              : null,
+          }
+          setMessageSummary(nextSummary)
+          setUnreadMessages(nextSummary.unreadMessages)
+        } else {
+          setMessageSummary({ totalConversations: 0, unreadMessages: 0, latestConversationAt: null })
+          setUnreadMessages(0)
+        }
       } catch {
-        // noop
+        if (!active) return
+        setRecommended([])
+        setNewListingsCount(0)
+        setMarketCities([])
+        setUnreadNotifications(0)
+        setMessageSummary({ totalConversations: 0, unreadMessages: 0, latestConversationAt: null })
+        setUnreadMessages(0)
       } finally {
         if (active) setRecommendedLoading(false)
       }
     }
     load()
     return () => { active = false }
-  }, [session])
+  }, [session, savedPropertyIds])
 
   const handleRemoveSaved = useCallback((id: string) => {
     toggleSavedProperty(id)
@@ -877,7 +1012,7 @@ export default function BuyerDashboardPage() {
         active={activeTab}
         onChange={setActiveTab}
         session={session}
-        unreadMessages={0}
+        unreadMessages={unreadMessages}
       />
 
       {/* Main content */}
@@ -894,8 +1029,13 @@ export default function BuyerDashboardPage() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/notifications" className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Notificaciones">
+              <Link href="/notifications" className="relative p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Notificaciones">
                 <FiBell className="text-lg" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 rounded-full bg-red-500 px-1 text-[10px] font-bold text-white flex items-center justify-center">
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </span>
+                )}
               </Link>
               <Link href="/search" className="p-2 rounded-xl bg-[#0B2545] text-white" aria-label="Buscar">
                 <FiSearch className="text-base" />
@@ -941,8 +1081,13 @@ export default function BuyerDashboardPage() {
             {activeTab === 'profile' && 'Mi Perfil'}
           </h1>
           <div className="flex items-center gap-3">
-            <Link href="/notifications" className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 transition-colors" aria-label="Notificaciones">
+            <Link href="/notifications" className="relative p-2 rounded-xl text-gray-400 hover:bg-gray-100 transition-colors" aria-label="Notificaciones">
               <FiBell className="text-lg" />
+              {unreadNotifications > 0 && (
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 rounded-full bg-red-500 px-1 text-[10px] font-bold text-white flex items-center justify-center">
+                  {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                </span>
+              )}
             </Link>
             <Link href="/search" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0B2545] text-white text-sm font-semibold hover:bg-[#133a66] transition-colors">
               <FiSearch /> Buscar
@@ -960,6 +1105,9 @@ export default function BuyerDashboardPage() {
               savedProperties={savedProperties}
               recommended={recommended}
               recommendedLoading={recommendedLoading}
+              unreadNotifications={unreadNotifications}
+              newListingsCount={newListingsCount}
+              marketCities={marketCities}
               onTabChange={setActiveTab}
             />
           )}
@@ -977,7 +1125,7 @@ export default function BuyerDashboardPage() {
               onRemove={removeSearch}
             />
           )}
-          {activeTab === 'messages' && <MessagesTab />}
+          {activeTab === 'messages' && <MessagesTab summary={messageSummary} />}
           {activeTab === 'profile' && (
             <ProfileTab session={session} onLogout={handleLogout} />
           )}
@@ -985,7 +1133,7 @@ export default function BuyerDashboardPage() {
       </div>
 
       {/* Mobile bottom tab bar */}
-      <BuyerTabBar active={activeTab} onChange={setActiveTab} unreadMessages={0} />
+      <BuyerTabBar active={activeTab} onChange={setActiveTab} unreadMessages={unreadMessages} />
     </div>
   )
 }
