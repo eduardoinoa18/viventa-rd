@@ -24,6 +24,20 @@ function toArray(value: unknown): string[] {
   return []
 }
 
+function resolveProfileImage(data: Record<string, any>): string {
+  return safeText(
+    data.profileImage ||
+    data.profileImageUrl ||
+    data.photoUrl ||
+    data.photoURL ||
+    data.photo ||
+    data.avatar ||
+    data.avatarUrl ||
+    data.companyLogo ||
+    data.logoUrl
+  )
+}
+
 export async function GET(_: Request, context: { params: { slug: string } }) {
   try {
     const db = getAdminDb()
@@ -93,7 +107,7 @@ export async function GET(_: Request, context: { params: { slug: string } }) {
       company: safeText(data.company),
       email: safeText(data.email),
       phone: safeText(data.phone),
-      image: safeText(data.profileImage || data.photoURL || data.photo),
+      image: resolveProfileImage(data),
       bio: safeText(data.bio || data.description),
       specialties: toArray(data.specialties),
       languages: toArray(data.languages),

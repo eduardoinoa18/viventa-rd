@@ -51,6 +51,20 @@ function avg(values: number[]): number {
   return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1))
 }
 
+function resolveProfileImage(data: Record<string, any>): string {
+  return safeText(
+    data.profileImage ||
+    data.profileImageUrl ||
+    data.companyLogo ||
+    data.logoUrl ||
+    data.photoUrl ||
+    data.photoURL ||
+    data.photo ||
+    data.avatar ||
+    data.avatarUrl
+  )
+}
+
 export async function GET(_: Request, context: { params: { slug: string } }) {
   try {
     const db = getAdminDb()
@@ -155,7 +169,7 @@ export async function GET(_: Request, context: { params: { slug: string } }) {
       company: safeText(broker.company || broker.displayName || broker.name || ''),
       email: safeText(broker.email),
       phone: safeText(broker.phone),
-      image: safeText(broker.profileImage || broker.companyLogo || broker.photoURL || broker.photo),
+      image: resolveProfileImage(broker),
       bio: safeText(broker.bio || broker.description),
       specialties: Array.isArray(broker.specialties)
         ? broker.specialties.map((item: unknown) => safeText(item)).filter(Boolean)
