@@ -206,13 +206,25 @@ export default function ProjectsCatalogPage() {
             </label>
             <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3">
               <FiMapPin className="text-slate-400" />
-              <select value={city} onChange={(event) => setCity(event.target.value)} className="w-full bg-transparent text-sm outline-none">
+              <select
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                aria-label="Filtrar por ciudad"
+                title="Filtrar por ciudad"
+                className="w-full bg-transparent text-sm outline-none"
+              >
                 {cities.map((option) => <option key={option} value={option}>{option === 'all' ? 'Todas las ciudades' : option}</option>)}
               </select>
             </label>
             <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3">
               <FiSliders className="text-slate-400" />
-              <select value={constructionStatus} onChange={(event) => setConstructionStatus(event.target.value)} className="w-full bg-transparent text-sm outline-none">
+              <select
+                value={constructionStatus}
+                onChange={(event) => setConstructionStatus(event.target.value)}
+                aria-label="Filtrar por etapa de construcción"
+                title="Filtrar por etapa de construcción"
+                className="w-full bg-transparent text-sm outline-none"
+              >
                 <option value="all">Todas las etapas</option>
                 <option value="pre-venta">Pre-venta</option>
                 <option value="en-construccion">En construcción</option>
