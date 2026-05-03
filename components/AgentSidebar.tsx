@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import {
   FiActivity, FiBarChart2, FiChevronLeft, FiDollarSign,
   FiGrid, FiHome, FiMessageSquare, FiPlusSquare, FiSettings,
-  FiTarget, FiUsers,
+  FiTarget, FiTrendingUp, FiUsers,
 } from 'react-icons/fi'
 import BrandLogo from '@/components/BrandLogo'
 
@@ -21,6 +21,7 @@ const PRIMARY: NavItem[] = [
 const SECONDARY: NavItem[] = [
   { href: '/dashboard/agent/profile',     label: 'Perfil',       icon: <FiSettings /> },
   { href: '/dashboard/agent/clients',     label: 'Clientes',     icon: <FiUsers /> },
+  { href: '/dashboard/agent/deals',       label: 'Negocios',     icon: <FiTrendingUp /> },
   { href: '/dashboard/agent/commissions', label: 'Comisiones',   icon: <FiBarChart2 /> },
 ]
 

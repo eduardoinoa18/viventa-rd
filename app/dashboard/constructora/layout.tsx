@@ -7,8 +7,8 @@ export default function ConstructoraDashboardLayout({ children }: { children: Re
       <ConstructoraSidebar />
       <main className="flex-1 min-w-0">
         <WorkspaceHeaderBar
-          eyebrow="Constructora Portal"
-          title="Constructora Workspace"
+          eyebrow="Portal Constructora"
+          title="Workspace Constructora"
           subtitle="Navegación lateral para proyectos, inventario, reservas, deals, tasks, clientes y actividad."
         />
         <div className="p-4 sm:p-6">{children}</div>

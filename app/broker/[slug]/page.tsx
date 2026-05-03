@@ -5,7 +5,7 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
-import { FiArrowLeft, FiMail, FiMapPin, FiPhone, FiShield, FiStar, FiTrendingUp, FiHome, FiAward, FiGlobe } from 'react-icons/fi'
+import { FiArrowLeft, FiMail, FiMapPin, FiPhone, FiShield, FiStar, FiTrendingUp, FiHome, FiAward, FiGlobe, FiThumbsUp, FiEdit3 } from 'react-icons/fi'
 
 type ListingCard = {
   id: string
@@ -73,6 +73,11 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
   const [listings, setListings] = useState<ListingCard[]>([])
   const [soldListings, setSoldListings] = useState<ListingCard[]>([])
   const [teamAgents, setTeamAgents] = useState<TeamAgent[]>([])
+  const [showAllReviews, setShowAllReviews] = useState(false)
+  const [reviewForm, setReviewForm] = useState({ authorName: '', comment: '', rating: 0 })
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const [reviewSubmitted, setReviewSubmitted] = useState(false)
+  const [reviewError, setReviewError] = useState('')
 
   useEffect(() => {
     let active = true
@@ -177,8 +182,9 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
             <div className="bg-gradient-to-r from-[#0B2545] to-[#3BAFDA] p-6 text-white">
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <img
-                  src={profile?.image || '/placeholder.png'}
+                  src={profile?.image || '/agent-placeholder.jpg'}
                   alt={profile?.company || profile?.name || 'Brokerage'}
+                  onError={(e) => { e.currentTarget.src = '/agent-placeholder.jpg' }}
                   className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover border-4 border-white shadow-lg"
                 />
                 <div className="text-center sm:text-left flex-1 min-w-0">
@@ -455,17 +461,91 @@ export default function BrokerSlugProfilePage({ params }: { params: { slug: stri
 
             {reviews.length > 0 && (
               <div className="px-6 pb-6 border-t border-gray-100 pt-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Rese\u00f1as de clientes</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">Reseñas de clientes</h2>
+                  <span className="text-sm text-gray-500">{reviews.length} reseña{reviews.length !== 1 ? 's' : ''}</span>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {reviews.slice(0, 4).map((review) => (
+                  {(showAllReviews ? reviews : reviews.slice(0, 4)).map((review) => (
                     <article key={review.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-2">
                         <p className="font-semibold text-gray-900 text-sm">{review.authorName || 'Cliente verificado'}</p>
-                        <p className="text-xs text-amber-600 font-semibold">{Number(review.rating || 0).toFixed(1)} / 5</p>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <FiStar key={s} className={`w-3.5 h-3.5 ${Number(review.rating) >= s ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
+                          ))}
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600 mt-2 line-clamp-4">{review.comment || 'Experiencia positiva con esta oficina.'}</p>
+                      <p className="text-sm text-gray-600 line-clamp-4">{review.comment || 'Experiencia positiva con esta oficina.'}</p>
+                      <p className="text-xs text-gray-400 mt-2">{review.createdAt ? new Date(review.createdAt).toLocaleDateString('es-DO', { year: 'numeric', month: 'long' }) : ''}</p>
                     </article>
                   ))}
+                </div>
+                {reviews.length > 4 && (
+                  <button onClick={() => setShowAllReviews((v) => !v)} className="mt-4 text-sm text-[#0B2545] hover:underline font-semibold">
+                    {showAllReviews ? 'Ver menos' : `Ver las ${reviews.length} reseñas →`}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* ── Deja tu opinión ── */}
+            {!reviewSubmitted ? (
+              <div className="px-6 pb-8 border-t border-gray-100 pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <FiEdit3 className="text-[#3BAFDA] text-lg" />
+                  <h2 className="text-lg font-semibold text-gray-900">Deja tu opinión</h2>
+                </div>
+                <p className="text-sm text-gray-500 mb-5">¿Trabajaste con esta oficina o agencia? Tu experiencia ayuda a otros profesionales y compradores a tomar mejores decisiones.</p>
+                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 space-y-4 max-w-xl">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Calificación *</label>
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <button key={s} type="button" onClick={() => setReviewForm((f) => ({ ...f, rating: s }))} className="focus:outline-none" aria-label={`${s} estrella${s !== 1 ? 's' : ''}`}>
+                          <FiStar className={`w-7 h-7 transition-colors ${reviewForm.rating >= s ? 'text-amber-400 fill-amber-400' : 'text-gray-300 hover:text-amber-200'}`} />
+                        </button>
+                      ))}
+                      {reviewForm.rating > 0 && <span className="text-sm text-amber-600 font-semibold ml-1">{['', 'Muy malo', 'Regular', 'Bueno', 'Muy bueno', 'Excelente'][reviewForm.rating]}</span>}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Tu nombre *</label>
+                    <input type="text" maxLength={80} placeholder="Ej. Carlos Ramírez" value={reviewForm.authorName} onChange={(e) => setReviewForm((f) => ({ ...f, authorName: e.target.value }))} className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3BAFDA]/40" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Tu reseña *</label>
+                    <textarea maxLength={1000} rows={4} placeholder="Describe tu experiencia con esta oficina..." value={reviewForm.comment} onChange={(e) => setReviewForm((f) => ({ ...f, comment: e.target.value }))} className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3BAFDA]/40 resize-none" />
+                    <p className="text-xs text-gray-400 mt-1 text-right">{reviewForm.comment.length}/1000</p>
+                  </div>
+                  {reviewError && <p className="text-sm text-red-600 font-medium">{reviewError}</p>}
+                  <button type="button" disabled={reviewSubmitting} onClick={async () => {
+                    setReviewError('')
+                    if (!reviewForm.authorName.trim()) { setReviewError('Por favor ingresa tu nombre.'); return }
+                    if (reviewForm.rating === 0) { setReviewError('Por favor selecciona una calificación.'); return }
+                    if (reviewForm.comment.trim().length < 20) { setReviewError('La reseña debe tener al menos 20 caracteres.'); return }
+                    setReviewSubmitting(true)
+                    try {
+                      const res = await fetch(`/api/professionals/${profile?.id}/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ authorName: reviewForm.authorName.trim(), comment: reviewForm.comment.trim(), rating: reviewForm.rating }) })
+                      const json = await res.json().catch(() => ({}))
+                      if (!res.ok || !json?.ok) throw new Error(json?.error || 'Error al enviar reseña')
+                      setReviewSubmitted(true)
+                    } catch (err: any) {
+                      setReviewError(err?.message || 'Error al enviar. Intenta de nuevo.')
+                    } finally { setReviewSubmitting(false) }
+                  }} className="w-full sm:w-auto px-6 py-2.5 bg-[#3BAFDA] text-white font-semibold rounded-xl hover:bg-[#2B9FCA] transition-colors disabled:opacity-60 text-sm">
+                    {reviewSubmitting ? 'Enviando...' : 'Enviar reseña'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="px-6 pb-8 border-t border-gray-100 pt-6">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 max-w-xl flex items-start gap-3">
+                  <FiThumbsUp className="text-emerald-500 text-xl mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-emerald-800">¡Gracias por tu opinión!</p>
+                    <p className="text-sm text-emerald-700 mt-1">Tu reseña fue enviada y será publicada tras una breve revisión. Tu feedback ayuda a la comunidad.</p>
+                  </div>
                 </div>
               </div>
             )}

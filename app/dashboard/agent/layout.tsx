@@ -7,8 +7,8 @@ export default function AgentDashboardLayout({ children }: { children: React.Rea
       <AgentSidebar />
       <main className="flex-1 min-w-0">
         <WorkspaceHeaderBar
-          eyebrow="Agent Portal"
-          title="Agent Workspace"
+          eyebrow="Portal del Agente"
+          title="Workspace del Agente"
           subtitle="Una sola navegación lateral para leads, comisiones y listados."
         />
         <div className="p-4 sm:p-6">{children}</div>
