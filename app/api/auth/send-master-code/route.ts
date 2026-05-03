@@ -3,6 +3,7 @@
 export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { verificationCodes } from '@/lib/verificationStore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
 import sgMail from '@sendgrid/mail'
 import nodemailer from 'nodemailer'
 import { keyFromRequest, rateLimit } from '@/lib/rateLimiter'
@@ -23,13 +24,29 @@ export async function POST(request: Request) {
     const allowedEmails = new Set(rawList)
     
     const incoming = String(email || '').trim().toLowerCase()
+    const uidText = String(uid || '').trim()
   const isDev = process.env.NODE_ENV !== 'production'
   const host = (request.headers.get('host') || '').toLowerCase()
   const isLocalHost = host.includes('localhost') || host.startsWith('127.0.0.1') || host.endsWith('.local')
     const allowAny = process.env.ALLOW_ANY_MASTER_EMAIL === 'true'
+
+    // Prefer role-based validation when uid is provided by the authenticated login flow.
+    let allowedByUidRole = false
+    if (uidText) {
+      const adminDb = getAdminDb()
+      if (adminDb) {
+        const userDoc = await adminDb.collection('users').doc(uidText).get()
+        if (userDoc.exists) {
+          const data = userDoc.data() || {}
+          const role = String(data.role || '').trim().toLowerCase()
+          const userEmail = String(data.email || '').trim().toLowerCase()
+          allowedByUidRole = (role === 'master_admin' || role === 'admin') && (!!incoming && userEmail === incoming)
+        }
+      }
+    }
     
     // In development, allow any email. In production, check allowlist or ALLOW_ANY_MASTER_EMAIL flag
-    const isAllowed = isDev || allowAny || allowedEmails.has(incoming)
+    const isAllowed = allowedByUidRole || isDev || allowAny || allowedEmails.has(incoming)
     
     // Security: Don't log sensitive data in production
     if (isDev) {
@@ -47,8 +64,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })
     }
 
-    // Unified login always sends uid. If it's missing, fall back to allowlist-only
-    // to avoid blocking valid master-admin logins in production.
+    // Unified login sends uid. If it's missing, fall back to allowlist-only rules.
     if (!uid && isDev) {
       console.warn('[send-master-code] Missing uid; proceeding with allowlist-only check')
     }
