@@ -9,6 +9,17 @@ import { getServerSession, createSessionCookie } from '@/lib/auth/session'
 import { verificationCodes } from '@/lib/verificationStore'
 import { keyFromRequest, rateLimit } from '@/lib/rateLimiter'
 
+function applyNoStoreHeaders(response: NextResponse) {
+  response.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+  response.headers.set('Pragma', 'no-cache')
+  response.headers.set('Expires', '0')
+  return response
+}
+
+function noStoreJson(body: any, init?: ResponseInit) {
+  return applyNoStoreHeaders(NextResponse.json(body, init))
+}
+
 async function signInWithCustomToken(apiKey: string, token: string): Promise<{ idToken: string }> {
   const res = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`,
@@ -33,24 +44,24 @@ export async function POST(req: NextRequest) {
     const code = String(payload?.code || '').trim()
 
     if (!code) {
-      return NextResponse.json({ ok: false, error: 'Codigo requerido' }, { status: 400 })
+      return noStoreJson({ ok: false, error: 'Codigo requerido' }, { status: 400 })
     }
 
     const session = await getServerSession()
     if (!session || !session.uid || !session.email) {
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Sesion no encontrada. Inicia sesion nuevamente.' },
         { status: 401 }
       )
     }
 
     if (session.role !== 'master_admin') {
-      return NextResponse.json({ ok: false, error: 'Solo master admin requiere 2FA' }, { status: 403 })
+      return noStoreJson({ ok: false, error: 'Solo master admin requiere 2FA' }, { status: 403 })
     }
 
     const rl = await rateLimit(keyFromRequest(req, session.email), 8, 60_000)
     if (!rl.allowed) {
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Demasiados intentos. Intenta mas tarde.' },
         { status: 429 }
       )
@@ -59,29 +70,29 @@ export async function POST(req: NextRequest) {
     const emailKey = session.email.toLowerCase()
     const codeData = verificationCodes.get(emailKey)
     if (!codeData) {
-      return NextResponse.json({ ok: false, error: 'Codigo no encontrado o expirado' }, { status: 404 })
+      return noStoreJson({ ok: false, error: 'Codigo no encontrado o expirado' }, { status: 404 })
     }
 
     if (Date.now() > codeData.expiresAt) {
       verificationCodes.delete(emailKey)
-      return NextResponse.json({ ok: false, error: 'Codigo expirado. Solicita uno nuevo.' }, { status: 401 })
+      return noStoreJson({ ok: false, error: 'Codigo expirado. Solicita uno nuevo.' }, { status: 401 })
     }
 
     if (code !== codeData.code) {
       codeData.attempts += 1
       if (codeData.attempts >= 3) {
         verificationCodes.delete(emailKey)
-        return NextResponse.json(
+        return noStoreJson(
           { ok: false, error: 'Demasiados intentos. Solicita un nuevo codigo.' },
           { status: 401 }
         )
       }
-      return NextResponse.json({ ok: false, error: 'Codigo invalido' }, { status: 401 })
+      return noStoreJson({ ok: false, error: 'Codigo invalido' }, { status: 401 })
     }
 
     const adminAuth = getAdminAuth()
     if (!adminAuth) {
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Error de configuracion del servidor' },
         { status: 500 }
       )
@@ -95,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
     if (!apiKey) {
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Configuracion de Firebase incompleta' },
         { status: 500 }
       )
@@ -118,9 +129,9 @@ export async function POST(req: NextRequest) {
     })
 
     response.cookies.set('__session', sessionCookie, options)
-    return response
+    return applyNoStoreHeaders(response)
   } catch (error) {
     console.error('2FA verification error:', error)
-    return NextResponse.json({ ok: false, error: 'Error del servidor' }, { status: 500 })
+    return noStoreJson({ ok: false, error: 'Error del servidor' }, { status: 500 })
   }
 }

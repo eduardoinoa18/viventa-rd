@@ -6,6 +6,17 @@ import { verificationCodes } from '@/lib/verificationStore'
 import { ActivityLogger } from '@/lib/activityLogger'
 import { keyFromRequest, rateLimit } from '@/lib/rateLimiter'
 
+function applyNoStoreHeaders(response: NextResponse) {
+  response.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+  response.headers.set('Pragma', 'no-cache')
+  response.headers.set('Expires', '0')
+  return response
+}
+
+function noStoreJson(body: any, init?: ResponseInit) {
+  return applyNoStoreHeaders(NextResponse.json(body, init))
+}
+
 export async function POST(request: Request) {
   try {
     const { email, code, remember } = await request.json()
@@ -16,7 +27,7 @@ export async function POST(request: Request) {
       5 * 60 * 1000
     )
     if (!rl.allowed) {
-      return NextResponse.json({ ok: false, error: 'Too many attempts. Please try again later.' }, { status: 429 })
+      return noStoreJson({ ok: false, error: 'Too many attempts. Please try again later.' }, { status: 429 })
     }
 
     const incoming = String(email || '').trim().toLowerCase()
@@ -24,7 +35,7 @@ export async function POST(request: Request) {
     const pwOk = cookies.match(/(?:^|;\s*)admin_pw_ok=([^;]+)/)?.[1] || ''
     const pwEmail = cookies.match(/(?:^|;\s*)admin_pw_email=([^;]+)/)?.[1] || ''
     if (pwOk !== '1' || (pwEmail && pwEmail.toLowerCase() !== incoming)) {
-      return NextResponse.json({ ok: false, error: 'Password verification required' }, { status: 401 })
+      return noStoreJson({ ok: false, error: 'Password verification required' }, { status: 401 })
     }
     const allowAny = process.env.ALLOW_ANY_MASTER_EMAIL === 'true'
     const isDev = process.env.NODE_ENV !== 'production'
@@ -34,7 +45,7 @@ export async function POST(request: Request) {
       .filter(Boolean)
     const allowedSet = new Set(allowed)
     if (!incoming || (!allowAny && allowedSet.size > 0 && !allowedSet.has(incoming) && !isDev)) {
-      return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 403 })
+      return noStoreJson({ ok: false, error: 'Invalid credentials' }, { status: 403 })
     }
 
     // Security: Don't log sensitive data in production
@@ -43,7 +54,7 @@ export async function POST(request: Request) {
     }
 
     if (!email || !code) {
-      return NextResponse.json({ 
+      return noStoreJson({ 
         ok: false, 
         error: 'Invalid request' 
       }, { status: 400 })
@@ -54,7 +65,7 @@ export async function POST(request: Request) {
 
     if (!storedData) {
       // Security: Generic error to prevent timing attacks
-      return NextResponse.json({ 
+      return noStoreJson({ 
         ok: false, 
         error: 'Invalid verification code' 
       }, { status: 401 })
@@ -63,7 +74,7 @@ export async function POST(request: Request) {
     // Check if code expired
     if (Date.now() > storedData.expiresAt) {
       verificationCodes.delete(key)
-      return NextResponse.json({ 
+      return noStoreJson({ 
         ok: false, 
         error: 'Invalid verification code' 
       }, { status: 401 })
@@ -72,7 +83,7 @@ export async function POST(request: Request) {
     // Check attempts (max 5)
     if (storedData.attempts >= 5) {
       verificationCodes.delete(key)
-      return NextResponse.json({ 
+      return noStoreJson({ 
         ok: false, 
         error: 'Too many attempts. Please request a new code.' 
       }, { status: 429 })
@@ -82,7 +93,7 @@ export async function POST(request: Request) {
     if (storedData.code !== code.trim()) {
       storedData.attempts++
       // Security: Don't reveal remaining attempts
-      return NextResponse.json({ 
+      return noStoreJson({ 
         ok: false, 
         error: 'Invalid verification code' 
       }, { status: 401 })
@@ -136,11 +147,11 @@ export async function POST(request: Request) {
         maxAge: 60 * 60 * 24 * 30,
       })
     }
-    return res
+    return applyNoStoreHeaders(res)
 
   } catch (error) {
     console.error('Error verifying code:', error)
-    return NextResponse.json({ 
+    return noStoreJson({ 
       ok: false, 
       error: 'Internal server error' 
     }, { status: 500 })

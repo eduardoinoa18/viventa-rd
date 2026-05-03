@@ -6,6 +6,17 @@
 import { NextResponse } from 'next/server'
 import { clearSessionCookie } from '@/lib/auth/session'
 
+function applyNoStoreHeaders(response: NextResponse) {
+  response.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+  response.headers.set('Pragma', 'no-cache')
+  response.headers.set('Expires', '0')
+  return response
+}
+
+function noStoreJson(body: any, init?: ResponseInit) {
+  return applyNoStoreHeaders(NextResponse.json(body, init))
+}
+
 export async function POST() {
   try {
     // Clear new session cookie
@@ -27,10 +38,10 @@ export async function POST() {
     response.cookies.delete('trusted_admin')
     response.cookies.delete('viventa_role')
 
-    return response
+    return applyNoStoreHeaders(response)
   } catch (error) {
     console.error('Logout error:', error)
-    return NextResponse.json(
+    return noStoreJson(
       { ok: false, error: 'Error al cerrar sesión' },
       { status: 500 }
     )

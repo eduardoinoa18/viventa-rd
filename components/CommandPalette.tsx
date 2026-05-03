@@ -35,27 +35,27 @@ type Command = {
 
 const COMMANDS: Command[] = [
   // Navigate
-  { id: 'goto-broker',          group: 'Navigate', label: 'Panel Broker',         description: 'Abrir resumen broker',        icon: <FiGrid />,       href: '/dashboard/broker/overview',       keywords: 'broker workspace home', roles: ['master_admin', 'broker'] },
-  { id: 'goto-agent',           group: 'Navigate', label: 'Panel Agente',         description: 'Abrir resumen agente',        icon: <FiGrid />,       href: '/dashboard/agent/overview',        keywords: 'agent workspace home', roles: ['master_admin', 'agent'] },
-  { id: 'goto-constructora',    group: 'Navigate', label: 'Panel Constructora',   description: 'Abrir panel constructora',    icon: <FiGrid />,       href: '/dashboard/constructora/overview', keywords: 'constructora builder developer', roles: ['master_admin', 'constructora'] },
-  { id: 'goto-master',          group: 'Navigate', label: 'Admin Master',         description: 'Abrir panel administrativo',  icon: <FiGrid />,       href: '/master',                          keywords: 'admin master platform', roles: ['master_admin', 'admin'] },
-  { id: 'goto-listings',        group: 'Navigate', label: 'Propiedades',          description: 'Ver todas las propiedades',   icon: <FiHome />,       href: '/dashboard/listings',              keywords: 'listings properties homes', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora'] },
-  { id: 'goto-search',          group: 'Navigate', label: 'Buscar Propiedad',     description: 'Buscar en el marketplace',    icon: <FiSearch />,     href: '/search',                          keywords: 'search find property', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
-  { id: 'goto-crm-broker',      group: 'Navigate', label: 'CRM Broker',           description: 'Leads, deals, tareas y calendario', icon: <FiTarget />,     href: '/dashboard/broker/crm',            keywords: 'crm leads pipeline broker transactions tasks calendar', roles: ['master_admin', 'broker'] },
-  { id: 'goto-crm-agent',       group: 'Navigate', label: 'CRM Agente',           description: 'Leads, negocios, tareas y calendario', icon: <FiTarget />,     href: '/dashboard/agent/crm',             keywords: 'crm leads agent deals tasks calendar', roles: ['master_admin', 'agent'] },
-  { id: 'goto-team',            group: 'Navigate', label: 'Equipo / Agentes',     description: 'Gestionar equipo de agentes', icon: <FiUsers />,      href: '/dashboard/broker/team',           keywords: 'team agents members', roles: ['master_admin', 'broker'] },
-  { id: 'goto-activity-broker', group: 'Navigate', label: 'Actividad Broker',     description: 'Feed de actividad',           icon: <FiActivity />,   href: '/dashboard/broker/activity',       keywords: 'activity events feed broker', roles: ['master_admin', 'broker'] },
-  { id: 'goto-activity-master', group: 'Navigate', label: 'Actividad Plataforma', description: 'Feed actividad admin master',  icon: <FiActivity />,   href: '/master/activity',                 keywords: 'activity events feed admin', roles: ['master_admin'] },
+  { id: 'goto-broker',          group: 'Navegación', label: 'Panel Broker',          description: 'Abrir resumen broker',           icon: <FiGrid />,       href: '/dashboard/broker/overview',       keywords: 'broker workspace home', roles: ['master_admin', 'broker'] },
+  { id: 'goto-agent',           group: 'Navegación', label: 'Panel Agente',          description: 'Abrir resumen agente',           icon: <FiGrid />,       href: '/dashboard/agent/overview',        keywords: 'agent workspace home', roles: ['master_admin', 'agent'] },
+  { id: 'goto-constructora',    group: 'Navegación', label: 'Panel Constructora',    description: 'Abrir panel constructora',       icon: <FiGrid />,       href: '/dashboard/constructora/overview', keywords: 'constructora builder developer', roles: ['master_admin', 'constructora'] },
+  { id: 'goto-master',          group: 'Navegación', label: 'Admin Master',          description: 'Abrir panel administrativo',     icon: <FiGrid />,       href: '/master',                          keywords: 'admin master platform', roles: ['master_admin', 'admin'] },
+  { id: 'goto-listings',        group: 'Navegación', label: 'Propiedades',           description: 'Ver todas las propiedades',      icon: <FiHome />,       href: '/dashboard/listings',              keywords: 'listings properties homes', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora'] },
+  { id: 'goto-search',          group: 'Navegación', label: 'Buscar Propiedad',      description: 'Buscar en el marketplace',       icon: <FiSearch />,     href: '/search',                          keywords: 'search find property', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
+  { id: 'goto-crm-broker',      group: 'Navegación', label: 'CRM Broker',            description: 'Leads, negocios, tareas y calendario', icon: <FiTarget />,     href: '/dashboard/broker/crm',            keywords: 'crm leads pipeline broker transactions tasks calendar', roles: ['master_admin', 'broker'] },
+  { id: 'goto-crm-agent',       group: 'Navegación', label: 'CRM Agente',            description: 'Leads, negocios, tareas y calendario', icon: <FiTarget />,     href: '/dashboard/agent/crm',             keywords: 'crm leads agent deals tasks calendar', roles: ['master_admin', 'agent'] },
+  { id: 'goto-team',            group: 'Navegación', label: 'Equipo / Agentes',      description: 'Gestionar equipo de agentes',    icon: <FiUsers />,      href: '/dashboard/broker/team',           keywords: 'team agents members', roles: ['master_admin', 'broker'] },
+  { id: 'goto-activity-broker', group: 'Navegación', label: 'Actividad Broker',      description: 'Flujo de actividad',             icon: <FiActivity />,   href: '/dashboard/broker/activity',       keywords: 'activity events feed broker', roles: ['master_admin', 'broker'] },
+  { id: 'goto-activity-master', group: 'Navegación', label: 'Actividad Plataforma',  description: 'Flujo de actividad admin master', icon: <FiActivity />,   href: '/master/activity',                 keywords: 'activity events feed admin', roles: ['master_admin'] },
   { id: 'goto-messages',        group: 'Navigate', label: 'Mensajes',            description: 'Abrir mensajeria',            icon: <FiUsers />,      href: '/messages',                        keywords: 'messages chat inbox', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
   { id: 'goto-favorites',       group: 'Navigate', label: 'Favoritos',           description: 'Propiedades guardadas',       icon: <FiHome />,       href: '/favorites',                       keywords: 'favorites saved bookmarks', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
-  { id: 'goto-billing',         group: 'Navigate', label: 'Facturacion',         description: 'Suscripcion y pagos',         icon: <FiBarChart2 />,  href: '/dashboard/billing',               keywords: 'billing subscription payments plan', roles: ['master_admin', 'admin', 'broker'] },
+  { id: 'goto-billing',         group: 'Navegación', label: 'Facturación',         description: 'Suscripción y pagos',         icon: <FiBarChart2 />,  href: '/dashboard/billing',               keywords: 'billing subscription payments plan', roles: ['master_admin', 'admin', 'broker'] },
   // Actions
   { id: 'action-create-listing', group: 'Acciones', label: 'Crear Propiedad',    description: 'Agregar nueva propiedad',     icon: <FiPlusSquare />, href: '/dashboard/listings/create',       keywords: 'create new listing property add', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora'] },
   { id: 'action-create-deal',    group: 'Acciones', label: 'Crear Negocio',      description: 'Abrir CRM unificado y crear negocio',   icon: <FiPlusSquare />, href: '/dashboard/broker/crm',   keywords: 'create deal transaction new crm', roles: ['master_admin', 'broker'] },
   { id: 'action-invite-agent',   group: 'Acciones', label: 'Invitar Agente',     description: 'Agregar agente a tu office',  icon: <FiUsers />,      href: '/dashboard/broker/team',           keywords: 'invite agent add member', roles: ['master_admin', 'broker'] },
   // Account
-  { id: 'account-profile',      group: 'Cuenta',   label: 'Mi Perfil',          description: 'Editar tu perfil',            icon: <FiUser />,       href: '/dashboard/settings',              keywords: 'profile settings account me', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
-  { id: 'account-public-site',  group: 'Cuenta',   label: 'Sitio Publico',      description: 'Ir al marketplace VIVENTA',  icon: <FiHome />,       href: '/',                                keywords: 'public marketplace site home', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
+  { id: 'account-profile',      group: 'Cuenta',   label: 'Mi Perfil',           description: 'Editar tu perfil',            icon: <FiUser />,       href: '/dashboard/settings',              keywords: 'profile settings account me', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
+  { id: 'account-public-site',  group: 'Cuenta',   label: 'Sitio Público',       description: 'Ir al marketplace VIVENTA',   icon: <FiHome />,       href: '/',                                keywords: 'public marketplace site home', roles: ['master_admin', 'admin', 'broker', 'agent', 'constructora', 'buyer', 'user'] },
   { id: 'account-back-admin',   group: 'Cuenta',   label: 'Volver al Admin',    description: 'Regresar al panel completo', icon: <FiGrid />, href: '/master', keywords: 'return admin dashboard master', roles: ['master_admin', 'admin'] },
 ]
 
@@ -158,9 +158,9 @@ export default function CommandPalette() {
   const extraCommands: Command[] = impersonating
     ? [{
         id: 'account-return-master-from-impersonation',
-        group: 'Account',
-        label: 'Return to Master Admin',
-        description: 'Stop impersonation and restore full admin session',
+        group: 'Cuenta',
+        label: 'Volver a Master Admin',
+        description: 'Detener impersonación y restaurar sesión completa',
         icon: <FiGrid />,
         action: stopImpersonation,
         keywords: 'stop impersonation return master admin',
@@ -291,12 +291,12 @@ export default function CommandPalette() {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={role === 'master_admin' ? 'Search deals, listings, projects or jump to…' : 'Search listings, projects or jump to…'}
+            placeholder={role === 'master_admin' ? 'Buscar negocios, propiedades, proyectos o ir a…' : 'Buscar propiedades, proyectos o ir a…'}
             className="min-w-0 flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
           />
           {query && (
             <button
-              aria-label="Clear search"
+              aria-label="Limpiar búsqueda"
               onClick={() => { setQuery(''); setDynamicResults([]) }}
               className="text-gray-400 hover:text-gray-600"
             >
@@ -327,7 +327,7 @@ export default function CommandPalette() {
 
           {allCommands.length === 0 && !searching ? (
             <div className="py-10 text-center text-sm text-gray-400">
-              No results for &ldquo;{query}&rdquo;
+              Sin resultados para &ldquo;{query}&rdquo;
             </div>
           ) : (
             groups.map(({ group, items }) => {
@@ -382,11 +382,11 @@ export default function CommandPalette() {
 
         {/* Footer */}
         <div className="flex items-center gap-4 border-t border-gray-100 px-4 py-2 text-[10px] text-gray-400">
-          <span><kbd className="font-mono">↑↓</kbd> navigate</span>
-          <span><kbd className="font-mono">↵</kbd> open</span>
-          <span><kbd className="font-mono">Esc</kbd> close</span>
+          <span><kbd className="font-mono">↑↓</kbd> navegar</span>
+          <span><kbd className="font-mono">↵</kbd> abrir</span>
+          <span><kbd className="font-mono">Esc</kbd> cerrar</span>
           {query.length >= 2 && (
-            <span className="ml-auto text-[#00A676]">Searching deals, listings &amp; projects…</span>
+            <span className="ml-auto text-[#00A676]">Buscando negocios, propiedades y proyectos…</span>
           )}
         </div>
       </div>

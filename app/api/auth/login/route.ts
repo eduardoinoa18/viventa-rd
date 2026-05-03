@@ -14,6 +14,17 @@ import { keyFromRequest, rateLimit } from '@/lib/rateLimiter'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+function applyNoStoreHeaders(response: NextResponse) {
+  response.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+  response.headers.set('Pragma', 'no-cache')
+  response.headers.set('Expires', '0')
+  return response
+}
+
+function noStoreJson(body: any, init?: ResponseInit) {
+  return applyNoStoreHeaders(NextResponse.json(body, init))
+}
+
 const authErrorMessages: Record<string, string> = {
   EMAIL_NOT_FOUND: 'Usuario no encontrado',
   INVALID_PASSWORD: 'Contraseña incorrecta',
@@ -100,7 +111,7 @@ export async function POST(req: NextRequest) {
     const password = String(payload?.password || '')
 
     if (!email || !password) {
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Email y contraseña son requeridos' },
         { status: 400 }
       )
@@ -109,7 +120,7 @@ export async function POST(req: NextRequest) {
     const rateLimitKey = keyFromRequest(req, email)
     const rateLimitResult = await rateLimit(rateLimitKey, 10, 60_000)
     if (!rateLimitResult.allowed) {
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Demasiados intentos. Intenta más tarde.' },
         { status: 429 }
       )
@@ -117,7 +128,7 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
     if (!apiKey) {
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Configuración de Firebase incompleta' },
         { status: 500 }
       )
@@ -126,7 +137,7 @@ export async function POST(req: NextRequest) {
     const adminAuth = getAdminAuth()
     if (!adminAuth) {
       console.error('[LOGIN] Admin Auth not initialized')
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Error de configuración del servidor' },
         { status: 500 }
       )
@@ -152,7 +163,7 @@ export async function POST(req: NextRequest) {
     const adminDb = getAdminDb()
     if (!adminDb) {
       console.error('[LOGIN] Admin DB not initialized')
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Error de configuración del servidor' },
         { status: 500 }
       )
@@ -164,7 +175,7 @@ export async function POST(req: NextRequest) {
       userDoc = await userDocRef.get()
     } catch (dbError: any) {
       console.error('[LOGIN] Firestore fetch error:', dbError?.message)
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Error al acceder a la base de datos' },
         { status: 500 }
       )
@@ -189,7 +200,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (userStatus === 'suspended' || userStatus === 'archived') {
-        return NextResponse.json(
+        return noStoreJson(
           { ok: false, error: `Tu cuenta está ${userStatus}. Contacta al administrador.` },
           { status: 403 }
         )
@@ -213,7 +224,7 @@ export async function POST(req: NextRequest) {
       })
     } catch (claimsError: any) {
       console.error('[LOGIN] Failed to set custom claims:', claimsError?.message)
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Error al configurar permisos' },
         { status: 500 }
       )
@@ -225,7 +236,7 @@ export async function POST(req: NextRequest) {
       customToken = await adminAuth.createCustomToken(uid)
     } catch (tokenError: any) {
       console.error('[LOGIN] Failed to create custom token:', tokenError?.message)
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Error al crear token de autenticación' },
         { status: 500 }
       )
@@ -236,7 +247,7 @@ export async function POST(req: NextRequest) {
       tokenData = await signInWithCustomToken(apiKey, customToken)
     } catch (exchangeError: any) {
       console.error('[LOGIN] Failed to exchange custom token:', exchangeError?.message)
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Error al validar token' },
         { status: 500 }
       )
@@ -252,7 +263,7 @@ export async function POST(req: NextRequest) {
       options = cookieData.options
     } catch (cookieError: any) {
       console.error('[LOGIN] Failed to create session cookie:', cookieError?.message)
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: 'Error al crear sesión' },
         { status: 500 }
       )
@@ -270,7 +281,7 @@ export async function POST(req: NextRequest) {
         })
       } catch (fetchError: any) {
         console.error('[LOGIN] Failed to call send-master-code:', fetchError?.message)
-        return NextResponse.json(
+        return noStoreJson(
           { ok: false, error: 'Error al enviar código 2FA' },
           { status: 500 }
         )
@@ -279,7 +290,7 @@ export async function POST(req: NextRequest) {
       const sendCodeData = await sendCodeRes.json().catch(() => ({}))
       if (!sendCodeRes.ok) {
         console.error('[LOGIN] send-master-code failed:', sendCodeData?.error)
-        return NextResponse.json(
+        return noStoreJson(
           { ok: false, error: sendCodeData?.error || 'Error al enviar código 2FA' },
           { status: sendCodeRes.status || 500 }
         )
@@ -294,7 +305,7 @@ export async function POST(req: NextRequest) {
 
       response.cookies.set('__session', sessionCookie, options)
 
-      return response
+      return applyNoStoreHeaders(response)
     }
 
     const redirectMap: Record<string, string> = {
@@ -341,17 +352,17 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    return response
+    return applyNoStoreHeaders(response)
   } catch (error: any) {
     if (error?.code && authErrorMessages[error.code]) {
-      return NextResponse.json(
+      return noStoreJson(
         { ok: false, error: authErrorMessages[error.code], errorCode: error.code },
         { status: 401 }
       )
     }
 
     console.error('Login error:', error)
-    return NextResponse.json(
+    return noStoreJson(
       { ok: false, error: 'Error del servidor', errorCode: error?.code || 'SERVER_ERROR' },
       { status: 500 }
     )
