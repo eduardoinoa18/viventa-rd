@@ -61,12 +61,12 @@ function formatRelative(value?: string) {
   if (!Number.isFinite(parsed.getTime())) return '—'
 
   const diffMs = Date.now() - parsed.getTime()
-  if (diffMs < 0) return 'just now'
+  if (diffMs < 0) return 'ahora mismo'
   const minutes = Math.floor(diffMs / (1000 * 60))
   const hours = Math.floor(minutes / 60)
   const days = Math.floor(hours / 24)
 
-  if (minutes < 1) return 'just now'
+  if (minutes < 1) return 'ahora mismo'
   if (minutes < 60) return `${minutes}m ago`
   if (hours < 24) return `${hours}h ago`
   return `${days}d ago`
@@ -117,7 +117,7 @@ export default function RevenueClient() {
       setData(json.data || DEFAULT_DATA)
     } catch (error: any) {
       console.error('revenue overview error', error)
-      toast.error(error?.message || 'Unable to load revenue overview')
+      toast.error(error?.message || 'No se pudo cargar el resumen de ingresos')
     } finally {
       setLoading(false)
     }
@@ -140,7 +140,7 @@ export default function RevenueClient() {
 
   async function createPlan() {
     if (!newPlan.name.trim() || !newPlan.interval || newPlan.amount <= 0) {
-      toast.error('Plan name, interval, and amount are required')
+      toast.error('Nombre del plan, intervalo y monto son requeridos')
       return
     }
 
@@ -156,7 +156,7 @@ export default function RevenueClient() {
       })
       const json = await res.json()
       if (!res.ok || !json?.ok) {
-        toast.error(json.error || 'Failed to create plan')
+        toast.error(json.error || 'No se pudo crear el plan')
         return
       }
       toast.success('Tipo de suscripción creado')
@@ -172,7 +172,7 @@ export default function RevenueClient() {
 
   async function createSubscriptionRequest() {
     if (!newRequest.name.trim() || !newRequest.email.trim() || !newRequest.planId) {
-      toast.error('Name, email and plan are required')
+      toast.error('Nombre, correo y plan son requeridos')
       return
     }
 
@@ -185,10 +185,10 @@ export default function RevenueClient() {
       })
       const json = await res.json()
       if (!res.ok || !json?.ok) {
-        toast.error(json.error || 'Failed to create request')
+        toast.error(json.error || 'No se pudo crear la solicitud')
         return
       }
-      toast.success(newRequest.createCredentials ? 'Request created and credentials invitation sent' : 'Subscription request created')
+      toast.success(newRequest.createCredentials ? 'Solicitud creada e invitación con credenciales enviada' : 'Solicitud de suscripción creada')
       setNewRequest({
         name: '',
         email: '',
@@ -210,7 +210,7 @@ export default function RevenueClient() {
   }
 
   async function deletePlan(plan: BillingPlan) {
-    if (!confirm(`Delete plan "${plan.name}"?`)) return
+    if (!confirm(`¿Eliminar el plan "${plan.name}"?`)) return
     setDeletingPlanId(plan.id)
     try {
       const res = await fetch('/api/admin/revenue/plans', {
@@ -220,7 +220,7 @@ export default function RevenueClient() {
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        toast.error(json?.error || 'Failed to delete plan')
+        toast.error(json?.error || 'No se pudo eliminar el plan')
         return
       }
       toast.success('Plan eliminado')
@@ -234,7 +234,7 @@ export default function RevenueClient() {
   }
 
   async function deleteRequest(request: SubscriptionRequest) {
-    if (!confirm(`Delete invitation/request for ${request.name}?`)) return
+    if (!confirm(`¿Eliminar invitación/solicitud de ${request.name}?`)) return
     setDeletingRequestId(request.id)
     try {
       const res = await fetch('/api/admin/revenue/subscription-requests', {
@@ -244,10 +244,10 @@ export default function RevenueClient() {
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        toast.error(json?.error || 'Failed to delete invitation')
+        toast.error(json?.error || 'No se pudo eliminar la invitación')
         return
       }
-      toast.success('Invitation/request deleted')
+      toast.success('Invitación/solicitud eliminada')
       await loadOperations()
     } catch (error) {
       console.error('delete request error', error)

@@ -241,7 +241,7 @@ export default function MasterUsersPage() {
 
   async function toggleStatus(uid: string, currentDisabled: boolean) {
     const action = currentDisabled ? 'enable' : 'disable'
-    if (!confirm(`${action === 'enable' ? 'Enable' : 'Disable'} this user account?`)) return
+    if (!confirm(`¿Deseas ${action === 'enable' ? 'habilitar' : 'deshabilitar'} esta cuenta?`)) return
 
     try {
       const res = await fetch('/api/admin/users', {
@@ -267,7 +267,7 @@ export default function MasterUsersPage() {
   }
 
   async function deleteUser(uid: string, name: string) {
-    if (!confirm(`Delete user "${name}"? This cannot be undone.`)) return
+    if (!confirm(`¿Eliminar al usuario "${name}"? Esta acción no se puede deshacer.`)) return
 
     try {
       const res = await fetch('/api/admin/users', {
@@ -292,7 +292,7 @@ export default function MasterUsersPage() {
     const uid = user.uid || user.id
     const nextValue = user.publicProfileEnabled === false
     const actionLabel = nextValue ? 'show' : 'hide'
-    if (!confirm(`Do you want to ${actionLabel} this profile publicly?`)) return
+    if (!confirm(`¿Deseas ${actionLabel} este perfil públicamente?`)) return
 
     try {
       const res = await fetch('/api/admin/users', {
@@ -469,7 +469,7 @@ export default function MasterUsersPage() {
       return
     }
 
-    if (!confirm(`Login as ${user.name || user.email}? This will replace your current session.`)) return
+    if (!confirm(`¿Ingresar como ${user.name || user.email}? Esto reemplazará tu sesión actual.`)) return
 
     setImpersonatingUserId(targetId)
     try {

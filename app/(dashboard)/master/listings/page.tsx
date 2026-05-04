@@ -198,7 +198,7 @@ export default function MasterListingsPage() {
 
   // API: Delete listing
   async function deleteListing(id: string) {
-    if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) return
+    if (!confirm('¿Estás seguro de que deseas eliminar esta propiedad? Esta acción no se puede deshacer.')) return
     try {
       const res = await fetch('/api/admin/properties', {
         method: 'DELETE',
