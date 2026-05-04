@@ -171,7 +171,7 @@ export default function ProjectCreationForm() {
         setFormState((prev) => ({ ...prev, unitsData: units }));
         toast.success(`${units.length} units loaded from CSV`);
       } catch (error) {
-        toast.error('Error parsing CSV file');
+        toast.error('Error al procesar el archivo CSV');
       }
     };
     reader.readAsText(file);
@@ -181,19 +181,19 @@ export default function ProjectCreationForm() {
     switch (currentTab) {
       case 'info':
         if (!formState.name || !formState.description || !formState.city) {
-          toast.error('Please fill all required fields');
+          toast.error('Por favor completa todos los campos requeridos');
           return false;
         }
         return true;
       case 'location':
         if (!formState.latitude || !formState.longitude) {
-          toast.error('Please set location coordinates');
+          toast.error('Por favor establece las coordenadas de ubicación');
           return false;
         }
         return true;
       case 'units':
         if (formState.unitsData.length === 0) {
-          toast.error('Please add at least one unit');
+          toast.error('Por favor agrega al menos una unidad');
           return false;
         }
         return true;

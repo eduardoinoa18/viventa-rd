@@ -61,7 +61,7 @@ export default function AdminUserDetailsModal({
       })
       const json = await res.json()
       if (!json.ok) throw new Error(json.error || 'Failed to save user')
-      toast.success('Saved')
+      toast.success('Guardado')
       onSaved?.({ name, phone, company, brokerage, status, emailVerified, verified })
       onClose()
     } catch (e: any) {
@@ -81,7 +81,7 @@ export default function AdminUserDetailsModal({
       const json = await res.json()
       if (!json.ok) throw new Error(json.error || 'Failed to generate reset link')
       await navigator.clipboard.writeText(json.resetLink)
-      toast.success('Reset link copied to clipboard')
+      toast.success('Enlace de restablecimiento copiado')
     } catch (e: any) {
       toast.error(e.message || 'Failed to generate reset link')
     }

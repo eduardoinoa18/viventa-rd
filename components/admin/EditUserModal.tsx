@@ -51,7 +51,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
 
     if (!user) return
     if (!formData.name.trim() || !formData.email.trim()) {
-      toast.error('Name and email are required')
+      toast.error('Nombre y correo son requeridos')
       return
     }
 
@@ -82,7 +82,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
         return
       }
 
-      toast.success('User updated successfully')
+      toast.success('Usuario actualizado exitosamente')
       onSuccess()
       onClose()
     } catch (error) {

@@ -57,7 +57,7 @@ export default function CreateConstructoraModal({ isOpen, onClose, onSuccess }: 
         return
       }
 
-      toast.success('Constructora created and invitation sent')
+      toast.success('Constructora creada e invitación enviada')
       setFormData({ name: '', email: '', phone: '', company: '', contactPerson: '' })
       onSuccess()
       onClose()
