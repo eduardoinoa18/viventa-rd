@@ -159,12 +159,12 @@ export default function RevenueClient() {
         toast.error(json.error || 'Failed to create plan')
         return
       }
-      toast.success('Subscription type created')
+      toast.success('Tipo de suscripción creado')
       setNewPlan({ name: '', interval: 'monthly', amount: 0, currency: 'USD', description: '', stripePriceId: '', active: true })
       await loadOperations()
     } catch (error) {
       console.error('create plan error', error)
-      toast.error('Failed to create plan')
+      toast.error('No se pudo crear el plan')
     } finally {
       setSavingPlan(false)
     }
@@ -203,7 +203,7 @@ export default function RevenueClient() {
       await loadOperations()
     } catch (error) {
       console.error('create subscription request error', error)
-      toast.error('Failed to create request')
+      toast.error('No se pudo crear la solicitud')
     } finally {
       setSavingRequest(false)
     }
@@ -223,11 +223,11 @@ export default function RevenueClient() {
         toast.error(json?.error || 'Failed to delete plan')
         return
       }
-      toast.success('Plan deleted')
+      toast.success('Plan eliminado')
       await loadOperations()
     } catch (error) {
       console.error('delete plan error', error)
-      toast.error('Failed to delete plan')
+      toast.error('No se pudo eliminar el plan')
     } finally {
       setDeletingPlanId(null)
     }
@@ -251,7 +251,7 @@ export default function RevenueClient() {
       await loadOperations()
     } catch (error) {
       console.error('delete request error', error)
-      toast.error('Failed to delete invitation')
+      toast.error('No se pudo eliminar la invitación')
     } finally {
       setDeletingRequestId(null)
     }

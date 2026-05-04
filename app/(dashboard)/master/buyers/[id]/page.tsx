@@ -164,7 +164,7 @@ export default function BuyerDetailPage() {
         throw new Error(data?.error || 'Failed to update buyer profile')
       }
 
-      toast.success('Buyer CRM profile updated')
+      toast.success('Perfil CRM del comprador actualizado')
       await loadBuyerData()
     } catch (error: any) {
       console.error('save buyer profile error', error)

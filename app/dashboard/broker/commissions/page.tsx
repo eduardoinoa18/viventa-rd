@@ -61,7 +61,7 @@ export default function BrokerCommissionsPage() {
 
         if (!res.ok || !json?.ok) {
           setRows([])
-          setError(String(json?.error || 'Failed to load commissions'))
+          setError(String(json?.error || 'No se pudieron cargar las comisiones'))
           return
         }
 
@@ -76,7 +76,7 @@ export default function BrokerCommissionsPage() {
       } catch {
         if (!active) return
         setRows([])
-        setError('Failed to load commissions')
+        setError('No se pudieron cargar las comisiones')
       } finally {
         if (active) setLoading(false)
       }

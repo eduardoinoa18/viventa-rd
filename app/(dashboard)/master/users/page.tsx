@@ -277,14 +277,14 @@ export default function MasterUsersPage() {
       })
       const json = await res.json()
       if (json.ok) {
-        toast.success('User deleted')
+        toast.success('Usuario eliminado')
         loadUsers()
       } else {
-        toast.error(json.error || 'Failed to delete user')
+        toast.error(json.error || 'No se pudo eliminar el usuario')
       }
     } catch (e) {
       console.error('Failed to delete user', e)
-      toast.error('Failed to delete user')
+      toast.error('No se pudo eliminar el usuario')
     }
   }
 
@@ -305,7 +305,7 @@ export default function MasterUsersPage() {
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        toast.error(json?.error || 'Failed to update public profile visibility')
+        toast.error(json?.error || 'No se pudo actualizar la visibilidad del perfil')
         return
       }
 
@@ -313,7 +313,7 @@ export default function MasterUsersPage() {
       loadUsers()
     } catch (error) {
       console.error('Failed to toggle public profile visibility', error)
-      toast.error('Failed to update public profile visibility')
+      toast.error('No se pudo actualizar la visibilidad del perfil')
     }
   }
 
@@ -326,14 +326,14 @@ export default function MasterUsersPage() {
       })
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        toast.error(json.error || 'Failed to resend invite')
+        toast.error(json.error || 'No se pudo reenviar la invitación')
         return
       }
-      toast.success('Invitation resent successfully')
+      toast.success('Invitación reenviada exitosamente')
       loadUsers()
     } catch (e) {
       console.error('Failed to resend invite', e)
-      toast.error('Failed to resend invite')
+      toast.error('No se pudo reenviar la invitación')
     }
   }
 
@@ -346,24 +346,24 @@ export default function MasterUsersPage() {
       })
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        toast.error(json.error || 'Failed to generate reset link')
+        toast.error(json.error || 'No se pudo generar el enlace de restablecimiento')
         return
       }
 
       if (json.resetLink) {
         try {
           await navigator.clipboard.writeText(json.resetLink)
-          toast.success('Reset link copied to clipboard')
+          toast.success('Enlace de restablecimiento copiado')
         } catch {
-          toast.success('Reset link generated')
+          toast.success('Enlace de restablecimiento generado')
           window.prompt('Copy reset link:', json.resetLink)
         }
       } else {
-        toast.success('Password reset prepared')
+        toast.success('Restablecimiento de contraseña preparado')
       }
     } catch (e) {
       console.error('Failed to generate reset link', e)
-      toast.error('Failed to generate reset link')
+      toast.error('No se pudo generar el enlace de restablecimiento')
     }
   }
 
@@ -441,31 +441,31 @@ export default function MasterUsersPage() {
       })
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        toast.error(json.error || 'Failed to request compliance review')
+        toast.error(json.error || 'No se pudo solicitar la revisión de cumplimiento')
         return
       }
-      toast.success('Compliance check requested')
+      toast.success('Revisión de cumplimiento solicitada')
       loadUsers()
     } catch (error) {
       console.error('force compliance check error', error)
-      toast.error('Failed to request compliance review')
+      toast.error('No se pudo solicitar la revisión de cumplimiento')
     }
   }
 
   async function loginAsUser(user: User) {
     if (sessionRole !== 'master_admin') {
-      toast.error('Only master admin can use Login as user')
+      toast.error('Solo el master admin puede usar Login como usuario')
       return
     }
 
     const targetId = String(user.uid || user.id || '')
     if (!targetId) {
-      toast.error('User id is missing')
+      toast.error('ID de usuario no encontrado')
       return
     }
 
     if (targetId === sessionUid) {
-      toast.error('You are already logged in as this user')
+      toast.error('Ya estás autenticado como este usuario')
       return
     }
 
@@ -481,7 +481,7 @@ export default function MasterUsersPage() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        const message = json?.error?.message || json?.error || 'Failed to impersonate user'
+        const message = json?.error?.message || json?.error || 'No se pudo suplantar al usuario'
         toast.error(message)
         return
       }
@@ -490,7 +490,7 @@ export default function MasterUsersPage() {
       window.location.href = String(json?.redirect || '/dashboard')
     } catch (error) {
       console.error('login as user error', error)
-      toast.error('Failed to impersonate user')
+      toast.error('No se pudo suplantar al usuario')
     } finally {
       setImpersonatingUserId(null)
     }

@@ -175,7 +175,7 @@ export default function MasterListingsPage() {
       else toast.error(json.error || 'Error al aprobar')
     } catch (e) {
       console.error('Failed to approve property', e)
-      toast.error('Failed to approve property')
+      toast.error('No se pudo aprobar la propiedad')
     }
   }
 
@@ -192,7 +192,7 @@ export default function MasterListingsPage() {
       else toast.error(json.error || 'Error al rechazar')
     } catch (e) {
       console.error('Failed to reject property', e)
-      toast.error('Failed to reject property')
+      toast.error('No se pudo rechazar la propiedad')
     }
   }
 
@@ -206,14 +206,14 @@ export default function MasterListingsPage() {
         body: JSON.stringify({ id }),
       })
       if (res.ok) {
-        toast.success('Property deleted')
+        toast.success('Propiedad eliminada')
         load()
       } else {
-        toast.error('Failed to delete property')
+        toast.error('No se pudo eliminar la propiedad')
       }
     } catch (e) {
       console.error('Failed to delete property', e)
-      toast.error('Failed to delete property')
+      toast.error('No se pudo eliminar la propiedad')
     }
   }
 
@@ -241,7 +241,7 @@ export default function MasterListingsPage() {
       }
     } catch (e) {
       console.error('Bulk update error', e)
-      toast.error('Bulk update failed')
+      toast.error('Actualización masiva fallida')
     }
   }
 

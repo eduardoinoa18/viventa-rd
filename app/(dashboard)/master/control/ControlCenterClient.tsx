@@ -189,7 +189,7 @@ export default function ControlCenterClient() {
       }
 
       setRoutingMode(nextMode)
-      toast.success('Routing mode updated')
+      toast.success('Modo de enrutamiento actualizado')
     } catch (error: any) {
       console.error('save routing mode error', error)
       toast.error(error?.message || 'Unable to save mode')
@@ -280,7 +280,7 @@ export default function ControlCenterClient() {
 
   const bulkAssignToAgent = useCallback(async (agent: Suggestion) => {
     if (selectedLeadIds.size === 0) {
-      toast.error('No leads selected')
+      toast.error('No hay leads seleccionados')
       return
     }
 
