@@ -353,16 +353,16 @@ export default function RevenueClient() {
         <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Create Subscription Type</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input value={newPlan.name} onChange={(e) => setNewPlan((prev) => ({ ...prev, name: e.target.value }))} placeholder="Plan name" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input value={newPlan.name} onChange={(e) => setNewPlan((prev) => ({ ...prev, name: e.target.value }))} placeholder="Nombre del plan" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
             <select value={newPlan.interval} onChange={(e) => setNewPlan((prev) => ({ ...prev, interval: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-lg text-sm" aria-label="Plan interval">
               <option value="monthly">Monthly</option>
               <option value="quarterly">Quarterly</option>
               <option value="yearly">Yearly</option>
             </select>
-            <input type="number" value={newPlan.amount} onChange={(e) => setNewPlan((prev) => ({ ...prev, amount: Number(e.target.value || 0) }))} placeholder="Amount" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
-            <input value={newPlan.currency} onChange={(e) => setNewPlan((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))} placeholder="Currency" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
-            <input value={newPlan.stripePriceId} onChange={(e) => setNewPlan((prev) => ({ ...prev, stripePriceId: e.target.value }))} placeholder="Stripe Price ID (optional)" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
-            <input value={newPlan.description} onChange={(e) => setNewPlan((prev) => ({ ...prev, description: e.target.value }))} placeholder="Description" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
+            <input type="number" value={newPlan.amount} onChange={(e) => setNewPlan((prev) => ({ ...prev, amount: Number(e.target.value || 0) }))} placeholder="Monto" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input value={newPlan.currency} onChange={(e) => setNewPlan((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))} placeholder="Moneda" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input value={newPlan.stripePriceId} onChange={(e) => setNewPlan((prev) => ({ ...prev, stripePriceId: e.target.value }))} placeholder="Stripe Price ID (opcional)" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
+            <input value={newPlan.description} onChange={(e) => setNewPlan((prev) => ({ ...prev, description: e.target.value }))} placeholder="Descripción" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
           </div>
           <button onClick={createPlan} disabled={savingPlan} className="px-4 py-2 rounded-lg bg-[#0B2545] text-white hover:bg-[#133a66] disabled:opacity-60 text-sm">
             {savingPlan ? 'Creating...' : 'Create Plan'}
@@ -396,7 +396,7 @@ export default function RevenueClient() {
         <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Send Subscription Request & Credentials</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input value={newRequest.name} onChange={(e) => setNewRequest((prev) => ({ ...prev, name: e.target.value }))} placeholder="Full name" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input value={newRequest.name} onChange={(e) => setNewRequest((prev) => ({ ...prev, name: e.target.value }))} placeholder="Nombre completo" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
             <input value={newRequest.email} onChange={(e) => setNewRequest((prev) => ({ ...prev, email: e.target.value }))} placeholder="Email" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
             <select value={newRequest.role} onChange={(e) => setNewRequest((prev) => ({ ...prev, role: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-lg text-sm" aria-label="Role">
               <option value="agent">Agent</option>
@@ -409,10 +409,10 @@ export default function RevenueClient() {
                 <option key={plan.id} value={plan.id}>{plan.name} ({plan.currency} {plan.amount})</option>
               ))}
             </select>
-            <input value={newRequest.phone} onChange={(e) => setNewRequest((prev) => ({ ...prev, phone: e.target.value }))} placeholder="Phone" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
-            <input value={newRequest.company} onChange={(e) => setNewRequest((prev) => ({ ...prev, company: e.target.value }))} placeholder="Company" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
-            <input value={newRequest.contactPerson} onChange={(e) => setNewRequest((prev) => ({ ...prev, contactPerson: e.target.value }))} placeholder="Contact person" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
-            <input value={newRequest.notes} onChange={(e) => setNewRequest((prev) => ({ ...prev, notes: e.target.value }))} placeholder="Internal notes" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
+            <input value={newRequest.phone} onChange={(e) => setNewRequest((prev) => ({ ...prev, phone: e.target.value }))} placeholder="Teléfono" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input value={newRequest.company} onChange={(e) => setNewRequest((prev) => ({ ...prev, company: e.target.value }))} placeholder="Empresa" className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <input value={newRequest.contactPerson} onChange={(e) => setNewRequest((prev) => ({ ...prev, contactPerson: e.target.value }))} placeholder="Persona de contacto" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
+            <input value={newRequest.notes} onChange={(e) => setNewRequest((prev) => ({ ...prev, notes: e.target.value }))} placeholder="Notas internas" className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-2" />
           </div>
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input type="checkbox" checked={newRequest.createCredentials} onChange={(e) => setNewRequest((prev) => ({ ...prev, createCredentials: e.target.checked }))} />
