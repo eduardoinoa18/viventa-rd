@@ -115,15 +115,15 @@ export default function AutomationHistoryPage() {
                 <thead className="border-b border-gray-100 bg-gray-50">
                   <tr>
                     <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Fecha</th>
-                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">Broker Checked</th>
-                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">B. Overdue</th>
-                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">B. Attention</th>
-                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">B. Tasks</th>
-                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">Const. Checked</th>
-                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">C. Overdue</th>
-                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">C. Attention</th>
-                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">C. Tasks</th>
-                    <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Run ID</th>
+                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">Broker verificado</th>
+                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">B. Vencido</th>
+                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">B. Atención</th>
+                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">B. Tareas</th>
+                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">Const. Verificado</th>
+                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">C. Vencido</th>
+                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">C. Atención</th>
+                    <th className="px-3 py-2.5 text-right font-semibold text-gray-600">C. Tareas</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-gray-600">ID de ejecución</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">

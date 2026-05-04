@@ -49,7 +49,7 @@ export default function ProfessionalContactForm({ locale, source = 'professional
         submit: 'Send',
         sending: 'Sending…',
         success: 'Thanks! We will contact you shortly.',
-        error: 'Something went wrong. Please try again.',
+        error: 'Algo salió mal. Inténtalo de nuevo.',
         required: 'This field is required',
         privacy: 'privacy policy',
       },

@@ -267,7 +267,7 @@ export default function KanbanBoard({ deals, onStageChange, onCardClick, loading
   }, [pendingMove, lostReason, applyStageMove])
 
   if (loading) {
-    return <div className="flex h-64 items-center justify-center text-sm text-gray-500">Loading pipeline...</div>
+    return <div className="flex h-64 items-center justify-center text-sm text-gray-500">Cargando pipeline...</div>
   }
 
   if (error) {
@@ -311,7 +311,7 @@ export default function KanbanBoard({ deals, onStageChange, onCardClick, loading
               onChange={(e) => setLostReason(e.target.value)}
               rows={4}
               className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              placeholder="Ejemplo: Cliente eligio otra propiedad por presupuesto"
+              placeholder="Ejemplo: Cliente eligió otra propiedad por presupuesto"
             />
             <div className="mt-3 flex justify-end gap-2">
               <button

@@ -221,31 +221,31 @@ export default function MasterOverviewPage() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
           <FiActivity className="text-[#00A676]" />
-          Platform Today
+          Platform hoy
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <div className="text-xs text-gray-500">Unread Notifications</div>
+            <div className="text-xs text-gray-500">Notificaciones sin leer</div>
             <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.unreadNotifications}</div>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <div className="text-xs text-gray-500">Unread Activity</div>
+            <div className="text-xs text-gray-500">Actividad sin leer</div>
             <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.unreadActivity}</div>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <div className="text-xs text-gray-500">Deals Opened</div>
+            <div className="text-xs text-gray-500">Negocios abiertos</div>
             <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.todayDealsOpened}</div>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <div className="text-xs text-gray-500">Reservations</div>
+            <div className="text-xs text-gray-500">Reservas</div>
             <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.todayReservations}</div>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <div className="text-xs text-gray-500">Documents</div>
+            <div className="text-xs text-gray-500">Documentos</div>
             <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.todayDocuments}</div>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <div className="text-xs text-gray-500">Transactions</div>
+            <div className="text-xs text-gray-500">Transacciones</div>
             <div className="text-2xl font-bold text-[#0B2545] mt-1">{activitySummary.todayTransactions}</div>
           </div>
         </div>
@@ -255,47 +255,47 @@ export default function MasterOverviewPage() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
           <FiHome className="text-[#00A676]" />
-          Property Inventory Status
+          Inventario de propiedades
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Total Properties */}
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Total Properties</span>
+              <span className="text-white/80 text-sm font-medium">Total de propiedades</span>
               <FiHome className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold">{stats.totalProperties}</div>
-            <div className="text-white/70 text-xs mt-2">All inventory</div>
+            <div className="text-white/70 text-xs mt-2">Todo el inventario</div>
           </div>
 
           {/* Approved/Active */}
           <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Published</span>
+              <span className="text-white/80 text-sm font-medium">Publicadas</span>
               <FiCheckCircle className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold">{stats.approvedProperties}</div>
-            <div className="text-white/70 text-xs mt-2">status = active</div>
+            <div className="text-white/70 text-xs mt-2">estado = activo</div>
           </div>
 
           {/* Pending Approval */}
           <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Pending Review</span>
+              <span className="text-white/80 text-sm font-medium">Pendiente de revisión</span>
               <FiClock className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold">{stats.pendingApprovals}</div>
-            <div className="text-white/70 text-xs mt-2">Awaiting moderation</div>
+            <div className="text-white/70 text-xs mt-2">Pendiente de moderación</div>
           </div>
 
           {/* Rejected */}
           <div className="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Rejected</span>
+              <span className="text-white/80 text-sm font-medium">Rechazadas</span>
               <FiXCircle className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold">{stats.rejectedProperties}</div>
-            <div className="text-white/70 text-xs mt-2">status = rejected</div>
+            <div className="text-white/70 text-xs mt-2">estado = rechazado</div>
           </div>
         </div>
 
@@ -304,34 +304,34 @@ export default function MasterOverviewPage() {
           {/* Draft */}
           <div className="bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Draft</span>
+              <span className="text-white/80 text-sm font-medium">Borrador</span>
               <FiHome className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold">{stats.draftProperties}</div>
-            <div className="text-white/70 text-xs mt-2">Incomplete listings</div>
+            <div className="text-white/70 text-xs mt-2">Listados incompletos</div>
           </div>
 
           {/* This Week */}
           <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">This Week</span>
+              <span className="text-white/80 text-sm font-medium">Esta semana</span>
               <FiActivity className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold">{stats.thisWeekProperties}</div>
-            <div className="text-white/70 text-xs mt-2">New submissions</div>
+            <div className="text-white/70 text-xs mt-2">Nuevas publicaciones</div>
           </div>
 
           {/* Quick Access */}
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Quick Action</span>
+              <span className="text-white/80 text-sm font-medium">Acción rápida</span>
               <FiActivity className="text-3xl opacity-80" />
             </div>
             <Link
               href="/master/listings"
               className="inline-block mt-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-colors text-sm"
             >
-              Review Queue →
+              Cola de revisión →
             </Link>
           </div>
         </div>
@@ -341,43 +341,43 @@ export default function MasterOverviewPage() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
           <FiActivity className="text-[#00A676]" />
-          Leads & Conversion
+          Leads y conversión
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div className="bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">{timeWindow==='all' ? 'Total Leads' : 'New Leads'}</span>
+              <span className="text-white/80 text-sm font-medium">{timeWindow==='all' ? 'Total de leads' : 'Nuevos leads'}</span>
               <FiUsers className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold mb-1">{timeWindow==='all' ? stats.leads : stats.newLeads}</div>
-            <div className="text-white/70 text-xs">{timeWindow==='all' ? 'All sources' : 'Within selected window'}</div>
+            <div className="text-white/70 text-xs">{timeWindow==='all' ? 'Todas las fuentes' : 'Dentro de la ventana seleccionada'}</div>
           </div>
           
           <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Property Views</span>
+              <span className="text-white/80 text-sm font-medium">Vistas de propiedades</span>
               <FiHome className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold mb-1">{stats.conversionMetrics.window.views.toLocaleString()}</div>
-            <div className="text-white/70 text-xs">{timeWindow==='all' ? 'All time' : 'Within selected window'}</div>
+            <div className="text-white/70 text-xs">{timeWindow==='all' ? 'Historial completo' : 'Dentro de la ventana seleccionada'}</div>
           </div>
           
           <div className="bg-gradient-to-br from-sky-500 to-sky-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Contact Rate</span>
+              <span className="text-white/80 text-sm font-medium">Tasa de contacto</span>
               <FiActivity className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold mb-1">{stats.conversionMetrics.window.viewToContactRate}</div>
-            <div className="text-white/70 text-xs">Views → Contacts</div>
+            <div className="text-white/70 text-xs">Vistas → Contactos</div>
           </div>
           
           <div className="bg-gradient-to-br from-violet-500 to-violet-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Lead Rate</span>
+              <span className="text-white/80 text-sm font-medium">Tasa de leads</span>
               <FiClock className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold mb-1">{stats.conversionMetrics.window.contactToLeadRate}</div>
-            <div className="text-white/70 text-xs">Contacts → Leads</div>
+            <div className="text-white/70 text-xs">Contactos → Leads</div>
           </div>
         </div>
       </section>
@@ -386,76 +386,76 @@ export default function MasterOverviewPage() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
           <FiUserPlus className="text-[#00A676]" />
-          Professional Network
+          Red de profesionales
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Active Agents</span>
+              <span className="text-white/80 text-sm font-medium">Agentes activos</span>
               <FiUserPlus className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold mb-1">{stats.totalAgents}</div>
-            <div className="text-white/70 text-xs">With credentials issued</div>
+            <div className="text-white/70 text-xs">Con credenciales emitidas</div>
           </div>
           
           <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Active Brokers</span>
+              <span className="text-white/80 text-sm font-medium">Brokers activos</span>
               <FiUsers className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold mb-1">{stats.totalBrokers}</div>
-            <div className="text-white/70 text-xs">Managing teams</div>
+            <div className="text-white/70 text-xs">Gestionando equipos</div>
           </div>
           
           <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Pending Applications</span>
+              <span className="text-white/80 text-sm font-medium">Solicitudes pendientes</span>
               <FiClock className="text-3xl opacity-80" />
             </div>
             <div className="text-4xl font-bold mb-1">{stats.pendingApplications}</div>
-            <div className="text-white/70 text-xs">Awaiting review</div>
+            <div className="text-white/70 text-xs">Pendiente de revisión</div>
           </div>
         </div>
       </section>
 
       {/* Growth & Performance */}
       <section className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Is Viventa Growing?</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">¿Viventa está creciendo?</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div className={`rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1 ${stats.growthMetrics.isGrowing ? 'bg-gradient-to-br from-green-500 to-green-600' : 'bg-gradient-to-br from-red-500 to-red-600'} text-white`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Platform Status</span>
+              <span className="text-white/80 text-sm font-medium">Estado de la plataforma</span>
               <FiActivity className="text-3xl opacity-80" />
             </div>
-            <div className="text-3xl font-bold mb-1">{stats.growthMetrics.isGrowing ? '✓ Growing' : '✗ Declining'}</div>
-            <div className="text-white/70 text-xs">Network health</div>
+            <div className="text-3xl font-bold mb-1">{stats.growthMetrics.isGrowing ? '✓ Creciendo' : '✗ Decreciendo'}</div>
+            <div className="text-white/70 text-xs">Salud de la red</div>
           </div>
 
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Leads Growth</span>
+              <span className="text-white/80 text-sm font-medium">Crecimiento de leads</span>
               <FiUsers className="text-3xl opacity-80" />
             </div>
             <div className="text-3xl font-bold mb-1">{stats.growthMetrics.leadsGrowth > 0 ? '+' : ''}{stats.growthMetrics.leadsGrowth}%</div>
-            <div className="text-white/70 text-xs">vs previous period</div>
+            <div className="text-white/70 text-xs">vs. período anterior</div>
           </div>
 
           <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">User Growth</span>
+              <span className="text-white/80 text-sm font-medium">Crecimiento de usuarios</span>
               <FiUserPlus className="text-3xl opacity-80" />
             </div>
             <div className="text-3xl font-bold mb-1">{stats.growthMetrics.usersGrowth > 0 ? '+' : ''}{stats.growthMetrics.usersGrowth}%</div>
-            <div className="text-white/70 text-xs">Total registrations</div>
+            <div className="text-white/70 text-xs">Total de registros</div>
           </div>
 
           <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-xl shadow-lg p-6 transition-all hover:shadow-2xl hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm font-medium">Revenue Growth</span>
+              <span className="text-white/80 text-sm font-medium">Crecimiento de ingresos</span>
               <FiDollarSign className="text-3xl opacity-80" />
             </div>
             <div className="text-3xl font-bold mb-1">{stats.growthMetrics.revenueGrowth > 0 ? '+' : ''}{stats.growthMetrics.revenueGrowth}%</div>
-            <div className="text-white/70 text-xs">Monthly trend</div>
+            <div className="text-white/70 text-xs">Tendencia mensual</div>
           </div>
         </div>
       </section>
@@ -463,15 +463,15 @@ export default function MasterOverviewPage() {
       {/* Top Brokers This Month */}
       {stats.topBrokers.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Top performing brokers</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Mejores brokers del mes</h2>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-semibold">Broker</th>
-                  <th className="px-6 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-semibold">Leads This Month</th>
-                  <th className="px-6 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-semibold">Conversion Rate</th>
-                  <th className="px-6 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-semibold">Revenue</th>
+                  <th className="px-6 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-semibold">Leads este mes</th>
+                  <th className="px-6 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-semibold">Tasa de conversión</th>
+                  <th className="px-6 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-semibold">Ingresos</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -492,11 +492,11 @@ export default function MasterOverviewPage() {
       {/* Lead Velocity & Registration Velocity Charts */}
       {(stats.leadVelocity.length > 0 || stats.registrationVelocity.length > 0) && (
         <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Velocity & Momentum</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Velocidad y momentum</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {stats.leadVelocity.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Lead velocity (last 7 days)</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Velocidad de leads (últimos 7 días)</h3>
                 <div className="space-y-3">
                   {stats.leadVelocity.map((day, idx) => {
                     const maxCount = Math.max(...stats.leadVelocity.map(d => d.count), 1)
@@ -514,7 +514,7 @@ export default function MasterOverviewPage() {
             )}
             {stats.registrationVelocity.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Registration velocity (last 7 days)</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Velocidad de registros (últimos 7 días)</h3>
                 <div className="space-y-3">
                   {stats.registrationVelocity.map((day, idx) => {
                     const maxCount = Math.max(...stats.registrationVelocity.map(d => d.count), 1)
@@ -536,37 +536,37 @@ export default function MasterOverviewPage() {
 
       {/* Quick Actions */}
       <section>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Quick Actions</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Acciones rápidas</h2>
         <div className="flex gap-3 flex-wrap">
           <Link 
             href="/master/listings" 
             className="px-6 py-3 bg-gradient-to-r from-[#00A6A6] to-[#00C896] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
           >
-            <FiHome /> Review Listings
+            <FiHome /> Revisar listados
           </Link>
           <Link 
             href="/master/applications" 
             className="px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
           >
-            <FiClock /> Review Applications
+            <FiClock /> Revisar solicitudes
           </Link>
           <Link 
             href="/master/users?invite=agent" 
             className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
           >
-            <FiUsers /> Invite Agent
+            <FiUsers /> Invitar agente
           </Link>
           <Link 
             href="/master/users?invite=broker" 
             className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
           >
-            <FiUsers /> Invite Broker
+            <FiUsers /> Invitar broker
           </Link>
           <Link 
             href="/master/recommendations" 
             className="px-6 py-3 bg-gradient-to-r from-[#0B2545] to-[#1d4f7a] text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
           >
-            <FiMail /> Recommendation Pipeline
+            <FiMail /> Pipeline de recomendaciones
           </Link>
         </div>
       </section>

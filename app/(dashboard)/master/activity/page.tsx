@@ -153,7 +153,7 @@ export default function MasterActivityPage() {
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
               aria-label="Filter entity type"
             >
-              <option value="all">All Entities</option>
+              <option value="all">Todas las entidades</option>
               {entityTypeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
           </div>
@@ -174,9 +174,9 @@ export default function MasterActivityPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
-                  <tr><td colSpan={6} className="p-5 text-center text-gray-500">Loading activity events...</td></tr>
+                  <tr><td colSpan={6} className="p-5 text-center text-gray-500">Cargando eventos de actividad...</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={6} className="p-5 text-center text-gray-500">No activity found</td></tr>
+                  <tr><td colSpan={6} className="p-5 text-center text-gray-500">Sin actividad encontrada</td></tr>
                 ) : (
                   filtered.map((event) => (
                     <tr key={event.id} className="hover:bg-gray-50 align-top">

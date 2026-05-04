@@ -302,7 +302,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                 value={lostReasonDraft}
                 onChange={(e) => setLostReasonDraft(e.target.value)}
                 className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                placeholder="Motivo de perdida"
+                placeholder="Motivo de pérdida"
               />
             )}
           </div>

@@ -362,7 +362,7 @@ export default function MasterUserDetailPage() {
                 </div>
 
                 {timelineLoading ? (
-                  <p className="text-sm text-gray-500">Loading activity timeline...</p>
+                  <p className="text-sm text-gray-500">Cargando historial de actividad...</p>
                 ) : timelineError ? (
                   <p className="text-sm text-red-600">{timelineError}</p>
                 ) : timelineItems.length === 0 ? (

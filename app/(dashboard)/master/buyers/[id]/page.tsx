@@ -203,11 +203,11 @@ export default function BuyerDetailPage() {
 
         {loading ? (
           <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500">
-            Loading buyer data...
+            Cargando datos del comprador...
           </div>
         ) : !buyer ? (
           <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500">
-            Buyer not found.
+            Comprador no encontrado.
           </div>
         ) : (
           <>
@@ -215,7 +215,7 @@ export default function BuyerDetailPage() {
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
                   <h1 className="text-3xl font-bold text-[#0B2545]">{buyer.name}</h1>
-                  <p className="mt-1 text-sm text-gray-500">Buyer profile and criteria</p>
+                  <p className="mt-1 text-sm text-gray-500">Perfil del comprador y criterios</p>
                 </div>
                 <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
                   {buyer.status || 'active'}
@@ -356,12 +356,12 @@ export default function BuyerDetailPage() {
             <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <FiBookmark className="text-[#00A676]" />
-                <h2 className="text-xl font-semibold text-[#0B2545]">Saved Searches</h2>
+                <h2 className="text-xl font-semibold text-[#0B2545]">Búsquedas guardadas</h2>
                 <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">{savedSearches.length}</span>
               </div>
               {savedSearches.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500">
-                  No saved searches for this buyer.
+                  Sin búsquedas guardadas para este comprador.
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
@@ -372,13 +372,13 @@ export default function BuyerDetailPage() {
                           <FiSearch className="text-gray-400 text-xs" />
                           <span className="font-medium text-[#0B2545] text-sm">{s.label || s.id}</span>
                           {s.status === 'paused' && (
-                            <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">paused</span>
+                            <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">pausada</span>
                           )}
                           {!s.marketingOptIn && (
-                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">mktg off</span>
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">mktg desact.</span>
                           )}
                         </div>
-                        <div className="mt-1 text-xs text-gray-500">Frequency: {s.frequency || 'off'}</div>
+                        <div className="mt-1 text-xs text-gray-500">Frecuencia: {s.frequency || 'desactivada'}</div>
                         {s.criteria && Object.keys(s.criteria).length > 0 && (
                           <div className="mt-1 flex flex-wrap gap-1">
                             {Object.entries(s.criteria).slice(0, 6).map(([k, v]) => v ? (
@@ -396,15 +396,15 @@ export default function BuyerDetailPage() {
 
             <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-[#0B2545]">Matching Listings</h2>
+                <h2 className="text-xl font-semibold text-[#0B2545]">Propiedades coincidentes</h2>
                 <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                  {matchesCount} matches
+                  {matchesCount} coincidencias
                 </span>
               </div>
 
               {matches.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
-                  No matching listings found for current criteria.
+                  Sin propiedades coincidentes para los criterios actuales.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

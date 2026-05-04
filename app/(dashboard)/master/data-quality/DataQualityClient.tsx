@@ -157,7 +157,7 @@ export default function DataQualityClient() {
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Lowest Completeness Listings</h2>
           <div className="mt-3 space-y-2">
             {data.lowestQualityListings.length === 0 ? (
-              <div className="text-xs text-gray-500">No listings available for quality scoring.</div>
+              <div className="text-xs text-gray-500">Sin propiedades disponibles para calificación de calidad.</div>
             ) : (
               data.lowestQualityListings.map((listing) => (
                 <div key={listing.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 px-3 py-2">

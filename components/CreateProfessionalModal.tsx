@@ -29,17 +29,17 @@ type ProfessionalFormData = {
 }
 
 const SPECIALTIES_OPTIONS = [
-  'Residential Sales',
-  'Commercial Real Estate',
-  'Luxury Properties',
-  'Investment Properties',
-  'Property Management',
-  'New Construction',
-  'Land Sales',
-  'Vacation Rentals',
+  'Ventas residenciales',
+  'Bienes raíces comerciales',
+  'Propiedades de lujo',
+  'Propiedades de inversión',
+  'Administración de propiedades',
+  'Construcción nueva',
+  'Venta de terrenos',
+  'Alquileres vacacionales',
 ]
 
-const LANGUAGES_OPTIONS = ['Spanish', 'English', 'French', 'Italian', 'Portuguese', 'German', 'Chinese']
+const LANGUAGES_OPTIONS = ['Español', 'Inglés', 'Francés', 'Italiano', 'Portugués', 'Alemán', 'Chino']
 
 type Props = {
   onClose: () => void
@@ -116,9 +116,9 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
         <div className="sticky top-0 bg-gradient-to-r from-[#0B2545] to-[#134074] text-white p-6 rounded-t-xl">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">Create Professional Account</h2>
+              <h2 className="text-2xl font-bold">Crear cuenta profesional</h2>
               <p className="text-white/80 text-sm mt-1">
-                {formData.role === 'agent' ? 'Add a new agent' : 'Add a new broker'} to the platform
+                {formData.role === 'agent' ? 'Agregar un nuevo agente' : 'Agregar un nuevo broker'} a la plataforma
               </p>
             </div>
             <button
@@ -156,9 +156,9 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
             ))}
           </div>
           <div className="flex justify-between mt-2 text-xs text-white/70">
-            <span>Personal Info</span>
-            <span>Professional Details</span>
-            <span>Business Info</span>
+            <span>Datos personales</span>
+            <span>Detalles profesionales</span>
+            <span>Info. del negocio</span>
           </div>
         </div>
 
@@ -168,14 +168,14 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
             <div className="space-y-4">
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mb-6">
                 <p className="text-sm text-blue-800">
-                  <strong>Step 1:</strong> Enter the professional&apos;s basic contact information
+                  <strong>Paso 1:</strong> Ingresa la información de contacto básica del profesional
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Role <span className="text-red-500">*</span>
+                    Rol <span className="text-red-500">*</span>
                   </label>
                   <div className="flex gap-4">
                     <label className="flex-1">
@@ -187,7 +187,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                         onChange={(e) => updateField('role', e.target.value)}
                         className="mr-2"
                       />
-                      <span className="text-gray-700">Real Estate Agent</span>
+                      <span className="text-gray-700">Agente inmobiliario</span>
                     </label>
                     <label className="flex-1">
                       <input
@@ -206,7 +206,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                 <div className="md:col-span-2">
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                     <FiUser className="inline mr-2" />
-                    Full Name <span className="text-red-500">*</span>
+                    Nombre completo <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="name"
@@ -222,7 +222,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                     <FiMail className="inline mr-2" />
-                    Email <span className="text-red-500">*</span>
+                    Correo electrónico <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="email"
@@ -238,7 +238,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                     <FiPhone className="inline mr-2" />
-                    Phone <span className="text-red-500">*</span>
+                    Teléfono <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="phone"
@@ -259,7 +259,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
             <div className="space-y-4">
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mb-6">
                 <p className="text-sm text-blue-800">
-                  <strong>Step 2:</strong> Professional credentials and expertise
+                  <strong>Paso 2:</strong> Credenciales y experiencia profesional
                 </p>
               </div>
 
@@ -267,7 +267,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                 <div>
                   <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700 mb-2">
                     <FiAward className="inline mr-2" />
-                    License Number <span className="text-gray-400 text-xs">(Optional)</span>
+                    Número de licencia <span className="text-gray-400 text-xs">(Opcional)</span>
                   </label>
                   <input
                     id="licenseNumber"
@@ -275,14 +275,14 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                     value={formData.licenseNumber}
                     onChange={(e) => updateField('licenseNumber', e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
-                    placeholder="RE-12345 (if applicable)"
+                    placeholder="RE-12345 (si aplica)"
                   />
                 </div>
 
                 <div>
                   <label htmlFor="yearsExperience" className="block text-sm font-medium text-gray-700 mb-2">
                     <FiBriefcase className="inline mr-2" />
-                    Years of Experience <span className="text-red-500">*</span>
+                    Años de experiencia <span className="text-red-500">*</span>
                   </label>
                   <select
                     id="yearsExperience"
@@ -291,18 +291,18 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                     required
                   >
-                    <option value="">Select...</option>
-                    <option value="0-2">0-2 years</option>
-                    <option value="3-5">3-5 years</option>
-                    <option value="6-10">6-10 years</option>
-                    <option value="11-15">11-15 years</option>
-                    <option value="16+">16+ years</option>
+                    <option value="">Seleccionar...</option>
+                    <option value="0-2">0-2 años</option>
+                    <option value="3-5">3-5 años</option>
+                    <option value="6-10">6-10 años</option>
+                    <option value="11-15">11-15 años</option>
+                    <option value="16+">16+ años</option>
                   </select>
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Specialties <span className="text-red-500">*</span> (Select at least one)
+                    Especialidades <span className="text-red-500">*</span> (Selecciona al menos una)
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {SPECIALTIES_OPTIONS.map((specialty) => (
@@ -355,7 +355,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
 
                 <div className="md:col-span-2">
                   <label htmlFor="certifications" className="block text-sm font-medium text-gray-700 mb-2">
-                    Certifications (Optional)
+                    Certificaciones (Opcional)
                   </label>
                   <textarea
                     id="certifications"
@@ -375,7 +375,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
             <div className="space-y-4">
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mb-6">
                 <p className="text-sm text-blue-800">
-                  <strong>Step 3:</strong> Business information and profile
+                  <strong>Paso 3:</strong> Información del negocio y perfil
                 </p>
               </div>
 
@@ -383,7 +383,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                 <div>
                   <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
                     <FiBriefcase className="inline mr-2" />
-                    Company/Brokerage Name
+                    Empresa/Nombre de la corredora
                   </label>
                   <input
                     id="company"
@@ -398,7 +398,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                 <div>
                   <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
                     <FiGlobe className="inline mr-2" />
-                    Website (Optional)
+                    Sitio web (Opcional)
                   </label>
                   <input
                     id="website"
@@ -413,7 +413,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                 <div className="md:col-span-2">
                   <label htmlFor="officeAddress" className="block text-sm font-medium text-gray-700 mb-2">
                     <FiMapPin className="inline mr-2" />
-                    Office Address
+                    Dirección de la oficina
                   </label>
                   <input
                     id="officeAddress"
@@ -427,7 +427,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
 
                 <div className="md:col-span-2">
                   <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
-                    Professional Bio (Optional)
+                    Biografía profesional (Opcional)
                   </label>
                   <textarea
                     id="bio"
@@ -435,15 +435,15 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                     onChange={(e) => updateField('bio', e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
                     rows={4}
-                    placeholder="Tell us about your experience, achievements, and what makes you stand out..."
+                    placeholder="Cuéntanos sobre tu experiencia, logros y qué te hace destacar..."
                   />
                 </div>
               </div>
 
               <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded mt-6">
                 <p className="text-sm text-green-800">
-                  ✅ <strong>Ready to submit!</strong> The professional will receive an email with their login
-                  credentials and password setup link.
+                  ✅ <strong>¡Listo para enviar!</strong> El profesional recibirá un correo con sus credenciales
+                  de acceso y enlace para configurar su contraseña.
                 </p>
               </div>
             </div>
@@ -458,7 +458,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                   onClick={() => setStep(step - 1)}
                   className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
                 >
-                  Previous
+                  Anterior
                 </button>
               )}
             </div>
@@ -469,7 +469,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                 onClick={onClose}
                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
               >
-                Cancel
+                Cancelar
               </button>
 
               {step < 3 ? (
@@ -479,7 +479,7 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                   disabled={!canProceed()}
                   className="px-6 py-2 bg-[#00A676] text-white rounded-lg font-semibold hover:bg-[#008F64] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Next Step
+                  Siguiente paso
                 </button>
               ) : (
                 <button
@@ -490,12 +490,12 @@ export default function CreateProfessionalModal({ onClose, onSubmit, initialRole
                   {submitting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Creating Account...
+                      Creando cuenta...
                     </>
                   ) : (
                     <>
                       <FiUser />
-                      Create Professional
+                      Crear profesional
                     </>
                   )}
                 </button>

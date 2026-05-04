@@ -104,7 +104,7 @@ export default function BrokerCommissionsPage() {
           <p className="mt-1 text-sm text-gray-600">Track paid, pending, and projected commissions for your office.</p>
         </div>
         <Link href="/dashboard/broker/overview" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-[#0B2545] hover:bg-gray-50">
-          <FiArrowLeft /> Back to overview
+          <FiArrowLeft /> Volver al resumen
         </Link>
       </div>
 
@@ -129,7 +129,7 @@ export default function BrokerCommissionsPage() {
           <span className="text-xs text-gray-500">{summary.totalTransactions} total deals</span>
         </div>
 
-        {loading ? <p className="px-4 py-4 text-sm text-gray-500">Loading commissions...</p> : null}
+        {loading ? <p className="px-4 py-4 text-sm text-gray-500">Cargando comisiones...</p> : null}
         {!loading && error ? <p className="px-4 py-4 text-sm text-red-600">{error}</p> : null}
         {!loading && !error && commissionRows.length === 0 ? (
           <p className="px-4 py-4 text-sm text-gray-500">No commission rows available yet.</p>

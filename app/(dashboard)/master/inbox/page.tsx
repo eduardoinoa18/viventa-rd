@@ -440,7 +440,7 @@ export default function MasterInboxPage() {
                               Open Chat
                             </button>
                           ) : (
-                            <span className="text-[11px] text-gray-400">No thread yet</span>
+                            <span className="text-[11px] text-gray-400">Sin conversación aún</span>
                           )}
                         </td>
                       </tr>

@@ -60,10 +60,10 @@ export default function OverviewClient() {
   const [data, setData] = useState<OverviewData | null>(null)
 
   const intelligenceTabs = [
-    { key: 'overview', label: 'Executive Overview' },
-    { key: 'growth', label: 'Growth Engine' },
-    { key: 'data-quality', label: 'Data Quality' },
-    { key: 'marketplace-intelligence', label: 'Marketplace Intelligence' },
+    { key: 'overview', label: 'Resumen ejecutivo' },
+    { key: 'growth', label: 'Motor de crecimiento' },
+    { key: 'data-quality', label: 'Calidad de datos' },
+    { key: 'marketplace-intelligence', label: 'Inteligencia de mercado' },
   ] as const
 
   const activeIntelligenceTab = useMemo(() => {
@@ -93,12 +93,12 @@ export default function OverviewClient() {
       const json = await res.json()
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || 'Failed to fetch overview')
+        throw new Error(json?.error || 'Error al obtener el resumen')
       }
 
       setData(json.data)
     } catch (err: any) {
-      setError(err?.message || 'Unknown error')
+      setError(err?.message || 'Error desconocido')
     } finally {
       setLoading(false)
     }
@@ -120,7 +120,7 @@ export default function OverviewClient() {
     return (
       <div className="p-6 md:p-8">
         <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
-          Loading executive overview data...
+          Cargando resumen ejecutivo...
         </div>
       </div>
     )
@@ -130,14 +130,14 @@ export default function OverviewClient() {
     return (
       <div className="p-6 md:p-8">
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
-          <p className="text-sm font-medium text-red-700">Unable to load Executive Overview.</p>
+          <p className="text-sm font-medium text-red-700">No se pudo cargar el resumen ejecutivo.</p>
           <p className="mt-1 text-xs text-red-600">{error}</p>
           <button
             type="button"
             onClick={fetchData}
             className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
           >
-            Retry
+            Reintentar
           </button>
         </div>
       </div>
@@ -151,10 +151,10 @@ export default function OverviewClient() {
       <div className="space-y-4 p-6 md:p-8">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Intelligence Hub</h1>
-            <p className="text-sm text-gray-600 mt-1">Switch between merged intelligence modules without leaving this page.</p>
+            <h1 className="text-2xl font-bold text-gray-900">Hub de inteligencia</h1>
+            <p className="text-sm text-gray-600 mt-1">Navega entre los módulos de inteligencia sin salir de esta página.</p>
           </div>
-          <div className="text-xs text-gray-500">Updated: {generatedAtLabel || 'N/A'}</div>
+          <div className="text-xs text-gray-500">Actualizado: {generatedAtLabel || 'N/A'}</div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -179,7 +179,7 @@ export default function OverviewClient() {
               disabled={activeTabIndex <= 0}
               className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-40"
             >
-              Previous
+              Anterior
             </button>
             <button
               type="button"
@@ -187,7 +187,7 @@ export default function OverviewClient() {
               disabled={activeTabIndex >= intelligenceTabs.length - 1}
               className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-40"
             >
-              Next
+              Siguiente
             </button>
           </div>
         </div>
@@ -207,10 +207,10 @@ export default function OverviewClient() {
     <div className="space-y-6 p-6 md:p-8">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Intelligence Hub</h1>
-          <p className="text-sm text-gray-600 mt-1">Executive overview plus merged navigation for growth, data quality, and marketplace insights.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Hub de inteligencia</h1>
+          <p className="text-sm text-gray-600 mt-1">Resumen ejecutivo con navegación integrada hacia crecimiento, calidad de datos e inteligencia de mercado.</p>
         </div>
-        <div className="text-xs text-gray-500">Updated: {generatedAtLabel || 'N/A'}</div>
+        <div className="text-xs text-gray-500">Actualizado: {generatedAtLabel || 'N/A'}</div>
       </div>
 
       <section>
@@ -229,92 +229,92 @@ export default function OverviewClient() {
               {tab.label}
             </button>
           ))}
-          <Link href="/master/growth" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Open standalone pages</Link>
+          <Link href="/master/growth" className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Abrir páginas independientes</Link>
         </div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Operational Health</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Salud operacional</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <MetricCard
-            title={`SLA Compliance (<= ${data.slaHours}h)`}
+            title={`Cumplimiento de SLA (<= ${data.slaHours}h)`}
             value={`${health.slaComplianceRate}%`}
             status={getComplianceStatus(health.slaComplianceRate)}
-            hint="Leads assigned within SLA target window"
+            hint="Leads asignados dentro del objetivo de SLA"
           />
-          <MetricCard title="Avg Assignment Time" value={`${health.avgAssignmentHours}h`} hint="Lead creation to assignment latency (hours)" />
+          <MetricCard title="Tiempo promedio de asignación" value={`${health.avgAssignmentHours}h`} hint="Latencia de creación de lead a asignación (horas)" />
           <MetricCard
-            title="Escalation Rate"
+            title="Tasa de escalada"
             value={`${health.escalationRate}%`}
             status={getInverseRateStatus(health.escalationRate)}
             tone={health.escalationRate >= 25 ? 'warn' : 'default'}
-            hint="Escalated leads as share of active queue"
+            hint="Leads escalados como parte de la cola activa"
           />
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Volume & Flow</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Volumen y flujo</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <MetricCard title="Leads 7d" value={String(flow.leads7d)} hint="New leads captured in the last 7 days" />
-          <MetricCard title="Leads 30d" value={String(flow.leads30d)} hint="New leads captured in the last 30 days" />
+          <MetricCard title="Leads 7d" value={String(flow.leads7d)} hint="Nuevos leads captados en los últimos 7 días" />
+          <MetricCard title="Leads 30d" value={String(flow.leads30d)} hint="Nuevos leads captados en los últimos 30 días" />
           <MetricCard
-            title="Velocity Trend 7d"
+            title="Tendencia de velocidad 7d"
             value={`${flow.velocityTrend7dPct}%`}
             status={getTrendStatus(flow.velocityTrend7dPct)}
             tone={flow.velocityTrend7dPct < 0 ? 'warn' : 'default'}
-            hint="Week-over-week lead flow change"
+            hint="Cambio de flujo de leads semana a semana"
           />
-          <MetricCard title="Active Pipeline" value={String(flow.activePipelineCount)} hint="Leads currently in non-terminal stages" />
+          <MetricCard title="Pipeline activo" value={String(flow.activePipelineCount)} hint="Leads actualmente en etapas no terminales" />
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Performance</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Rendimiento</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-800">Conversion Funnel</h3>
+            <h3 className="text-sm font-semibold text-gray-800">Embudo de conversión</h3>
             <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <KpiPair label="Leads → Qualified" value={`${perf.leadsToQualifiedRate}%`} />
-              <KpiPair label="Qualified → Won" value={`${perf.qualifiedToDealRate}%`} />
+              <KpiPair label="Leads → Calificados" value={`${perf.leadsToQualifiedRate}%`} />
+              <KpiPair label="Calificados → Ganados" value={`${perf.qualifiedToDealRate}%`} />
             </div>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-800">Top Performers</h3>
+            <h3 className="text-sm font-semibold text-gray-800">Mejores performers</h3>
             <div className="mt-3 space-y-2 text-sm">
-              <Row label="Top Broker" value={perf.topBroker ? `${perf.topBroker.name} (${perf.topBroker.conversionRate}%)` : 'N/A'} />
-              <Row label="Top Agent" value={perf.topAgent ? `${perf.topAgent.name} (${perf.topAgent.conversionRate}%)` : 'N/A'} />
-              <Row label="Critical SLA Broker" value={perf.worstSlaBroker ? `${perf.worstSlaBroker.name} (${perf.worstSlaBroker.slaRate}% SLA)` : 'N/A'} />
+              <Row label="Mejor broker" value={perf.topBroker ? `${perf.topBroker.name} (${perf.topBroker.conversionRate}%)` : 'N/A'} />
+              <Row label="Mejor agente" value={perf.topAgent ? `${perf.topAgent.name} (${perf.topAgent.conversionRate}%)` : 'N/A'} />
+              <Row label="Broker SLA crítico" value={perf.worstSlaBroker ? `${perf.worstSlaBroker.name} (${perf.worstSlaBroker.slaRate}% SLA)` : 'N/A'} />
             </div>
           </div>
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Source / Sector Value</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Fuentes / valor por sector</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <TopListCard title="Top Sources" rows={data.valueSources.topSources} />
-          <TopListCard title="Top Sectors" rows={data.valueSources.topSectors} />
-          <TopListCard title="Top Property Types" rows={data.valueSources.topPropertyTypes} />
+          <TopListCard title="Principales fuentes" rows={data.valueSources.topSources} />
+          <TopListCard title="Principales sectores" rows={data.valueSources.topSectors} />
+          <TopListCard title="Principales tipos de propiedad" rows={data.valueSources.topPropertyTypes} />
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Risk Areas</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Áreas de riesgo</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <MetricCard
-            title="Aging > 48h"
+            title="Leads con +48h sin atención"
             value={String(data.risk.agingOver48h)}
             status={data.risk.agingOver48h > 0 ? 'risk' : 'ok'}
             tone={data.risk.agingOver48h > 0 ? 'warn' : 'default'}
-            hint="Unassigned leads older than 48 hours"
+            hint="Leads sin asignar con más de 48 horas"
           />
 
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-800">Underperforming Agents</h3>
+            <h3 className="text-sm font-semibold text-gray-800">Agentes de bajo rendimiento</h3>
             <SimplePerfList rows={data.risk.slowAgents} metric="avgLatencyHours" suffix="h" />
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-800">High Escalation Risk</h3>
+            <h3 className="text-sm font-semibold text-gray-800">Alto riesgo de escalada</h3>
             <SimplePerfList rows={data.risk.highEscalationBrokers} metric="escalationRate" suffix="%" />
           </div>
         </div>
@@ -322,7 +322,7 @@ export default function OverviewClient() {
 
       {error ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
-          Partial refresh warning: {error}
+          Advertencia de actualización parcial: {error}
         </div>
       ) : null}
     </div>
@@ -389,7 +389,7 @@ function TopListCard({ title, rows }: { title: string; rows: Array<{ label: stri
             </div>
           ))
         ) : (
-          <p className="text-xs text-gray-500">No data yet</p>
+          <p className="text-xs text-gray-500">Sin datos aún</p>
         )}
       </div>
     </div>
@@ -398,7 +398,7 @@ function TopListCard({ title, rows }: { title: string; rows: Array<{ label: stri
 
 function SimplePerfList({ rows, metric, suffix }: { rows: PerfRow[]; metric: 'avgLatencyHours' | 'escalationRate'; suffix: string }) {
   if (!rows.length) {
-    return <p className="mt-3 text-xs text-gray-500">No significant risks detected</p>
+    return <p className="mt-3 text-xs text-gray-500">Sin riesgos significativos detectados</p>
   }
 
   return (
@@ -441,7 +441,7 @@ function getStatusChipClass(status: 'ok' | 'watch' | 'risk') {
 }
 
 function statusLabel(status: 'ok' | 'watch' | 'risk') {
-  if (status === 'ok') return 'Healthy'
-  if (status === 'watch') return 'Watch'
-  return 'Risk'
+  if (status === 'ok') return 'Saludable'
+  if (status === 'watch') return 'Atención'
+  return 'Riesgo'
 }

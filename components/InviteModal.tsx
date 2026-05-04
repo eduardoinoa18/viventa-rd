@@ -239,7 +239,7 @@ export default function InviteModal({ onClose, inviteType, onSuccess }: Props) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A676] focus:border-transparent"
-                  placeholder="john@example.com"
+                  placeholder="juan@ejemplo.com"
                   required
                 />
               </div>

@@ -158,12 +158,12 @@ export default function MasterSettingsPage() {
     <main className="p-4 sm:p-6 bg-gray-50 min-h-screen">
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6">
-          <h1 className="text-2xl font-bold text-[#0B2545]">Settings</h1>
+          <h1 className="text-2xl font-bold text-[#0B2545]">Configuración</h1>
           <p className="text-sm text-gray-600 mt-1">Configuración operativa del portal maestro.</p>
         </div>
 
         <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-3">
-          <h2 className="text-lg font-semibold text-[#0B2545]">Operational profiles</h2>
+          <h2 className="text-lg font-semibold text-[#0B2545]">Perfiles operativos</h2>
           <p className="text-sm text-gray-600">Aplica una base rápida y luego ajusta detalles antes de guardar.</p>
           <div className="flex flex-wrap gap-2">
             <button
@@ -171,21 +171,21 @@ export default function MasterSettingsPage() {
               onClick={() => applyPreset('open')}
               className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
             >
-              Open growth
+              Crecimiento abierto
             </button>
             <button
               type="button"
               onClick={() => applyPreset('controlled')}
               className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
             >
-              Controlled intake
+              Entrada controlada
             </button>
             <button
               type="button"
               onClick={() => applyPreset('maintenance')}
               className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
             >
-              Maintenance lock
+              Bloqueo de mantenimiento
             </button>
           </div>
         </section>
@@ -194,7 +194,7 @@ export default function MasterSettingsPage() {
           <h2 className="text-lg font-semibold text-[#0B2545]">General</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="text-sm text-gray-700">
-              Site name
+              Nombre del sitio
               <input
                 className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
                 value={form.siteName || ''}
@@ -202,7 +202,7 @@ export default function MasterSettingsPage() {
               />
             </label>
             <label className="text-sm text-gray-700">
-              Support email
+              Correo de soporte
               <input
                 className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
                 value={form.supportEmail || ''}
@@ -216,7 +216,7 @@ export default function MasterSettingsPage() {
           <h2 className="text-lg font-semibold text-[#0B2545]">Límites y control</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <label className="text-sm text-gray-700">
-              Max properties per agent
+              Máx. propiedades por agente
               <input
                 type="number"
                 min={1}
@@ -226,7 +226,7 @@ export default function MasterSettingsPage() {
               />
             </label>
             <label className="text-sm text-gray-700">
-              Featured properties limit
+              Límite de propiedades destacadas
               <input
                 type="number"
                 min={1}
@@ -236,7 +236,7 @@ export default function MasterSettingsPage() {
               />
             </label>
             <label className="text-sm text-gray-700">
-              Escalation hours
+              Horas de escalada
               <input
                 type="number"
                 min={1}
@@ -249,16 +249,16 @@ export default function MasterSettingsPage() {
         </section>
 
         <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-3">
-          <h2 className="text-lg font-semibold text-[#0B2545]">Flags</h2>
+          <h2 className="text-lg font-semibold text-[#0B2545]">Opciones de activación</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Toggle label="Maintenance mode" checked={!!form.maintenanceMode} onChange={(v) => setBool('maintenanceMode', v)} />
-            <Toggle label="Allow registration" checked={!!form.allowRegistration} onChange={(v) => setBool('allowRegistration', v)} />
-            <Toggle label="Allow agent applications" checked={!!form.allowAgentApplications} onChange={(v) => setBool('allowAgentApplications', v)} />
-            <Toggle label="Allow broker applications" checked={!!form.allowBrokerApplications} onChange={(v) => setBool('allowBrokerApplications', v)} />
-            <Toggle label="Manual reassignment" checked={!!form.reassignmentPolicy?.manualReassignEnabled} onChange={(v) => setPolicy('manualReassignEnabled', v)} />
-            <Toggle label="Suggest new assignee" checked={!!form.reassignmentPolicy?.suggestNewAssigneeEnabled} onChange={(v) => setPolicy('suggestNewAssigneeEnabled', v)} />
-            <Toggle label="Broker fallback" checked={!!form.reassignmentPolicy?.brokerFallbackEnabled} onChange={(v) => setPolicy('brokerFallbackEnabled', v)} />
-            <Toggle label="Escalation log" checked={!!form.reassignmentPolicy?.escalationLogEnabled} onChange={(v) => setPolicy('escalationLogEnabled', v)} />
+            <Toggle label="Modo mantenimiento" checked={!!form.maintenanceMode} onChange={(v) => setBool('maintenanceMode', v)} />
+            <Toggle label="Permitir registros" checked={!!form.allowRegistration} onChange={(v) => setBool('allowRegistration', v)} />
+            <Toggle label="Permitir solicitudes de agentes" checked={!!form.allowAgentApplications} onChange={(v) => setBool('allowAgentApplications', v)} />
+            <Toggle label="Permitir solicitudes de brokers" checked={!!form.allowBrokerApplications} onChange={(v) => setBool('allowBrokerApplications', v)} />
+            <Toggle label="Reasignación manual" checked={!!form.reassignmentPolicy?.manualReassignEnabled} onChange={(v) => setPolicy('manualReassignEnabled', v)} />
+            <Toggle label="Sugerir nuevo asignado" checked={!!form.reassignmentPolicy?.suggestNewAssigneeEnabled} onChange={(v) => setPolicy('suggestNewAssigneeEnabled', v)} />
+            <Toggle label="Respaldo de broker" checked={!!form.reassignmentPolicy?.brokerFallbackEnabled} onChange={(v) => setPolicy('brokerFallbackEnabled', v)} />
+            <Toggle label="Registro de escaladas" checked={!!form.reassignmentPolicy?.escalationLogEnabled} onChange={(v) => setPolicy('escalationLogEnabled', v)} />
           </div>
         </section>
 
