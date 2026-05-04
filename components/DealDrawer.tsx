@@ -33,7 +33,7 @@ function formatDate(ts: unknown): string {
 }
 
 function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Failed to load timeline'
+  return error instanceof Error ? error.message : 'No se pudo cargar la línea de tiempo'
 }
 
 const STAGE_CONFIG: Record<TransactionStage, { label: string; color: string; bg: string; dot: string }> = {
@@ -310,13 +310,13 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
         {actionMode === 'note' && (
           <div className="border-b border-gray-100 px-5 py-3">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Deal note</p>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Nota del negocio</p>
             <textarea
               rows={3}
               value={noteDraft}
               onChange={(e) => setNoteDraft(e.target.value)}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-              placeholder="Add note..."
+              placeholder="Agregar nota..."
             />
             <div className="mt-2 flex justify-end">
               <button
@@ -325,7 +325,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                 disabled={savingAction}
                 className="rounded-lg bg-[#0B2545] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
               >
-                {savingAction ? 'Saving...' : 'Save note'}
+                {savingAction ? 'Guardando...' : 'Guardar nota'}
               </button>
             </div>
           </div>
@@ -335,7 +335,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
         <div className="flex-1 overflow-y-auto px-5 py-2">
           <Row
             icon={<FiDollarSign />}
-            label="Sale Price"
+            label="Precio de venta"
             value={
               <span className="font-bold text-[#0B2545]">
                 {formatCurrency(deal.salePrice, deal.currency)}
@@ -344,39 +344,39 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
           />
           <Row
             icon={<FiTrendingUp />}
-            label="Commission"
+            label="Comisión"
             value={
               deal.totalCommission > 0
                 ? `${formatCurrency(deal.totalCommission, deal.currency)} (${deal.commissionPercent}%)`
                 : '—'
             }
           />
-          <Row icon={<FiUser />} label="Client" value={deal.clientName} />
+          <Row icon={<FiUser />} label="Cliente" value={deal.clientName} />
           {deal.clientEmail && <Row icon={<FiFileText />} label="Email" value={deal.clientEmail} />}
-          {deal.clientPhone && <Row icon={<FiFileText />} label="Phone" value={deal.clientPhone} />}
-          <Row icon={<FiUser />} label="Agent ID" value={deal.agentId ? deal.agentId.slice(0, 16) + '…' : null} />
+          {deal.clientPhone && <Row icon={<FiFileText />} label="Teléfono" value={deal.clientPhone} />}
+          <Row icon={<FiUser />} label="ID de Agente" value={deal.agentId ? deal.agentId.slice(0, 16) + '…' : null} />
 
           {deal.projectId && (
-            <Row icon={<FiLayers />} label="Project" value={deal.projectId} />
+            <Row icon={<FiLayers />} label="Proyecto" value={deal.projectId} />
           )}
           {deal.unitId && (
-            <Row icon={<FiLayers />} label="Unit" value={deal.unitId} />
+            <Row icon={<FiLayers />} label="Unidad" value={deal.unitId} />
           )}
           {deal.listingId && (
-            <Row icon={<FiLayers />} label="Listing ID" value={deal.listingId} />
+            <Row icon={<FiLayers />} label="ID de listado" value={deal.listingId} />
           )}
 
-          <Row icon={<FiCalendar />} label="Created" value={formatDate(deal.createdAt)} />
-          <Row icon={<FiCalendar />} label="Updated" value={formatDate(deal.updatedAt)} />
+          <Row icon={<FiCalendar />} label="Creado" value={formatDate(deal.createdAt)} />
+          <Row icon={<FiCalendar />} label="Actualizado" value={formatDate(deal.updatedAt)} />
 
           <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 p-4">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Timeline</p>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Línea de tiempo</p>
             {timelineLoading ? (
-              <p className="text-sm text-gray-500">Loading activity timeline...</p>
+              <p className="text-sm text-gray-500">Cargando línea de tiempo...</p>
             ) : timelineError ? (
               <p className="text-sm text-red-600">{timelineError}</p>
             ) : timelineEvents.length === 0 ? (
-              <p className="text-sm text-gray-500">No timeline events yet.</p>
+              <p className="text-sm text-gray-500">Sin eventos en la línea de tiempo.</p>
             ) : (
               <div className="space-y-2">
                 {timelineEvents.map((event) => (
@@ -401,7 +401,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
           {noteDraft && (
             <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Notes</p>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Notas</p>
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{noteDraft}</p>
             </div>
           )}
@@ -414,7 +414,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
             className="block w-full rounded-xl bg-gradient-to-r from-[#00A676] to-[#008F64] px-4 py-2.5 text-center
               text-sm font-semibold text-white shadow-sm hover:from-[#008F64] hover:to-[#007A55] transition-all"
           >
-            Open Full Deal View
+            Ver negocio completo
           </a>
         </div>
       </div>

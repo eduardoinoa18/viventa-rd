@@ -115,14 +115,14 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name *
+              Nombre completo *
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Full name"
+              placeholder="Nombre completo"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -143,7 +143,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone
+              Teléfono
             </label>
             <input
               type="tel"
@@ -165,7 +165,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
                 name="company"
                 value={formData.company}
                 onChange={handleChange}
-                placeholder={user.role === 'agent' ? 'Broker name' : 'Company name'}
+                placeholder={user.role === 'agent' ? 'Nombre del broker' : 'Nombre de la empresa'}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

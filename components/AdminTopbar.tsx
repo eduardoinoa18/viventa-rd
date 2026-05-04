@@ -151,11 +151,11 @@ export default function AdminTopbar() {
                 </div>
                 <div className="overflow-y-auto flex-1">
                   {loading ? (
-                    <div className="p-8 text-center text-gray-500">Loading...</div>
+                    <div className="p-8 text-center text-gray-500">Cargando...</div>
                   ) : notifications.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                       <FiBell className="text-4xl mx-auto mb-2 opacity-50" />
-                      <p>No notifications</p>
+                      <p>Sin notificaciones</p>
                     </div>
                   ) : (
                     notifications.map(notif => {

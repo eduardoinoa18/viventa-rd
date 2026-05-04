@@ -97,19 +97,19 @@ export default function AdminUserDetailsModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="name" className="block text-sm text-gray-600">Name</label>
-            <input id="name" placeholder="Full name" className="mt-1 w-full px-3 py-2 border rounded" value={name} onChange={e=>setName(e.target.value)} />
+            <label htmlFor="name" className="block text-sm text-gray-600">Nombre</label>
+            <input id="name" placeholder="Nombre completo" className="mt-1 w-full px-3 py-2 border rounded" value={name} onChange={e=>setName(e.target.value)} />
           </div>
           <div>
             <label htmlFor="email" className="block text-sm text-gray-600">Email</label>
             <input id="email" placeholder="email@example.com" className="mt-1 w-full px-3 py-2 border rounded bg-gray-50" value={user.email} readOnly />
           </div>
           <div>
-            <label htmlFor="phone" className="block text-sm text-gray-600">Phone</label>
-            <input id="phone" placeholder="Phone number" className="mt-1 w-full px-3 py-2 border rounded" value={phone} onChange={e=>setPhone(e.target.value)} />
+            <label htmlFor="phone" className="block text-sm text-gray-600">Teléfono</label>
+            <input id="phone" placeholder="Teléfono" className="mt-1 w-full px-3 py-2 border rounded" value={phone} onChange={e=>setPhone(e.target.value)} />
           </div>
           <div>
-            <label htmlFor="status" className="block text-sm text-gray-600">Status</label>
+            <label htmlFor="status" className="block text-sm text-gray-600">Estado</label>
             <select id="status" className="mt-1 w-full px-3 py-2 border rounded" value={status} onChange={e=>setStatus(e.target.value)}>
               <option value="active">active</option>
               <option value="pending">pending</option>
@@ -117,8 +117,8 @@ export default function AdminUserDetailsModal({
             </select>
           </div>
           <div>
-            <label htmlFor="company" className="block text-sm text-gray-600">Company</label>
-            <input id="company" placeholder="Company" className="mt-1 w-full px-3 py-2 border rounded" value={company} onChange={e=>setCompany(e.target.value)} />
+            <label htmlFor="company" className="block text-sm text-gray-600">Empresa</label>
+            <input id="company" placeholder="Empresa" className="mt-1 w-full px-3 py-2 border rounded" value={company} onChange={e=>setCompany(e.target.value)} />
           </div>
           <div>
             <label htmlFor="brokerage" className="block text-sm text-gray-600">Brokerage</label>
@@ -126,7 +126,7 @@ export default function AdminUserDetailsModal({
           </div>
           <div className="flex items-center gap-2">
             <input id="emailVerified" type="checkbox" className="h-4 w-4" checked={emailVerified} onChange={e=>setEmailVerified(e.target.checked)} />
-            <label htmlFor="emailVerified" className="text-sm text-gray-700">Email Verified</label>
+            <label htmlFor="emailVerified" className="text-sm text-gray-700">Email verificado</label>
           </div>
           <div className="flex items-center gap-2">
             <input id="verified" type="checkbox" className="h-4 w-4" checked={verified} onChange={e=>setVerified(e.target.checked)} />
