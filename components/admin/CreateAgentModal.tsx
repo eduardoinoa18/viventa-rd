@@ -68,7 +68,7 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
     e.preventDefault()
 
     if (!formData.name.trim() || !formData.email.trim() || !formData.brokerageId) {
-      toast.error('Name, email, and broker are required')
+      toast.error('Nombre, correo y broker son requeridos')
       return
     }
 
@@ -93,7 +93,7 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
       if (!res.ok || !json.ok) {
         const issue = mapOfficeQuotaIssue(json || {}, {
           context: 'agent-seat',
-          fallbackMessage: 'Failed to create agent',
+          fallbackMessage: 'No se pudo crear el agente',
         })
         toast.error(issue.message)
         setSubmitError(issue.message)
@@ -101,14 +101,14 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
         return
       }
 
-      toast.success('Agent created and invitation sent')
+      toast.success('Agente creado e invitación enviada')
       setFormData({ name: '', email: '', phone: '', brokerageId: '' })
       onSuccess()
       onClose()
     } catch (error) {
       console.error('Error creating agent:', error)
-      toast.error('Failed to create agent')
-      setSubmitError('Failed to create agent')
+      toast.error('No se pudo crear el agente')
+      setSubmitError('No se pudo crear el agente')
       setSubmitErrorCta(null)
     } finally {
       setLoading(false)
@@ -123,7 +123,7 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <FiUserPlus className="w-5 h-5" />
-            Create Agent
+            Crear Agente
           </h2>
           <button
             onClick={onClose}
@@ -137,14 +137,14 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name *
+              Nombre completo *
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="e.g., María López"
+              placeholder="Ej: María López"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -175,7 +175,7 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">
-                {loadingBrokers ? 'Loading brokers...' : 'Select a broker'}
+                {loadingBrokers ? 'Cargando brokers...' : 'Seleccionar broker'}
               </option>
               {brokers.map((broker) => (
                 <option key={broker.id} value={broker.id}>
@@ -187,7 +187,7 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone
+              Teléfono
             </label>
             <input
               type="tel"
@@ -205,14 +205,14 @@ export default function CreateAgentModal({ isOpen, onClose, onSuccess }: CreateA
               onClick={onClose}
               className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
               disabled={loading || loadingBrokers}
               className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors"
             >
-              {loading ? 'Creating...' : 'Create Agent'}
+              {loading ? 'Creando...' : 'Crear Agente'}
             </button>
           </div>
 

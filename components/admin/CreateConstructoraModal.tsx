@@ -53,7 +53,7 @@ export default function CreateConstructoraModal({ isOpen, onClose, onSuccess }: 
 
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        toast.error(json.error || 'Failed to create constructora')
+        toast.error(json.error || 'No se pudo crear la constructora')
         return
       }
 
@@ -63,7 +63,7 @@ export default function CreateConstructoraModal({ isOpen, onClose, onSuccess }: 
       onClose()
     } catch (error) {
       console.error('Error creating constructora:', error)
-      toast.error('Failed to create constructora')
+      toast.error('No se pudo crear la constructora')
     } finally {
       setLoading(false)
     }

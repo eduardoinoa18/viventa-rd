@@ -78,7 +78,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
 
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        toast.error(json.error || 'Failed to update user')
+        toast.error(json.error || 'No se pudo actualizar el usuario')
         return
       }
 
@@ -87,7 +87,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
       onClose()
     } catch (error) {
       console.error('Error updating user:', error)
-      toast.error('Failed to update user')
+      toast.error('No se pudo actualizar el usuario')
     } finally {
       setLoading(false)
     }

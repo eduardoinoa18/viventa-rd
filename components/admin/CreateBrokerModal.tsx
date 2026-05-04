@@ -30,7 +30,7 @@ export default function CreateBrokerModal({ isOpen, onClose, onSuccess }: Create
     e.preventDefault()
 
     if (!formData.name.trim() || !formData.email.trim() || !formData.company.trim()) {
-      toast.error('Name, email, and company are required')
+      toast.error('Nombre, correo y empresa son requeridos')
       return
     }
 
@@ -51,17 +51,17 @@ export default function CreateBrokerModal({ isOpen, onClose, onSuccess }: Create
 
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        toast.error(json.error || 'Failed to create broker')
+        toast.error(json.error || 'No se pudo crear el broker')
         return
       }
 
-      toast.success('Broker created and invitation sent')
+      toast.success('Broker creado e invitación enviada')
       setFormData({ name: '', email: '', phone: '', company: '' })
       onSuccess()
       onClose()
     } catch (error) {
       console.error('Error creating broker:', error)
-      toast.error('Failed to create broker')
+      toast.error('No se pudo crear el broker')
     } finally {
       setLoading(false)
     }
@@ -75,7 +75,7 @@ export default function CreateBrokerModal({ isOpen, onClose, onSuccess }: Create
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <FiUserPlus className="w-5 h-5" />
-            Create Broker
+            Crear Broker
           </h2>
           <button
             onClick={onClose}
@@ -89,14 +89,14 @@ export default function CreateBrokerModal({ isOpen, onClose, onSuccess }: Create
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name *
+              Nombre completo *
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="e.g., Juan García"
+              placeholder="Ej: Juan García"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -117,21 +117,21 @@ export default function CreateBrokerModal({ isOpen, onClose, onSuccess }: Create
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Company *
+              Empresa *
             </label>
             <input
               type="text"
               name="company"
               value={formData.company}
               onChange={handleChange}
-              placeholder="e.g., Paraiso Inmobiliario"
+              placeholder="Ej: Paraíso Inmobiliario"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone
+              Teléfono
             </label>
             <input
               type="tel"
@@ -149,14 +149,14 @@ export default function CreateBrokerModal({ isOpen, onClose, onSuccess }: Create
               onClick={onClose}
               className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors"
             >
-              {loading ? 'Creating...' : 'Create Broker'}
+              {loading ? 'Creando...' : 'Crear Broker'}
             </button>
           </div>
         </form>

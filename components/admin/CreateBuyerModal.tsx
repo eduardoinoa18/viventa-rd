@@ -35,7 +35,7 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
     e.preventDefault()
 
     if (!formData.name.trim() || !formData.email.trim()) {
-      toast.error('Name and email are required')
+      toast.error('Nombre y correo son requeridos')
       return
     }
 
@@ -75,11 +75,11 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
 
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        toast.error(json.error || 'Failed to create buyer')
+        toast.error(json.error || 'No se pudo crear el comprador')
         return
       }
 
-      toast.success(sendInvite ? 'Buyer created and invitation sent' : 'Buyer created successfully')
+      toast.success(sendInvite ? 'Comprador creado e invitación enviada' : 'Comprador creado exitosamente')
       setFormData({
         name: '',
         email: '',
@@ -94,7 +94,7 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
       onClose()
     } catch (error) {
       console.error('Error creating buyer:', error)
-      toast.error('Failed to create buyer')
+      toast.error('No se pudo crear el comprador')
     } finally {
       setLoading(false)
     }
@@ -108,7 +108,7 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
         <div className="flex items-center justify-between mb-6 sticky top-0 bg-white pb-4">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <FiUserPlus className="w-5 h-5" />
-            Create Buyer
+            Crear Comprador
           </h2>
           <button
             onClick={onClose}
@@ -122,14 +122,14 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name *
+              Nombre completo *
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="e.g., Pedro Pérez"
+              placeholder="Ej: Pedro Pérez"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -150,7 +150,7 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone
+              Teléfono
             </label>
             <input
               type="tel"
@@ -164,20 +164,20 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
 
           <div className="pt-3 border-t border-gray-200">
             <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">
-              Search Criteria (Optional)
+              Criterios de búsqueda (opcional)
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location
+              Ubicación
             </label>
             <input
               type="text"
               name="location"
               value={formData.location}
               onChange={handleChange}
-              placeholder="e.g., Santo Domingo, Punta Cana"
+              placeholder="Ej: Santo Domingo, Punta Cana"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -185,7 +185,7 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Budget Min (USD)
+                Presupuesto mín. (USD)
               </label>
               <input
                 type="number"
@@ -198,7 +198,7 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Budget Max (USD)
+                Presupuesto máx. (USD)
               </label>
               <input
                 type="number"
@@ -217,13 +217,13 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
               checked={sendInvite}
               onChange={(e) => setSendInvite(e.target.checked)}
             />
-            Send invitation email now (optional)
+            Enviar invitación por correo ahora (opcional)
           </label>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bedrooms
+                Habitaciones
               </label>
               <input
                 type="number"
@@ -236,7 +236,7 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Purpose
+                Propósito
               </label>
               <select
                 name="purpose"
@@ -245,8 +245,8 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
                 aria-label="Select property purpose"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="Residential">Residential</option>
-                <option value="Investment">Investment</option>
+                <option value="Residential">Residencial</option>
+                <option value="Investment">Inversión</option>
                 <option value="Airbnb">Airbnb</option>
               </select>
             </div>
@@ -258,14 +258,14 @@ export default function CreateBuyerModal({ isOpen, onClose, onSuccess }: CreateB
               onClick={onClose}
               className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors"
             >
-              {loading ? 'Creating...' : 'Create Buyer'}
+              {loading ? 'Creando...' : 'Crear Comprador'}
             </button>
           </div>
         </form>
