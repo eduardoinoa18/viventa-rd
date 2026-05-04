@@ -156,14 +156,14 @@ export default function ConstructoraOverviewPage() {
 
       <section className="mt-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold text-[#0B2545]">Health de Tasks</h3>
+          <h3 className="text-sm font-semibold text-[#0B2545]">Salud de tareas</h3>
           <Link href="/dashboard/constructora/tasks" className="text-xs font-semibold text-blue-700 hover:underline">Abrir Tasks</Link>
         </div>
         {loading ? (
           <div className="space-y-2">{[1,2].map(i => <div key={i} className="h-10 animate-pulse rounded-lg bg-gray-100" />)}</div>
         ) : (
           <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-            <Metric label="Total Tasks" value={summary.totalTasks} />
+            <Metric label="Total" value={summary.totalTasks} />
             <Metric label="Pendientes" value={summary.pendingTasks} />
             <Metric label="En Progreso" value={summary.inProgressTasks} />
             <Metric label="Completadas" value={summary.doneTasks} />
@@ -172,7 +172,7 @@ export default function ConstructoraOverviewPage() {
         {!loading && (
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
             <Link href="/dashboard/constructora/tasks?status=all" className="flex items-center justify-between rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 hover:bg-amber-100">
-              <span className="inline-flex items-center gap-2"><FiAlertTriangle /> Overdue Tasks</span>
+              <span className="inline-flex items-center gap-2"><FiAlertTriangle /> Tareas vencidas</span>
               <span>{summary.overdueTasks}</span>
             </Link>
             <Link href="/dashboard/constructora/tasks?status=pending" className="flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-800 hover:bg-blue-100">

@@ -1337,7 +1337,7 @@ export default function BuyerDashboardPage() {
                                 onChange={(e) => updateSchedulerJob(item.key, { intervalMinutes: Math.max(5, Number(e.target.value || 5)) })}
                                 className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs"
                                 title="Intervalo en minutos"
-                                placeholder="min"
+                                placeholder="min."
                               />
                               <input
                                 type="number"
@@ -1346,7 +1346,7 @@ export default function BuyerDashboardPage() {
                                 onChange={(e) => updateSchedulerJob(item.key, { limit: Math.max(1, Number(e.target.value || 1)) })}
                                 className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs"
                                 title="Límite por corrida"
-                                placeholder="limit"
+                                placeholder="límite"
                               />
                             </div>
                           </div>

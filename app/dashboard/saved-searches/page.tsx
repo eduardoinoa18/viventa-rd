@@ -62,12 +62,12 @@ export default function SavedSearchesPage() {
     try {
       setLoading(true)
       const res = await fetch('/api/saved-searches/manage')
-      if (!res.ok) throw new Error('Failed to load searches')
+      if (!res.ok) throw new Error('No se pudieron cargar las búsquedas')
       const data = await res.json()
       setSearches(data.data || [])
     } catch (error) {
       console.error('Error loading searches:', error)
-      showMessage('error', 'Error loading saved searches')
+      showMessage('error', 'No se pudieron cargar las búsquedas guardadas')
     } finally {
       setLoading(false)
     }
@@ -82,7 +82,7 @@ export default function SavedSearchesPage() {
     e.preventDefault()
 
     if (!formData.name.trim()) {
-      showMessage('error', 'Search name is required')
+      showMessage('error', 'El nombre de búsqueda es requerido')
       return
     }
 
@@ -96,28 +96,28 @@ export default function SavedSearchesPage() {
         body: JSON.stringify(payload),
       })
 
-      if (!res.ok) throw new Error('Failed to save search')
+      if (!res.ok) throw new Error('No se pudo guardar la búsqueda')
 
-      showMessage('success', editingId ? 'Search updated' : 'Search saved')
+      showMessage('success', editingId ? 'Búsqueda actualizada' : 'Búsqueda guardada')
       resetForm()
       loadSearches()
     } catch (error) {
       console.error('Error saving search:', error)
-      showMessage('error', 'Failed to save search')
+      showMessage('error', 'No se pudo guardar la búsqueda')
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this saved search?')) return
+    if (!confirm('¿Eliminar esta búsqueda guardada?')) return
 
     try {
       const res = await fetch(`/api/saved-searches/manage?id=${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Failed to delete')
-      showMessage('success', 'Search deleted')
+      if (!res.ok) throw new Error('No se pudo eliminar')
+      showMessage('success', 'Búsqueda eliminada')
       loadSearches()
     } catch (error) {
       console.error('Error deleting:', error)
-      showMessage('error', 'Failed to delete search')
+      showMessage('error', 'No se pudo eliminar la búsqueda')
     }
   }
 
@@ -144,11 +144,11 @@ export default function SavedSearchesPage() {
         }),
       })
 
-      if (!res.ok) throw new Error('Failed to toggle alerts')
+      if (!res.ok) throw new Error('No se pudo cambiar el estado de alertas')
       loadSearches()
     } catch (error) {
       console.error('Error toggling alerts:', error)
-      showMessage('error', 'Failed to toggle alerts')
+      showMessage('error', 'No se pudo cambiar el estado de alertas')
     }
   }
 
@@ -219,7 +219,7 @@ export default function SavedSearchesPage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Apartamentos en Santo Domingo"
+                    placeholder="Ej. Apartamentos en Santo Domingo"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent"
                 />
               </div>
@@ -303,7 +303,7 @@ export default function SavedSearchesPage() {
                         },
                       })
                     }
-                    placeholder="Unlimited"
+                    placeholder="Sin límite"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent"
                   />
                 </div>
@@ -325,7 +325,7 @@ export default function SavedSearchesPage() {
                         },
                       })
                     }
-                    placeholder="Any"
+                    placeholder="Cualquiera"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent"
                   />
                 </div>
