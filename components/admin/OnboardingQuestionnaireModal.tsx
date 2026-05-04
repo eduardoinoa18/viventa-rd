@@ -66,7 +66,7 @@ export default function OnboardingQuestionnaireModal({ isOpen, user, onClose, on
   const handleSave = async () => {
     if (!user) return
     if (!form.businessGoal.trim()) {
-      toast.error('Business goal is required')
+      toast.error('El objetivo de negocio es requerido')
       return
     }
 
@@ -83,16 +83,16 @@ export default function OnboardingQuestionnaireModal({ isOpen, user, onClose, on
       })
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        toast.error(json.error || 'Failed to save onboarding questionnaire')
+        toast.error(json.error || 'No se pudo guardar el cuestionario de onboarding')
         return
       }
 
-      toast.success('Onboarding questionnaire saved')
+      toast.success('Cuestionario de onboarding guardado')
       onSaved()
       onClose()
     } catch (error) {
       console.error('save onboarding questionnaire error', error)
-      toast.error('Failed to save onboarding questionnaire')
+      toast.error('No se pudo guardar el cuestionario de onboarding')
     } finally {
       setLoading(false)
     }
@@ -106,7 +106,7 @@ export default function OnboardingQuestionnaireModal({ isOpen, user, onClose, on
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <FiClipboard className="w-5 h-5" />
-            Onboarding Questionnaire
+            Cuestionario de Onboarding
           </h3>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700" aria-label="Close">
             <FiX className="w-5 h-5" />
@@ -119,68 +119,68 @@ export default function OnboardingQuestionnaireModal({ isOpen, user, onClose, on
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FieldSelect
-            label="Onboarding Stage"
+            label="Etapa de onboarding"
             value={form.onboardingStage}
             onChange={(value) => setField('onboardingStage', value as Questionnaire['onboardingStage'])}
             options={[
-              { value: 'discovery', label: 'Discovery' },
-              { value: 'qualification', label: 'Qualification' },
-              { value: 'ready_for_invite', label: 'Ready for Invite' },
-              { value: 'invited', label: 'Invited' },
-              { value: 'activated', label: 'Activated' },
+              { value: 'discovery', label: 'Descubrimiento' },
+              { value: 'qualification', label: 'Calificación' },
+              { value: 'ready_for_invite', label: 'Listo para invitar' },
+              { value: 'invited', label: 'Invitado' },
+              { value: 'activated', label: 'Activado' },
             ]}
           />
 
           <FieldSelect
-            label="Urgency"
+            label="Urgencia"
             value={form.urgency}
             onChange={(value) => setField('urgency', value as Questionnaire['urgency'])}
             options={[
-              { value: 'low', label: 'Low' },
-              { value: 'medium', label: 'Medium' },
-              { value: 'high', label: 'High' },
+              { value: 'low', label: 'Baja' },
+              { value: 'medium', label: 'Media' },
+              { value: 'high', label: 'Alta' },
             ]}
           />
         </div>
 
-        <FieldInput label="Business Goal" value={form.businessGoal} onChange={(value) => setField('businessGoal', value)} required />
+        <FieldInput label="Objetivo de negocio" value={form.businessGoal} onChange={(value) => setField('businessGoal', value)} required />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FieldInput label="Target Zones" value={form.targetZones} onChange={(value) => setField('targetZones', value)} placeholder="Santo Domingo, Punta Cana" />
-          <FieldInput label="Budget Range" value={form.budgetRange} onChange={(value) => setField('budgetRange', value)} placeholder="USD 150k - 400k" />
+          <FieldInput label="Zonas objetivo" value={form.targetZones} onChange={(value) => setField('targetZones', value)} placeholder="Santo Domingo, Punta Cana" />
+          <FieldInput label="Rango de presupuesto" value={form.budgetRange} onChange={(value) => setField('budgetRange', value)} placeholder="USD 150k - 400k" />
         </div>
 
-        <FieldInput label="Preferred Inventory" value={form.preferredInventory} onChange={(value) => setField('preferredInventory', value)} placeholder="Luxury condos, pre-construction, lots" />
+        <FieldInput label="Inventario preferido" value={form.preferredInventory} onChange={(value) => setField('preferredInventory', value)} placeholder="Condominios de lujo, preventa, lotes" />
 
         <FieldSelect
-          label="Preferred Communication"
+          label="Canal de comunicación preferido"
           value={form.communicationPreference}
           onChange={(value) => setField('communicationPreference', value as Questionnaire['communicationPreference'])}
           options={[
             { value: 'whatsapp', label: 'WhatsApp' },
             { value: 'email', label: 'Email' },
-            { value: 'phone', label: 'Phone' },
+            { value: 'phone', label: 'Teléfono' },
           ]}
         />
 
         <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Admin Notes</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Notas del administrador</label>
           <textarea
             value={form.notes}
             onChange={(e) => setField('notes', e.target.value)}
             rows={4}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Capture qualification outcomes, blockers, and next steps..."
+            placeholder="Captura resultados de calificación, bloqueos y próximos pasos..."
           />
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cancelar</button>
           <button
             onClick={handleSave}
             disabled={loading}
             className="px-4 py-2 rounded-lg bg-[#0B2545] text-white hover:bg-[#133a66] disabled:opacity-60"
           >
-            {loading ? 'Saving...' : 'Save Questionnaire'}
+            {loading ? 'Guardando...' : 'Guardar cuestionario'}
           </button>
         </div>
       </div>

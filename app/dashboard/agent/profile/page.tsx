@@ -442,7 +442,7 @@ export default function AgentProfilePage() {
                     type="text"
                     value={profile.city}
                     onChange={(e) => handleChange('city', e.target.value)}
-                    placeholder="e.g., Santo Domingo"
+                    placeholder="Ej: Santo Domingo"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -454,7 +454,7 @@ export default function AgentProfilePage() {
                   type="text"
                   value={profile.area}
                   onChange={(e) => handleChange('area', e.target.value)}
-                  placeholder="e.g., East Coast, North"
+                  placeholder="Ej: Este, Norte"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
