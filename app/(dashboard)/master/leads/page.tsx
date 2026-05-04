@@ -433,16 +433,16 @@ export default function LeadsPage() {
           setAgents(data.members.filter((user: AgentOption) => user.role === 'agent' || user.role === 'broker'))
         } else {
           setAgents([])
-          toast.error('Unable to load team members')
+          toast.error('No se pudo cargar el equipo')
         }
       } else if (data.ok && Array.isArray(data.data)) {
         setAgents(data.data.filter((user: AgentOption) => user.role === 'agent' || user.role === 'broker'))
       } else {
-        toast.error('Unable to load agents')
+        toast.error('No se pudieron cargar los agentes')
       }
     } catch (err) {
       console.error('Error fetching agents:', err)
-      toast.error('Unable to load agents')
+      toast.error('No se pudieron cargar los agentes')
     } finally {
       setAgentsLoading(false)
     }
@@ -612,7 +612,7 @@ export default function LeadsPage() {
       fetchLeads()
     } catch (err) {
       console.error('Error running auto-assign:', err)
-      toast.error('Unable to run auto-assign')
+      toast.error('No se pudo ejecutar la auto-asignación')
     } finally {
       setRunningAutoAssign(false)
     }
@@ -666,7 +666,7 @@ export default function LeadsPage() {
       fetchLeads()
     } catch (err) {
       console.error('Error running SLA escalation:', err)
-      toast.error('Unable to run SLA escalation')
+      toast.error('No se pudo ejecutar la escalada de SLA')
     } finally {
       setRunningEscalation(false)
     }
