@@ -202,21 +202,21 @@ export default function ConstructoraDealsPage() {
 
       <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
         <Metric label="Total" value={summary.total} />
-        <Metric label="Reserved" value={summary.reserved} />
-        <Metric label="Negotiating" value={summary.negotiating} />
-        <Metric label="Closed" value={summary.closed} />
-        <Metric label="Pipeline Value" value={`$${summary.pipelineValue.toLocaleString()}`} />
+        <Metric label="Reservados" value={summary.reserved} />
+        <Metric label="En negociación" value={summary.negotiating} />
+        <Metric label="Cerrados" value={summary.closed} />
+        <Metric label="Valor del pipeline" value={`$${summary.pipelineValue.toLocaleString()}`} />
       </div>
 
       <form onSubmit={onCreateDeal} className="mt-4 rounded-lg border border-gray-200 p-3 space-y-3">
         <div className="text-sm font-semibold text-gray-900">Crear deal</div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-          <input value={form.projectId} onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))} placeholder="projectId" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Project ID" />
-          <input value={form.unitId} onChange={(e) => setForm((prev) => ({ ...prev, unitId: e.target.value }))} placeholder="unitId" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Unit ID" />
-          <input value={form.reservationId} onChange={(e) => setForm((prev) => ({ ...prev, reservationId: e.target.value }))} placeholder="reservationId (optional)" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Reservation ID" />
-          <input value={form.buyerName} onChange={(e) => setForm((prev) => ({ ...prev, buyerName: e.target.value }))} placeholder="buyer name" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Buyer name" />
-          <input value={form.brokerName} onChange={(e) => setForm((prev) => ({ ...prev, brokerName: e.target.value }))} placeholder="broker name (optional)" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Broker name" />
-          <input value={form.price} onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))} placeholder="price" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Price" />
+          <input value={form.projectId} onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))} placeholder="ID del proyecto" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Project ID" />
+          <input value={form.unitId} onChange={(e) => setForm((prev) => ({ ...prev, unitId: e.target.value }))} placeholder="ID de la unidad" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Unit ID" />
+          <input value={form.reservationId} onChange={(e) => setForm((prev) => ({ ...prev, reservationId: e.target.value }))} placeholder="ID de reserva (opcional)" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Reservation ID" />
+          <input value={form.buyerName} onChange={(e) => setForm((prev) => ({ ...prev, buyerName: e.target.value }))} placeholder="Nombre del comprador" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Buyer name" />
+          <input value={form.brokerName} onChange={(e) => setForm((prev) => ({ ...prev, brokerName: e.target.value }))} placeholder="Nombre del broker (opcional)" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Broker name" />
+          <input value={form.price} onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))} placeholder="Precio" className="px-3 py-2 text-sm border border-gray-300 rounded-lg" title="Price" />
           <select value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))} className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white" title="Deal status">
             {DEAL_STATUSES.filter((status) => status !== 'all').map((status) => <option key={status} value={status}>{status}</option>)}
           </select>
@@ -265,7 +265,7 @@ export default function ConstructoraDealsPage() {
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Broker</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Price</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Timeline</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Línea de tiempo</th>
                 <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Action</th>
               </tr>
             </thead>

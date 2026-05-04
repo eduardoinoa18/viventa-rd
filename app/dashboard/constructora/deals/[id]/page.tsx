@@ -252,7 +252,7 @@ export default function ConstructoraDealDetailPage() {
           </div>
 
           <div className="mt-4 rounded-lg border border-gray-200 p-3">
-            <div className="text-sm font-semibold text-gray-900">Timeline</div>
+            <div className="text-sm font-semibold text-gray-900">Línea de tiempo</div>
             <div className="mt-2 space-y-2">
               {events.map((event) => (
                 <div key={event.id} className="rounded-lg border border-gray-200 p-2">
