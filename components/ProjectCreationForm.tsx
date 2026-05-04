@@ -528,7 +528,7 @@ export default function ProjectCreationForm() {
               <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                 <p className="text-sm text-blue-900 font-medium mb-2">Add units by:</p>
                 <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                  <li>Uploading a CSV file</li>
+                  <li>Cargar un archivo CSV</li>
                   <li>Adding units one by one manually</li>
                 </ul>
               </div>

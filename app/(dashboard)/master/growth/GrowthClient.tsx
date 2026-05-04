@@ -90,7 +90,7 @@ export default function GrowthClient() {
     <div className="p-6 bg-gray-50 min-h-screen space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#0B2545]">Growth Engine</h1>
+          <h1 className="text-3xl font-bold text-[#0B2545]">Motor de crecimiento</h1>
           <p className="text-sm text-gray-600 mt-1">User acquisition, funnel performance, and growth velocity control center.</p>
         </div>
         <button

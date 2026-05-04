@@ -36,7 +36,8 @@ function PriorityBadge({ priority }: { priority: string }) {
       : priority === 'low'
         ? 'bg-slate-100 text-slate-700'
         : 'bg-amber-50 text-amber-700'
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>{priority}</span>
+  const label = priority === 'high' ? 'Alta' : priority === 'low' ? 'Baja' : 'Normal'
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>{label}</span>
 }
 
 export default function ConstructoraTasksPage() {
@@ -133,23 +134,23 @@ export default function ConstructoraTasksPage() {
 
   return (
     <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
-      <h2 className="text-lg font-semibold text-[#0B2545]">Tasks</h2>
+      <h2 className="text-lg font-semibold text-[#0B2545]">Tareas</h2>
       <p className="mt-1 text-sm text-gray-600">Seguimiento operativo para deals, con tareas manuales y tareas creadas por automatización SLA.</p>
 
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 text-sm">
         <Metric label="Total" value={summary.total} />
-        <Metric label="Pending" value={summary.pending} />
-        <Metric label="In Progress" value={summary.inProgress} />
-        <Metric label="Overdue" value={summary.overdue} />
+        <Metric label="Pendientes" value={summary.pending} />
+        <Metric label="En progreso" value={summary.inProgress} />
+        <Metric label="Vencidas" value={summary.overdue} />
       </div>
 
       <form onSubmit={createTask} className="mt-4 grid grid-cols-1 gap-2 rounded-lg border border-gray-200 p-3 md:grid-cols-[minmax(0,1fr)_180px_160px_140px]">
         <input value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="Nueva tarea operativa" className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
         <input value={taskDueAt} onChange={(e) => setTaskDueAt(e.target.value)} type="datetime-local" title="Fecha límite de la tarea" aria-label="Fecha límite de la tarea" className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
         <select value={taskPriority} onChange={(e) => setTaskPriority(e.target.value as 'low' | 'normal' | 'high')} title="Prioridad de la tarea" aria-label="Prioridad de la tarea" className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
-          <option value="low">low</option>
-          <option value="normal">normal</option>
-          <option value="high">high</option>
+          <option value="low">Baja</option>
+          <option value="normal">Normal</option>
+          <option value="high">Alta</option>
         </select>
         <button type="submit" disabled={creating} className="rounded-lg bg-[#0B2545] px-3 py-2 text-sm font-medium text-white hover:bg-[#12355f] disabled:opacity-50">
           {creating ? 'Creando...' : 'Crear tarea'}
@@ -177,15 +178,15 @@ export default function ConstructoraTasksPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-sm font-semibold text-[#0B2545]">{task.title}</h3>
                       <PriorityBadge priority={task.priority || 'normal'} />
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${task.status === 'done' ? 'bg-emerald-50 text-emerald-700' : task.status === 'in_progress' ? 'bg-blue-50 text-blue-700' : overdue ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-700'}`}>{task.status}</span>
-                      {task.source === 'deal_automation' ? <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">automation</span> : null}
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${task.status === 'done' ? 'bg-emerald-50 text-emerald-700' : task.status === 'in_progress' ? 'bg-blue-50 text-blue-700' : overdue ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-700'}`}>{task.status === 'done' ? 'Completado' : task.status === 'in_progress' ? 'En progreso' : 'Pendiente'}</span>
+                      {task.source === 'deal_automation' ? <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">automatización</span> : null}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-600">
                       <span>Vence: {fmtDate(task.dueAt)}</span>
                       {task.assigneeName ? (
-                        <span>Assignee: {task.assigneeName}</span>
+                        <span>Asignado: {task.assigneeName}</span>
                       ) : task.assigneeUid ? (
-                        <span>Assignee: {task.assigneeUid.slice(0, 8)}</span>
+                        <span>Asignado: {task.assigneeUid.slice(0, 8)}</span>
                       ) : null}
                       {task.linkedDealId ? <Link href={`/dashboard/constructora/deals/${task.linkedDealId}`} className="font-medium text-blue-700 hover:underline">Deal {task.linkedDealId.slice(0, 8)}</Link> : null}
                     </div>

@@ -60,20 +60,20 @@ function formatRelative(value?: string | null) {
   if (!Number.isFinite(parsed.getTime())) return '—'
 
   const diffMs = Date.now() - parsed.getTime()
-  if (diffMs < 0) return 'just now'
+  if (diffMs < 0) return 'ahora mismo'
   const minutes = Math.floor(diffMs / (1000 * 60))
   const hours = Math.floor(minutes / 60)
   const days = Math.floor(hours / 24)
 
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  if (hours < 24) return `${hours}h ago`
-  return `${days}d ago`
+  if (minutes < 1) return 'ahora mismo'
+  if (minutes < 60) return `hace ${minutes}m`
+  if (hours < 24) return `hace ${hours}h`
+  return `hace ${days}d`
 }
 
 function formatRunMetrics(run: AutomationRun) {
-  if (run.job === 'scheduledLeadAutoAssign') return `scanned ${run.scanned} · assigned ${run.assigned}`
-  return `scanned ${run.scanned} · escalated ${run.escalated}`
+  if (run.job === 'scheduledLeadAutoAssign') return `escaneado ${run.scanned} · asignado ${run.assigned}`
+  return `escaneado ${run.scanned} · escalado ${run.escalated}`
 }
 
 function formatRunDuration(durationMs: number) {
@@ -83,8 +83,8 @@ function formatRunDuration(durationMs: number) {
 }
 
 function formatJobLabel(job: AutomationRun['job']) {
-  if (job === 'scheduledLeadAutoAssign') return 'Auto-Assign'
-  return 'SLA Escalation'
+  if (job === 'scheduledLeadAutoAssign') return 'Auto-Asignar'
+  return 'Escalada SLA'
 }
 
 function getRunStatusChip(status: string) {
@@ -101,7 +101,7 @@ function calculateSLATimer(ageHours: number, escalationHours: number): {timeRema
 }
 
 function formatSLATimer(timeRemaining: number): string {
-  if (timeRemaining <= 0) return 'BREACHED'
+  if (timeRemaining <= 0) return 'INCUMPLIDO'
   if (timeRemaining < 1) return `${Math.round(timeRemaining * 60)}m`
   if (timeRemaining < 24) return `${Math.round(timeRemaining * 10) / 10}h`
   return `${Math.round(timeRemaining / 24)}d`
@@ -348,38 +348,38 @@ export default function ControlCenterClient() {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[#0B2545]">Control Center</h1>
-            <p className="text-sm text-gray-600 mt-1">Real-time command surface for lead routing decisions.</p>
+            <h1 className="text-3xl font-bold text-[#0B2545]">Centro de control</h1>
+            <p className="text-sm text-gray-600 mt-1">Superficie de comando en tiempo real para decisiones de enrutamiento de leads.</p>
           </div>
           <button
             onClick={loadControlCenter}
             disabled={loading}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm hover:bg-gray-100 disabled:opacity-60"
-            title="Reload all lead stream and settings data"
+            title="Recargar flujo de leads y configuración"
           >
-            <FiRefreshCw /> Refresh
+            <FiRefreshCw /> Actualizar
           </button>
         </div>
 
         <section className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="text-xs uppercase tracking-wide text-gray-500">Incoming</div>
+            <div className="text-xs uppercase tracking-wide text-gray-500">Entrantes</div>
             <div className="text-3xl font-bold text-[#0B2545] mt-1">{queueStats.total}</div>
           </div>
           <div className="bg-white rounded-xl border border-green-200 p-4 shadow-sm">
-            <div className="text-xs uppercase tracking-wide text-green-700">SLA Green</div>
+            <div className="text-xs uppercase tracking-wide text-green-700">SLA Verde</div>
             <div className="text-3xl font-bold text-green-800 mt-1">{queueStats.green}</div>
           </div>
           <div className="bg-white rounded-xl border border-yellow-200 p-4 shadow-sm">
-            <div className="text-xs uppercase tracking-wide text-yellow-700">SLA Yellow</div>
+            <div className="text-xs uppercase tracking-wide text-yellow-700">SLA Amarillo</div>
             <div className="text-3xl font-bold text-yellow-800 mt-1">{queueStats.yellow}</div>
           </div>
           <div className="bg-white rounded-xl border border-red-200 p-4 shadow-sm">
-            <div className="text-xs uppercase tracking-wide text-red-700">SLA Red</div>
+            <div className="text-xs uppercase tracking-wide text-red-700">SLA Rojo</div>
             <div className="text-3xl font-bold text-red-800 mt-1">{queueStats.red}</div>
           </div>
           <div className="bg-white rounded-xl border border-[#0B2545]/20 p-4 shadow-sm">
-            <div className="text-xs uppercase tracking-wide text-[#0B2545]">Avg Urgency</div>
+            <div className="text-xs uppercase tracking-wide text-[#0B2545]">Urgencia Prom.</div>
             <div className="text-3xl font-bold text-[#0B2545] mt-1">{queueStats.avgUrgency}</div>
           </div>
         </section>
@@ -404,9 +404,9 @@ export default function ControlCenterClient() {
                   onClick={() => saveEscalationHours(hours)}
                   disabled={savingMode}
                   className={`px-3 py-1.5 rounded-md text-sm border font-medium ${escalationHours === hours ? 'bg-[#0B2545] text-white border-[#0B2545]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-60`}
-                  title={escalationHours === hours ? 'Current escalation threshold' : 'Set escalation threshold'}
+                  title={escalationHours === hours ? 'Umbral de escalada actual' : 'Establecer umbral de escalada'}
                 >
-                  {hours}h{escalationHours === hours ? ' (current)' : ''}
+                  {hours}h{escalationHours === hours ? ' (actual)' : ''}
                 </button>
               ))}
             </div>
@@ -488,7 +488,7 @@ export default function ControlCenterClient() {
           <div className="font-semibold text-[#0B2545] mb-2">Reglas de reasignación</div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
             <div className={`rounded-lg border p-3 ${reassignmentPolicy.manualReassignEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-              Manual reassign: <strong>{reassignmentPolicy.manualReassignEnabled ? 'ON' : 'OFF'}</strong>
+              Manual reassign: <strong>{reassignmentPolicy.manualReassignEnabled ? 'ACTIVO' : 'INACTIVO'}</strong>
             </div>
             <div className={`rounded-lg border p-3 ${reassignmentPolicy.suggestNewAssigneeEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
               Sugerir nuevo asignado: <strong>{reassignmentPolicy.suggestNewAssigneeEnabled ? 'ON' : 'OFF'}</strong>
@@ -504,8 +504,8 @@ export default function ControlCenterClient() {
 
         <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <div className="font-semibold text-[#0B2545] flex items-center gap-2">
-              <FiZap /> Escalation Preview
+            <div className="flex items-center gap-2 text-[#0B2545] font-semibold mb-3">
+              <FiZap /> Vista previa de escalada
             </div>
             <button
               onClick={() => setPreviewEscalation(!previewEscalation)}
@@ -600,8 +600,8 @@ export default function ControlCenterClient() {
                       checked={selectedLeadIds.size === stream.length && stream.length > 0}
                       onChange={selectAllVisibleLeads}
                       className="rounded border-gray-300"
-                      aria-label="Select all visible leads"
-                      title="Select all visible leads for bulk action"
+                      aria-label="Seleccionar todos los leads visibles"
+                      title="Seleccionar todos los leads visibles para acción masiva"
                     />
                   </th>
                   <th className="px-4 py-3 text-left">Lead</th>
@@ -631,13 +631,13 @@ export default function ControlCenterClient() {
                             checked={selectedLeadIds.has(lead.id)}
                             onChange={() => toggleLeadSelection(lead.id)}
                             className="rounded border-gray-300"
-                            aria-label={`Select lead ${lead.buyerName || 'unnamed'}`}
-                            title={`Select ${lead.buyerName || 'this lead'} for bulk action`}
+                            aria-label={`Seleccionar lead ${lead.buyerName || 'sin nombre'}`}
+                            title={`Seleccionar ${lead.buyerName || 'este lead'} para acción masiva`}
                           />
                         </td>
                         <td className="px-4 py-4 align-top">
                           <div className="font-medium text-[#0B2545]">{lead.buyerName || 'Lead sin nombre'}</div>
-                          <div className="text-xs text-gray-600">{lead.buyerEmail || 'no email'}</div>
+                          <div className="text-xs text-gray-600">{lead.buyerEmail || 'sin email'}</div>
                           {lead.buyerPhone && <div className="text-xs text-gray-500">{lead.buyerPhone}</div>}
                           <div className="text-xs text-gray-400 mt-1">ID: {lead.id.slice(0, 8)}...</div>
                         </td>
@@ -647,7 +647,7 @@ export default function ControlCenterClient() {
                           <div className="text-xs text-gray-500">{lead.propertyType || 'property'} • {lead.ageHours}h</div>
                           {lead.escalated && (
                             <span className={`inline-flex mt-1 text-[11px] px-2 py-0.5 rounded-full ${lead.escalationLevel === 'critical' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
-                              Escalated ({lead.escalationLevel})
+                              Escalado ({lead.escalationLevel})
                             </span>
                           )}
                         </td>
@@ -657,7 +657,7 @@ export default function ControlCenterClient() {
                               {formatSLATimer(slaTimer.timeRemaining)}
                             </div>
                             <div className={`h-1.5 rounded-full ${slaTimer.isRed ? 'bg-red-500 w-4' : slaTimer.percentage > 75 ? 'bg-green-500 w-16' : slaTimer.percentage > 50 ? 'bg-green-500 w-12' : 'bg-yellow-500 w-8'}`} />
-                            <div className="text-xs text-gray-500">{escalationHours}h window</div>
+                            <div className="text-xs text-gray-500">ventana de {escalationHours}h</div>
                           </div>
                         </td>
                         <td className="px-4 py-4 align-top">
@@ -681,7 +681,7 @@ export default function ControlCenterClient() {
                                   disabled={assigningLeadId === lead.id}
                                   className="mt-2 px-2.5 py-1.5 text-xs rounded-md bg-[#0B2545] text-white hover:bg-[#143a66] disabled:opacity-60"
                                 >
-                                  Assign to this profile
+                                  Asignar a este perfil
                                 </button>
                               </div>
                             ))}

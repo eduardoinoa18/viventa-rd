@@ -76,7 +76,7 @@ export default function AgentCommissionsPage() {
       {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
 
       <div className="mt-4 grid grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
-        <Metric label="Deals" value={summary.deals} />
+        <Metric label="Negocios" value={summary.deals} />
         <Metric label="Pendiente" value={currency(summary.pendingCommission)} />
         <Metric label="Pagado" value={currency(summary.paidCommission)} />
         <Metric label="Pagado año" value={currency(summary.paidThisYear)} />
@@ -104,7 +104,7 @@ export default function AgentCommissionsPage() {
                 <td className="px-3 py-2">{currency(Number(deal.agentCommission || 0), deal.currency || 'USD')}</td>
                 <td className="px-3 py-2">
                   <span className={`px-2 py-1 rounded text-xs border ${deal.commissionStatus === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                    {deal.commissionStatus === 'paid' ? 'Paid' : 'Pending'}
+                    {deal.commissionStatus === 'paid' ? 'Pagado' : 'Pendiente'}
                   </span>
                 </td>
                 <td className="px-3 py-2 text-gray-600">{formatDate(deal.updatedAt || deal.createdAt)}</td>
@@ -133,12 +133,12 @@ function Metric({ label, value }: { label: string; value: string | number }) {
 
 function humanizeStage(stage?: string) {
   const key = String(stage || 'lead').toLowerCase()
-  if (key === 'showing') return 'Showing'
-  if (key === 'offer') return 'Offer'
-  if (key === 'reservation') return 'Reservation'
-  if (key === 'contract') return 'Contract'
-  if (key === 'closing') return 'Closing'
-  if (key === 'completed') return 'Completed'
+  if (key === 'showing') return 'Visita'
+  if (key === 'offer') return 'Oferta'
+  if (key === 'reservation') return 'Reserva'
+  if (key === 'contract') return 'Contrato'
+  if (key === 'closing') return 'Cierre'
+  if (key === 'completed') return 'Completado'
   return 'Lead'
 }
 

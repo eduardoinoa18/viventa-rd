@@ -111,9 +111,9 @@ export default function AdminUserDetailsModal({
           <div>
             <label htmlFor="status" className="block text-sm text-gray-600">Estado</label>
             <select id="status" className="mt-1 w-full px-3 py-2 border rounded" value={status} onChange={e=>setStatus(e.target.value)}>
-              <option value="active">active</option>
-              <option value="pending">pending</option>
-              <option value="suspended">suspended</option>
+              <option value="active">Activo</option>
+              <option value="pending">Pendiente</option>
+              <option value="suspended">Suspendido</option>
             </select>
           </div>
           <div>

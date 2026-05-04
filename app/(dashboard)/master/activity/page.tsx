@@ -143,7 +143,7 @@ export default function MasterActivityPage() {
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
               aria-label="Filter event type"
             >
-              <option value="all">All Event Types</option>
+              <option value="all">Todos los tipos de evento</option>
               {typeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
 
@@ -164,12 +164,12 @@ export default function MasterActivityPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="text-left p-3">Timestamp</th>
-                  <th className="text-left p-3">Event</th>
+                  <th className="text-left p-3">Fecha/hora</th>
+                  <th className="text-left p-3">Evento</th>
                   <th className="text-left p-3">Actor</th>
-                  <th className="text-left p-3">Entity</th>
+                  <th className="text-left p-3">Entidad</th>
                   <th className="text-left p-3">Deal</th>
-                  <th className="text-left p-3">Metadata</th>
+                  <th className="text-left p-3">Metadatos</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">

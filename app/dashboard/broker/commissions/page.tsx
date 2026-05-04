@@ -32,7 +32,7 @@ function formatDate(value?: string) {
   if (!value) return 'N/A'
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return 'N/A'
-  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return parsed.toLocaleDateString('es-DO', { month: 'short', day: 'numeric' })
 }
 
 export default function BrokerCommissionsPage() {
@@ -99,9 +99,9 @@ export default function BrokerCommissionsPage() {
     <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00A676]">Broker Finance</p>
-          <h1 className="mt-1 text-2xl font-bold text-[#0B2545]">Commissions</h1>
-          <p className="mt-1 text-sm text-gray-600">Track paid, pending, and projected commissions for your office.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00A676]">Finanzas del broker</p>
+          <h1 className="mt-1 text-2xl font-bold text-[#0B2545]">Comisiones</h1>
+          <p className="mt-1 text-sm text-gray-600">Seguimiento de comisiones pagadas, pendientes y proyectadas de tu oficina.</p>
         </div>
         <Link href="/dashboard/broker/overview" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-[#0B2545] hover:bg-gray-50">
           <FiArrowLeft /> Volver al resumen
@@ -110,29 +110,29 @@ export default function BrokerCommissionsPage() {
 
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         <article className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Pending</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Pendiente</p>
           <p className="mt-2 text-2xl font-bold text-[#0B2545]">{money(summary.pendingCommissions)}</p>
         </article>
         <article className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Paid</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Pagado</p>
           <p className="mt-2 text-2xl font-bold text-[#0B2545]">{money(summary.paidCommissions)}</p>
         </article>
         <article className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Projection</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Proyección</p>
           <p className="mt-2 text-2xl font-bold text-[#0B2545]">{money(summary.monthlyProjection)}</p>
         </article>
       </div>
 
       <div className="mt-5 rounded-xl border border-gray-100">
         <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-[#0B2545]">Top commission rows</h2>
-          <span className="text-xs text-gray-500">{summary.totalTransactions} total deals</span>
+          <h2 className="text-sm font-semibold text-[#0B2545]">Top comisiones</h2>
+          <span className="text-xs text-gray-500">{summary.totalTransactions} deals en total</span>
         </div>
 
         {loading ? <p className="px-4 py-4 text-sm text-gray-500">Cargando comisiones...</p> : null}
         {!loading && error ? <p className="px-4 py-4 text-sm text-red-600">{error}</p> : null}
         {!loading && !error && commissionRows.length === 0 ? (
-          <p className="px-4 py-4 text-sm text-gray-500">No commission rows available yet.</p>
+          <p className="px-4 py-4 text-sm text-gray-500">No hay comisiones disponibles aún.</p>
         ) : null}
 
         {!loading && !error && commissionRows.length > 0 ? (
@@ -141,11 +141,11 @@ export default function BrokerCommissionsPage() {
               <div key={tx.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-[#0B2545]">{tx.title || tx.id}</p>
-                  <p className="text-xs text-gray-500">Updated {formatDate(tx.updatedAt)}</p>
+                  <p className="text-xs text-gray-500">Actualizado {formatDate(tx.updatedAt)}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`rounded-full px-2 py-1 text-xs font-semibold ${tx.commissionStatus === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                    {tx.commissionStatus === 'paid' ? 'Paid' : 'Pending'}
+                    {tx.commissionStatus === 'paid' ? 'Pagado' : 'Pendiente'}
                   </span>
                   <span className="text-sm font-semibold text-[#0B2545]">{money(Number(tx.commissionAmount || 0))}</span>
                 </div>
@@ -157,10 +157,10 @@ export default function BrokerCommissionsPage() {
 
       <div className="mt-4 flex flex-wrap gap-2 text-sm">
         <Link href="/dashboard/broker/transactions" className="inline-flex items-center gap-2 rounded-lg bg-[#0B2545] px-3 py-2 font-semibold text-white hover:bg-[#134074]">
-          <FiTrendingUp /> Open deals board
+          <FiTrendingUp /> Ver tablero de deals
         </Link>
         <Link href="/dashboard/billing" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 font-medium text-[#0B2545] hover:bg-gray-50">
-          <FiDollarSign /> Billing
+          <FiDollarSign /> Facturación
         </Link>
       </div>
     </section>

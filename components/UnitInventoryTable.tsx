@@ -80,19 +80,19 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
   return (
     <div className="w-full space-y-6">
       <div>
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Unit Inventory</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Inventario de unidades</h3>
         <p className="text-sm text-gray-600 mb-4">
-          {sortedUnits.length} of {units.length} units
+          {sortedUnits.length} de {units.length} unidades
         </p>
       </div>
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
           <input
             type="text"
-            placeholder="Unit number..."
+            placeholder="Número de unidad..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -100,7 +100,7 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="unit-filter-status">Status</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="unit-filter-status">Estado</label>
           <select
             id="unit-filter-status"
             value={filterStatus}
@@ -108,7 +108,7 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             aria-label="Filter by status"
           >
-            <option value="">All Statuses</option>
+            <option value="">Todos los estados</option>
             {uniqueStatuses.map((status) => (
               <option key={status} value={status}>
                 {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
@@ -118,7 +118,7 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="unit-filter-bedrooms">Bedrooms</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="unit-filter-bedrooms">Habitaciones</label>
           <select
             id="unit-filter-bedrooms"
             value={filterBedrooms}
@@ -126,7 +126,7 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             aria-label="Filter by bedrooms"
           >
-            <option value="">All</option>
+            <option value="">Todos</option>
             {uniqueBedrooms.map((br) => (
               <option key={br} value={br.toString()}>
                 {br} BR
@@ -144,7 +144,7 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
             }}
             className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 font-medium"
           >
-            Clear Filters
+            Limpiar filtros
           </button>
         </div>
       </div>
@@ -159,11 +159,11 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
                   onClick={() => handleSort('unitNumber')}
                   className="flex items-center hover:text-gray-900"
                 >
-                  Unit Number <SortIcon field="unitNumber" />
+                  Número de unidad <SortIcon field="unitNumber" />
                 </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                Type
+                Tipo
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 <button
@@ -186,7 +186,7 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
                   onClick={() => handleSort('priceUSD')}
                   className="flex items-center hover:text-gray-900"
                 >
-                  Price USD <SortIcon field="priceUSD" />
+                  Precio USD <SortIcon field="priceUSD" />
                 </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -194,11 +194,11 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
                   onClick={() => handleSort('status')}
                   className="flex items-center hover:text-gray-900"
                 >
-                  Status <SortIcon field="status" />
+                  Estado <SortIcon field="status" />
                 </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                Price/M²
+                Precio/M²
               </th>
             </tr>
           </thead>
@@ -234,7 +234,7 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
             ) : (
               <tr>
                 <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                  No units match your filters
+                  Ninguna unidad coincide con los filtros
                 </td>
               </tr>
             )}
@@ -246,25 +246,25 @@ export default function UnitInventoryTable({ units, onUnitSelect }: UnitInventor
       {sortedUnits.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 bg-gray-50 p-6 rounded-lg">
           <div>
-            <p className="text-gray-600 text-sm">Average Price</p>
+            <p className="text-gray-600 text-sm">Precio promedio</p>
             <p className="text-xl font-bold text-gray-900">
               ${Math.round(sortedUnits.reduce((acc, u) => acc + u.priceUSD, 0) / sortedUnits.length).toLocaleString()}
             </p>
           </div>
           <div>
-            <p className="text-gray-600 text-sm">Average Size</p>
+            <p className="text-gray-600 text-sm">Tamaño promedio</p>
             <p className="text-xl font-bold text-gray-900">
               {Math.round(sortedUnits.reduce((acc, u) => acc + u.meters, 0) / sortedUnits.length)} m²
             </p>
           </div>
           <div>
-            <p className="text-gray-600 text-sm">Available Units</p>
+            <p className="text-gray-600 text-sm">Unidades disponibles</p>
             <p className="text-xl font-bold text-green-600">
               {sortedUnits.filter((u) => u.status === 'disponible').length}
             </p>
           </div>
           <div>
-            <p className="text-gray-600 text-sm">Sold Units</p>
+            <p className="text-gray-600 text-sm">Unidades vendidas</p>
             <p className="text-xl font-bold text-gray-900">
               {sortedUnits.filter((u) => u.status === 'vendido').length}
             </p>

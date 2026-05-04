@@ -95,7 +95,7 @@ export default function BrokerTeamPage() {
       <section className="rounded-2xl border border-[#0B2545]/10 bg-white p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00A676]">Broker control</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00A676]">Control de broker</p>
             <h1 className="mt-2 text-2xl font-bold text-[#0B2545]">Equipo e invitaciones</h1>
             <p className="mt-1 max-w-2xl text-sm text-gray-600">
               Gestiona agentes activos, sigue onboarding pendiente y recluta nuevos miembros desde el mismo flujo.

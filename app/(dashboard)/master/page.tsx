@@ -161,12 +161,12 @@ export default function MasterOverviewPage() {
         <h1 className="text-4xl font-bold bg-gradient-to-r from-[#0B2545] to-[#00A676] bg-clip-text text-transparent mb-2">
           Master Control Overview
         </h1>
-        <p className="text-gray-600">Complete control of the Dominican Republic real estate network</p>
+        <p className="text-gray-600">Control total de la red inmobiliaria de la República Dominicana</p>
       </div>
       
       {/* Time window selector */}
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <span className="text-sm text-gray-600 mr-2">Time window:</span>
+        <span className="text-sm text-gray-600 mr-2">Ventana de tiempo:</span>
         {([
           { key: 'all', label: 'All' },
           { key: 'day', label: 'Today' },
