@@ -258,11 +258,11 @@ export default function MasterUsersPage() {
         toast.success(`User ${action}d successfully`)
         loadUsers()
       } else {
-        toast.error(json.error || `Failed to ${action} user`)
+        toast.error(json.error || `No se pudo ${action === 'enable' ? 'habilitar' : 'deshabilitar'} el usuario`)
       }
     } catch (e) {
       console.error(`Failed to ${action} user`, e)
-      toast.error(`Failed to ${action} user`)
+      toast.error(`No se pudo ${action === 'enable' ? 'habilitar' : 'deshabilitar'} el usuario`)
     }
   }
 
@@ -309,7 +309,7 @@ export default function MasterUsersPage() {
         return
       }
 
-      toast.success(nextValue ? 'Public profile enabled' : 'Public profile hidden')
+      toast.success(nextValue ? 'Perfil público activado' : 'Perfil público desactivado')
       loadUsers()
     } catch (error) {
       console.error('Failed to toggle public profile visibility', error)
@@ -503,12 +503,12 @@ export default function MasterUsersPage() {
       <div className="flex-1 overflow-auto">
         <div className="max-w-4xl mx-auto p-8">
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
-            <h1 className="text-2xl font-bold text-amber-900">People management is restricted</h1>
+            <h1 className="text-2xl font-bold text-amber-900">Gestión de usuarios restringida</h1>
             <p className="mt-2 text-sm text-amber-800">
-              This module is available to admin and broker roles only. Your role should continue in dashboard operational flows.
+              Este módulo está disponible solo para roles de administrador y broker. Continúa desde tu panel principal.
             </p>
             <div className="mt-4">
-              <Link href="/dashboard" className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium hover:bg-[#12355f]">Go to My Dashboard</Link>
+              <Link href="/dashboard" className="px-4 py-2 rounded-lg bg-[#0B2545] text-white text-sm font-medium hover:bg-[#12355f]">Ir a mi panel</Link>
             </div>
           </div>
         </div>
@@ -523,11 +523,11 @@ export default function MasterUsersPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{isBrokerView ? 'Team Management' : 'User Management'}</h1>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">{isBrokerView ? 'Gestión del equipo' : 'Gestión de usuarios'}</h1>
               <p className="text-gray-600">
                 {isBrokerView
-                  ? 'Manage your office team and track onboarding progress'
-                  : 'Manage all users across the platform'}
+                  ? 'Administra tu equipo y sigue el progreso de incorporación'
+                  : 'Administra todos los usuarios de la plataforma'}
               </p>
             </div>
             {!isBrokerView && (
@@ -555,7 +555,7 @@ export default function MasterUsersPage() {
                 <details className="relative">
                   <summary className="list-none inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#0B2545] px-4 py-2 text-sm font-medium text-white hover:bg-[#12355f] [&::-webkit-details-marker]:hidden">
                     <FiUserPlus className="h-4 w-4" />
-                    People Actions
+                    Acciones de personas
                     <FiChevronDown className="h-4 w-4" />
                   </summary>
                   <div className="absolute right-0 z-20 mt-2 w-64 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
@@ -569,7 +569,7 @@ export default function MasterUsersPage() {
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-purple-700 hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <FiUserPlus className="h-4 w-4" />
-                      Create Broker
+                      Crear Broker
                     </button>
                     <button
                       onClick={(event) => {
@@ -581,7 +581,7 @@ export default function MasterUsersPage() {
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <FiUserPlus className="h-4 w-4" />
-                      Create Agent
+                      Crear Agente
                     </button>
                     <button
                       onClick={(event) => {
@@ -593,7 +593,7 @@ export default function MasterUsersPage() {
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-orange-700 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <FiUserPlus className="h-4 w-4" />
-                      Create Constructora
+                      Crear Constructora
                     </button>
                     <button
                       onClick={(event) => {
@@ -605,7 +605,7 @@ export default function MasterUsersPage() {
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <FiUserPlus className="h-4 w-4" />
-                      Create Buyer
+                      Crear Comprador
                     </button>
                     <div className="my-1 border-t border-gray-100" />
                     <button
@@ -616,7 +616,7 @@ export default function MasterUsersPage() {
                       }}
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      Refresh people list
+                      Actualizar lista
                     </button>
                   </div>
                 </details>
@@ -646,16 +646,16 @@ export default function MasterUsersPage() {
 
         {isDangerousActionsLocked && (
           <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-            <div className="font-semibold">Admin actions are disabled while impersonating a user.</div>
+            <div className="font-semibold">Acciones de administrador deshabilitadas durante la impersonación.</div>
             <div className="mt-1">
-              Logged in as: <span className="font-medium">{impersonationAdminEmail || 'original admin'}</span>. Use <span className="font-medium">Stop Impersonation</span> to restore full admin controls.
+              Conectado como: <span className="font-medium">{impersonationAdminEmail || 'administrador original'}</span>. Usa <span className="font-medium">Detener impersonación</span> para restaurar los controles.
             </div>
           </div>
         )}
 
         <div className="mb-6 rounded-lg border border-[#0B2545]/20 bg-[#0B2545]/5 p-4">
           <div className="text-sm font-semibold text-[#0B2545]">
-            {isBrokerView ? 'Team Onboarding Flow' : 'People & Onboarding Flow'}
+            {isBrokerView ? 'Flujo de incorporación del equipo' : 'Flujo de personas e incorporación'}
           </div>
           {isBrokerView ? (
             <div className="mt-2 text-xs text-gray-700">
@@ -670,7 +670,7 @@ export default function MasterUsersPage() {
           )}
           {!isBrokerView && (
             <div className="mt-2 text-xs text-gray-600">
-              Detailed intake and approval queue: <Link href="/master/applications" className="font-semibold text-[#0B2545] hover:underline">Applications</Link>
+              Cola de solicitudes y aprobaciones: <Link href="/master/applications" className="font-semibold text-[#0B2545] hover:underline">Solicitudes</Link>
             </div>
           )}
         </div>
@@ -679,27 +679,27 @@ export default function MasterUsersPage() {
         {overview && (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
             <div className="bg-white rounded-lg border border-indigo-200 p-4">
-              <div className="text-sm font-medium text-indigo-700">Pending Invites</div>
+              <div className="text-sm font-medium text-indigo-700">Invitaciones pendientes</div>
               <div className="text-3xl font-bold text-indigo-900">{overview.totals.invitedPending}</div>
             </div>
             <div className="bg-white rounded-lg border border-amber-200 p-4">
-              <div className="text-sm font-medium text-amber-700">Stalled &gt;72h</div>
+              <div className="text-sm font-medium text-amber-700">Estancados &gt;72h</div>
               <div className="text-3xl font-bold text-amber-900">{overview.totals.stalledInvites}</div>
             </div>
             <div className="bg-white rounded-lg border border-rose-200 p-4">
-              <div className="text-sm font-medium text-rose-700">Suspended</div>
+              <div className="text-sm font-medium text-rose-700">Suspendidos</div>
               <div className="text-3xl font-bold text-rose-900">{overview.totals.suspendedUsers}</div>
             </div>
             <div className="bg-white rounded-lg border border-orange-200 p-4">
-              <div className="text-sm font-medium text-orange-700">Unverified Active</div>
+              <div className="text-sm font-medium text-orange-700">Activos sin verificar</div>
               <div className="text-3xl font-bold text-orange-900">{overview.totals.unverifiedActive}</div>
             </div>
             <div className="bg-white rounded-lg border border-emerald-200 p-4">
-              <div className="text-sm font-medium text-emerald-700">Onboarding Complete</div>
+              <div className="text-sm font-medium text-emerald-700">Incorporación completa</div>
               <div className="text-3xl font-bold text-emerald-900">{overview.totals.onboardingCompletionRate}%</div>
             </div>
             <div className="bg-white rounded-lg border border-slate-200 p-4">
-              <div className="text-sm font-medium text-slate-700">Lifecycle Events (7d)</div>
+              <div className="text-sm font-medium text-slate-700">Eventos de ciclo (7d)</div>
               <div className="text-3xl font-bold text-slate-900">{overview.governance.lifecycleEvents7d}</div>
             </div>
           </div>
@@ -707,11 +707,11 @@ export default function MasterUsersPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="text-sm font-medium text-gray-600">Total Users</div>
+            <div className="text-sm font-medium text-gray-600">Total usuarios</div>
             <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
           </div>
           <div className="bg-white rounded-lg border border-blue-200 p-4 cursor-pointer hover:border-blue-300" onClick={() => setRoleFilter('agent')}>
-            <div className="text-sm font-medium text-blue-700">Agents</div>
+            <div className="text-sm font-medium text-blue-700">Agentes</div>
             <div className="text-3xl font-bold text-blue-900">{stats.agents}</div>
           </div>
           <div className="bg-white rounded-lg border border-purple-200 p-4 cursor-pointer hover:border-purple-300" onClick={() => setRoleFilter('broker')}>
@@ -719,20 +719,20 @@ export default function MasterUsersPage() {
             <div className="text-3xl font-bold text-purple-900">{stats.brokers}</div>
           </div>
           <div className="bg-white rounded-lg border border-green-200 p-4 cursor-pointer hover:border-green-300" onClick={() => setRoleFilter('buyer')}>
-            <div className="text-sm font-medium text-green-700">Buyers</div>
+            <div className="text-sm font-medium text-green-700">Compradores</div>
             <div className="text-3xl font-bold text-green-900">{stats.buyers}</div>
           </div>
           <div className="bg-white rounded-lg border border-emerald-200 p-4 cursor-pointer hover:border-emerald-300" onClick={() => setStatusFilter('active')}>
             <div className="text-sm font-medium text-emerald-700 flex items-center gap-1">
               <FiUserCheck className="w-4 h-4" />
-              Active
+              Activos
             </div>
             <div className="text-3xl font-bold text-emerald-900">{stats.active}</div>
           </div>
           <div className="bg-white rounded-lg border border-red-200 p-4 cursor-pointer hover:border-red-300" onClick={() => setStatusFilter('inactive')}>
             <div className="text-sm font-medium text-red-700 flex items-center gap-1">
               <FiUserX className="w-4 h-4" />
-              Inactive
+              Inactivos
             </div>
             <div className="text-3xl font-bold text-red-900">{stats.inactive}</div>
           </div>
@@ -741,26 +741,26 @@ export default function MasterUsersPage() {
         {/* Filters & Search */}
         <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Quick Views</span>
-            <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'all' && statusFilter === 'all' ? 'border-[#0B2545] bg-[#0B2545] text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>{isBrokerView ? 'All Team' : 'All People'}</button>
-            <button type="button" onClick={() => { setRoleFilter('agent'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'agent' ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Agents</button>
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Vistas rápidas</span>
+            <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'all' && statusFilter === 'all' ? 'border-[#0B2545] bg-[#0B2545] text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>{isBrokerView ? 'Todo el equipo' : 'Todos'}</button>
+            <button type="button" onClick={() => { setRoleFilter('agent'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'agent' ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Agentes</button>
             <button type="button" onClick={() => { setRoleFilter('broker'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'broker' ? 'border-purple-600 bg-purple-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Brokers</button>
             {!isBrokerView && (
               <>
                 <button type="button" onClick={() => { setRoleFilter('constructora'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'constructora' ? 'border-orange-600 bg-orange-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Constructoras</button>
-                <button type="button" onClick={() => { setRoleFilter('buyer'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'buyer' ? 'border-green-600 bg-green-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Buyers</button>
+                <button type="button" onClick={() => { setRoleFilter('buyer'); setStatusFilter('all') }} className={`text-xs px-3 py-1.5 rounded-lg border ${roleFilter === 'buyer' ? 'border-green-600 bg-green-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Compradores</button>
               </>
             )}
-            <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('active') }} className={`text-xs px-3 py-1.5 rounded-lg border ${statusFilter === 'active' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Active</button>
-            <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('inactive') }} className={`text-xs px-3 py-1.5 rounded-lg border ${statusFilter === 'inactive' ? 'border-red-600 bg-red-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Inactive</button>
-            <button type="button" onClick={() => { setSearchQuery(''); setRoleFilter('all'); setStatusFilter('all') }} className="ml-auto text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Clear Filters</button>
+            <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('active') }} className={`text-xs px-3 py-1.5 rounded-lg border ${statusFilter === 'active' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Activos</button>
+            <button type="button" onClick={() => { setRoleFilter('all'); setStatusFilter('inactive') }} className={`text-xs px-3 py-1.5 rounded-lg border ${statusFilter === 'inactive' ? 'border-red-600 bg-red-600 text-white' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}>Inactivos</button>
+            <button type="button" onClick={() => { setSearchQuery(''); setRoleFilter('all'); setStatusFilter('all') }} className="ml-auto text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700">Limpiar filtros</button>
           </div>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex-1 relative">
               <FiSearch className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name, email, phone, or code..."
+                placeholder="Buscar por nombre, email, teléfono o código..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -774,10 +774,10 @@ export default function MasterUsersPage() {
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-label="Filter by role"
               >
-                <option value="all">All Roles</option>
-                <option value="agent">Agents</option>
+                <option value="all">Todos los roles</option>
+                <option value="agent">Agentes</option>
                 <option value="broker">Brokers</option>
-                {!isBrokerView && <option value="buyer">Buyers</option>}
+                {!isBrokerView && <option value="buyer">Compradores</option>}
                 {!isBrokerView && <option value="constructora">Constructoras</option>}
               </select>
               <select
@@ -786,9 +786,9 @@ export default function MasterUsersPage() {
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-label="Filter by status"
               >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="all">Todos los estados</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
               </select>
             </div>
           </div>
@@ -826,7 +826,7 @@ export default function MasterUsersPage() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Last Login</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Risk</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -907,7 +907,7 @@ export default function MasterUsersPage() {
                             <details className="relative">
                               <summary className="list-none inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 [&::-webkit-details-marker]:hidden">
                                 <FiMoreVertical className="w-4 h-4" />
-                                Actions
+                                Acciones
                                 <FiChevronDown className="w-4 h-4" />
                               </summary>
                               <div className="absolute right-0 z-20 mt-2 w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
@@ -919,7 +919,7 @@ export default function MasterUsersPage() {
                                   }}
                                   className="block rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
                                 >
-                                  View profile
+                                  Ver perfil
                                 </Link>
                                 {isInvited && (
                                   <button
@@ -931,7 +931,7 @@ export default function MasterUsersPage() {
                                     className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-indigo-700 hover:bg-indigo-50"
                                   >
                                     <FiMail className="w-4 h-4" />
-                                    Resend Invite
+                                    Reenviar invitación
                                   </button>
                                 )}
                                 <button
@@ -945,7 +945,7 @@ export default function MasterUsersPage() {
                                   className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   <FiEdit className="w-4 h-4" />
-                                  Edit user
+                                  Editar usuario
                                 </button>
                                 <button
                                   onClick={(event) => {
@@ -969,7 +969,7 @@ export default function MasterUsersPage() {
                                     className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     <FiLogIn className="w-4 h-4" />
-                                    {impersonatingUserId === (user.uid || user.id) ? 'Logging in...' : 'Login as'}
+                                    {impersonatingUserId === (user.uid || user.id) ? 'Ingresando...' : 'Ingresar como'}
                                   </button>
                                 )}
                                 <button
@@ -982,7 +982,7 @@ export default function MasterUsersPage() {
                                   className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-violet-700 hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   <FiKey className="w-4 h-4" />
-                                  Reset password
+                                  Restablecer contraseña
                                 </button>
                                 <button
                                   onClick={(event) => {
@@ -993,7 +993,7 @@ export default function MasterUsersPage() {
                                   disabled={isBrokerView || isDangerousActionsLocked}
                                   className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-orange-700 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                  Compliance check
+                                  Verificación de cumplimiento
                                 </button>
                                 {isProfessional && (
                                   <button
@@ -1009,7 +1009,7 @@ export default function MasterUsersPage() {
                                         : 'text-slate-700 hover:bg-slate-100'
                                     }`}
                                   >
-                                    {isPublicProfileEnabled ? 'Public profile: ON' : 'Public profile: OFF'}
+                                    {isPublicProfileEnabled ? 'Perfil público: ON' : 'Perfil público: OFF'}
                                   </button>
                                 )}
                                 <button
@@ -1022,7 +1022,7 @@ export default function MasterUsersPage() {
                                   className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   {isDisabled ? <FiUserCheck className="w-4 h-4" /> : <FiUserX className="w-4 h-4" />}
-                                  {isDisabled ? 'Enable user' : 'Disable user'}
+                                  {isDisabled ? 'Habilitar usuario' : 'Deshabilitar usuario'}
                                 </button>
                                 <div className="my-1 border-t border-gray-100" />
                                 <button
@@ -1035,7 +1035,7 @@ export default function MasterUsersPage() {
                                   className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   <FiTrash2 className="w-4 h-4" />
-                                  Delete user
+                                  Eliminar usuario
                                 </button>
                               </div>
                             </details>

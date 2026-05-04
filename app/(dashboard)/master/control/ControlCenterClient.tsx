@@ -218,7 +218,7 @@ export default function ControlCenterClient() {
         throw new Error(json?.error || 'Unable to assign lead')
       }
 
-      toast.success(`Lead assigned to ${suggestion.agentName}`)
+      toast.success(`Lead asignado a ${suggestion.agentName}`)
       await loadControlCenter()
     } catch (error: any) {
       console.error('assign lead error', error)
@@ -246,7 +246,7 @@ export default function ControlCenterClient() {
       }
 
       setEscalationHours(nextHours)
-      toast.success(`Global SLA escalation updated to ${nextHours}h`)
+      toast.success(`Escalada global de SLA actualizada a ${nextHours}h`)
       await loadControlCenter()
     } catch (error: any) {
       console.error('save escalation hours error', error)
@@ -304,7 +304,7 @@ export default function ControlCenterClient() {
         throw new Error(json?.error || 'Unable to bulk assign leads')
       }
 
-      toast.success(`${leadIds.length} leads assigned to ${agent.agentName}`)
+      toast.success(`${leadIds.length} leads asignados a ${agent.agentName}`)
       setSelectedLeadIds(new Set())
       setBulkAssignMode(false)
       setBulkAssignAgent(null)
@@ -337,10 +337,10 @@ export default function ControlCenterClient() {
   const topThree = useMemo(() => stream.slice(0, 3), [stream])
 
   const modeOptions = [
-    { value: 'manual_only', label: 'Manual only', hint: 'Master admin decides each assignment.' },
-    { value: 'auto_brokerage', label: 'Auto-assign to brokerage', hint: 'Ready for brokerage-based routing.' },
-    { value: 'auto_top_agent', label: 'Auto-assign to top agent', hint: 'Ready to use top system score.' },
-    { value: 'rotation_mode', label: 'Rotation mode', hint: 'Ready for operational round-robin.' },
+    { value: 'manual_only', label: 'Solo manual', hint: 'El administrador maestro decide cada asignación.' },
+    { value: 'auto_brokerage', label: 'Auto-asignar a brokerage', hint: 'Listo para enrutamiento por brokerage.' },
+    { value: 'auto_top_agent', label: 'Auto-asignar al mejor agente', hint: 'Usa la puntuación más alta del sistema.' },
+    { value: 'rotation_mode', label: 'Modo rotación', hint: 'Distribución rotativa operacional.' },
   ] as const
 
   return (
@@ -386,17 +386,17 @@ export default function ControlCenterClient() {
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="text-xs uppercase tracking-wide text-gray-500">Escalated Leads</div>
+            <div className="text-xs uppercase tracking-wide text-gray-500">Leads escalados</div>
             <div className="text-2xl font-bold text-red-700 mt-1">{queueStats.escalated}</div>
-            <div className="text-xs text-gray-500 mt-1">Breached and escalated beyond {escalationHours}h SLA window</div>
+            <div className="text-xs text-gray-500 mt-1">Incumplieron el SLA de {escalationHours}h y fueron escalados</div>
           </div>
           <div className="bg-white rounded-xl border border-orange-200 p-4 shadow-sm">
-            <div className="text-xs uppercase tracking-wide text-orange-700">Orphaned Conversations</div>
+            <div className="text-xs uppercase tracking-wide text-orange-700">Conversaciones huérfanas</div>
             <div className="text-2xl font-bold text-orange-800 mt-1">{orphanedConversations}</div>
-            <div className="text-xs text-gray-500 mt-1">Conversations blocked by lifecycle policy, need reassignment</div>
+            <div className="text-xs text-gray-500 mt-1">Conversaciones bloqueadas por política de ciclo de vida, requieren reasignación</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="text-xs uppercase tracking-wide text-gray-500">Global SLA Escalation Threshold</div>
+            <div className="text-xs uppercase tracking-wide text-gray-500">Umbral de escalada SLA global</div>
             <div className="mt-2 flex items-center gap-2">
               {[2, 4, 6].map((hours) => (
                 <button
@@ -414,10 +414,10 @@ export default function ControlCenterClient() {
         </section>
 
         <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <div className="font-semibold text-[#0B2545] mb-2 uppercase tracking-wide">Recent automation runs</div>
+          <div className="font-semibold text-[#0B2545] mb-2 uppercase tracking-wide">Ejecuciones de automatización recientes</div>
           <div className="space-y-2">
             {automationRuns.length === 0 ? (
-              <div className="text-xs text-gray-500">No scheduler runs available yet.</div>
+              <div className="text-xs text-gray-500">Sin ejecuciones de scheduler disponibles.</div>
             ) : (
               automationRuns.slice(0, 4).map((run) => (
                 <div key={run.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 px-2 py-1.5">
@@ -427,7 +427,7 @@ export default function ControlCenterClient() {
                       {run.status}
                     </span>
                   </div>
-                  <div className="text-[11px] text-gray-600">{formatRunMetrics(run)} · duration {formatRunDuration(run.durationMs)} · {formatRelative(run.timestamp)}</div>
+                  <div className="text-[11px] text-gray-600">{formatRunMetrics(run)} · duración {formatRunDuration(run.durationMs)} · {formatRelative(run.timestamp)}</div>
                 </div>
               ))
             )}
@@ -436,7 +436,7 @@ export default function ControlCenterClient() {
 
         <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="flex items-center gap-2 text-[#0B2545] font-semibold mb-3">
-            <FiTarget /> Routing Policy
+            <FiTarget /> Política de enrutamiento
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {modeOptions.map((option) => {
@@ -461,11 +461,11 @@ export default function ControlCenterClient() {
 
         <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="flex items-center gap-2 text-[#0B2545] font-semibold mb-3">
-            <FiActivity /> Immediate Priority Queue (Top 3)
+            <FiActivity /> Cola de prioridad inmediata (Top 3)
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             {topThree.length === 0 ? (
-              <div className="text-sm text-gray-500">No high-priority leads in queue.</div>
+              <div className="text-sm text-gray-500">Sin leads de alta prioridad en cola.</div>
             ) : (
               topThree.map((lead) => (
                 <div key={lead.id} className="rounded-lg border border-gray-200 p-3">
@@ -476,7 +476,7 @@ export default function ControlCenterClient() {
                     </span>
                   </div>
                   <div className="text-xs text-gray-600 mt-1">{lead.city || 'N/A'} {lead.sector ? `• ${lead.sector}` : ''}</div>
-                  <div className="text-xs text-gray-500 mt-1">{lead.type} • urgency {lead.urgencyScore}</div>
+                  <div className="text-xs text-gray-500 mt-1">{lead.type} • urgencia {lead.urgencyScore}</div>
                   <div className="text-xs text-gray-500">{lead.propertyType || 'property'} • {lead.ageHours}h</div>
                 </div>
               ))
@@ -485,19 +485,19 @@ export default function ControlCenterClient() {
         </section>
 
         <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <div className="font-semibold text-[#0B2545] mb-2">Reassignment Rules</div>
+          <div className="font-semibold text-[#0B2545] mb-2">Reglas de reasignación</div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
             <div className={`rounded-lg border p-3 ${reassignmentPolicy.manualReassignEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
               Manual reassign: <strong>{reassignmentPolicy.manualReassignEnabled ? 'ON' : 'OFF'}</strong>
             </div>
             <div className={`rounded-lg border p-3 ${reassignmentPolicy.suggestNewAssigneeEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-              Suggest new assignee: <strong>{reassignmentPolicy.suggestNewAssigneeEnabled ? 'ON' : 'OFF'}</strong>
+              Sugerir nuevo asignado: <strong>{reassignmentPolicy.suggestNewAssigneeEnabled ? 'ON' : 'OFF'}</strong>
             </div>
             <div className={`rounded-lg border p-3 ${reassignmentPolicy.brokerFallbackEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
               Broker fallback: <strong>{reassignmentPolicy.brokerFallbackEnabled ? 'ON' : 'OFF'}</strong>
             </div>
             <div className={`rounded-lg border p-3 ${reassignmentPolicy.escalationLogEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-              Escalation log entry: <strong>{reassignmentPolicy.escalationLogEnabled ? 'ON' : 'OFF'}</strong>
+              Entrada de log de escalada: <strong>{reassignmentPolicy.escalationLogEnabled ? 'ON' : 'OFF'}</strong>
             </div>
           </div>
         </section>
@@ -511,26 +511,26 @@ export default function ControlCenterClient() {
               onClick={() => setPreviewEscalation(!previewEscalation)}
               className="text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-50"
             >
-              {previewEscalation ? 'Hide' : 'Preview'}
+              {previewEscalation ? 'Ocultar' : 'Vista previa'}
             </button>
           </div>
           
           {previewEscalation && escalationPreviewStats && (
             <div className="mt-4 grid grid-cols-3 gap-3">
               <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-                <div className="text-xs uppercase tracking-wide text-red-700 font-semibold">Will Escalate Now</div>
+                <div className="text-xs uppercase tracking-wide text-red-700 font-semibold">Escalarán ahora</div>
                 <div className="text-2xl font-bold text-red-900 mt-1">{escalationPreviewStats.willEscalate}</div>
-                <div className="text-xs text-red-600 mt-1">Already breached SLA window</div>
+                <div className="text-xs text-red-600 mt-1">Ya incumplieron la ventana SLA</div>
               </div>
               <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
-                <div className="text-xs uppercase tracking-wide text-orange-700 font-semibold">At Risk</div>
+                <div className="text-xs uppercase tracking-wide text-orange-700 font-semibold">En riesgo</div>
                 <div className="text-2xl font-bold text-orange-900 mt-1">{escalationPreviewStats.atRisk}</div>
-                <div className="text-xs text-orange-600 mt-1">Less than 30 minutes left</div>
+                <div className="text-xs text-orange-600 mt-1">Menos de 30 minutos restantes</div>
               </div>
               <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                <div className="text-xs uppercase tracking-wide text-green-700 font-semibold">Safe</div>
+                <div className="text-xs uppercase tracking-wide text-green-700 font-semibold">En tiempo</div>
                 <div className="text-2xl font-bold text-green-900 mt-1">{escalationPreviewStats.total - escalationPreviewStats.willEscalate - escalationPreviewStats.atRisk}</div>
-                <div className="text-xs text-green-600 mt-1">Still within SLA</div>
+                <div className="text-xs text-green-600 mt-1">Aún dentro del SLA</div>
               </div>
             </div>
           )}
@@ -538,13 +538,13 @@ export default function ControlCenterClient() {
 
         <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-            <div className="font-semibold text-[#0B2545] flex items-center gap-2"><FiClock /> Incoming Lead Stream (Unassigned)</div>
-            <div className="text-xs text-gray-500">Manual decision with ranked suggestions</div>
+            <div className="font-semibold text-[#0B2545] flex items-center gap-2"><FiClock /> Cola de leads entrantes (Sin asignar)</div>
+            <div className="text-xs text-gray-500">Decisión manual con sugerencias clasificadas</div>
           </div>
 
           {selectedLeadIds.size > 0 && (
             <div className="px-5 py-3 border-b border-amber-200 bg-amber-50 flex items-center justify-between">
-              <div className="text-sm font-semibold text-amber-800">{selectedLeadIds.size} lead{selectedLeadIds.size !== 1 ? 's' : ''} selected</div>
+              <div className="text-sm font-semibold text-amber-800">{selectedLeadIds.size} lead{selectedLeadIds.size !== 1 ? 's' : ''} seleccionado{selectedLeadIds.size !== 1 ? 's' : ''}</div>
               <button
                 onClick={() => {
                   if (bulkAssignmentLeads.length > 0) {
@@ -553,7 +553,7 @@ export default function ControlCenterClient() {
                 }}
                 className="px-3 py-1.5 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-700"
               >
-                Bulk assign
+                Asignación masiva
               </button>
             </div>
           )}
@@ -561,7 +561,7 @@ export default function ControlCenterClient() {
           {bulkAssignMode && bulkAssignmentLeads.length > 0 && (
             <div className="px-5 py-4 border-b border-green-200 bg-green-50">
               <div className="text-sm font-semibold text-green-900 mb-3">
-                Assign {bulkAssignmentLeads.length} lead{bulkAssignmentLeads.length !== 1 ? 's' : ''} to:
+                Asignar {bulkAssignmentLeads.length} lead{bulkAssignmentLeads.length !== 1 ? 's' : ''} a:
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 {Array.from(new Map(
@@ -585,7 +585,7 @@ export default function ControlCenterClient() {
                 }}
                 className="mt-2 text-sm text-gray-600 hover:text-gray-900"
               >
-                Cancel
+                Cancelar
               </button>
             </div>
           )}
@@ -605,20 +605,20 @@ export default function ControlCenterClient() {
                     />
                   </th>
                   <th className="px-4 py-3 text-left">Lead</th>
-                  <th className="px-4 py-3 text-left">Context</th>
-                  <th className="px-4 py-3 text-left">SLA Timer</th>
-                  <th className="px-4 py-3 text-left">Urgency</th>
-                  <th className="px-4 py-3 text-left">Suggestions</th>
+                  <th className="px-4 py-3 text-left">Contexto</th>
+                  <th className="px-4 py-3 text-left">SLA</th>
+                  <th className="px-4 py-3 text-left">Urgencia</th>
+                  <th className="px-4 py-3 text-left">Sugerencias</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">Loading lead stream...</td>
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">Cargando cola de leads...</td>
                   </tr>
                 ) : stream.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No leads pending assignment.</td>
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">Sin leads pendientes de asignación.</td>
                   </tr>
                 ) : (
                   stream.map((lead) => {
@@ -636,7 +636,7 @@ export default function ControlCenterClient() {
                           />
                         </td>
                         <td className="px-4 py-4 align-top">
-                          <div className="font-medium text-[#0B2545]">{lead.buyerName || 'Unnamed lead'}</div>
+                          <div className="font-medium text-[#0B2545]">{lead.buyerName || 'Lead sin nombre'}</div>
                           <div className="text-xs text-gray-600">{lead.buyerEmail || 'no email'}</div>
                           {lead.buyerPhone && <div className="text-xs text-gray-500">{lead.buyerPhone}</div>}
                           <div className="text-xs text-gray-400 mt-1">ID: {lead.id.slice(0, 8)}...</div>

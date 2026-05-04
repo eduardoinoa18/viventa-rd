@@ -169,7 +169,7 @@ export default function ProjectCreationForm() {
         }
 
         setFormState((prev) => ({ ...prev, unitsData: units }));
-        toast.success(`${units.length} units loaded from CSV`);
+        toast.success(`${units.length} unidades cargadas desde CSV`);
       } catch (error) {
         toast.error('Error al procesar el archivo CSV');
       }

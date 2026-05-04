@@ -131,7 +131,7 @@ export default function MasterActivityPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by type, actor, entity, deal..."
+              placeholder="Buscar por tipo, actor, entidad, negocio..."
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm min-w-[280px]"
             />
           </div>

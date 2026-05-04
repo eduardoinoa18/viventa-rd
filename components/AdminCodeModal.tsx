@@ -40,7 +40,7 @@ export default function AdminCodeModal({ onVerified }: { onVerified: () => void 
       <div className="bg-white p-6 rounded shadow w-96">
         <h2 className="text-xl font-bold mb-2">Admin Verification</h2>
         <p className="mb-3 text-gray-600">Enter the 6-digit code sent to your email.</p>
-        <input value={code} onChange={e=>setCode(e.target.value)} maxLength={6} className="w-full px-3 py-2 border rounded mb-3" placeholder="Code" />
+        <input value={code} onChange={e=>setCode(e.target.value)} maxLength={6} className="w-full px-3 py-2 border rounded mb-3" placeholder="Código" />
         <button onClick={verify} className="w-full px-4 py-2 bg-[#00A6A6] text-white rounded mb-2">Verify</button>
         {sending && <div className="text-sm text-gray-500">Sending code...</div>}
         {status && <div className="text-sm text-gray-700">{status}</div>}

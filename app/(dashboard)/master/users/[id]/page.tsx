@@ -206,13 +206,13 @@ export default function MasterUserDetailPage() {
   }, [loadTimeline])
 
   const timelineEventOptions = [
-    { value: 'all', label: 'All events' },
-    { value: 'login', label: 'Login' },
-    { value: 'property_view', label: 'Property view' },
-    { value: 'whatsapp_click', label: 'WhatsApp click' },
-    { value: 'lead_created', label: 'Lead created' },
-    { value: 'reservation_started', label: 'Reservation started' },
-    { value: 'reservation_completed', label: 'Reservation completed' },
+    { value: 'all', label: 'Todos los eventos' },
+    { value: 'login', label: 'Inicio de sesión' },
+    { value: 'property_view', label: 'Vista de propiedad' },
+    { value: 'whatsapp_click', label: 'Clic en WhatsApp' },
+    { value: 'lead_created', label: 'Lead creado' },
+    { value: 'reservation_started', label: 'Reserva iniciada' },
+    { value: 'reservation_completed', label: 'Reserva completada' },
   ]
 
   const headerSubtitle = useMemo(() => {
@@ -230,19 +230,19 @@ export default function MasterUserDetailPage() {
             href="/master/users"
             className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-[#0B2545] hover:bg-gray-100"
           >
-            <FiArrowLeft /> Back to Users
+            <FiArrowLeft /> Volver a usuarios
           </Link>
           <button
             onClick={loadDetails}
             className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-[#0B2545] hover:bg-gray-100"
           >
-            Refresh
+            Actualizar
           </button>
         </div>
 
         {loading ? (
           <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500">
-            Loading user performance...
+            Cargando rendimiento del usuario...
           </div>
         ) : error ? (
           <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
@@ -250,7 +250,7 @@ export default function MasterUserDetailPage() {
           </div>
         ) : !data ? (
           <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500">
-            User details not available.
+            Detalles del usuario no disponibles.
           </div>
         ) : (
           <>
@@ -295,19 +295,19 @@ export default function MasterUserDetailPage() {
             </section>
 
             <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <StatCard title="Leads Assigned" value={data.kpis.leadStats.assigned} subtitle={`Won ${data.kpis.leadStats.won} • Lost ${data.kpis.leadStats.lost}`} />
-              <StatCard title="Conversion Rate" value={`${data.kpis.conversionRate}%`} subtitle="Won / Assigned" />
-              <StatCard title="Listings" value={data.kpis.listingStats.total} subtitle={`Active ${data.kpis.listingStats.active} • Sold ${data.kpis.listingStats.sold}`} />
-              <StatCard title="Buyer Leads" value={data.kpis.buyerLeadsCount} subtitle="Matched by buyer email" />
+              <StatCard title="Leads Asignados" value={data.kpis.leadStats.assigned} subtitle={`Ganados ${data.kpis.leadStats.won} • Perdidos ${data.kpis.leadStats.lost}`} />
+              <StatCard title="Tasa de conversión" value={`${data.kpis.conversionRate}%`} subtitle="Ganados / Asignados" />
+              <StatCard title="Propiedades" value={data.kpis.listingStats.total} subtitle={`Activas ${data.kpis.listingStats.active} • Vendidas ${data.kpis.listingStats.sold}`} />
+              <StatCard title="Leads de compradores" value={data.kpis.buyerLeadsCount} subtitle="Coincide por email del comprador" />
             </section>
 
             {data.kpis.teamStats ? (
               <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-[#0B2545]">Broker Team Snapshot</h2>
+                <h2 className="text-lg font-semibold text-[#0B2545]">Equipo del broker</h2>
                 <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <StatCard title="Team Agents" value={data.kpis.teamStats.teamAgents} />
+                  <StatCard title="Agentes del equipo" value={data.kpis.teamStats.teamAgents} />
                   <StatCard
-                    title="Invite Status"
+                    title="Estado de invitación"
                     value={data.kpis.invite?.status || 'n/a'}
                     subtitle={data.kpis.invite?.expiresAt ? `Expires ${formatDate(data.kpis.invite.expiresAt)}` : 'No invite record'}
                   />
@@ -318,10 +318,10 @@ export default function MasterUserDetailPage() {
             <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-semibold text-[#0B2545]">
-                  <FiTarget /> Recent Leads
+                  <FiTarget /> Leads recientes
                 </h2>
                 {data.recent.leads.length === 0 ? (
-                  <p className="text-sm text-gray-500">No assigned leads for this user.</p>
+                  <p className="text-sm text-gray-500">No hay leads asignados a este usuario.</p>
                 ) : (
                   <div className="space-y-3">
                     {data.recent.leads.map((lead) => (

@@ -132,7 +132,7 @@ export default function BuyerDetailPage() {
       if (!res.ok || !data?.ok) {
         throw new Error(data?.error || 'Failed to send matches email')
       }
-      toast.success(`Matches email sent to ${data?.data?.sentTo || 'buyer'}`)
+      toast.success(`Email de matches enviado a ${data?.data?.sentTo || 'comprador'}`)
     } catch (error: any) {
       console.error('send matches error', error)
       toast.error(error?.message || 'No se pudo enviar el email de matches')
@@ -271,7 +271,7 @@ export default function BuyerDetailPage() {
                     <input
                       value={assignedAgentName}
                       onChange={(event) => setAssignedAgentName(event.target.value)}
-                      placeholder="Agent name"
+                      placeholder="Nombre del agente"
                       className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
                     />
                   </label>
