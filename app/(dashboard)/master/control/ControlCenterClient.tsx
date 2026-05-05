@@ -77,7 +77,7 @@ function formatRunMetrics(run: AutomationRun) {
 }
 
 function formatRunDuration(durationMs: number) {
-  if (!durationMs || durationMs < 0) return 'n/a'
+  if (!durationMs || durationMs < 0) return 'n/d'
   if (durationMs < 1000) return `${durationMs}ms`
   return `${(durationMs / 1000).toFixed(1)}s`
 }
@@ -142,7 +142,7 @@ export default function ControlCenterClient() {
       const leadsJson = await leadsRes.json().catch(() => ({}))
 
       if (!streamRes.ok || !streamJson?.ok) {
-        throw new Error(streamJson?.error || 'Failed to load lead stream')
+        throw new Error(streamJson?.error || 'No se pudo cargar el flujo de leads')
       }
 
       setStream(Array.isArray(streamJson?.data?.stream) ? streamJson.data.stream : [])
@@ -161,7 +161,7 @@ export default function ControlCenterClient() {
       if (mode) setRoutingMode(mode)
     } catch (error: any) {
       console.error('control center load error', error)
-      toast.error(error?.message || 'Unable to load Control Center')
+      toast.error(error?.message || 'No se pudo cargar el Centro de control')
     } finally {
       setLoading(false)
     }
@@ -185,14 +185,14 @@ export default function ControlCenterClient() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || 'Unable to save routing mode')
+        throw new Error(json?.error || 'No se pudo guardar el modo de enrutamiento')
       }
 
       setRoutingMode(nextMode)
       toast.success('Modo de enrutamiento actualizado')
     } catch (error: any) {
       console.error('save routing mode error', error)
-      toast.error(error?.message || 'Unable to save mode')
+      toast.error(error?.message || 'No se pudo guardar el modo')
     } finally {
       setSavingMode(false)
     }
@@ -201,7 +201,7 @@ export default function ControlCenterClient() {
   const assignToSuggestion = useCallback(async (lead: ControlLead, suggestion: Suggestion) => {
     try {
       setAssigningLeadId(lead.id)
-      const note = `Assigned from Control Center (${routingMode}). Fit=${suggestion.fitScore}, Load=${suggestion.activeLoad}, Conv=${suggestion.conversionRate}%`
+      const note = `Asignado desde Centro de control (${routingMode}). Ajuste=${suggestion.fitScore}, Carga=${suggestion.activeLoad}, Conv=${suggestion.conversionRate}%`
 
       const res = await fetch('/api/admin/leads/assign', {
         method: 'POST',
@@ -215,14 +215,14 @@ export default function ControlCenterClient() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || 'Unable to assign lead')
+        throw new Error(json?.error || 'No se pudo asignar el lead')
       }
 
       toast.success(`Lead asignado a ${suggestion.agentName}`)
       await loadControlCenter()
     } catch (error: any) {
       console.error('assign lead error', error)
-      toast.error(error?.message || 'Unable to assign lead')
+      toast.error(error?.message || 'No se pudo asignar el lead')
     } finally {
       setAssigningLeadId(null)
     }
@@ -242,7 +242,7 @@ export default function ControlCenterClient() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || 'Unable to save SLA threshold')
+        throw new Error(json?.error || 'No se pudo guardar el umbral de SLA')
       }
 
       setEscalationHours(nextHours)
@@ -250,7 +250,7 @@ export default function ControlCenterClient() {
       await loadControlCenter()
     } catch (error: any) {
       console.error('save escalation hours error', error)
-      toast.error(error?.message || 'Unable to save global SLA')
+      toast.error(error?.message || 'No se pudo guardar el SLA global')
     } finally {
       setSavingMode(false)
     }
@@ -287,7 +287,7 @@ export default function ControlCenterClient() {
     try {
       setSavingMode(true)
       const leadIds = Array.from(selectedLeadIds)
-      const note = `Bulk assigned from Control Center (${routingMode}). Fit=${agent.fitScore}, Load=${agent.activeLoad}, Conv=${agent.conversionRate}%`
+      const note = `Asignación masiva desde Centro de control (${routingMode}). Ajuste=${agent.fitScore}, Carga=${agent.activeLoad}, Conv=${agent.conversionRate}%`
 
       const res = await fetch('/api/admin/leads/bulk-assign', {
         method: 'POST',
@@ -301,7 +301,7 @@ export default function ControlCenterClient() {
 
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || 'Unable to bulk assign leads')
+        throw new Error(json?.error || 'No se pudieron asignar leads en lote')
       }
 
       toast.success(`${leadIds.length} leads asignados a ${agent.agentName}`)
@@ -311,7 +311,7 @@ export default function ControlCenterClient() {
       await loadControlCenter()
     } catch (error: any) {
       console.error('bulk assign error', error)
-      toast.error(error?.message || 'Unable to bulk assign leads')
+      toast.error(error?.message || 'No se pudieron asignar leads en lote')
     } finally {
       setSavingMode(false)
     }
@@ -470,14 +470,14 @@ export default function ControlCenterClient() {
               topThree.map((lead) => (
                 <div key={lead.id} className="rounded-lg border border-gray-200 p-3">
                   <div className="flex items-center justify-between">
-                    <div className="font-medium text-[#0B2545]">{lead.buyerName || 'Unnamed lead'}</div>
+                    <div className="font-medium text-[#0B2545]">{lead.buyerName || 'Lead sin nombre'}</div>
                     <span className={`text-xs px-2 py-1 rounded-full ${lead.sla.color === 'green' ? 'bg-green-100 text-green-700' : lead.sla.color === 'yellow' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
                       {lead.sla.label}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-600 mt-1">{lead.city || 'N/A'} {lead.sector ? `• ${lead.sector}` : ''}</div>
+                  <div className="text-xs text-gray-600 mt-1">{lead.city || 'n/d'} {lead.sector ? `• ${lead.sector}` : ''}</div>
                   <div className="text-xs text-gray-500 mt-1">{lead.type} • urgencia {lead.urgencyScore}</div>
-                  <div className="text-xs text-gray-500">{lead.propertyType || 'property'} • {lead.ageHours}h</div>
+                  <div className="text-xs text-gray-500">{lead.propertyType || 'propiedad'} • {lead.ageHours}h</div>
                 </div>
               ))
             )}
@@ -488,16 +488,16 @@ export default function ControlCenterClient() {
           <div className="font-semibold text-[#0B2545] mb-2">Reglas de reasignación</div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
             <div className={`rounded-lg border p-3 ${reassignmentPolicy.manualReassignEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-              Manual reassign: <strong>{reassignmentPolicy.manualReassignEnabled ? 'ACTIVO' : 'INACTIVO'}</strong>
+              Reasignación manual: <strong>{reassignmentPolicy.manualReassignEnabled ? 'ACTIVO' : 'INACTIVO'}</strong>
             </div>
             <div className={`rounded-lg border p-3 ${reassignmentPolicy.suggestNewAssigneeEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-              Sugerir nuevo asignado: <strong>{reassignmentPolicy.suggestNewAssigneeEnabled ? 'ON' : 'OFF'}</strong>
+              Sugerir nuevo asignado: <strong>{reassignmentPolicy.suggestNewAssigneeEnabled ? 'ACTIVO' : 'INACTIVO'}</strong>
             </div>
             <div className={`rounded-lg border p-3 ${reassignmentPolicy.brokerFallbackEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-              Broker fallback: <strong>{reassignmentPolicy.brokerFallbackEnabled ? 'ON' : 'OFF'}</strong>
+              Respaldo de broker: <strong>{reassignmentPolicy.brokerFallbackEnabled ? 'ACTIVO' : 'INACTIVO'}</strong>
             </div>
             <div className={`rounded-lg border p-3 ${reassignmentPolicy.escalationLogEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-              Entrada de log de escalada: <strong>{reassignmentPolicy.escalationLogEnabled ? 'ON' : 'OFF'}</strong>
+              Entrada de log de escalada: <strong>{reassignmentPolicy.escalationLogEnabled ? 'ACTIVO' : 'INACTIVO'}</strong>
             </div>
           </div>
         </section>
@@ -574,7 +574,7 @@ export default function ControlCenterClient() {
                     className="text-left px-3 py-2 rounded-lg border border-green-300 bg-white hover:bg-green-50 text-sm"
                   >
                     <div className="font-semibold text-[#0B2545]">{agent.agentName}</div>
-                    <div className="text-xs text-gray-600">Fit {agent.fitScore} • Load {agent.activeLoad} • Conv {agent.conversionRate}%</div>
+                    <div className="text-xs text-gray-600">Ajuste {agent.fitScore} • Carga {agent.activeLoad} • Conv {agent.conversionRate}%</div>
                   </button>
                 ))}
               </div>
@@ -642,9 +642,9 @@ export default function ControlCenterClient() {
                           <div className="text-xs text-gray-400 mt-1">ID: {lead.id.slice(0, 8)}...</div>
                         </td>
                         <td className="px-4 py-4 align-top">
-                          <div className="text-sm text-gray-700">{lead.type || 'request'} • {lead.source || 'source'}</div>
-                          <div className="text-xs text-gray-500 mt-1">{lead.city || 'N/A'} {lead.sector ? `• ${lead.sector}` : ''}</div>
-                          <div className="text-xs text-gray-500">{lead.propertyType || 'property'} • {lead.ageHours}h</div>
+                          <div className="text-sm text-gray-700">{lead.type || 'solicitud'} • {lead.source || 'origen'}</div>
+                          <div className="text-xs text-gray-500 mt-1">{lead.city || 'n/d'} {lead.sector ? `• ${lead.sector}` : ''}</div>
+                          <div className="text-xs text-gray-500">{lead.propertyType || 'propiedad'} • {lead.ageHours}h</div>
                           {lead.escalated && (
                             <span className={`inline-flex mt-1 text-[11px] px-2 py-0.5 rounded-full ${lead.escalationLevel === 'critical' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
                               Escalado ({lead.escalationLevel})
@@ -671,7 +671,7 @@ export default function ControlCenterClient() {
                               <div key={`${lead.id}-${suggestion.agentId}`} className="border border-gray-200 rounded-lg p-2">
                                 <div className="text-xs font-semibold text-[#0B2545]">#{idx + 1} {suggestion.agentName}</div>
                                 <div className="text-[11px] text-gray-600">
-                                  Fit {suggestion.fitScore} • Load {suggestion.activeLoad} • Conv {suggestion.conversionRate}% • Active {suggestion.hoursSinceActive}h
+                                  Ajuste {suggestion.fitScore} • Carga {suggestion.activeLoad} • Conv {suggestion.conversionRate}% • Activo {suggestion.hoursSinceActive}h
                                 </div>
                                 {suggestion.brokerage && (
                                   <div className="text-[11px] text-gray-500">{suggestion.brokerage}</div>
@@ -699,3 +699,4 @@ export default function ControlCenterClient() {
     </div>
   )
 }
+

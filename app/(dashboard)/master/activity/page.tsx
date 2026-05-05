@@ -113,15 +113,15 @@ export default function MasterActivityPage() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[#0B2545] flex items-center gap-3">
-              <FiActivity /> Platform Activity Feed
+              <FiActivity /> Feed de actividad de la plataforma
             </h1>
-            <p className="text-gray-600 mt-1">Global event stream for listings, leads, deals, docs, transactions and commissions.</p>
+            <p className="text-gray-600 mt-1">Flujo global de eventos para propiedades, leads, deals, documentos, transacciones y comisiones.</p>
           </div>
           <button
             onClick={loadEvents}
             className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-100 text-sm"
           >
-            <FiRefreshCw /> Refresh
+            <FiRefreshCw /> Actualizar
           </button>
         </div>
 
@@ -141,7 +141,7 @@ export default function MasterActivityPage() {
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              aria-label="Filter event type"
+              aria-label="Filtrar tipo de evento"
             >
               <option value="all">Todos los tipos de evento</option>
               {typeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
@@ -151,7 +151,7 @@ export default function MasterActivityPage() {
               value={entityTypeFilter}
               onChange={(e) => setEntityTypeFilter(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              aria-label="Filter entity type"
+              aria-label="Filtrar tipo de entidad"
             >
               <option value="all">Todas las entidades</option>
               {entityTypeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
@@ -191,7 +191,7 @@ export default function MasterActivityPage() {
                         )}
                       </td>
                       <td className="p-3 text-xs text-gray-700">
-                        <div>{safeText(event.actorRole) || 'system'}</div>
+                        <div>{safeText(event.actorRole) || 'sistema'}</div>
                         <div className="text-gray-500 font-mono break-all">{safeText(event.actorId) || '—'}</div>
                       </td>
                       <td className="p-3 text-xs text-gray-700">

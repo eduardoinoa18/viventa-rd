@@ -173,7 +173,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
 
           <div className="pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-600 mb-2">
-              <strong>Role:</strong> {user.role}
+              <strong>Rol:</strong> {user.role}
             </p>
           </div>
 
@@ -183,14 +183,14 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }: Edit
               onClick={onClose}
               className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors"
             >
-              {loading ? 'Saving...' : 'Save Changes'}
+              {loading ? 'Guardando...' : 'Guardar cambios'}
             </button>
           </div>
         </form>

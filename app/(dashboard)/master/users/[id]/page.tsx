@@ -257,37 +257,37 @@ export default function MasterUserDetailPage() {
             <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-[#0B2545]">{data.profile.name || 'Unnamed user'}</h1>
+                  <h1 className="text-3xl font-bold text-[#0B2545]">{data.profile.name || 'Usuario sin nombre'}</h1>
                   <p className="mt-1 text-sm text-gray-600">{headerSubtitle}</p>
                 </div>
                 <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-xs text-gray-600">
-                  Viewer: {data.access.viewerRole}
-                  {data.access.scopedByBrokerage ? ' (brokerage scoped)' : ''}
+                  Visor: {data.access.viewerRole}
+                  {data.access.scopedByBrokerage ? ' (alcance por brokerage)' : ''}
                 </div>
               </div>
 
               <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
                   <div className="mb-1 inline-flex items-center gap-2 font-semibold text-gray-800">
-                    <FiMail /> Email
+                    <FiMail /> Correo
                   </div>
                   <p className="break-all">{data.profile.email || '—'}</p>
                 </div>
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
                   <div className="mb-1 inline-flex items-center gap-2 font-semibold text-gray-800">
-                    <FiPhone /> Phone
+                    <FiPhone /> Teléfono
                   </div>
                   <p>{data.profile.phone || '—'}</p>
                 </div>
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
                   <div className="mb-1 inline-flex items-center gap-2 font-semibold text-gray-800">
-                    <FiUser /> Brokerage
+                    <FiUser /> Corredora
                   </div>
                   <p>{data.profile.brokerage || data.profile.brokerageId || '—'}</p>
                 </div>
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
                   <div className="mb-1 inline-flex items-center gap-2 font-semibold text-gray-800">
-                    <FiClock /> Last login
+                    <FiClock /> Último acceso
                   </div>
                   <p>{formatDate(data.profile.lastLoginAt)}</p>
                 </div>
@@ -308,8 +308,8 @@ export default function MasterUserDetailPage() {
                   <StatCard title="Agentes del equipo" value={data.kpis.teamStats.teamAgents} />
                   <StatCard
                     title="Estado de invitación"
-                    value={data.kpis.invite?.status || 'n/a'}
-                    subtitle={data.kpis.invite?.expiresAt ? `Expires ${formatDate(data.kpis.invite.expiresAt)}` : 'No invite record'}
+                    value={data.kpis.invite?.status || 'n/d'}
+                    subtitle={data.kpis.invite?.expiresAt ? `Vence ${formatDate(data.kpis.invite.expiresAt)}` : 'Sin registro de invitación'}
                   />
                 </div>
               </section>
@@ -326,10 +326,10 @@ export default function MasterUserDetailPage() {
                   <div className="space-y-3">
                     {data.recent.leads.map((lead) => (
                       <div key={lead.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
-                        <p className="font-semibold text-gray-800">{lead.buyerName || 'Unknown Buyer'}</p>
+                        <p className="font-semibold text-gray-800">{lead.buyerName || 'Comprador desconocido'}</p>
                         <p className="text-gray-600">{lead.buyerEmail || '—'}</p>
                         <p className="text-xs text-gray-500">
-                          {lead.type || 'lead'} • {lead.source || 'source'} • {lead.status || 'status'} • {formatDate(lead.createdAt)}
+                          {lead.type || 'lead'} • {lead.source || 'origen'} • {lead.status || 'estado'} • {formatDate(lead.createdAt)}
                         </p>
                       </div>
                     ))}
@@ -339,7 +339,7 @@ export default function MasterUserDetailPage() {
 
               <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-semibold text-[#0B2545]">
-                  <FiBarChart2 /> Activity Trail
+                  <FiBarChart2 /> Historial de actividad
                 </h2>
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                   <select
@@ -349,7 +349,7 @@ export default function MasterUserDetailPage() {
                       setTimelinePage(1)
                     }}
                     className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
-                    aria-label="Filter activity by event type"
+                    aria-label="Filtrar actividad por tipo de evento"
                   >
                     {timelineEventOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -358,7 +358,7 @@ export default function MasterUserDetailPage() {
                     ))}
                   </select>
 
-                  <span className="text-xs text-gray-500">Total events: {timelineTotal}</span>
+                  <span className="text-xs text-gray-500">Eventos totales: {timelineTotal}</span>
                 </div>
 
                 {timelineLoading ? (
@@ -366,14 +366,14 @@ export default function MasterUserDetailPage() {
                 ) : timelineError ? (
                   <p className="text-sm text-red-600">{timelineError}</p>
                 ) : timelineItems.length === 0 ? (
-                  <p className="text-sm text-gray-500">No activity events found for this user.</p>
+                  <p className="text-sm text-gray-500">No se encontraron eventos de actividad para este usuario.</p>
                 ) : (
                   <>
                     <div className="space-y-3">
                       {timelineItems.map((activity) => (
                         <div key={activity.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
-                          <p className="font-semibold text-gray-800">{activity.eventType || activity.action || 'event'}</p>
-                          <p className="text-gray-600">{activity.action || activity.type || 'system'} • {activity.source || 'activity'}</p>
+                          <p className="font-semibold text-gray-800">{activity.eventType || activity.action || 'evento'}</p>
+                          <p className="text-gray-600">{activity.action || activity.type || 'sistema'} • {activity.source || 'actividad'}</p>
                           <p className="text-xs text-gray-500">{formatDate(activity.timestamp)}</p>
                         </div>
                       ))}
@@ -386,16 +386,16 @@ export default function MasterUserDetailPage() {
                         disabled={timelinePage <= 1 || timelineLoading}
                         className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                       >
-                        Previous
+                        Anterior
                       </button>
-                      <span className="text-xs text-gray-500">Page {timelinePage}</span>
+                      <span className="text-xs text-gray-500">Página {timelinePage}</span>
                       <button
                         type="button"
                         onClick={() => setTimelinePage((current) => current + 1)}
                         disabled={!timelineHasMore || timelineLoading}
                         className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                       >
-                        Next
+                        Siguiente
                       </button>
                     </div>
                   </>
