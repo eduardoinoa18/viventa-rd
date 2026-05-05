@@ -255,13 +255,13 @@ export default function MasterUsersPage() {
       })
       const json = await res.json()
       if (json.ok) {
-        toast.success(`User ${action}d successfully`)
+        toast.success(`Usuario ${action === 'enable' ? 'habilitado' : 'deshabilitado'} con éxito`)
         loadUsers()
       } else {
         toast.error(json.error || `No se pudo ${action === 'enable' ? 'habilitar' : 'deshabilitar'} el usuario`)
       }
     } catch (e) {
-      console.error(`Failed to ${action} user`, e)
+      console.error(`No se pudo ${action} el usuario`, e)
       toast.error(`No se pudo ${action === 'enable' ? 'habilitar' : 'deshabilitar'} el usuario`)
     }
   }
@@ -283,7 +283,7 @@ export default function MasterUsersPage() {
         toast.error(json.error || 'No se pudo eliminar el usuario')
       }
     } catch (e) {
-      console.error('Failed to delete user', e)
+      console.error('No se pudo eliminar el usuario', e)
       toast.error('No se pudo eliminar el usuario')
     }
   }
@@ -291,7 +291,7 @@ export default function MasterUsersPage() {
   async function togglePublicProfile(user: User) {
     const uid = user.uid || user.id
     const nextValue = user.publicProfileEnabled === false
-    const actionLabel = nextValue ? 'show' : 'hide'
+    const actionLabel = nextValue ? 'mostrar' : 'ocultar'
     if (!confirm(`¿Deseas ${actionLabel} este perfil públicamente?`)) return
 
     try {
@@ -312,7 +312,7 @@ export default function MasterUsersPage() {
       toast.success(nextValue ? 'Perfil público activado' : 'Perfil público desactivado')
       loadUsers()
     } catch (error) {
-      console.error('Failed to toggle public profile visibility', error)
+      console.error('No se pudo cambiar la visibilidad del perfil público', error)
       toast.error('No se pudo actualizar la visibilidad del perfil')
     }
   }
@@ -332,7 +332,7 @@ export default function MasterUsersPage() {
       toast.success('Invitación reenviada exitosamente')
       loadUsers()
     } catch (e) {
-      console.error('Failed to resend invite', e)
+      console.error('No se pudo reenviar la invitación', e)
       toast.error('No se pudo reenviar la invitación')
     }
   }
@@ -356,13 +356,13 @@ export default function MasterUsersPage() {
           toast.success('Enlace de restablecimiento copiado')
         } catch {
           toast.success('Enlace de restablecimiento generado')
-          window.prompt('Copy reset link:', json.resetLink)
+          window.prompt('Copiar enlace de restablecimiento:', json.resetLink)
         }
       } else {
         toast.success('Restablecimiento de contraseña preparado')
       }
     } catch (e) {
-      console.error('Failed to generate reset link', e)
+      console.error('No se pudo generar el enlace de restablecimiento', e)
       toast.error('No se pudo generar el enlace de restablecimiento')
     }
   }
@@ -376,11 +376,11 @@ export default function MasterUsersPage() {
       master_admin: 'bg-red-100 text-red-800',
     }
     const labels: Record<string, string> = {
-      agent: 'Agent',
+      agent: 'Agente',
       broker: 'Broker',
-      buyer: 'Buyer',
-      user: 'User',
-      master_admin: 'Master Admin',
+      buyer: 'Comprador',
+      user: 'Usuario',
+      master_admin: 'Administrador maestro',
     }
     return { style: styles[role] || 'bg-gray-100 text-gray-800', label: labels[role] || role }
   }
