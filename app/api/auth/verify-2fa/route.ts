@@ -129,6 +129,18 @@ export async function POST(req: NextRequest) {
     })
 
     response.cookies.set('__session', sessionCookie, options)
+    response.cookies.set('viventa_role', 'master_admin', {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    })
+    response.cookies.set('viventa_uid', session.uid, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    })
     return applyNoStoreHeaders(response)
   } catch (error) {
     console.error('2FA verification error:', error)

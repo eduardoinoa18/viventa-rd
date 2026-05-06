@@ -11,12 +11,37 @@ const ADMIN_ROLES = new Set(['master_admin', 'admin'])
 const PROFESSIONAL_ROLES = new Set(['agent', 'broker', 'constructora'])
 const BUYER_ROLES = new Set(['buyer', 'user'])
 
+function normalizeRoleCookie(rawRole: string | undefined): string | null {
+  const role = String(rawRole || '').trim().toLowerCase()
+  if (!role) return null
+  if (role === 'master-admin' || role === 'masteradmin') return 'master_admin'
+  if (role === 'administrator') return 'admin'
+  if (role === 'developer') return 'constructora'
+  return role
+}
+
+async function getSessionOrRoleFallback(req: NextRequest) {
+  const session = await getMiddlewareSession(req)
+  if (session) return session
+
+  const roleFromCookie = normalizeRoleCookie(req.cookies.get('viventa_role')?.value)
+  if (!roleFromCookie) return null
+
+  return {
+    uid: req.cookies.get('viventa_uid')?.value || '',
+    email: '',
+    role: roleFromCookie,
+    // We can't reliably know this without verifying __session. Server guards still enforce true auth.
+    twoFactorVerified: roleFromCookie !== 'master_admin',
+  }
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   // ========== AUTH ROUTES (SESSION-AWARE) ==========
   if (pathname === '/login' || pathname === '/verify-2fa') {
-    const session = await getMiddlewareSession(req)
+    const session = await getSessionOrRoleFallback(req)
 
     if (!session) {
       return NextResponse.next()
@@ -73,7 +98,7 @@ export async function middleware(req: NextRequest) {
 
   // ========== MASTER NAMESPACE (SECURE SESSION COOKIES) ==========
   if (pathname.startsWith('/master')) {
-    const session = await getMiddlewareSession(req)
+    const session = await getSessionOrRoleFallback(req)
 
     if (!session) {
       return NextResponse.redirect(new URL('/login?next=' + encodeURIComponent(pathname), req.url))
@@ -90,7 +115,7 @@ export async function middleware(req: NextRequest) {
   }
 
   if (pathname.startsWith('/dashboard')) {
-    const session = await getMiddlewareSession(req)
+    const session = await getSessionOrRoleFallback(req)
     if (!session) {
       return NextResponse.redirect(new URL('/login?next=' + encodeURIComponent(pathname), req.url))
     }

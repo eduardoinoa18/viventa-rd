@@ -317,6 +317,26 @@ export async function POST(req: NextRequest) {
       })
 
       response.cookies.set('__session', sessionCookie, options)
+      response.cookies.set('viventa_role', role, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      })
+      response.cookies.set('viventa_uid', uid, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      })
+      if (userName) {
+        response.cookies.set('viventa_name', userName, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 7,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+        })
+      }
 
       return applyNoStoreHeaders(response)
     }
