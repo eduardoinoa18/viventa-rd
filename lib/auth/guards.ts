@@ -23,13 +23,13 @@ export async function requireMasterAdmin() {
     redirect('/login')
   }
 
-  // Must be master_admin
-  if (session.role !== 'master_admin') {
+  // Must be admin-level role
+  if (session.role !== 'master_admin' && session.role !== 'admin') {
     redirect('/login')
   }
 
-  // Must have verified 2FA
-  if (!session.twoFactorVerified) {
+  // Only master_admin requires verified 2FA
+  if (session.role === 'master_admin' && !session.twoFactorVerified) {
     redirect('/verify-2fa')
   }
 
@@ -47,7 +47,7 @@ export async function requireMasterAdmin() {
   return {
     uid: session.uid,
     email: session.email,
-    role: 'master_admin' as const,
+    role: session.role,
     authenticated: true,
   }
 }

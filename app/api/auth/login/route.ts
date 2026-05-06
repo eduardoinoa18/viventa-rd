@@ -50,6 +50,18 @@ function matchesMasterAdminPassword(email: string, password: string): boolean {
   return password === masterPassword
 }
 
+function normalizeRole(rawRole: unknown): 'master_admin' | 'admin' | 'buyer' | 'user' | 'agent' | 'broker' | 'constructora' {
+  const role = String(rawRole || '').trim().toLowerCase()
+  if (role === 'master_admin' || role === 'master-admin' || role === 'masteradmin') return 'master_admin'
+  if (role === 'admin' || role === 'administrator') return 'admin'
+  if (role === 'agent') return 'agent'
+  if (role === 'broker') return 'broker'
+  if (role === 'constructora' || role === 'developer') return 'constructora'
+  if (role === 'buyer') return 'buyer'
+  if (role === 'user') return 'user'
+  return 'buyer'
+}
+
 async function getOrCreateMasterAdminUid(adminAuth: NonNullable<ReturnType<typeof getAdminAuth>>, email: string): Promise<string> {
   try {
     const user = await adminAuth.getUserByEmail(email)
@@ -185,7 +197,7 @@ export async function POST(req: NextRequest) {
     let userName = ''
   let userStatus: 'invited' | 'active' | 'suspended' | 'archived' = 'active'
     if (userDoc.exists) {
-      role = (userDoc.data()?.role as string) || role
+      role = normalizeRole(userDoc.data()?.role || role)
       userName = String(userDoc.data()?.name || userDoc.data()?.displayName || '')
       userStatus = normalizeLifecycleStatus(userDoc.data()?.status)
       if (usedMasterFallback && role !== 'master_admin') {
@@ -206,6 +218,7 @@ export async function POST(req: NextRequest) {
         )
       }
     } else {
+      role = normalizeRole(role)
       await userDocRef.set({
         email,
         role,

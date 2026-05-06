@@ -19,6 +19,14 @@ const GOOGLE_JWKS = createRemoteJWKSet(
   new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com')
 )
 
+function normalizeRole(rawRole: unknown): string {
+  const role = String(rawRole || '').trim().toLowerCase()
+  if (role === 'master_admin' || role === 'master-admin' || role === 'masteradmin') return 'master_admin'
+  if (role === 'administrator') return 'admin'
+  if (role === 'developer') return 'constructora'
+  return role || 'buyer'
+}
+
 function getProjectId(): string | null {
   return (
     process.env.FIREBASE_PROJECT_ID ||
@@ -61,7 +69,7 @@ export async function getMiddlewareSession(
     return {
       uid,
       email: String(payload.email || ''),
-      role: String(payload.role || 'buyer'),
+      role: normalizeRole(payload.role),
       twoFactorVerified: payload.twoFactorVerified === true,
     }
   } catch (error) {

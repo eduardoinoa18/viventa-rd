@@ -23,6 +23,17 @@ export interface UserSession {
   customClaims: Record<string, any>
 }
 
+function normalizeSessionRole(rawRole: unknown): UserSession['role'] {
+  const role = String(rawRole || '').trim().toLowerCase()
+  if (role === 'master_admin' || role === 'master-admin' || role === 'masteradmin') return 'master_admin'
+  if (role === 'admin' || role === 'administrator') return 'admin'
+  if (role === 'agent') return 'agent'
+  if (role === 'broker') return 'broker'
+  if (role === 'constructora' || role === 'developer') return 'constructora'
+  if (role === 'user') return 'user'
+  return 'buyer'
+}
+
 function extractImpersonation(decodedClaims: Record<string, any>): ImpersonationSessionMetadata | null {
   const raw = decodedClaims?.impersonation
   if (!raw || typeof raw !== 'object') return null
@@ -64,7 +75,7 @@ export async function getServerSession(): Promise<UserSession | null> {
     return {
       uid: decodedClaims.uid,
       email: decodedClaims.email || null,
-      role: (decodedClaims.role as any) || 'buyer',
+      role: normalizeSessionRole(decodedClaims.role),
       twoFactorVerified: decodedClaims.twoFactorVerified === true,
       impersonation: extractImpersonation(decodedClaims as Record<string, any>),
       customClaims: decodedClaims,
@@ -105,7 +116,7 @@ export async function getSessionFromRequest(req: Request): Promise<UserSession |
     return {
       uid: decodedClaims.uid,
       email: decodedClaims.email || null,
-      role: (decodedClaims.role as any) || 'buyer',
+      role: normalizeSessionRole(decodedClaims.role),
       twoFactorVerified: decodedClaims.twoFactorVerified === true,
       impersonation: extractImpersonation(decodedClaims as Record<string, any>),
       customClaims: decodedClaims,

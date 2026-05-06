@@ -1343,7 +1343,7 @@ export default function ListingDetail(){
       </main>
 
       {/* Mobile Sticky Bottom CTA - Zillow Style (only on mobile, hidden on desktop) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg safe-area-inset-bottom">
+      <div className="lg:hidden fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg safe-area-inset-bottom">
         <div className="px-4 py-3">
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
