@@ -56,12 +56,26 @@ export default function Verify2FAPage() {
     setError('')
 
     try {
-      // For resend, we need to call send-master-code again
-      // But we don't have the email on client. The server should read it from session.
-      // Let's update the send-master-code endpoint to support this.
-      
-      // For now, show a message
-      toast('Funcionalidad de reenvío próximamente. Por favor, inicia sesión nuevamente si el código expiró.')
+      const res = await fetch('/api/auth/send-master-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+        credentials: 'include',
+      })
+
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data?.ok) {
+        const msg = data?.error || 'No se pudo reenviar el código'
+        setError(msg)
+        toast.error(msg)
+        return
+      }
+
+      if (data?.devCode) {
+        toast.success(`Código de respaldo: ${data.devCode}`)
+      } else {
+        toast.success('Código reenviado a tu correo')
+      }
     } catch (err) {
       toast.error('Error al reenviar código')
     } finally {

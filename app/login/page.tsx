@@ -55,7 +55,11 @@ export default function UnifiedLoginPage() {
 
       if (data.requires2FA) {
         // Master admin: Redirect to 2FA verification
-        toast.success('Código 2FA enviado a tu email')
+        if (data.devCode) {
+          toast.success(`Código de respaldo: ${data.devCode}`)
+        } else {
+          toast.success('Código 2FA enviado a tu email')
+        }
         router.push('/verify-2fa')
       } else {
         // Buyer/Professional: Direct access

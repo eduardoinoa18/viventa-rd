@@ -7,6 +7,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin'
 import sgMail from '@sendgrid/mail'
 import nodemailer from 'nodemailer'
 import { keyFromRequest, rateLimit } from '@/lib/rateLimiter'
+import { getServerSession } from '@/lib/auth/session'
 
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -14,7 +15,14 @@ function generateCode(): string {
 
 export async function POST(request: Request) {
   try {
-    const { email, uid } = await request.json()
+    const payload = await request.json().catch(() => ({} as any))
+    const emailFromBody = String(payload?.email || '').trim().toLowerCase()
+    const uidFromBody = String(payload?.uid || '').trim()
+
+    // Fallback for resend flow: infer from authenticated session when body is absent.
+    const session = await getServerSession()
+    const email = emailFromBody || String(session?.email || '').trim().toLowerCase()
+    const uid = uidFromBody || String(session?.uid || '').trim()
 
     // Build allowed email list: prefer MASTER_ADMIN_EMAILS (comma-separated), fallback to MASTER_ADMIN_EMAIL
     const rawList = (process.env.MASTER_ADMIN_EMAILS || process.env.MASTER_ADMIN_EMAIL || 'viventa.rd@gmail.com')
@@ -46,7 +54,9 @@ export async function POST(request: Request) {
     }
     
     // In development, allow any email. In production, check allowlist or ALLOW_ANY_MASTER_EMAIL flag
-    const isAllowed = allowedByUidRole || isDev || allowAny || allowedEmails.has(incoming)
+    const sessionRole = String(session?.role || '').toLowerCase()
+    const allowedBySessionRole = !!incoming && (sessionRole === 'master_admin' || sessionRole === 'admin')
+    const isAllowed = allowedByUidRole || allowedBySessionRole || isDev || allowAny || allowedEmails.has(incoming)
     
     // Security: Don't log sensitive data in production
     if (isDev) {
@@ -57,6 +67,10 @@ export async function POST(request: Request) {
       console.log('Dev mode:', isDev)
       console.log('Allow any:', allowAny)
       console.log('Is allowed:', isAllowed)
+    }
+
+    if (!incoming) {
+      return NextResponse.json({ ok: false, error: 'Missing email context for verification' }, { status: 400 })
     }
 
     if (!isAllowed) {
