@@ -110,20 +110,29 @@ export async function POST(request: Request) {
     if (!emailSent) {
       const isPreview = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production'
       const allowDevResponse = isDev || isLocalHost || isPreview || process.env.ALLOW_DEV_2FA_RESPONSE === 'true'
-      if (allowDevResponse) {
+      const allowEmergencyBackup =
+        process.env.ENABLE_MASTER_2FA_EMERGENCY_BACKUP !== 'false' &&
+        (allowedByUidRole || allowedBySessionRole || allowedEmails.has(incoming))
+
+      if (allowDevResponse || allowEmergencyBackup) {
+        const fallbackType = allowDevResponse ? 'dev' : 'emergency_backup'
+        console.warn(`[send-master-code] Email delivery failed. Using ${fallbackType} code fallback for ${incoming}`)
         console.log('⚠️  Email failed but DEV mode - returning code in response')
         return NextResponse.json({ 
           ok: true, 
-          message: 'Verification code (DEV) ready. Email sending is not configured.',
+          message: allowDevResponse
+            ? 'Verification code (DEV) ready. Email sending is not configured.'
+            : 'Email delivery unavailable. Use backup code to continue.',
           expiresIn: 600,
-          devCode: code
+          devCode: code,
+          delivery: fallbackType,
         })
       }
-      console.error('❌ Email failed in production mode')
+      console.error('❌ Email failed in production mode with backup disabled')
       return NextResponse.json({ 
         ok: false, 
-        error: 'Email provider error. Please check SENDGRID or SMTP credentials.' 
-      }, { status: 500 })
+        error: 'Email delivery is temporarily unavailable. Please try again in a moment.' 
+      }, { status: 503 })
     }
 
     // Success
