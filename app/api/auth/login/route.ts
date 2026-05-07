@@ -308,7 +308,7 @@ export async function POST(req: NextRequest) {
         ok: true,
         requires2FA: true,
         email,
-        devCode: sendCodeData.devCode,
+        devCode: process.env.ALLOW_DEV_2FA_RESPONSE === 'true' ? sendCodeData.devCode : undefined,
         codeDeliveryError,
       })
 

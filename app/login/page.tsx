@@ -59,11 +59,7 @@ export default function UnifiedLoginPage() {
           toast.error(data.codeDeliveryError)
           toast('Continúa a verificación 2FA y usa "Reenviar" para generar un nuevo código.')
         }
-        if (data.devCode) {
-          toast.success(`Código de respaldo: ${data.devCode}`)
-        } else {
-          toast.success('Código 2FA enviado a tu email')
-        }
+        toast.success('Código 2FA enviado a tu email')
         router.push('/verify-2fa')
       } else {
         // Buyer/Professional: Direct access

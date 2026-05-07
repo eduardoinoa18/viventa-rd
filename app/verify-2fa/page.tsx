@@ -71,11 +71,7 @@ export default function Verify2FAPage() {
         return
       }
 
-      if (data?.devCode) {
-        toast.success(`Código de respaldo: ${data.devCode}`)
-      } else {
-        toast.success('Código reenviado a tu correo')
-      }
+      toast.success('Código reenviado a tu correo')
     } catch (err) {
       toast.error('Error al reenviar código')
     } finally {

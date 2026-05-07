@@ -32,9 +32,10 @@ export async function POST(request: Request) {
     
     const incoming = String(email || '').trim().toLowerCase()
     const uidText = String(uid || '').trim()
-  const isDev = process.env.NODE_ENV !== 'production'
-  const host = (request.headers.get('host') || '').toLowerCase()
-  const isLocalHost = host.includes('localhost') || host.startsWith('127.0.0.1') || host.endsWith('.local')
+    const isDev = process.env.NODE_ENV !== 'production'
+    const host = (request.headers.get('host') || '').toLowerCase()
+    const isLocalHost = host.includes('localhost') || host.startsWith('127.0.0.1') || host.endsWith('.local')
+    const allowDebugCodeExposure = process.env.ALLOW_DEV_2FA_RESPONSE === 'true'
     const allowAny = process.env.ALLOW_ANY_MASTER_EMAIL === 'true'
 
     // Prefer role-based validation when uid is provided by the authenticated login flow.
@@ -108,16 +109,16 @@ export async function POST(request: Request) {
 
     // If sending fails in development, still allow sign-in by surfacing the code
     if (!emailSent) {
-      const isPreview = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production'
-      const allowDevResponse = isDev || isLocalHost || isPreview || process.env.ALLOW_DEV_2FA_RESPONSE === 'true'
+      const allowDevResponse = allowDebugCodeExposure
       const allowEmergencyBackup =
-        process.env.ENABLE_MASTER_2FA_EMERGENCY_BACKUP !== 'false' &&
+        process.env.ENABLE_MASTER_2FA_EMERGENCY_BACKUP === 'true' &&
+        allowDebugCodeExposure &&
         (allowedByUidRole || allowedBySessionRole || allowedEmails.has(incoming))
 
       if (allowDevResponse || allowEmergencyBackup) {
         const fallbackType = allowDevResponse ? 'dev' : 'emergency_backup'
         console.warn(`[send-master-code] Email delivery failed. Using ${fallbackType} code fallback for ${incoming}`)
-        console.log('⚠️  Email failed but DEV mode - returning code in response')
+        console.log('⚠️  Email failed and fallback code exposure is explicitly enabled')
         return NextResponse.json({ 
           ok: true, 
           message: allowDevResponse
@@ -143,8 +144,7 @@ export async function POST(request: Request) {
       expiresIn: 600 // seconds
     }
     // Helpful for development and staging
-    const isPreview = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production'
-    if (isDev || isLocalHost || isPreview || process.env.ALLOW_DEV_2FA_RESPONSE === 'true') {
+    if (allowDebugCodeExposure) {
       response.devCode = code
       console.log('🔐 DEV CODE:', code)
     }
