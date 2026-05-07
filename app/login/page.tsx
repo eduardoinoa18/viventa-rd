@@ -55,6 +55,10 @@ export default function UnifiedLoginPage() {
 
       if (data.requires2FA) {
         // Master admin: Redirect to 2FA verification
+        if (data.codeDeliveryError) {
+          toast.error(data.codeDeliveryError)
+          toast('Continúa a verificación 2FA y usa "Reenviar" para generar un nuevo código.')
+        }
         if (data.devCode) {
           toast.success(`Código de respaldo: ${data.devCode}`)
         } else {

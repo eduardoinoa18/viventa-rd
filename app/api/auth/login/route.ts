@@ -285,28 +285,23 @@ export async function POST(req: NextRequest) {
     // 6. Determine flow based on role
     if (role === 'master_admin') {
       const sendCodeUrl = new URL('/api/auth/send-master-code', req.url)
-      let sendCodeRes
+      let sendCodeData: any = {}
+      let codeDeliveryError: string | null = null
       try {
-        sendCodeRes = await fetch(sendCodeUrl, {
+        const sendCodeRes = await fetch(sendCodeUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, uid }),
         })
-      } catch (fetchError: any) {
-        console.error('[LOGIN] Failed to call send-master-code:', fetchError?.message)
-        return noStoreJson(
-          { ok: false, error: 'Error al enviar código 2FA' },
-          { status: 500 }
-        )
-      }
 
-      const sendCodeData = await sendCodeRes.json().catch(() => ({}))
-      if (!sendCodeRes.ok) {
-        console.error('[LOGIN] send-master-code failed:', sendCodeData?.error)
-        return noStoreJson(
-          { ok: false, error: sendCodeData?.error || 'Error al enviar código 2FA' },
-          { status: sendCodeRes.status || 500 }
-        )
+        sendCodeData = await sendCodeRes.json().catch(() => ({}))
+        if (!sendCodeRes.ok) {
+          codeDeliveryError = sendCodeData?.error || 'No se pudo enviar el código 2FA en este momento.'
+          console.warn('[LOGIN] send-master-code failed, continuing to 2FA:', codeDeliveryError)
+        }
+      } catch (fetchError: any) {
+        codeDeliveryError = 'No se pudo contactar el servicio de códigos 2FA. Usa reenviar en la siguiente pantalla.'
+        console.warn('[LOGIN] Failed to call send-master-code, continuing to 2FA:', fetchError?.message)
       }
 
       const response = NextResponse.json({
@@ -314,6 +309,7 @@ export async function POST(req: NextRequest) {
         requires2FA: true,
         email,
         devCode: sendCodeData.devCode,
+        codeDeliveryError,
       })
 
       response.cookies.set('__session', sessionCookie, options)
