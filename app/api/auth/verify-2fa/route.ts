@@ -141,6 +141,13 @@ export async function POST(req: NextRequest) {
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     })
+    // Non-httpOnly flag cookie used by middleware fallback when edge JWT verify is unavailable
+    response.cookies.set('viventa_2fa', '1', {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    })
     return applyNoStoreHeaders(response)
   } catch (error) {
     console.error('2FA verification error:', error)

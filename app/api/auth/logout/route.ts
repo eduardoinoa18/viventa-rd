@@ -37,6 +37,9 @@ export async function POST() {
     response.cookies.delete('admin_2fa_ok')
     response.cookies.delete('trusted_admin')
     response.cookies.delete('viventa_role')
+    response.cookies.delete('viventa_uid')
+    response.cookies.delete('viventa_2fa')
+    response.cookies.delete('viventa_name')
 
     return applyNoStoreHeaders(response)
   } catch (error) {

@@ -27,12 +27,13 @@ async function getSessionOrRoleFallback(req: NextRequest) {
   const roleFromCookie = normalizeRoleCookie(req.cookies.get('viventa_role')?.value)
   if (!roleFromCookie) return null
 
+  const twoFaVerified = req.cookies.get('viventa_2fa')?.value === '1'
   return {
     uid: req.cookies.get('viventa_uid')?.value || '',
     email: '',
     role: roleFromCookie,
-    // We can't reliably know this without verifying __session. Server guards still enforce true auth.
-    twoFactorVerified: roleFromCookie !== 'master_admin',
+    // viventa_2fa cookie is set only after successful 2FA. Server guards still enforce true auth.
+    twoFactorVerified: roleFromCookie !== 'master_admin' || twoFaVerified,
   }
 }
 
